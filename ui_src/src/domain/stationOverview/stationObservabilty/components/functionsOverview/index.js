@@ -187,7 +187,7 @@ const FunctionsOverview = ({ referredFunction, dismissFunction, moveToGenralView
 
     const statisticsData = [
         { name: 'Awaiting msgs', data: stationState?.stationFunctions?.total_awaiting_messages?.toLocaleString() },
-        { name: 'Processed msgs', data: stationState?.stationFunctions?.total_processed_messages?.toLocaleString() },
+        { name: 'In process', data: stationState?.stationFunctions?.total_processed_messages?.toLocaleString() },
         { name: 'Total invocations', data: stationState?.stationFunctions?.total_invocations?.toLocaleString() || 0 },
         { name: 'Avg Error rate', data: stationState?.stationFunctions?.average_error_rate },
         {
@@ -244,7 +244,7 @@ const FunctionsOverview = ({ referredFunction, dismissFunction, moveToGenralView
                                             <FunctionCard
                                                 functionItem={functionItem}
                                                 stationName={stationState?.stationMetaData?.name}
-                                                partiotionNumber={stationState?.stationMetaData?.partitions_number}
+                                                partiotionNumber={stationState?.stationPartition || -1}
                                                 onClick={() => {
                                                     setCurrentFunction(functionItem);
                                                     setOpenBottomDetails(true);

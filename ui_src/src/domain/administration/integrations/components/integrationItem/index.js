@@ -181,6 +181,7 @@ const IntegrationItem = ({ value, lockFeature, isOpen }) => {
                 open={modalIsOpen}
                 closeIcon={false}
                 headerStyle={{ display: 'none' }}
+                bodyStyle={{ padding: '0px' }}
             >
                 {modalContent()}
             </Drawer>

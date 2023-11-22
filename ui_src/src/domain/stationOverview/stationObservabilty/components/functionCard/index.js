@@ -64,7 +64,7 @@ export default function FunctionCard({
 
     const handleDeactivate = async () => {
         const bodyRequest = {
-            function_id: functionItem?.installed_id,
+            function_id: functionItem?.id,
             station_name: stationName,
             partition: partiotionNumber,
             visible_step: functionItem?.visible_step
@@ -79,7 +79,7 @@ export default function FunctionCard({
 
     const handleActivate = async () => {
         const bodyRequest = {
-            function_id: functionItem?.installed_id,
+            function_id: functionItem?.id,
             station_name: stationName,
             partition: partiotionNumber,
             visible_step: functionItem?.visible_step

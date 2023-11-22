@@ -4,6 +4,18 @@
     height: 100%;
     overflow-y: auto;
     flex-direction: column;
+    .attach-btn {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        cursor: pointer;
+    }
+    .loader {
+        display: flex;
+        justify-content: center;
+        height: 100%;
+        width: 100%;
+    }
     .back-to-function {
         display: flex;
         align-items: center;
@@ -169,6 +181,11 @@
             display: flex;
             gap: 10px;
         }
+        .git {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
     }
     inputsSection {
         margin-top: 10px;
@@ -287,5 +304,12 @@
         font-family: 'InterSemiBold';
         font-size: 16px;
         color: #2e2c34;
+    }
+    .inline-code {
+        display: inline-block;
+        padding: 2px 4px;
+        color: #232629;
+        background-color: #e3e6e8;
+        border-radius: 3px;
     }
 }

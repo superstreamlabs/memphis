@@ -12,18 +12,19 @@
 
 import './style.scss';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import Skeleton from 'antd/lib/skeleton';
 import { IoIosInformationCircle } from 'react-icons/io';
 import { isCloud, parsingDate } from '../../../../services/valueConvertor';
 import { FiGitCommit } from 'react-icons/fi';
 import { BiDownload } from 'react-icons/bi';
-import { MdOutlineFileDownloadOff } from 'react-icons/md';
 import { IoClose } from 'react-icons/io5';
 import { GoRepo } from 'react-icons/go';
 import { ReactComponent as GithubBranchIcon } from '../../../../assets/images/githubBranchIcon.svg';
 import { ReactComponent as MemphisFunctionIcon } from '../../../../assets/images/memphisFunctionIcon.svg';
 import { ReactComponent as FunctionIcon } from '../../../../assets/images/functionIcon.svg';
+import { ReactComponent as DeleteIcon } from '../../../../assets/images/deleteIcon.svg';
+import { FaArrowCircleUp } from 'react-icons/fa';
 import { Divider, Drawer, Rate } from 'antd';
 import FunctionDetails from '../functionDetails';
 import { showMessages } from '../../../../services/genericServices';
@@ -36,8 +37,10 @@ import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
 import AttachFunctionModal from '../attachFunctionModal';
 import CloudModal from '../../../../components/cloudModal';
+import { Context } from '../../../../hooks/store';
 
 function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null, onApply, doneUninstall, startInstallation, funcIndex, referredFunction }) {
+    const [state, dispatch] = useContext(Context);
     const [functionDetails, setFunctionDetils] = useState(funcDetails);
     const [open, setOpen] = useState(false);
     const [selectedFunction, setSelectedFunction] = useState(null);
@@ -45,6 +48,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
     const [chooseStationModal, setChooseStationModal] = useState(false);
     const [cloudModal, setCloudModal] = useState(false);
     const [loader, setLoader] = useState(false);
+    const [openUpgradeModal, setOpenUpgradeModal] = useState(false);
 
     useEffect(() => {
         const url = window.location.href;
@@ -151,12 +155,12 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                         <>
                                             <downloads is="x3d">
                                                 <BiDownload className="download-icon" />
-                                                <label>{Number(180).toLocaleString()}</label>
+                                                <label>{Number(funcDetails?.forks).toLocaleString()}</label>
                                             </downloads>
                                             <Divider type="vertical" />
                                             <rate is="x3d">
-                                                <Rate disabled defaultValue={5} className="stars-rate" />
-                                                <label>(50)</label>
+                                                <Rate disabled defaultValue={functionDetails?.stars} className="stars-rate" />
+                                                <label>{`(${funcDetails?.rates})`}</label>
                                             </rate>
                                             <Divider type="vertical" />
                                         </>
@@ -191,7 +195,16 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                 <Button
                                     width="100px"
                                     height="34px"
-                                    placeholder="Attach"
+                                    placeholder={
+                                        isCloud() && !state?.allowedActions?.can_apply_functions ? (
+                                            <span className="attach-btn">
+                                                <label>Attach</label>
+                                                <FaArrowCircleUp className="lock-feature-icon" />
+                                            </span>
+                                        ) : (
+                                            <span className="attach-btn">Attach</span>
+                                        )
+                                    }
                                     purple-light
                                     colorType="white"
                                     radiusType="circle"
@@ -202,26 +215,24 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                     onClick={() => {
                                         if (!isCloud()) setCloudModal(true);
                                         else if (isTagsOn) setChooseStationModal(true);
-                                        else onApply();
+                                        else {
+                                            state?.allowedActions?.can_apply_functions ? onApply() : setOpenUpgradeModal(true);
+                                        }
                                     }}
                                 />
                             )}
 
                             {isCloud() && (
                                 <Button
-                                    width="100px"
+                                    width={functionDetails?.installed && !functionDetails?.updates_available ? '34px' : '100px'}
                                     height="34px"
                                     placeholder={
                                         functionDetails?.installed_in_progress ? (
                                             ''
                                         ) : functionDetails?.installed ? (
                                             <div className="code-btn">
-                                                {functionDetails?.updates_available ? (
-                                                    <BiDownload className="Install" />
-                                                ) : (
-                                                    <MdOutlineFileDownloadOff className="Uninstall" />
-                                                )}
-                                                {functionDetails?.updates_available ? <label>Update</label> : <label>Uninstall</label>}
+                                                {functionDetails?.updates_available ? <BiDownload className="Install" /> : <DeleteIcon className="Uninstall" />}
+                                                {functionDetails?.updates_available ? <label>Update</label> : null}
                                             </div>
                                         ) : (
                                             <div className="code-btn">
@@ -232,7 +243,8 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                     }
                                     colorType="white"
                                     radiusType="circle"
-                                    backgroundColorType="purple"
+                                    backgroundColorType={functionDetails?.installed && !functionDetails?.updates_available ? 'white' : 'purple'}
+                                    border={functionDetails?.installed && !functionDetails?.updates_available ? 'gray-light' : null}
                                     fontSize="12px"
                                     fontFamily="InterSemiBold"
                                     disabled={!isValid || functionDetails?.installed_in_progress}
@@ -261,7 +273,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
             <Modal
                 header={
                     <div className="modal-header">
-                        <p>Attach function to station</p>
+                        <p>Attach a function</p>
                     </div>
                 }
                 displayButtons={false}
@@ -295,6 +307,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                     />
                 )}
             </Drawer>
+            <CloudModal type="upgrade" open={openUpgradeModal} handleClose={() => setOpenUpgradeModal(false)} />
         </>
     );
 }

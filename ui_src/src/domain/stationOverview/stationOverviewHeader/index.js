@@ -17,7 +17,7 @@ import { Add, FiberManualRecord } from '@material-ui/icons';
 import { HiOutlineExclamationCircle } from 'react-icons/hi';
 import { MinusOutlined } from '@ant-design/icons';
 import { useHistory } from 'react-router-dom';
-
+import { useGetAllowedActions } from '../../../services/genericServices';
 import { convertBytes, convertSecondsToDate, isCloud, replicasConvertor } from '../../../services/valueConvertor';
 import { ReactComponent as DeleteWrapperIcon } from '../../../assets/images/deleteWrapperIcon.svg';
 import { ReactComponent as StopUsingIcon } from '../../../assets/images/stopUsingIcon.svg';
@@ -64,7 +64,7 @@ const StationOverviewHeader = () => {
     const [useDlsModal, setUseDlsModal] = useState(false);
     const [disableModal, setDisableModal] = useState(false);
     const [disableLoader, setDisableLoader] = useState(false);
-
+    const getAllowedActions = useGetAllowedActions();
     const history = useHistory();
 
     const showRetentinViolation = isCloud() && stationState?.stationMetaData?.retention_type !== 'message_age_sec';
@@ -147,6 +147,8 @@ const StationOverviewHeader = () => {
         } catch (error) {
             setDeleteLoader(false);
             modalDeleteFlip(false);
+        } finally {
+            getAllowedActions();
         }
     };
 
@@ -162,6 +164,8 @@ const StationOverviewHeader = () => {
         } catch (error) {
             setDetachLoader(false);
             setDeleteModal(false);
+        } finally {
+            getAllowedActions();
         }
     };
 

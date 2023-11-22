@@ -47,6 +47,10 @@ const TestResult = ({ testResultData, loading }) => {
         setTestResult(testResultData);
     }, [testResultData]);
 
+    useEffect(() => {
+        (!testResult || testResult?.error) && setResponseTab('Error');
+    }, [testResult]);
+
     const getCopyData = () => {
         if (responseTab === 'All') {
             return JSON.stringify(testResult, null, 2);
@@ -137,8 +141,8 @@ const TestResult = ({ testResultData, loading }) => {
                                 <span className="status">Status:</span>
                                 <Tag
                                     tag={{
-                                        name: testResult?.failed_messages ? 'Failed' : 'Successful',
-                                        color: testResult?.failed_messages ? ColorPalette[7] : ColorPalette[9]
+                                        name: !testResult || testResult?.error ? 'Failed' : 'Successful',
+                                        color: !testResult || testResult?.error ? ColorPalette[7] : ColorPalette[9]
                                     }}
                                     editable={false}
                                     rounded={false}

@@ -22,6 +22,7 @@ import { ReactComponent as DeleteWrapperIcon } from '../../assets/images/deleteW
 import { ReactComponent as MailIcon } from '../../assets/images/mailIcon.svg';
 import { ReactComponent as DeleteIcon } from '../../assets/images/deleteIcon.svg';
 import { ReactComponent as SearchIcon } from '../../assets/images/searchIcon.svg';
+import { FaArrowCircleUp } from 'react-icons/fa';
 import SegmentButton from '../../components/segmentButton';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import SearchInput from '../../components/searchInput';
@@ -34,6 +35,7 @@ import { Context } from '../../hooks/store';
 import Modal from '../../components/modal';
 import Table from '../../components/table';
 import DeleteItemsModal from '../../components/deleteItemsModal';
+import CloudModal from '../../components/cloudModal';
 
 function Users() {
     const [state, dispatch] = useContext(Context);
@@ -51,6 +53,7 @@ function Users() {
     const [resendEmailLoader, setResendEmailLoader] = useState(false);
     const [createUserLoader, setCreateUserLoader] = useState(false);
     const [userToResend, setuserToResend] = useState('');
+    const [openCloudModal, setOpenCloudModal] = useState(false);
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'users' });
@@ -477,7 +480,16 @@ function Users() {
                         className="modal-btn"
                         width="160px"
                         height="34px"
-                        placeholder={'Add new user'}
+                        placeholder={
+                            isCloud() && !state?.allowedActions?.can_create_users ? (
+                                <span className="create-new">
+                                    <label>Add a new user</label>
+                                    <FaArrowCircleUp className="lock-feature-icon" />
+                                </span>
+                            ) : (
+                                <span className="create-new">Add a new user</span>
+                            )
+                        }
                         colorType="white"
                         radiusType="circle"
                         backgroundColorType="purple"
@@ -485,7 +497,7 @@ function Users() {
                         fontWeight="600"
                         boxShadowStyle="float"
                         aria-haspopup="true"
-                        onClick={() => addUserModalFlip(true)}
+                        onClick={() => (!isCloud() || state?.allowedActions?.can_create_users ? addUserModalFlip(true) : setOpenCloudModal(true))}
                     />
                 </div>
             </div>
@@ -582,6 +594,7 @@ function Users() {
                 />
                 <br />
             </Modal>
+            <CloudModal type="upgrade" open={openCloudModal} handleClose={() => setOpenCloudModal(false)} />
         </div>
     );
 }

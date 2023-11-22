@@ -187,7 +187,7 @@ const S3Integration = ({ close, value, lockFeature }) => {
                     <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs} />
                     <Form name="form" form={creationForm} autoComplete="off" className="integration-form">
                         {tabValue === 'Details' && <IntegrationDetails integrateDesc={s3Configuration.integrateDesc} />}
-                        {tabValue === 'Logs' && <IntegrationLogs integrationName={'s3'} />}
+                        {tabValue === 'Logs details' && <IntegrationLogs integrationName={'s3'} />}
                         {tabValue === 'Configuration' && (
                             <div className="integration-body">
                                 <IntegrationDetails integrateDesc={s3Configuration.integrateDesc} />

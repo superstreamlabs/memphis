@@ -4,6 +4,11 @@
     padding: 1vw;
     min-width: 700px;
     height: 100%;
+    .create-new {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
     .add-search-user {
         display: flex;
         justify-content: space-between;

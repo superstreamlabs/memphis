@@ -55,11 +55,12 @@ import { ReactComponent as LogsActiveIcon } from '../../assets/images/logsActive
 import { ReactComponent as SchemaIcon } from '../../assets/images/schemaIcon.svg';
 import { LATEST_RELEASE_URL } from '../../config';
 import { ReactComponent as LogsIcon } from '../../assets/images/logsIcon.svg';
+import { FaArrowCircleUp } from 'react-icons/fa';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import Logo from '../../assets/images/logo.svg';
 import AuthService from '../../services/auth';
-import { sendTrace } from '../../services/genericServices';
+import { sendTrace, useGetAllowedActions } from '../../services/genericServices';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import Spinner from '../spinner';
@@ -70,7 +71,6 @@ import Modal from '../modal';
 import CreateStationForm from '../createStationForm';
 import { ReactComponent as StationIcon } from '../../assets/images/stationIcon.svg';
 import CreateUserDetails from '../../domain/users/createUserDetails';
-
 import UpgradePlans from '../upgradePlans';
 import { FaBook, FaDiscord } from 'react-icons/fa';
 import { BiEnvelope } from 'react-icons/bi';
@@ -82,6 +82,15 @@ const overlayStyles = {
     paddingBottom: '5px',
     marginBottom: '10px'
 };
+
+const quickActionsStyles = {
+    borderRadius: '8px',
+    width: '250px',
+    paddingTop: '5px',
+    paddingBottom: '5px',
+    marginBottom: '10px'
+};
+
 const supportContextMenuStyles = {
     borderRadius: '8px',
     paddingTop: '5px',
@@ -116,6 +125,7 @@ function SideBar() {
     const [addUserModalIsOpen, addUserModalFlip] = useState(false);
     const [createUserLoader, setCreateUserLoader] = useState(false);
     const [bannerType, setBannerType] = useState('');
+    const getAllowedActions = useGetAllowedActions();
 
     const getCompanyLogo = useCallback(async () => {
         try {
@@ -145,6 +155,7 @@ function SideBar() {
         {
             !isCloud() && getSystemVersion().catch(console.error);
         }
+        isCloud() && getAllowedActions();
         setAvatarImage(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID) || state?.userData?.avatar_id);
         localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true' && setOpenGetStartedModal(true);
     }, []);
@@ -193,13 +204,27 @@ function SideBar() {
         );
     };
 
-    const PopoverActionItem = ({ icon, name, onClick }) => {
+    const PopoverActionItem = ({ icon, name, onClick, upgrade }) => {
+        upgrade && setBannerType('upgrade');
         return (
-            <div className="item-wrap" onClick={onClick}>
-                <div className="item">
+            <div className="item-wrap">
+                <div
+                    className="item"
+                    onClick={() => {
+                        if (upgrade) {
+                            setCloudModalOpen(true);
+                            setPopoverQuickActions(false);
+                        } else onClick();
+                    }}
+                >
                     <span className="icons">{icon}</span>
                     <p className="item-title">{name}</p>
                 </div>
+                {isCloud() && upgrade && (
+                    <div>
+                        <FaArrowCircleUp className="lock-feature-icon" />
+                    </div>
+                )}
             </div>
         );
     };
@@ -214,6 +239,7 @@ function SideBar() {
                     setPopoverQuickActions(false);
                     createStationModalFlip(true);
                 }}
+                upgrade={!state?.allowedActions?.can_create_stations}
             />
             <PopoverActionItem
                 icon={<NewSchemaIcon className="icons-sidebar" />}
@@ -235,6 +261,7 @@ function SideBar() {
                     setPopoverQuickActions(false);
                     addUserModalFlip(true);
                 }}
+                upgrade={!state?.allowedActions?.can_create_users}
             />
             <PopoverActionItem
                 icon={<NewIntegrationIcon className="icons-sidebar" />}
@@ -384,7 +411,7 @@ function SideBar() {
                 </span>
 
                 <Popover
-                    overlayInnerStyle={overlayStyles}
+                    overlayInnerStyle={quickActionsStyles}
                     placement="rightBottom"
                     content={contentQuickStart}
                     trigger="click"

@@ -12,7 +12,7 @@
 
 import './style.scss';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useContext } from 'react';
 import { AddRounded } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
 import pathDomains from '../../../../router';
@@ -27,9 +27,13 @@ import LearnMore from '../../../../components/learnMore';
 import SchemaItem from '../../../stationOverview/components/useSchemaModal/schemaItem';
 import { ReactComponent as StationIcon } from '../../../../assets/images/stationsIconActive.svg';
 import CreateStationForm from '../../../../components/createStationForm';
+import { isCloud } from '../../../../services/valueConvertor';
+import { Context } from '../../../../hooks/store';
+import LockFeature from '../../../../components/lockFeature';
 
 const AttachFunctionModal = ({ selectedFunction }) => {
     const createStationRef = useRef(null);
+    const [state, dispatch] = useContext(Context);
     const [searchInput, setSearchInput] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [selected, setSelected] = useState(null);
@@ -113,9 +117,10 @@ const AttachFunctionModal = ({ selectedFunction }) => {
                     </div>
 
                     <div className="buttons">
-                        <div className="add-schema" onClick={() => setNewStationModal(true)}>
+                        <div className="add-schema" onClick={() => (!isCloud() || state?.allowedActions?.can_create_stations) && setNewStationModal(true)}>
                             <AddRounded />
-                            <p>Add new station</p>
+                            <p>Add a new station </p>
+                            {isCloud() && !state?.allowedActions?.can_create_stations && <LockFeature />}
                         </div>
                         <Button
                             width="100%"

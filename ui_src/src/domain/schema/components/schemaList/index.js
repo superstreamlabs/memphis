@@ -18,13 +18,14 @@ import { ReactComponent as PlaceholderSchema } from '../../../../assets/images/p
 import { ReactComponent as DeleteWrapperIcon } from '../../../../assets/images/deleteWrapperIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
+import { useGetAllowedActions } from '../../../../services/genericServices';
 import Loader from '../../../../components/loader';
 import Button from '../../../../components/button';
 import Filter from '../../../../components/filter';
 import { Context } from '../../../../hooks/store';
 import Modal from '../../../../components/modal';
 import SchemaBox from '../schemaBox';
-import { filterArray } from '../../../../services/valueConvertor';
+import { filterArray, isCloud } from '../../../../services/valueConvertor';
 import DeleteItemsModal from '../../../../components/deleteItemsModal';
 import { useHistory } from 'react-router-dom';
 import pathDomains from '../../../../router';
@@ -38,7 +39,7 @@ function SchemaList({ createNew }) {
     const [deleteModal, setDeleteModal] = useState(false);
     const [deleteLoader, setDeleteLoader] = useState(false);
     const location = useLocation();
-
+    const getAllowedActions = useGetAllowedActions();
     useEffect(() => {
         getAllSchemas();
         return () => {
@@ -99,6 +100,7 @@ function SchemaList({ createNew }) {
         } finally {
             setDeleteLoader(false);
             setDeleteModal(false);
+            isCloud() && getAllowedActions();
         }
     };
 

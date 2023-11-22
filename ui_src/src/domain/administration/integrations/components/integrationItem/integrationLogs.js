@@ -41,7 +41,7 @@ const IntegrationLogs = ({ integrationName }) => {
         <div className="integration-body">
             <div className="integrate-description logs-header">
                 <p>Logs Details</p>
-                <Copy data={JSON.stringify(logsList)} text="Copy Logs" />
+                <Copy data={JSON.stringify(logsList)} />
             </div>
             <div className="generic-list-wrapper">
                 <div className="list">

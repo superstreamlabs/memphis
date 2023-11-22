@@ -15,10 +15,10 @@ import './style.scss';
 import React, { useContext, useEffect, useState } from 'react';
 import { Form } from 'antd';
 import { HiLockClosed } from 'react-icons/hi';
-
 import Input from '../../../components/Input';
 import RadioButton from '../../../components/radioButton';
 import { httpRequest } from '../../../services/http';
+import { useGetAllowedActions } from '../../../services/genericServices';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import SelectCheckBox from '../../../components/selectCheckBox';
 import { generator } from '../../../services/generator';
@@ -66,7 +66,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
         }
     ];
     const [generatedPassword, setGeneratedPassword] = useState('');
-
+    const getAllowedActions = useGetAllowedActions();
     useEffect(() => {
         createUserRef.current = onFinish;
         generateNewPassword();
@@ -114,6 +114,8 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                     }
                 } catch (error) {
                     handleLoader(false);
+                } finally {
+                    getAllowedActions();
                 }
             }
         } catch (error) {
