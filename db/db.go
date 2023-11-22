@@ -7068,7 +7068,7 @@ func RemoveAllAsyncTasks(duration time.Duration) ([]int, error) {
 	defer conn.Release()
 	query := `WITH deleted_rows AS (
 		DELETE FROM async_tasks
-		WHERE updated_at <= $1 AND name='resend_all_dls_msgs'
+		WHERE updated_at <= $1
 		RETURNING station_id
 	  )
 	  SELECT ARRAY_AGG(station_id) AS deleted_station_ids
