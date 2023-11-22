@@ -223,8 +223,16 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Processing a branch is currently in progress. Please wait for the current processes to complete."})
 			return
 		}
-		connectedRepos := integrationFromDb.Keys["connected_repos"].([]interface{})
-		connectedReposUpdated := body.Keys["connected_repos"].([]interface{})
+
+		var connectedRepos, connectedReposUpdated []interface{}
+		connectedReposVal, oKconnectedRepos := integrationFromDb.Keys["connected_repos"].([]interface{})
+		if oKconnectedRepos {
+			connectedRepos = connectedReposVal
+		}
+		connectedReposUpdatedVal, oKconnectedReposUpdated := body.Keys["connected_repos"].([]interface{})
+		if oKconnectedReposUpdated {
+			connectedReposUpdated = connectedReposUpdatedVal
+		}
 		for _, connectedRepo := range connectedRepos {
 			if !containsRepo(connectedReposUpdated, connectedRepo) {
 				connectedRepoName, repoNameOK := connectedRepo.(map[string]interface{})["repo_name"].(string)
@@ -728,12 +736,28 @@ func SharedLockUnlock(name, tenantName string) {
 
 func containsRepo(repos []interface{}, target interface{}) bool {
 	for _, repo := range repos {
-		mapBranch := repo.(map[string]interface{})["branch"].(string)
-		mapRepo := repo.(map[string]interface{})["repo_name"].(string)
-		targetBranch := target.(map[string]interface{})["branch"].(string)
-		targetRepo := target.(map[string]interface{})["repo_name"].(string)
-		if mapBranch == targetBranch && mapRepo == targetRepo {
-			return true
+		var mapBranch, mapRepo, targetBranch, targetRepo string
+		repoMap, okRepoMap := repo.(map[string]interface{})
+		if okRepoMap {
+			if branchVal, ok := repoMap["branch"].(string); ok {
+				mapBranch = branchVal
+			}
+			if repoVal, ok := repoMap["repo_name"].(string); ok {
+				mapRepo = repoVal
+			}
+			if targetBranchVal, ok := repoMap["branch"].(string); ok {
+				targetBranch = targetBranchVal
+			}
+
+			if targetRepoVal, ok := repoMap["repo_name"].(string); ok {
+				targetRepo = targetRepoVal
+			}
+			if mapBranch == "" && targetBranch == "" && mapRepo == "" && targetRepo == "" {
+				return false
+			}
+			if mapBranch == targetBranch && mapRepo == targetRepo {
+				return true
+			}
 		}
 	}
 	return false
