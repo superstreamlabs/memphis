@@ -21,13 +21,13 @@ import { ReactComponent as PlaceholderFunctionsIcon } from '../../../../assets/i
 import { ReactComponent as SearchIcon } from '../../../../assets/images/searchIcon.svg';
 import { ReactComponent as CloneModalIcon } from '../../../../assets/images/cloneModalIcon.svg';
 import { ReactComponent as RefreshIcon } from '../../../../assets/images/refresh.svg';
-import { ReactComponent as GitHubLogo } from '../../../../assets/images/githubLogo.svg';
 import { ReactComponent as RepoIcon } from '../../../../assets/images/repoPurple.svg';
 import { ReactComponent as PurpleQuestionMark } from '../../../../assets/images/purpleQuestionMark.svg';
 import { ReactComponent as MemphisLogo } from '../../../../assets/images/logo.svg';
 import CollapseArrow from '../../../../assets/images/collapseArrow.svg';
 import { BiCode } from 'react-icons/bi';
 import { MdDone } from 'react-icons/md';
+import { BsGit } from 'react-icons/bs';
 import { AddRounded } from '@material-ui/icons';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
@@ -105,9 +105,28 @@ function FunctionList({ tabPrivate }) {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_FUNCTIONS);
             setIntegrated(data?.scm_integrated);
-            setInstalledFunctionList(data?.installed?.sort((a, b) => (a.function_name > b.function_name ? 1 : -1)));
+            let updatedData = { ...data };
+
+            const installed = updatedData?.installed?.map((func, index) => {
+                if (func?.owner === OWNER) {
+                    func.stars = Math.random() + 4;
+                    func.rates = Math.floor(Math.random() * (80 - 50 + 1)) + 50;
+                    func.forks = Math.floor(Math.random() * (100 - 80 + 1)) + 80;
+                }
+                return func;
+            });
+            setInstalledFunctionList(installed?.sort((a, b) => (a.function_name > b.function_name ? 1 : -1)));
+
+            const other = updatedData?.other?.map((func, index) => {
+                if (func?.owner === OWNER) {
+                    func.stars = Math.random() + 4;
+                    func.rates = Math.floor(Math.random() * (80 - 50 + 1)) + 50;
+                    func.forks = Math.floor(Math.random() * (100 - 80 + 1)) + 80;
+                }
+                return func;
+            });
             setOtherFunctionList(
-                data?.other?.sort((a, b) => (a.function_name > b.function_name ? 1 : -1))?.sort((a, b) => (a?.is_valid === b?.is_valid ? 0 : a?.is_valid ? -1 : 1))
+                other?.sort((a, b) => (a.function_name > b.function_name ? 1 : -1))?.sort((a, b) => (a?.is_valid === b?.is_valid ? 0 : a?.is_valid ? -1 : 1))
             );
             setConnectedRepos(data?.connected_repos);
             setTimeout(() => {
@@ -291,22 +310,16 @@ function FunctionList({ tabPrivate }) {
                 )}
                 {isCloud() && (
                     <>
-                        {filteredInstalledData?.length > 0 && (
-                            <Collapse defaultActiveKey={['1']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />} ghost>
-                                <Panel header={<div className="panel-header">{`Installed ${`(${filteredInstalledData?.length || 0})`}`}</div>} key={1}>
-                                    <div>{installedFunctionBoxesContent || noFunctionsContent}</div>
-                                </Panel>
-                            </Collapse>
-                        )}
-                        {filteredInstalledData?.length > 0 ? (
-                            <Collapse defaultActiveKey={['2']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />} ghost>
-                                <Panel header={<div className="panel-header">{`Other ${`(${filteredOtherData?.length || 0})`}`}</div>} key={2}>
-                                    <div>{otherFunctionBoxesContent || noFunctionsContent}</div>
-                                </Panel>
-                            </Collapse>
-                        ) : (
-                            <div>{otherFunctionBoxesContent || noFunctionsContent}</div>
-                        )}
+                        <Collapse defaultActiveKey={['1']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />} ghost>
+                            <Panel header={<div className="panel-header">{`Installed ${`(${filteredInstalledData?.length || 0})`}`}</div>} key={1}>
+                                <div>{installedFunctionBoxesContent || noFunctionsContent}</div>
+                            </Panel>
+                        </Collapse>
+                        <Collapse defaultActiveKey={['2']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />} ghost>
+                            <Panel header={<div className="panel-header">{`Available ${`(${filteredOtherData?.length || 0})`}`}</div>} key={2}>
+                                <div>{otherFunctionBoxesContent || noFunctionsContent}</div>
+                            </Panel>
+                        </Collapse>
                     </>
                 )}
             </div>
@@ -330,11 +343,11 @@ function FunctionList({ tabPrivate }) {
                 <div className="action-section">
                     <span className="update-refresh">
                         {refreshIndeicator && <Badge dot />}
-                        <div className="refresh-btn">
+                        <div className="refresh-btn" onClick={getAllFunctions}>
                             {isLoading ? (
                                 <Spin indicator={<SyncOutlined style={{ color: '#6557FF', fontSize: '16px' }} spin />} />
                             ) : (
-                                <RefreshIcon alt="refreshIcon" style={{ path: { color: '#6557FF' } }} onClick={getAllFunctions} />
+                                <RefreshIcon alt="refreshIcon" style={{ path: { color: '#6557FF' } }} />
                             )}
                         </div>
                     </span>
@@ -363,9 +376,8 @@ function FunctionList({ tabPrivate }) {
                             {connectedRepos.some((repo) => repo?.in_progress) && (
                                 <Spin indicator={<SyncOutlined style={{ color: '#6557FF', fontSize: '16px' }} spin />} />
                             )}
-
-                            <GitHubLogo alt="github icon" />
-                            <label>Connected Git Repositories</label>
+                            <BsGit className="attach-btn" alt="Git" />
+                            <label>Connected Repositories</label>
                             <Divider type="vertical" />
                             <img src={CollapseArrow} alt="arrow" className={clickedRefresh ? 'open' : 'collapse-arrow'} />
                         </connectedRepos>

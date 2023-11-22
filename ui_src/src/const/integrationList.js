@@ -46,7 +46,7 @@ import { ColorPalette } from './globalConst';
 import { Divider } from 'antd';
 
 export const getTabList = (intgrationName) => {
-    return INTEGRATION_LIST[intgrationName]?.hasLogs ? ['Configuration', 'Logs'] : ['Configuration'];
+    return INTEGRATION_LIST[intgrationName]?.hasLogs ? ['Configuration', 'Logs details'] : ['Configuration'];
 };
 
 export const CATEGORY_LIST = {

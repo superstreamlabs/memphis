@@ -11,7 +11,7 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import './style.scss';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
@@ -19,7 +19,6 @@ import emoji from 'emoji-dictionary';
 import Editor from '@monaco-editor/react';
 import { FiGitCommit } from 'react-icons/fi';
 import { BiDownload } from 'react-icons/bi';
-import { MdOutlineFileDownloadOff } from 'react-icons/md';
 import { GoFileDirectoryFill } from 'react-icons/go';
 import { Divider, Rate } from 'antd';
 import { ReactComponent as CollapseArrowIcon } from '../../../../assets/images/collapseArrow.svg';
@@ -33,35 +32,42 @@ import { ReactComponent as CodeBlackIcon } from '../../../../assets/images/codeI
 import { ReactComponent as GithubBranchIcon } from '../../../../assets/images/githubBranchIcon.svg';
 import { ReactComponent as PlaceholderFunctionsIcon } from '../../../../assets/images/placeholderFunctions.svg';
 import { ReactComponent as ArrowBackIcon } from '../../../../assets/images/arrowBackIcon.svg';
+import { ReactComponent as DeleteIcon } from '../../../../assets/images/deleteIcon.svg';
 import CustomTabs from '../../../../components/Tabs';
 import SelectComponent from '../../../../components/select';
-import Input from '../../../../components/Input';
+import CloudModal from '../../../../components/cloudModal';
 import TestMockEvent from '../testFunctionModal/components/testMockEvent';
 import Modal from '../../../../components/modal';
 import { OWNER } from '../../../../const/globalConst';
-import { BsFileEarmarkCode } from 'react-icons/bs';
+import { BsFileEarmarkCode, BsGit } from 'react-icons/bs';
 import { GoRepo } from 'react-icons/go';
 import { RxDotFilled } from 'react-icons/rx';
+import { FaArrowCircleUp } from 'react-icons/fa';
 import { Tree } from 'antd';
 import { httpRequest } from '../../../../services/http';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { getCodingLanguage } from '../../../../utils/languages';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
+import { isCloud } from '../../../../services/valueConvertor';
+import { Context } from '../../../../hooks/store';
 
 function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, clickApply, onBackToFunction = null, stationView }) {
+    const [state, dispatch] = useContext(Context);
     const [tabValue, setTabValue] = useState('Details');
     const [isTestFunctionModalOpen, setIsTestFunctionModalOpen] = useState(false);
     const [treeData, setTreeData] = useState([]);
     const [selectedVersion, setSelectedVersion] = useState('latest');
     const [metaData, setMetaData] = useState({});
-    const [readme, setReadme] = useState('');
+    const [readme, setReadme] = useState(null);
     const [versions, setVersions] = useState([]);
     const [files, setFiles] = useState([]);
     const [fileContent, setFileContent] = useState(null);
     const [selectedLanguage, setSelectedLanguage] = useState(null);
     const [isFileContentLoading, setIsFileContentLoading] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [openUpgradeModal, setOpenUpgradeModal] = useState(false);
 
-    const emojiSupport = (text) => text.replace(/:\w+:/gi, (name) => emoji.getUnicode(name));
+    const emojiSupport = (text) => text?.replace(/:\w+:/gi, (name) => emoji?.getUnicode(name));
     const formattedMarkdownContent = (text) => text.replace((/`/g, '\\`'));
 
     useEffect(() => {
@@ -73,6 +79,7 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
     }, [files]);
 
     const getFunctionDetails = async () => {
+        setLoading(true);
         try {
             const response = await httpRequest(
                 'GET',
@@ -92,7 +99,9 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
             setReadme(response?.readme_content);
             setVersions(response?.versions);
             setFiles([...response?.s3_object_keys] || []);
+            setLoading(false);
         } catch (e) {
+            setLoading(false);
             return;
         }
     };
@@ -215,12 +224,12 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                 <>
                                     <downloads is="x3d">
                                         <BiDownload className="download-icon" />
-                                        <label>{Number(180).toLocaleString()}</label>
+                                        <label>{Number(selectedFunction?.forks).toLocaleString()}</label>
                                     </downloads>
                                     <Divider type="vertical" />
                                     <rate is="x3d">
-                                        <Rate disabled defaultValue={5} className="stars-rate" />
-                                        <label>(50)</label>
+                                        <Rate disabled defaultValue={selectedFunction?.stars} className="stars-rate" />
+                                        <label>{`(${selectedFunction?.rates})`}</label>
                                     </rate>
                                     <Divider type="vertical" />
                                 </>
@@ -242,14 +251,23 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                 <div className="action-section-btn">
                                     <div className="header-flex">
                                         <Button
-                                            placeholder="Attach"
+                                            placeholder={
+                                                isCloud() && !state?.allowedActions?.can_apply_functions ? (
+                                                    <span className="attach-btn">
+                                                        <label>Attach</label>
+                                                        <FaArrowCircleUp className="lock-feature-icon" />
+                                                    </span>
+                                                ) : (
+                                                    <span className="attach-btn">Attach</span>
+                                                )
+                                            }
                                             width={'100px'}
                                             backgroundColorType={'purple'}
                                             colorType={'white'}
                                             radiusType={'circle'}
                                             fontSize="12px"
                                             fontFamily="InterSemiBold"
-                                            onClick={() => clickApply('attach')}
+                                            onClick={() => (!isCloud() || state?.allowedActions?.can_apply_functions ? clickApply('attach') : setOpenUpgradeModal(true))}
                                             disabled={selectedFunction?.installed_in_progress || !selectedFunction?.installed}
                                         />
                                     </div>
@@ -260,12 +278,8 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                                     ''
                                                 ) : selectedFunction?.installed ? (
                                                     <div className="code-btn">
-                                                        {selectedFunction?.updates_available ? (
-                                                            <BiDownload className="Install" />
-                                                        ) : (
-                                                            <MdOutlineFileDownloadOff className="Uninstall" />
-                                                        )}
-                                                        {selectedFunction?.updates_available ? <label>Update</label> : <label>Uninstall</label>}
+                                                        {selectedFunction?.updates_available ? <BiDownload className="Install" /> : <DeleteIcon className="Uninstall" />}
+                                                        {selectedFunction?.updates_available ? <label>Update</label> : null}
                                                     </div>
                                                 ) : (
                                                     <div className="code-btn">
@@ -274,8 +288,9 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                                     </div>
                                                 )
                                             }
-                                            width={'100px'}
-                                            backgroundColorType="purple"
+                                            width={selectedFunction?.installed && !selectedFunction?.updates_available ? '34px' : '100px'}
+                                            backgroundColorType={selectedFunction?.installed && !selectedFunction?.updates_available ? 'white' : 'purple'}
+                                            border={selectedFunction?.installed && !selectedFunction?.updates_available ? 'gray-light' : null}
                                             colorType={'white'}
                                             radiusType={'circle'}
                                             fontSize="12px"
@@ -288,23 +303,43 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                 </div>
                             </>
                         )}
-                        <SelectComponent
-                            colorType="black"
-                            backgroundColorType="none"
-                            radiusType="circle"
-                            borderColorType="gray"
-                            height="32px"
-                            width={'150px'}
-                            popupClassName="select-options"
-                            fontSize="12px"
-                            fontFamily="InterSemiBold"
-                            value={`Version: ${selectedVersion}`}
-                            disabled={!selectedFunction?.installed}
-                            onChange={(e) => {
-                                setSelectedVersion(e);
-                            }}
-                            options={versions}
-                        />
+                        <span className="git">
+                            <div className="header-flex">
+                                <Button
+                                    placeholder={<BsGit className="attach-btn" alt="Git" />}
+                                    width={'32px'}
+                                    backgroundColorType={'orange-dark'}
+                                    colorType={'white'}
+                                    radiusType={'circle'}
+                                    fontSize="16px"
+                                    fontFamily="InterSemiBold"
+                                    onClick={() =>
+                                        window.open(
+                                            `https://github.com/${selectedFunction?.owner}/${selectedFunction?.repo}/tree/${selectedFunction?.branch}/${
+                                                selectedFunction?.function_name || selectedFunction?.name
+                                            }`
+                                        )
+                                    }
+                                />
+                            </div>
+                            <SelectComponent
+                                colorType="black"
+                                backgroundColorType="none"
+                                radiusType="circle"
+                                borderColorType="gray"
+                                height="32px"
+                                width={'150px'}
+                                popupClassName="select-options"
+                                fontSize="12px"
+                                fontFamily="InterSemiBold"
+                                value={`Version: ${selectedVersion}`}
+                                disabled={!selectedFunction?.installed}
+                                onChange={(e) => {
+                                    setSelectedVersion(e);
+                                }}
+                                options={versions}
+                            />
+                        </span>
                     </actions>
                 </div>
             </div>
@@ -317,11 +352,18 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
             {tabValue === 'Details' && (
                 <code is="x3d">
                     <span className="readme">
-                        {readme === '' ? (
-                            renderNoFunctionDetails
-                        ) : (
+                        {loading && (
+                            <div className="loader">
+                                {' '}
+                                <Spinner />
+                            </div>
+                        )}
+                        {!loading && readme === '' && renderNoFunctionDetails}
+                        {!loading && readme && readme !== '' && (
                             <div>
-                                <ReactMarkdown rehypePlugins={[rehypeRaw, remarkGfm]}>{formattedMarkdownContent(emojiSupport(readme))}</ReactMarkdown>
+                                <ReactMarkdown rehypePlugins={[rehypeRaw, remarkGfm]}>
+                                    {formattedMarkdownContent(emojiSupport(readme))?.replace(/`/g, '\\`')}
+                                </ReactMarkdown>
                             </div>
                         )}
                     </span>
@@ -354,12 +396,12 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                     <>
                                         <downloads is="x3d">
                                             <BiDownload className="download-icon" />
-                                            <label>{Number(180).toLocaleString()}</label>
+                                            <label>{Number(selectedFunction?.forks).toLocaleString()}</label>
                                         </downloads>
                                         <Divider type="vertical" />
                                         <rate is="x3d">
-                                            <Rate disabled defaultValue={5} className="stars-rate" />
-                                            <label>(50)</label>
+                                            <Rate disabled defaultValue={selectedFunction?.stars} className="stars-rate" />
+                                            <label>{`(${selectedFunction?.rates})`}</label>
                                         </rate>
                                         <Divider type="vertical" />
                                     </>
@@ -461,6 +503,7 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                     </div>
                 </div>
             )}
+            <CloudModal type="upgrade" open={openUpgradeModal} handleClose={() => setOpenUpgradeModal(false)} />
         </div>
     );
 }

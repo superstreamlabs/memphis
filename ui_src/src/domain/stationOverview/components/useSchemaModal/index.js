@@ -15,7 +15,7 @@ import './style.scss';
 import React, { useContext, useEffect, useMemo, useState, useRef } from 'react';
 import { AddRounded } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
-
+import { useGetAllowedActions } from '../../../../services/genericServices';
 import { ReactComponent as PlaceholderSchemaIcon } from '../../../../assets/images/placeholderSchema.svg';
 import { ReactComponent as StopUsingIcon } from '../../../../assets/images/stopUsingIcon.svg';
 import DeleteItemsModal from '../../../../components/deleteItemsModal';
@@ -23,19 +23,22 @@ import { ReactComponent as SearchIcon } from '../../../../assets/images/searchIc
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import SearchInput from '../../../../components/searchInput';
 import { httpRequest } from '../../../../services/http';
+import { isCloud } from '../../../../services/valueConvertor';
 import Button from '../../../../components/button';
 import Modal from '../../../../components/modal';
 import LearnMore from '../../../../components/learnMore';
 import pathDomains from '../../../../router';
 import { StationStoreContext } from '../..';
+import { Context } from '../../../../hooks/store';
 import SchemaItem from './schemaItem';
 import { ReactComponent as StationIcon } from '../../../../assets/images/stationsIconActive.svg';
 import CreateStationForm from '../../../../components/createStationForm';
+import LockFeature from '../../../../components/lockFeature';
 
 const UseSchemaModal = ({ stationName, handleSetSchema, close, type = 'schema' }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
+    const [state, dispatch] = useContext(Context);
     const createStationRef = useRef(null);
-
     const [detachLoader, setDetachLoader] = useState(false);
     const [schemaList, setSchemasList] = useState([]);
     const [searchInput, setSearchInput] = useState('');
@@ -46,6 +49,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close, type = 'schema' }
     const [newStationModal, setNewStationModal] = useState(false);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
 
+    const getAllowedActions = useGetAllowedActions();
     const history = useHistory();
 
     const getAllSchema = async () => {
@@ -82,6 +86,8 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close, type = 'schema' }
             }
         } catch (error) {
             setUseschemaLoading(false);
+        } finally {
+            isCloud() && getAllowedActions();
         }
     };
 
@@ -97,6 +103,8 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close, type = 'schema' }
         } catch (error) {
             setDeleteModal(false);
             setDetachLoader(false);
+        } finally {
+            isCloud() && getAllowedActions();
         }
     };
 
@@ -142,9 +150,25 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close, type = 'schema' }
                         })}
                     </div>
                     <div className="buttons">
-                        <div className="add-schema" onClick={() => createNew()}>
+                        <div
+                            className="add-schema"
+                            onClick={() => (!isCloud() || (type === 'dls' && state?.allowedActions?.can_create_stations) || type !== 'dls') && createNew()}
+                        >
                             <AddRounded />
-                            <p>Add new {type === 'dls' ? 'station' : 'schema'}</p>
+                            <p>
+                                <label>Add new </label>
+                                {type === 'dls' ? (
+                                    isCloud() && !state?.allowedActions?.can_create_stations ? (
+                                        <>
+                                            station <LockFeature />
+                                        </>
+                                    ) : (
+                                        'station'
+                                    )
+                                ) : (
+                                    'schema'
+                                )}
+                            </p>
                         </div>
                         {type === 'dls' ? (
                             <div className="btn-container">

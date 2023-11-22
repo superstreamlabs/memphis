@@ -24,6 +24,7 @@
         .add-schema {
             display: flex;
             padding: 15px;
+            gap: 10px;
             border-bottom: 1px solid #efefef;
             border-top: 1px solid #efefef;
             align-items: center;
@@ -33,9 +34,6 @@
                 font-size: 13px;
                 line-height: 12px;
                 color: #4a495c;
-            }
-            svg {
-                margin-right: 10px;
             }
         }
         .button-container {

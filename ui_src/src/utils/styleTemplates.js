@@ -62,6 +62,8 @@ export function getFontColor(colorType) {
             return '#ffffff';
         case 'red':
             return '#FF4838';
+        case 'orange':
+            return '#ea4e32';
         default:
             return '#6557FF';
     }
@@ -79,6 +81,8 @@ export function getBackgroundColor(backgroundColor) {
             return '#FFFFFF';
         case 'orange':
             return '#FFC633';
+        case 'orange-dark':
+            return '#ea4e32';
         case 'red':
             return '#E54F4F';
         case 'navy':

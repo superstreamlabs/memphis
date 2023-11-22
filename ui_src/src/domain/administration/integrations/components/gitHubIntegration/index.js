@@ -118,7 +118,7 @@ const GitHubIntegration = ({ close, value }) => {
 
     const removeRepoItem = (index) => {
         let updatedValue = { ...formFields.keys };
-        updatedValue?.connected_repos?.splice(index, 1);
+        updatedValue?.connected_repos.splice(index, 1);
         setFormFields((formFields) => ({ ...formFields, keys: updatedValue }));
         updateIntegration(updatedValue);
     };
@@ -242,7 +242,7 @@ const GitHubIntegration = ({ close, value }) => {
                     <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs} />
                     <Form name="form" form={creationForm} autoComplete="off" className="integration-form">
                         {tabValue === 'Details' && <IntegrationDetails integrateDesc={githubConfiguration.integrateDesc} />}
-                        {tabValue === 'Logs' && <IntegrationLogs integrationName={'github'} />}
+                        {tabValue === 'Logs details' && <IntegrationLogs integrationName={'github'} />}
                         {tabValue === 'Configuration' && (
                             <div className="integration-body">
                                 <IntegrationDetails integrateDesc={githubConfiguration.integrateDesc} />
@@ -307,7 +307,7 @@ const GitHubIntegration = ({ close, value }) => {
                                                     })}
                                                     {inProgressFlag && (
                                                         <div className="add-more-repos" onClick={getIntegration}>
-                                                            <label>We are updating integration. Please refersh in few minutes.</label>
+                                                            <label>We're scanning. It might take a few minutes to complete</label>
                                                         </div>
                                                     )}
                                                     {!addNew && !inProgressFlag && (

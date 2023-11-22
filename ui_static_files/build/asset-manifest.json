@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.2c1adeae.css",
-    "main.js": "/static/js/main.a6789b50.js",
+    "main.css": "/static/css/main.1ef3db66.css",
+    "main.js": "/static/js/main.6031a4a1.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -163,7 +163,6 @@
     "static/media/editIcon.svg": "/static/media/editIcon.1bc57053f82f152a5ea3301ae06862cd.svg",
     "static/media/gitIcon.svg": "/static/media/gitIcon.42f668fc1035f8e12ea0262f2fd70dca.svg",
     "static/media/githubBranchIcon.svg": "/static/media/githubBranchIcon.584358d0c1bebd525947ddc5abc29bf3.svg",
-    "static/media/githubLogo.svg": "/static/media/githubLogo.aa20dd0db39627180b1dd60632b32f52.svg",
     "static/media/schemaIcon.svg": "/static/media/schemaIcon.0a6892a86a18f11ccf9f3b88dcb32d8f.svg",
     "static/media/placeholderSchema.svg": "/static/media/placeholderSchema.cde9d3484259f8c40b67644cd987432c.svg",
     "static/media/schemaAlertIcon.svg": "/static/media/schemaAlertIcon.7fd559db477880ec74a0bf5a1ba2ccfd.svg",
@@ -317,7 +316,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.2c1adeae.css",
-    "static/js/main.a6789b50.js"
+    "static/css/main.1ef3db66.css",
+    "static/js/main.6031a4a1.js"
   ]
 }

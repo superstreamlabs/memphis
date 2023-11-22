@@ -132,5 +132,6 @@ export const ApiEndpoints = {
     RESEND_INVITATION: '/usermgmt/resendInvitation',
     REVOKED_INVITATION: '/usermgmt/revokeInvitation',
     SIGN_OUT: '/usermgmt/signOut',
-    SEND_SUPPORT: '/usermgmt/sendSupportRequest'
+    SEND_SUPPORT: '/usermgmt/sendSupportRequest',
+    GET_ALLOWED_FUNCTIONS: '/usermgmt/getAllowedActions'
 };

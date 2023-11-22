@@ -28,6 +28,7 @@ import {
 import S3Integration from '../../domain/administration/integrations/components/s3Integration';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
+import { useGetAllowedActions } from '../../services/genericServices';
 import InputNumberComponent from '../InputNumber';
 import OverflowTip from '../tooltip/overflowtip';
 import TitleComponent from '../titleComponent';
@@ -121,6 +122,8 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         { name: 'Local storage tier', checked: true },
         { name: 'Remote storage tier', checked: selectedTier2Option || false }
     ];
+    const getAllowedActions = useGetAllowedActions();
+
     useEffect(() => {
         if (!isCloud()) {
             getAvailableReplicas();
@@ -248,6 +251,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         } catch (error) {
         } finally {
             setLoading(false);
+            isCloud() && getAllowedActions();
         }
     };
 

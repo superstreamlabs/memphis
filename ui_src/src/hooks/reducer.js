@@ -160,6 +160,11 @@ const Reducer = (state, action) => {
                 ...state,
                 logsFilter: action.payload
             };
+        case 'SET_ALLOWED_ACTIONS':
+            return {
+                ...state,
+                allowedActions: action.payload
+            };
         default:
             return state;
     }

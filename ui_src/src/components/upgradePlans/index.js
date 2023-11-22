@@ -20,7 +20,7 @@ import { BsCheckLg } from 'react-icons/bs';
 import { Link } from 'react-router-dom';
 
 import { ReactComponent as RedirectIcon } from '../../assets/images/redirectIcon.svg';
-import { showMessages } from '../../services/genericServices';
+import { showMessages, useGetAllowedActions } from '../../services/genericServices';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import pathDomains from '../../router';
@@ -45,7 +45,7 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
     const [downgradeReaon, setReasonDowngrade] = useState('');
     const [planSelected, setPlanSelected] = useState({});
     const [textInput, setTextInput] = useState('');
-
+    const getAllowedActions = useGetAllowedActions();
     const success_url = window.location.href;
     const cancel_url = window.location.href;
 
@@ -104,6 +104,7 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
                 setReasonDowngrade('');
                 setIsCheck([]);
             }
+            getAllowedActions();
         }
     };
 

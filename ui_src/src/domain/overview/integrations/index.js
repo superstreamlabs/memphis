@@ -142,7 +142,7 @@ const Integrations = () => {
                                 }}
                             >
                                 {storageTiringLimits && integration.name === 'S3' ? (
-                                    <LockFeature header={'Storage tiering'} />
+                                    <LockFeature />
                                 ) : (
                                     integrations[index]?.value &&
                                     Object.keys(integrations[index]?.value).length > 0 &&
