@@ -21,18 +21,11 @@ pipeline {
         }
     }
 	  
-	stage('Install minikube'){
-		steps {
-			sh """
-				curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-latest.x86_64.rpm
-				sudo rpm -Uvh minikube-latest.x86_64.rpm
-				sudo su -c "minikube start --cpus='max'" -s /bin/bash ec2-user
-   			"""
-		}
-	}
+	
     stage('Create memphis namespace in Kubernetes'){
         steps {
             sh """
+	    	minikube start
                 kubectl config use-context minikube
                 kubectl create namespace memphis-$unique_id --dry-run=client -o yaml | kubectl apply -f -
                 aws s3 cp s3://memphis-jenkins-backup-bucket/regcred.yaml .
