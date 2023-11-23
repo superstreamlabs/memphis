@@ -236,7 +236,7 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                             )}
                             <commits is="x3d">
                                 <FiGitCommit />
-                                <label>Last commit on {parsingDate(selectedFunction?.installed_updated_at, false, false)}</label>
+                                <label>Last modified on {parsingDate(selectedFunction?.installed_updated_at, false, false)}</label>
                             </commits>
                         </deatils>
                     </div>
@@ -274,7 +274,7 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                     <div className="header-flex">
                                         <Button
                                             placeholder={
-                                                selectedFunction?.installed_in_progress ? (
+                                                metaData?.installed_in_progress ? (
                                                     ''
                                                 ) : selectedFunction?.installed ? (
                                                     <div className="code-btn">
@@ -296,7 +296,7 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                             fontSize="12px"
                                             fontFamily="InterSemiBold"
                                             onClick={() => (selectedFunction?.installed ? handleUnInstall() : handleInstall())}
-                                            isLoading={selectedFunction?.installed_in_progress}
+                                            isLoading={metaData?.installed_in_progress}
                                             disabled={!selectedFunction?.is_valid || selectedFunction?.installed_in_progress}
                                         />
                                     </div>
@@ -408,7 +408,7 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                 )}
                                 <commits is="x3d">
                                     <FiGitCommit />
-                                    <label>Last commit on {parsingDate(selectedFunction?.installed_updated_at, false, false)}</label>
+                                    <label>Last modified on {parsingDate(selectedFunction?.installed_updated_at, false, false)}</label>
                                 </commits>
                             </deatils>
                             <Divider />

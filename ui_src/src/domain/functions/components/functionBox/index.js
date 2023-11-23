@@ -167,7 +167,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                     )}
                                     <commits is="x3d">
                                         <FiGitCommit />
-                                        <label>Last commit on {parsingDate(functionDetails?.installed_updated_at, true, true)}</label>
+                                        <label>Last modified on {parsingDate(functionDetails?.installed_updated_at, true, true)}</label>
                                     </commits>
                                 </deatils>
                                 <description is="x3d">
@@ -185,8 +185,8 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                         <div onClick={(e) => e.stopPropagation()} className="install-button">
                             {!isValid && (
                                 <div className="warning">
-                                    <IoIosInformationCircle style={{ fontSize: '20px', color: '#6557FF' }} />
-                                    <OverflowTip text={functionDetails?.invalid_reason} maxWidth={'260px'}>
+                                    <IoIosInformationCircle style={{ fontSize: '20px', color: '#fc3400' }} />
+                                    <OverflowTip text={functionDetails?.invalid_reason} maxWidth={'260px'} textColor="#fc3400">
                                         <label className="warning-message">{functionDetails?.invalid_reason}</label>
                                     </OverflowTip>
                                 </div>
