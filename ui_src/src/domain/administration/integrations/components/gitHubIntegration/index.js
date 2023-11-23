@@ -286,7 +286,7 @@ const GitHubIntegration = ({ close, value }) => {
                                                     {formFields?.keys?.connected_repos?.map((repo, index) => {
                                                         return (
                                                             <IntegrationItem
-                                                                key={index}
+                                                                key={`${repo.repo_name}_${repo.branch}_${repo.repo_owner}`}
                                                                 index={index}
                                                                 repo={repo}
                                                                 reposList={repos || []}

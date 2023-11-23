@@ -231,7 +231,7 @@ function FunctionList({ tabPrivate }) {
                                 </OverflowTip>
                                 <OverflowTip text={`${repo?.branch} | ${parsingDate(repo?.last_modified, true, true)}`} width={'170px'} center={false}>
                                     <label className="last-modified">
-                                        {repo?.branch} | Synced on {parsingDate(repo?.last_modified, true, true)}
+                                        {repo?.branch} | Last modified {parsingDate(repo?.last_modified, true, true)}
                                     </label>
                                 </OverflowTip>
                             </span>

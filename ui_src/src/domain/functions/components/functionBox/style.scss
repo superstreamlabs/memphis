@@ -107,11 +107,10 @@
                 justify-content: center;
                 align-items: center;
                 border-radius: 32px;
-                border: 1px solid #dddbff;
-                background: #ecebff;
+                background: rgba(252, 52, 0, 0.1);
                 gap: 5px;
                 .warning-message {
-                    color: #2e2c34;
+                    color: #fc3400;
                     font-family: 'InterSemiBold';
                     font-size: 12px;
                 }
