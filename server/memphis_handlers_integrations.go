@@ -738,18 +738,19 @@ func containsRepo(repos []interface{}, target interface{}) bool {
 	for _, repo := range repos {
 		var mapBranch, mapRepo, targetBranch, targetRepo string
 		repoMap, okRepoMap := repo.(map[string]interface{})
-		if okRepoMap {
+		target, okTarget := target.(map[string]interface{})
+		if okRepoMap && okTarget {
 			if branchVal, ok := repoMap["branch"].(string); ok {
 				mapBranch = branchVal
 			}
 			if repoVal, ok := repoMap["repo_name"].(string); ok {
 				mapRepo = repoVal
 			}
-			if targetBranchVal, ok := repoMap["branch"].(string); ok {
+			if targetBranchVal, ok := target["branch"].(string); ok {
 				targetBranch = targetBranchVal
 			}
 
-			if targetRepoVal, ok := repoMap["repo_name"].(string); ok {
+			if targetRepoVal, ok := target["repo_name"].(string); ok {
 				targetRepo = targetRepoVal
 			}
 			if mapBranch == "" && targetBranch == "" && mapRepo == "" && targetRepo == "" {
