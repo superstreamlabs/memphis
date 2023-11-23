@@ -15,6 +15,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
+import rehypeSlug from 'rehype-slug';
 import emoji from 'emoji-dictionary';
 import Editor from '@monaco-editor/react';
 import { FiGitCommit } from 'react-icons/fi';
@@ -58,7 +59,7 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
     const [treeData, setTreeData] = useState([]);
     const [selectedVersion, setSelectedVersion] = useState('latest');
     const [metaData, setMetaData] = useState({});
-    const [readme, setReadme] = useState(null);
+    const [readme, setReadme] = useState();
     const [versions, setVersions] = useState([]);
     const [files, setFiles] = useState([]);
     const [fileContent, setFileContent] = useState(null);
@@ -193,6 +194,17 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
         const lang = path?.split('.');
         lang?.length > 1 && setSelectedLanguage(lang[lang.length - 1]);
         getFileContent(path);
+    };
+
+    const modifiedContent = (content) => {
+        return content
+            ?.replace(/```json([\s\S]*?)```/g, (match, p1) => {
+                return `<div className="code-block">${p1.trim()}</div>`;
+            })
+            ?.replace(/`([\s\S]*?)`/g, (match, p1) => {
+                return `<div className="code-var">${p1.trim()}</div>`;
+            })
+            ?.replace(/`/g, '\\`');
     };
 
     return (
@@ -361,8 +373,8 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                         {!loading && readme === '' && renderNoFunctionDetails}
                         {!loading && readme && readme !== '' && (
                             <div>
-                                <ReactMarkdown rehypePlugins={[rehypeRaw, remarkGfm]}>
-                                    {formattedMarkdownContent(emojiSupport(readme))?.replace(/`/g, '\\`')}
+                                <ReactMarkdown rehypePlugins={[rehypeRaw, remarkGfm, rehypeSlug]} className="custom-markdown">
+                                    {modifiedContent(formattedMarkdownContent(emojiSupport(readme)))}
                                 </ReactMarkdown>
                             </div>
                         )}
@@ -441,8 +453,7 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                 </code>
             )}
             {tabValue === 'Code' && (
-                <div className="source-code">
-                    {/* <Spinner /> */}
+                <div className={`source-code ${onBackToFunction ? 'source-code-stations' : 'source-code-functions'}`}>
                     <div>
                         <label className="source-code-title">Code tree</label>
                         <div className="repos-section">
@@ -456,12 +467,10 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                     <CollapseArrowIcon className={expanded ? 'collapse-arrow open arrow' : 'collapse-arrow arrow'} alt="collapse-arrow" />
                                 )}
                                 defaultExpandAll={true}
-                                // selectedKeys={[selectedFileTreeKey]}
                             />
                         </div>
                     </div>
                     <div className="code-content-section">
-                        {/* {renderNoFunctionDetails} */}
                         <>
                             <Button
                                 placeholder="Test"

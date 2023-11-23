@@ -85,12 +85,32 @@ const FunctionsModal = ({ applyFunction, referredFunction }) => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_FUNCTIONS);
             setIsIntegrated(data?.scm_integrated);
-            setFunctionList(
-                [
-                    ...data?.installed?.sort((a, b) => (a.function_name > b.function_name ? 1 : -1)),
-                    ...data?.other?.sort((a, b) => (a.function_name > b.function_name ? 1 : -1))
-                ] || []
-            );
+
+            let updatedData = { ...data };
+
+            const installed = updatedData?.installed
+                ?.map((func, index) => {
+                    if (func?.owner === OWNER) {
+                        func.stars = Math.random() + 4;
+                        func.rates = Math.floor(Math.random() * (80 - 50 + 1)) + 50;
+                        func.forks = Math.floor(Math.random() * (100 - 80 + 1)) + 80;
+                    }
+                    return func;
+                })
+                ?.sort((a, b) => (a.function_name > b.function_name ? 1 : -1));
+
+            const other = updatedData?.other
+                ?.map((func, index) => {
+                    if (func?.owner === OWNER) {
+                        func.stars = Math.random() + 4;
+                        func.rates = Math.floor(Math.random() * (80 - 50 + 1)) + 50;
+                        func.forks = Math.floor(Math.random() * (100 - 80 + 1)) + 80;
+                    }
+                    return func;
+                })
+                ?.sort((a, b) => (a.function_name > b.function_name ? 1 : -1));
+
+            setFunctionList([...installed, ...other] || []);
             setTimeout(() => {
                 setIsLoading(false);
             }, 500);

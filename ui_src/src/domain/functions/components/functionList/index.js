@@ -294,7 +294,8 @@ function FunctionList({ tabPrivate }) {
         );
 
     const drawCollapse = () => {
-        if (isCloud() && tabValue === 'Private' && !integrated) return <IntegrateFunction onClick={() => setIsFunctionsGuideOpen(true)} />;
+        if (isCloud() && tabValue === 'Private' && !integrated && installedFunctionList?.every((func) => func?.owner === OWNER))
+            return <IntegrateFunction onClick={() => setIsFunctionsGuideOpen(true)} />;
         const noFunctionsContent = filteredInstalledData?.length === 0 && filteredOtherData === 0 ? renderNoFunctionsFound() : null;
         const installedFunctionBoxesContent = filteredInstalledData?.length !== 0 ? <div className="cards-wrapper">{renderFunctionBoxes('installed')}</div> : null;
         const otherFunctionBoxesContent = filteredOtherData?.length !== 0 ? <div className="cards-wrapper">{renderFunctionBoxes('other')}</div> : null;
@@ -303,11 +304,7 @@ function FunctionList({ tabPrivate }) {
         return (
             <div className="function-list-collapse">
                 {!isCloud() && <div>{otherFunctionBoxesContent || noFunctionsContent}</div>}
-                {isCloud() && !integrated && tabValue === 'Private' && (
-                    <div className="cards-wrapper">
-                        <IntegrateFunction onClick={() => setIsFunctionsGuideOpen(true)} />
-                    </div>
-                )}
+
                 {isCloud() && (
                     <>
                         <Collapse defaultActiveKey={['1']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />} ghost>

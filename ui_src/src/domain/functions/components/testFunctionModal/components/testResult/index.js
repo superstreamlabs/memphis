@@ -48,7 +48,7 @@ const TestResult = ({ testResultData, loading }) => {
     }, [testResultData]);
 
     useEffect(() => {
-        (!testResult || testResult?.error) && setResponseTab('Error');
+        testResult?.error ? setResponseTab('Error') : setResponseTab('All');
     }, [testResult]);
 
     const getCopyData = () => {

@@ -22,23 +22,62 @@ import { httpRequest } from '../../../../../../services/http';
 import { ApiEndpoints } from '../../../../../../const/apiEndpoints';
 
 const TestMockEvent = ({ functionDetails, open }) => {
-    const [testMock, setTestMock] = useState(`{
-        "type": "record",
-        "namespace": "com.example",
-        "name": "test-schema",
-        "fields": [
-           { "name": "Master message", "type": "string", "default": "NONE" },
-           { "name": "age", "type": "int", "default": "-1" },
-           { "name": "phone", "type": "string", "default": "NONE" },
-           { "name": "country", "type": "string", "default": "NONE" }
-            ]
-        }`);
+    const [testMock, setTestMock] = useState('');
     const [inputs, setInputs] = useState(null);
     const [testResultData, setTestResult] = useState(null);
+    const [missingMockIndicator, setMissingMockIndicator] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     useEffect(() => {
         setTestResult(null);
+        open && getFileContent();
+        const inputsObject = functionDetails?.inputs?.map((item) => {
+            item.value = '';
+            return item;
+        });
+        setInputs(inputsObject);
     }, [open]);
+
+    const getFileContent = async () => {
+        try {
+            const response = await httpRequest(
+                'GET',
+                ApiEndpoints.GET_FUNCTION_FILE_CODE +
+                    '?repo=' +
+                    encodeURI(functionDetails?.repo) +
+                    '&branch=' +
+                    encodeURI(functionDetails?.branch) +
+                    '&owner=' +
+                    encodeURI(functionDetails?.owner) +
+                    '&scm=' +
+                    encodeURI(functionDetails?.scm) +
+                    '&function_name=' +
+                    encodeURI(functionDetails?.function_name) +
+                    '&path=' +
+                    encodeURI(`${functionDetails?.function_name}/test.json`),
+                {},
+                {},
+                {},
+                true,
+                0,
+                null,
+                false
+            );
+            setTestMock(response?.content);
+        } catch (e) {
+            setTestMock(`{
+                "type": "record",
+                "namespace": "com.example",
+                "name": "test-schema",
+                "fields": [
+                   { "name": "Master message", "type": "string", "default": "NONE" },
+                   { "name": "age", "type": "int", "default": "-1" },
+                   { "name": "phone", "type": "string", "default": "NONE" },
+                   { "name": "country", "type": "string", "default": "NONE" }
+                    ]
+                }`);
+            setMissingMockIndicator(true);
+        }
+    };
 
     const testEvent = async () => {
         let inputsObject = {};
@@ -67,10 +106,6 @@ const TestMockEvent = ({ functionDetails, open }) => {
             setIsLoading(false);
         }
     };
-
-    useEffect(() => {
-        functionDetails?.inputs && functionDetails?.inputs?.length > 0 && setInputs(functionDetails?.inputs);
-    }, []);
 
     const handleChange = (e, index) => {
         const newInputs = [...inputs];
@@ -105,7 +140,11 @@ const TestMockEvent = ({ functionDetails, open }) => {
             </div>
             <div className="test-area">
                 <div className="text-area-wrapper">
-                    <label className="title">Event data</label>
+                    <span className="title-span">
+                        <label className="title">Event data</label>{' '}
+                        {missingMockIndicator && <span className="missing-mock">{`(The file 'test.json' is not found. Creating artificial data instead.)`}</span>}
+                    </span>
+
                     <div className="text-area">
                         <Editor
                             options={{
@@ -134,7 +173,7 @@ const TestMockEvent = ({ functionDetails, open }) => {
                         <>
                             <label className="title">Inputs</label>
                             <div className="inputs-section">
-                                {inputs.map((input, index) => (
+                                {inputs?.map((input, index) => (
                                     <span className="input-row" key={`${input?.name}${index}`}>
                                         <Input
                                             placeholder={input?.name}
@@ -144,6 +183,7 @@ const TestMockEvent = ({ functionDetails, open }) => {
                                             backgroundColorType="light-gray"
                                             borderColorType="gray"
                                             height="40px"
+                                            fontSize="14px"
                                             value={input?.name}
                                             disabled
                                         />
@@ -155,6 +195,7 @@ const TestMockEvent = ({ functionDetails, open }) => {
                                             backgroundColorType="none"
                                             borderColorType="gray"
                                             height="40px"
+                                            fontSize="14px"
                                             onBlur={(e) => handleChange(e, index)}
                                             onChange={(e) => handleChange(e, index)}
                                             value={input?.value}

@@ -195,11 +195,12 @@ function SideBar() {
         addUserModalFlip(false);
     };
 
-    const MenuItem = ({ icon, activeIcon, name, route, onClick, onMouseEnter, onMouseLeave }) => {
+    const MenuItem = ({ icon, activeIcon, name, route, onClick, onMouseEnter, onMouseLeave, badge }) => {
         return (
             <div className="item-wrapper" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onClick={onClick}>
                 <div className="icon">{state.route === route ? activeIcon : hoveredItem === route ? activeIcon : icon}</div>
                 <p className={state.route === route ? 'checked' : 'name'}>{name}</p>
+                {badge && <label className="badge">{badge}</label>}
             </div>
         );
     };
@@ -459,6 +460,7 @@ function SideBar() {
                     onMouseEnter={() => setHoveredItem('functions')}
                     onMouseLeave={() => setHoveredItem('')}
                     route="functions"
+                    badge={'Alpha'}
                 />
                 <MenuItem
                     icon={<IntegrationIcon alt="IntegrationIcon" width={20} height={20} />}

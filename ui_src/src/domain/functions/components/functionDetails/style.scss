@@ -4,6 +4,39 @@
     height: 100%;
     overflow-y: auto;
     flex-direction: column;
+    .code-block {
+        border-radius: 4px;
+        padding: 10px;
+        background: #f9f9fa;
+        white-space: pre;
+        overflow-y: auto;
+    }
+    .code-var {
+        border-radius: 4px;
+        padding: 2px 4px;
+        background: #f9f9fa;
+        white-space: pre;
+        display: inline-block;
+    }
+    .custom-markdown table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    .custom-markdown p {
+        display: inline;
+    }
+
+    .custom-markdown th,
+    .custom-markdown td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+
+    .custom-markdown th {
+        background-color: #f9f9fa;
+    }
     .attach-btn {
         display: flex;
         align-items: center;
@@ -61,6 +94,10 @@
         min-width: 750px;
         .header-flex {
             display: flex;
+            span,
+            label {
+                cursor: pointer;
+            }
         }
         .right-side {
             display: flex;
@@ -231,9 +268,15 @@
     .ant-divider-horizontal {
         margin: 10px 0px;
     }
+    .source-code-functions {
+        height: calc(100% - 230px);
+    }
+    .source-code-stations {
+        height: calc(100% - 300px);
+    }
     .source-code {
         display: flex;
-        height: calc(100% - 230px);
+
         position: relative;
         .source-code-title {
             font-family: 'InterSemiBold';
