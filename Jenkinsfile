@@ -20,7 +20,16 @@ pipeline {
             }
         }
     }
-
+	  
+	stage('Install minikube'){
+		steps {
+			sh """
+				curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-latest.x86_64.rpm
+				sudo rpm -Uvh minikube-latest.x86_64.rpm
+				sudo su -c "minikube start --cpus='max'" -s /bin/bash ec2-user
+   			"""
+		}
+	}
     stage('Create memphis namespace in Kubernetes'){
         steps {
             sh """
