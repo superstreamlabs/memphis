@@ -171,6 +171,7 @@ func removeTenantResources(tenantName string, user models.User) error {
 	if err != nil {
 		return err
 	}
+
 	err = deleteInstallationForAuthenticatedGithubApp(user.TenantName)
 	if err != nil {
 		return err
