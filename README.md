@@ -22,13 +22,16 @@
 
   <h4>
 
-**[Memphis.dev](https://memphis.dev)** is a highly scalable, painless, and effortless data streaming platform.<br>
-Made to enable developers and data teams to collaborate and build<br>
-real-time and streaming apps fast.
+**[Memphis.dev](https://memphis.dev)** is more than a broker. It's a new streaming stack.<br>
+Memphis.dev is a highly scalable event streaming and processing engine.<br>
 
   </h4>
   
 </div>
+
+## ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) About
+
+Before Memphis came along, handling ingestion and processing of events on a large scale took months to adopt and was a capability reserved for the top 20% of mega-companies. Now, Memphis opens the door for the other 80% to unleash their event and data streaming superpowers quickly, easily, and with great cost-effectiveness.
 
 ## 🚀 Getting Started
 [Tutorials](https://docs.memphis.dev/memphis/getting-started/tutorials) | [Videos](https://www.youtube.com/playlist?list=PL_7iYjqhtXpWpZT2U0zDYo2eGOoGmg2mm)<br>
