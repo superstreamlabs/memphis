@@ -37,6 +37,7 @@ import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
 import AttachFunctionModal from '../attachFunctionModal';
 import CloudModal from '../../../../components/cloudModal';
+import TestMockEvent from '../../components/testFunctionModal/components/testMockEvent';
 import { Context } from '../../../../hooks/store';
 
 function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null, onApply, doneUninstall, startInstallation, funcIndex, referredFunction }) {
@@ -49,6 +50,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
     const [cloudModal, setCloudModal] = useState(false);
     const [loader, setLoader] = useState(false);
     const [openUpgradeModal, setOpenUpgradeModal] = useState(false);
+    const [isTestFunctionModalOpen, setIsTestFunctionModalOpen] = useState(false);
 
     useEffect(() => {
         const url = window.location.href;
@@ -191,6 +193,19 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                     </OverflowTip>
                                 </div>
                             )}
+                            {isCloud() && functionDetails?.installed && (
+                                <Button
+                                    placeholder="Test"
+                                    width={'100px'}
+                                    backgroundColorType={'orange'}
+                                    colorType={'black'}
+                                    radiusType={'circle'}
+                                    fontSize="12px"
+                                    fontFamily="InterSemiBold"
+                                    onClick={() => setIsTestFunctionModalOpen(true)}
+                                    disabled={!functionDetails?.installed}
+                                />
+                            )}
                             {isValid && (!isCloud() || functionDetails?.installed) && (
                                 <Button
                                     width="100px"
@@ -308,6 +323,9 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                 )}
             </Drawer>
             <CloudModal type="upgrade" open={openUpgradeModal} handleClose={() => setOpenUpgradeModal(false)} />
+            <Modal width={'75vw'} height={'80vh'} clickOutside={() => setIsTestFunctionModalOpen(false)} open={isTestFunctionModalOpen} displayButtons={false}>
+                <TestMockEvent functionDetails={funcDetails} open={isTestFunctionModalOpen} />
+            </Modal>
         </>
     );
 }

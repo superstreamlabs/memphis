@@ -347,7 +347,10 @@ const Messages = ({ referredFunction }) => {
                                 onClick={() => (isCloud() ? stationState?.stationSocketData?.functions_enabled && setActiveTab('functions') : setCloudModalOpen(true))}
                             >
                                 {stationState?.stationSocketData?.functions_enabled ? (
-                                    'Functions'
+                                    <>
+                                        <label>Functions</label>
+                                        <label className="badge">Alpha</label>
+                                    </>
                                 ) : (
                                     <TooltipComponent text="Supported for new stations" minWidth="35px">
                                         Functions

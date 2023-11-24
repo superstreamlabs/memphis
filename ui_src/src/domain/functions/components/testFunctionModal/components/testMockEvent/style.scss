@@ -55,14 +55,26 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            .title {
-                font-size: 14px;
-                font-family: 'InterSemiBold';
+            .title-span {
+                display: flex;
+                align-items: flex-end;
+                gap: 5px;
+                .title {
+                    font-size: 14px;
+                    font-family: 'InterSemiBold';
+                }
+                .missing-mock {
+                    font-size: 12px;
+                    font-family: 'Inter';
+                    color: #475467;
+                }
             }
+
             .text-area {
                 border-radius: 8px;
                 border: 1px solid #e2e2e2;
                 height: calc(100% - 30px);
+                max-height: 470px;
                 padding: 3px;
                 overflow-y: auto;
             }

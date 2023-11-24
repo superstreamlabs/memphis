@@ -72,7 +72,7 @@ export const planType = {
     ENTERPRISE: 'plan-cloud-enterprise',
     BUSINESS: 'plan-cloud-business',
     GROWTH: 'plan-cloud-growth-buckets',
-    FREE: 'plan-cloud-free',
+    FREE: 'plan-cloud-free'
 };
 
 export const githubUrls = {
@@ -82,9 +82,9 @@ export const githubUrls = {
         MEMPHIS_GIT_SSH: 'git@github.com:memphisdev/onboarding-app.git'
     },
     functions: {
-        DOWNLOAD_URL: 'https://github.com/memphisdev/memphis-dev-functions/archive/refs/heads/master.zip',
-        MEMPHIS_GIT_HTTPS: 'https://github.com/memphisdev/memphis-dev-functions.git',
-        MEMPHIS_GIT_SSH: 'git@github.com:memphisdev/memphis-dev-functions.git'
+        DOWNLOAD_URL: 'https://github.com/memphisdev/function-templates/archive/refs/heads/master.zip',
+        MEMPHIS_GIT_HTTPS: 'https://github.com/memphisdev/function-templates.git',
+        MEMPHIS_GIT_SSH: 'git@github.com:memphisdev/function-templates.git'
     }
 };
 

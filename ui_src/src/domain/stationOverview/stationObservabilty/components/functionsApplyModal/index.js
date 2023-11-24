@@ -26,26 +26,26 @@ const FunctionsApplyModal = ({ onCancel, onApply, successText }) => {
     const content = [
         {
             title: 'No',
-            subtitle: 'For my use case, performance takes priority over ordering.',
             value: false
         },
         {
             title: 'Yes',
-            subtitle: 'Please ensure the preservation of a First-In-First-Out (FIFO) sequence.',
             value: true
         }
     ];
     return (
         <>
-            {content.map((item, index) => (
-                <div className={`modal-card ${selected === index ? 'selected' : undefined}`} onClick={() => handleSelect(index)}>
-                    <div className="modal-card__top-row">
-                        <div className="modal-card__title">{item.title}</div>
-                        {[selected].includes(index) ? <CheckIcon /> : <div className="empty-circle" />}
+            <div className="select-section">
+                {content.map((item, index) => (
+                    <div className={`modal-card ${selected === index ? 'selected' : undefined}`} onClick={() => handleSelect(index)}>
+                        <div className="modal-card__top-row">
+                            <div className="modal-card__title">{item.title}</div>
+                            {[selected].includes(index) ? <CheckIcon /> : <div className="empty-circle" />}
+                        </div>
+                        <div className="modal-card__subtitle">{item.subtitle}</div>
                     </div>
-                    <div className="modal-card__subtitle">{item.subtitle}</div>
-                </div>
-            ))}
+                ))}
+            </div>
             <div className="modal-buttons">
                 <Button
                     width="100%"
