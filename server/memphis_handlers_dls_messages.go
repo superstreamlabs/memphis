@@ -231,13 +231,13 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 			poisonMessages = append(poisonMessages, models.LightDlsMessageResponse{MessageSeq: v.MessageSeq, ID: v.ID, Message: messageDetails})
 		case "schema":
 			messageDetails.Size = len(v.MessageDetails.Data) + len(v.MessageDetails.Headers)
-			schemaMessages = append(schemaMessages, models.LightDlsMessageResponse{MessageSeq: v.MessageSeq, ID: v.ID, Message: v.MessageDetails})
+			schemaMessages = append(schemaMessages, models.LightDlsMessageResponse{MessageSeq: v.MessageSeq, ID: v.ID, Message: messageDetails})
 		case "functions":
-			functionsMessages = append(functionsMessages, models.LightDlsMessageResponse{MessageSeq: v.MessageSeq, ID: v.ID, Message: v.MessageDetails})
+			functionsMessages = append(functionsMessages, models.LightDlsMessageResponse{MessageSeq: v.MessageSeq, ID: v.ID, Message: messageDetails})
 		}
 	}
 
-	lenPoison, lenSchema := len(poisonMessages), len(schemaMessages)
+	lenPoison, lenSchema, lenFunctions := len(poisonMessages), len(schemaMessages), len(functionsMessages)
 	totalDlsAmount := 0
 	if len(dlsMsgs) >= 0 {
 		totalDlsAmount, err = db.CountDlsMsgsByStationAndPartition(station.ID, partitionNumber)
@@ -254,12 +254,20 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 		return schemaMessages[i].Message.TimeSent.After(schemaMessages[j].Message.TimeSent)
 	})
 
+	sort.Slice(functionsMessages, func(i, j int) bool {
+		return functionsMessages[i].Message.TimeSent.After(functionsMessages[j].Message.TimeSent)
+	})
+
 	if lenPoison > 1000 {
 		poisonMessages = poisonMessages[:1000]
 	}
 
 	if lenSchema > 1000 {
 		schemaMessages = schemaMessages[:1000]
+	}
+
+	if lenFunctions > 1000 {
+		functionsMessages = functionsMessages[:1000]
 	}
 	return poisonMessages, schemaMessages, functionsMessages, totalDlsAmount, nil
 }
