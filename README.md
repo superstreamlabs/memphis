@@ -11,6 +11,9 @@
 <div align="center">
   
 ![Logos](https://github.com/memphisdev/memphis/assets/107035359/ada2b2aa-3ae0-471c-b520-cf24a22f5850) 
+
+</div>
+
  <b><p align="center">
   <a href="https://memphis.dev/pricing/">Cloud</a> - <a href="github.com/memphisdev/memphis-dev-academy">Academy</a> - <a href="https://memphis.dev/docs/">Docs</a> - <a href="https://twitter.com/Memphis_Dev">X</a> - <a href="https://www.youtube.com/channel/UCVdMDLCSxXOqtgrBaRUHKKg">YouTube</a>
 </p></b>
