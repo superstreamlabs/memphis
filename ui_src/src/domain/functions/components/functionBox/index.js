@@ -121,7 +121,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                         ? 'function-box-wrapper func-selected'
                         : 'function-box-wrapper'
                 }
-                onClick={() => (onClick ? onClick() : isCloud() && handleDrawer(true))}
+                onClick={() => (onClick ? onClick() : isCloud() ? handleDrawer(true) : setCloudModal(true))}
             >
                 <header is="x3d">
                     <div className={`function-box-header ${!isTagsOn && 'station'}`}>

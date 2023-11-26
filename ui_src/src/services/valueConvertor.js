@@ -13,7 +13,6 @@
 import { planType } from '../const/globalConst';
 import { decodeMessage } from './decoder';
 import { LOCAL_STORAGE_PLAN } from '../const/localStorageConsts';
-import CloudOnly from '../components/cloudOnly';
 
 export const convertDateToSeconds = (days, hours, minutes, seconds) => {
     let totalSeconds = 0;
@@ -561,14 +560,9 @@ export const getFunctionsTabs = () => [
         disabled: false
     },
     {
-        name: isCloud() ? (
-            'Private'
-        ) : (
-            <>
-                Private <CloudOnly position={'relative'} />
-            </>
-        ),
-        disabled: !isCloud()
+        name: 'Private',
+        disabled: !isCloud(),
+        cloudOnly: !isCloud() ? true : false
     }
 ];
 
