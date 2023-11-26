@@ -19,6 +19,8 @@
 **[Memphis.dev](https://memphis.dev)** is more than a broker. It's a new streaming stack.<br>
 Memphis.dev is a highly scalable event streaming and processing engine.<br>
 
+<img width="177" alt="cloud_native 2 (5)" src="https://github.com/memphisdev/memphis/assets/107035359/a20ea11c-d509-42bb-a46c-e388c8424101">
+
   </h4>
   
 </div>
