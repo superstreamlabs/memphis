@@ -46,7 +46,7 @@ docker compose -f docker-compose.yml -p memphis up
 
 </div>
 
-## ✨ Key Features [v1.3.1](https://docs.memphis.dev/memphis/release-notes/releases/v1.3.1-stable)
+## ✨ Key Features [v1.4.0](https://docs.memphis.dev/memphis/release-notes/releases/v1.4.0)
 
 [**Take part in our roadmap!**](https://memphis.dev/roadmap)
 
@@ -55,6 +55,7 @@ docker compose -f docker-compose.yml -p memphis up
 ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Data-level observability<br>
 ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Dead-Letter Queue with automatic message retransmit<br>
 ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Schemaverse - Embedded schema management for produced data (Protobuf/JSON/GraphQL/Avro)<br>
+![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Functions for real-time processing<br>
 ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Graph visualization<br>
 ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Storage tiering<br>
 ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) SDKs: Node.JS, Go, Python, Typescript, NestJS, REST, .NET, Kotlin<br>
