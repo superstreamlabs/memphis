@@ -19,8 +19,8 @@ import VideoPlayer from '../../../../components/videoPlayer';
 import Button from '../../../../components/button';
 import Modal from '../../../../components/modal';
 import CloneModal from '../../../../components/cloneModal';
-import { CONNECT_APP_VIDEO } from '../../../../config';
-import ConnectBG from '../../../../assets/images/connectBG.webp';
+import { FUNCTION_GUIDE_VIDEO } from '../../../../config';
+import ConnectBG from '../../../../assets/images/functionsWelcomeBanner.webp';
 import { LuInfo } from 'react-icons/lu';
 
 const FunctionsGuide = ({ handleClose, handleConfirm }) => {
@@ -78,7 +78,7 @@ const FunctionsGuide = ({ handleClose, handleConfirm }) => {
                 <p className="sub-title">Embrace Lightning-Speed Serverless Stream Processing.</p>
             </div>
             <div className="video-wrapper">
-                <VideoPlayer url={CONNECT_APP_VIDEO} bgImg={ConnectBG} width={'540px'} height={'250px'} tracePlay />
+                <VideoPlayer url={FUNCTION_GUIDE_VIDEO} bgImg={ConnectBG} width={'540px'} height={'250px'} tracePlay />
             </div>
             <div className="info">
                 <p className="info-title">Getting Started</p>
