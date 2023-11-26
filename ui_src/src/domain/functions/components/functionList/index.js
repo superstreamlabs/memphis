@@ -49,6 +49,7 @@ import { Collapse, Divider, Popover, Badge } from 'antd';
 import { LOCAL_STORAGE_FUNCTION_PAGE_VIEW } from '../../../../const/localStorageConsts';
 import { getFunctionsTabs } from '../../../../services/valueConvertor';
 const { Panel } = Collapse;
+const TABS = getFunctionsTabs();
 
 function FunctionList({ tabPrivate }) {
     const [state, dispatch] = useContext(Context);
@@ -69,13 +70,18 @@ function FunctionList({ tabPrivate }) {
     const [refreshIndeicator, setRefreshIndicator] = useState(false);
     const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
     const [githubIntegrationData, setGithubIntegrationData] = useState({});
-
+    const [tabsCounter, setTabsCounter] = useState([0, 0, 0]);
     const ExpandIcon = ({ isActive }) => <img className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />;
-    const TABS = getFunctionsTabs();
 
     useEffect(() => {
         findAndUpdateGithubIntegration();
     }, [state?.integrationsList]);
+
+    useEffect(() => {
+        const memphisCount = installedFunctionList?.filter((func) => func.owner === OWNER)?.length + otherFunctionList?.filter((func) => func.owner === OWNER)?.length;
+        const privateCount = installedFunctionList?.filter((func) => func.owner !== OWNER)?.length + otherFunctionList?.filter((func) => func.owner !== OWNER)?.length;
+        setTabsCounter([memphisCount + privateCount, memphisCount, privateCount]);
+    }, [filteredInstalledData, filteredOtherData]);
 
     const findAndUpdateGithubIntegration = () => {
         const integrationData = state?.integrationsList?.find((integration) => integration?.name === 'github');
@@ -200,21 +206,27 @@ function FunctionList({ tabPrivate }) {
         });
     };
 
-    const startInstallation = (index) => {
+    const startInstallation = (index, isUpdate) => {
         setRefreshIndicator(true);
-        setFilteredInstalledData((prev) => {
-            const data = [...prev];
-            let func = filteredOtherData[index];
-            func.installed_in_progress = true;
-            func.installed = true;
-            data.push(func);
-            return data;
-        });
-        setFilteredOtherData((prev) => {
-            const data = [...prev];
-            data.splice(index, 1);
-            return data;
-        });
+        if (isUpdate) {
+            let installedFunctions = [...filteredInstalledData];
+            installedFunctions[index].installed_in_progress = true;
+            setFilteredInstalledData(installedFunctions);
+        } else {
+            setFilteredInstalledData((prev) => {
+                const data = [...prev];
+                let func = filteredOtherData[index];
+                func.installed_in_progress = true;
+                func.installed = true;
+                data.push(func);
+                return data;
+            });
+            setFilteredOtherData((prev) => {
+                const data = [...prev];
+                data.splice(index, 1);
+                return data;
+            });
+        }
     };
 
     const content = (
@@ -354,9 +366,13 @@ function FunctionList({ tabPrivate }) {
                             <div
                                 className="git-repo git-refresh-title"
                                 onClick={() => {
-                                    if (!isCloud()) return; //Open cloud only banner
-                                    modalFlip(true);
-                                    setClickedRefresh(false);
+                                    if (!isCloud()) {
+                                        setIsCloudModalOpen(true);
+                                        setClickedRefresh(false);
+                                    } else {
+                                        modalFlip(true);
+                                        setClickedRefresh(false);
+                                    }
                                 }}
                             >
                                 <AddRounded className="add" fontSize="small" />
@@ -409,8 +425,13 @@ function FunctionList({ tabPrivate }) {
                     </Popover>
                 </div>
             </div>
-            <CustomTabs tabs={TABS} defaultActiveKey={tabPrivate ? 'Private' : 'All'} tabValue={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
-
+            <CustomTabs
+                tabs={TABS}
+                defaultActiveKey={tabPrivate ? 'Private' : 'All'}
+                value={tabValue}
+                onChange={(tabValue) => setTabValue(tabValue)}
+                tabsCounter={tabsCounter}
+            />
             <SearchInput
                 placeholder="Search here"
                 colorType="navy"

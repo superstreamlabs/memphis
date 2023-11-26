@@ -267,7 +267,7 @@ const GitHubIntegration = ({ close, value }) => {
                                         />
                                     </div>
                                 )}
-                                <div className="api-details">
+                                <div className="api-details api-details-github">
                                     {isIntegrated && (
                                         <div className="input-field">
                                             <p className="title">Repos</p>

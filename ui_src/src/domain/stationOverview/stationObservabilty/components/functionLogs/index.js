@@ -15,23 +15,38 @@ import './style.scss';
 import React, { useEffect, useState } from 'react';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
+import Spinner from '../../../../../components/spinner';
 
 const FunctionLogs = ({ functionId }) => {
     const [logs, setLogs] = useState([]);
+    const [loader, setLoader] = useState(false);
+
     useEffect(() => {
         getAttachedFunctionLogs();
     }, []);
 
     const getAttachedFunctionLogs = async () => {
+        setLoader(true);
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_ATTACHED_FUNCTION_LOGS}?function_id=${functionId}`);
             setLogs(data);
+            setLoader(false);
         } catch (e) {
-            return;
+            setLoader(false);
         }
     };
 
-    return <div className="logs-container">{logs?.map((item) => item.log).join('')}</div>;
+    return (
+        <div className="logs-container">
+            {loader && (
+                <div className="spinner">
+                    <Spinner />
+                </div>
+            )}
+            {!loader && logs?.map((item) => item.log).join('')}
+            {!loader && !logs?.length && 'No logs to show'}
+        </div>
+    );
 };
 
 export default FunctionLogs;

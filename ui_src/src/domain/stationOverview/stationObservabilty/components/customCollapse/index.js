@@ -72,7 +72,7 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                                 <p className="title">
                                     {header}
                                     {header === 'Headers' && <span className="consumer-number">{data !== undefined ? Object?.keys(data)?.length : ''}</span>}
-                                    {header === 'Validation error' && <WarningCircleIcon className="validation-image" />}
+                                    {(header === 'Validation error' || header === 'Error') && <WarningCircleIcon className="validation-image" />}
                                 </p>
                                 <status is="x3d">
                                     {activeKey[0] === '1' ? (

@@ -18,6 +18,7 @@ import Button from '../../../../../../components/button';
 import Input from '../../../../../../components/Input';
 import Editor from '@monaco-editor/react';
 import TestResult from '../testResult';
+import { generateJSONWithMaxLength } from '../../../../../../services/valueConvertor';
 import { httpRequest } from '../../../../../../services/http';
 import { ApiEndpoints } from '../../../../../../const/apiEndpoints';
 
@@ -64,17 +65,7 @@ const TestMockEvent = ({ functionDetails, open }) => {
             );
             setTestMock(response?.content);
         } catch (e) {
-            setTestMock(`{
-                "type": "record",
-                "namespace": "com.example",
-                "name": "test-schema",
-                "fields": [
-                   { "name": "Master message", "type": "string", "default": "NONE" },
-                   { "name": "age", "type": "int", "default": "-1" },
-                   { "name": "phone", "type": "string", "default": "NONE" },
-                   { "name": "country", "type": "string", "default": "NONE" }
-                    ]
-                }`);
+            setTestMock(generateJSONWithMaxLength(100));
             setMissingMockIndicator(true);
         }
     };
@@ -120,7 +111,7 @@ const TestMockEvent = ({ functionDetails, open }) => {
             </div>
             <div className="header">
                 <div className="title-container">
-                    <p className="title">Generate test event</p>
+                    <p className="title">Test the function</p>
                 </div>
                 <Button
                     width="120px"
@@ -142,7 +133,7 @@ const TestMockEvent = ({ functionDetails, open }) => {
                 <div className="text-area-wrapper">
                     <span className="title-span">
                         <label className="title">Event data</label>{' '}
-                        {missingMockIndicator && <span className="missing-mock">{`(The file 'test.json' is not found. Creating artificial data instead.)`}</span>}
+                        {missingMockIndicator && <span className="missing-mock">{`(The file 'test.json' is cannot be found. Creating artificial data instead)`}</span>}
                     </span>
 
                     <div className="text-area">
@@ -171,7 +162,8 @@ const TestMockEvent = ({ functionDetails, open }) => {
                     </div>
                     {inputs && inputs?.length > 0 && (
                         <>
-                            <label className="title">Inputs</label>
+                            <label className="title-inputs">Inputs</label>
+                            <label className="description-inputs">Not sure how to fill in the inputs? Head over the function`s README for more information</label>
                             <div className="inputs-section">
                                 {inputs?.map((input, index) => (
                                     <span className="input-row" key={`${input?.name}${index}`}>

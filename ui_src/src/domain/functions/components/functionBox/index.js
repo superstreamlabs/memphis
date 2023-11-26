@@ -87,7 +87,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
         try {
             await httpRequest('POST', ApiEndpoints.INSTALL_FUNCTION, bodyRequest);
             showMessages('success', `We are ${functionDetails?.updates_available ? 'updating' : 'installing'} the function for you. We will let you know once its done`);
-            startInstallation(funcIndex);
+            startInstallation(funcIndex, functionDetails?.updates_available);
         } catch (e) {
             return;
         }
@@ -203,7 +203,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                     fontSize="12px"
                                     fontFamily="InterSemiBold"
                                     onClick={() => setIsTestFunctionModalOpen(true)}
-                                    disabled={!functionDetails?.installed}
+                                    disabled={!functionDetails?.installed || functionDetails?.installed_in_progress}
                                 />
                             )}
                             {isValid && (!isCloud() || functionDetails?.installed) && (

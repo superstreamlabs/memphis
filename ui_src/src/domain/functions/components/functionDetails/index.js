@@ -94,7 +94,9 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                     '&scm=' +
                     encodeURI(selectedFunction?.scm) +
                     '&function_name=' +
-                    encodeURI(selectedFunction?.function_name || selectedFunction?.name)
+                    encodeURI(selectedFunction?.function_name || selectedFunction?.name) +
+                    '&version=' +
+                    encodeURI(selectedVersion === 'latest' ? '' : selectedVersion)
             );
             setMetaData(response?.metadata_function);
             setReadme(response?.readme_content);
@@ -248,7 +250,9 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                             )}
                             <commits is="x3d">
                                 <FiGitCommit />
-                                <label>Last modified on {parsingDate(selectedFunction?.installed_updated_at, false, false)}</label>
+                                <OverflowTip text={parsingDate(selectedFunction?.installed_updated_at || metaData?.installed_updated_at, true, true)} width={'220px'}>
+                                    Last modified on {parsingDate(selectedFunction?.installed_updated_at || metaData?.installed_updated_at, true, true)}
+                                </OverflowTip>
                             </commits>
                         </deatils>
                     </div>
@@ -307,7 +311,14 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                             radiusType={'circle'}
                                             fontSize="12px"
                                             fontFamily="InterSemiBold"
-                                            onClick={() => (selectedFunction?.installed ? handleUnInstall() : handleInstall())}
+                                            onClick={() => {
+                                                if (selectedFunction?.installed) {
+                                                    handleUnInstall();
+                                                } else {
+                                                    handleInstall();
+                                                }
+                                                onBackToFunction && onBackToFunction();
+                                            }}
                                             isLoading={metaData?.installed_in_progress}
                                             disabled={!selectedFunction?.is_valid || selectedFunction?.installed_in_progress}
                                         />
@@ -404,7 +415,7 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                             <Divider />
                             <label className="label-title">Social</label>
                             <deatils is="x3d">
-                                {selectedFunction.owner === OWNER && (
+                                {selectedFunction?.owner === OWNER && (
                                     <>
                                         <downloads is="x3d">
                                             <BiDownload className="download-icon" />
@@ -420,7 +431,9 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                 )}
                                 <commits is="x3d">
                                     <FiGitCommit />
-                                    <label>Last modified on {parsingDate(selectedFunction?.installed_updated_at, false, false)}</label>
+                                    <OverflowTip text={parsingDate(selectedFunction?.installed_updated_at || metaData?.installed_updated_at, true, true)} width={'210px'}>
+                                        Last modified on {parsingDate(selectedFunction?.installed_updated_at || metaData?.installed_updated_at, true, true)}
+                                    </OverflowTip>
                                 </commits>
                             </deatils>
                             <Divider />

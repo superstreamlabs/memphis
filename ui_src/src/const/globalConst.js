@@ -82,9 +82,9 @@ export const githubUrls = {
         MEMPHIS_GIT_SSH: 'git@github.com:memphisdev/onboarding-app.git'
     },
     functions: {
-        DOWNLOAD_URL: 'https://github.com/memphisdev/function-templates/archive/refs/heads/master.zip',
-        MEMPHIS_GIT_HTTPS: 'https://github.com/memphisdev/function-templates.git',
-        MEMPHIS_GIT_SSH: 'git@github.com:memphisdev/function-templates.git'
+        DOWNLOAD_URL: 'https://github.com/memphisdev/functions-templates/archive/refs/heads/master.zip',
+        MEMPHIS_GIT_HTTPS: 'https://github.com/memphisdev/functions-templates.git',
+        MEMPHIS_GIT_SSH: 'git@github.com:memphisdev/functions-templates.git'
     }
 };
 

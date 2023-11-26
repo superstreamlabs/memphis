@@ -159,8 +159,11 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false, isFailedFunction
                     <>
                         <div className="row-data">
                             <Space direction="vertical">
-                                {messageDetails?.validationError !== '' && (
+                                {!isFailedFunctionMessage && messageDetails?.validationError !== '' && (
                                     <CustomCollapse status={false} header="Validation error" data={messageDetails?.validationError} message={true} />
+                                )}
+                                {isFailedFunctionMessage && messageDetails?.validationError !== '' && (
+                                    <CustomCollapse status={false} header="Error" data={messageDetails?.validationError} message={true} />
                                 )}
                                 {isFailedFunctionMessage && messageDetails?.function_name !== '' && (
                                     <CustomCollapse status={false} header="Function" data={messageDetails?.function_name} message={true} />

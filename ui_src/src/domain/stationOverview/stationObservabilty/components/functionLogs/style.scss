@@ -2,4 +2,9 @@
     white-space: pre;
     height: 150px;
     overflow-y: scroll;
+    .spinner {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
 }

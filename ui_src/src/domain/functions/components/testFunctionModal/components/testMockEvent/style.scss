@@ -54,11 +54,11 @@
             height: calc(100% - 20px);
             display: flex;
             flex-direction: column;
-            gap: 10px;
+
             .title-span {
                 display: flex;
-                align-items: flex-end;
-                gap: 5px;
+                align-items: center;
+                gap: 10px;
                 .title {
                     font-size: 14px;
                     font-family: 'InterSemiBold';
@@ -98,5 +98,16 @@
                 }
             }
         }
+    }
+    .title-inputs {
+        font-size: 14px;
+        font-family: 'InterSemiBold';
+        margin-top: 10px;
+    }
+    .description-inputs {
+        margin-bottom: 10px;
+        font-size: 12px;
+        font-family: 'Inter';
+        color: #475467;
     }
 }

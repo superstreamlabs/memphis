@@ -37,10 +37,11 @@ const FunctionsGuide = ({ handleClose, handleConfirm }) => {
         {
             name: (
                 <>
+                    <label>Clone or create a new GitHub repository </label>
                     <label className="link" onClick={() => handleCloneClick('functions')}>
-                        Clone
+                        {' '}
+                        (templates can be found here)
                     </label>
-                    <label> or create a new repository (At the moment, support is available for GitHub)</label>
                 </>
             )
         },
@@ -50,7 +51,7 @@ const FunctionsGuide = ({ handleClose, handleConfirm }) => {
                     <label>Code your function based on the following </label>
                     <label
                         className="link"
-                        onClick={() => window.open(`https://github.com/memphisdev/memphis-dev-functions/blob/master/README.md#rocket-step-by-step-guide`)}
+                        onClick={() => window.open(`https://docs.memphis.dev/memphis/memphis-functions/getting-started#how-to-develop-a-new-private-function`)}
                     >
                         guide
                     </label>
