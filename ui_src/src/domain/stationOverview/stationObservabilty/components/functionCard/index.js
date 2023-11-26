@@ -24,6 +24,7 @@ import { convertLongNumbers } from '../../../../../services/valueConvertor';
 import { StationStoreContext } from '../../../';
 import FunctionDetails from '../../../../functions/components/functionDetails';
 import { Drawer } from 'antd';
+import Tooltip from '../../../../../components/tooltip/tooltip';
 
 export default function FunctionCard({
     onClick,
@@ -165,16 +166,22 @@ export default function FunctionCard({
     );
 
     return (
-        <div className={`ms-function-card ${!functionItem?.activated ? 'deactivated' : undefined}`} onClick={() => isActive && onClick && onClick()}>
-            <div className="ms-function-card-badge-left">
-                <FunctionProcessingWarningIcon />
-                {convertLongNumbers(functionItem?.pending_messages || 0)}
-            </div>
-            <div className="ms-function-card-top">
-                <div className="ms-function-card-badge-top">
-                    <FunctionProcessingIcon />
-                    {convertLongNumbers(functionItem?.in_process_messages || 0)}
+        <div className={`ms-function-card`} onClick={() => isActive && onClick && onClick()}>
+            <Tooltip text="Awaiting messages">
+                <div className={`ms-function-card-badge-left ${!selectedFunction?.activated ? 'deactivated' : undefined}`}>
+                    <FunctionProcessingWarningIcon />
+                    {convertLongNumbers(selectedFunction?.pending_messages || 0)}
                 </div>
+            </Tooltip>
+            <div className={`ms-function-card-top`}>
+                {
+                    <Tooltip text="In process">
+                        <div className={`ms-function-card-badge-top ${!selectedFunction?.activated ? 'deactivated' : undefined}`}>
+                            <FunctionProcessingIcon />
+                            {convertLongNumbers(functionItem?.in_process_messages || 0)}
+                        </div>
+                    </Tooltip>
+                }
                 <div className={`ms-function-card-inner ${selected ? 'selected' : undefined}`}>
                     <div className="ms-function-card-header">
                         <div className="ms-function-card-header-action">
@@ -192,18 +199,20 @@ export default function FunctionCard({
                             </Popover>
                         </div>
                     </div>
-                    <div className="ms-function-card-title">
+
+                    <div className={`ms-function-card-title ${!selectedFunction?.activated ? 'deactivated-function' : undefined}`}>
                         <FunctionBoxTitleIcon />
                         <div>
-                            <span>{functionItem.name}</span>
-                            {isGeneralView && <p>Avg. processing time : {functionItem.metrics?.average_processing_time}s</p>}
+                            <span>{selectedFunction?.name}</span>
                         </div>
                     </div>
                 </div>
-                <div className="ms-function-card-badge-bottom">
-                    <FunctionProcessingIcon />
-                    {convertLongNumbers(functionItem?.dls_msgs_count || 0)}
-                </div>
+                <Tooltip text="Dead-letter">
+                    <div className={`ms-function-card-badge-bottom ${!selectedFunction?.activated ? 'deactivated' : undefined}`}>
+                        <FunctionProcessingIcon />
+                        {convertLongNumbers(functionItem?.dls_msgs_count || 0)}
+                    </div>
+                </Tooltip>
             </div>
             <Drawer
                 placement="right"

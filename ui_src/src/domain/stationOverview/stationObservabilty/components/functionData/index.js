@@ -48,7 +48,6 @@ const FunctionData = ({ functionDetails }) => {
     }, [attachedFunctionDlsMsgs]);
 
     const getMessageDetails = async () => {
-        setMessageDetails({});
         setLoadMessageData(true);
         try {
             const data = await httpRequest(
@@ -56,6 +55,7 @@ const FunctionData = ({ functionDetails }) => {
                 `${ApiEndpoints.GET_MESSAGE_DETAILS}?dls_type=functions&station_name=${stationState?.stationMetaData?.name}&is_dls=true&partition_number=${stationState?.stationPartition}&message_id=${selectedMsg?.id}&message_seq=${selectedMsg?.message_seq}&function_id=${functionDetails?.function?.id}&row_number=-1`
             );
             setMessageDetails(data);
+            setLoadMessageData(false);
         } catch (error) {
             setLoadMessageData(false);
         }

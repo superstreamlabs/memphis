@@ -22,7 +22,7 @@ import { generateJSONWithMaxLength } from '../../../../../../services/valueConve
 import { httpRequest } from '../../../../../../services/http';
 import { ApiEndpoints } from '../../../../../../const/apiEndpoints';
 
-const TestMockEvent = ({ functionDetails, open }) => {
+const TestMockEvent = ({ functionDetails, open, selectedVersion }) => {
     const [testMock, setTestMock] = useState('');
     const [inputs, setInputs] = useState(null);
     const [testResultData, setTestResult] = useState(null);
@@ -54,7 +54,9 @@ const TestMockEvent = ({ functionDetails, open }) => {
                     '&function_name=' +
                     encodeURI(functionDetails?.function_name) +
                     '&path=' +
-                    encodeURI(`${functionDetails?.function_name}/test.json`),
+                    encodeURI(`${functionDetails?.function_name}/test.json`) +
+                    '&version=' +
+                    encodeURI(selectedVersion === 'latest' ? '' : selectedVersion),
                 {},
                 {},
                 {},

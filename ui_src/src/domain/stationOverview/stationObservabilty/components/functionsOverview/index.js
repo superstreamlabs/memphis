@@ -250,7 +250,7 @@ const FunctionsOverview = ({ referredFunction, dismissFunction, moveToGenralView
                                                     setOpenBottomDetails(true);
                                                 }}
                                                 updatedFunctionList={(data) => stationDispatch({ type: 'UPDATE_FUNCTION_LIST', payload: data?.functions['1'] })}
-                                                key={`function-tab-2-${functionItem?.id}`}
+                                                key={`${functionItem?.id}-${index}`}
                                                 changeActivition={(e) => changeActivition(functionItem?.id, e)}
                                                 onDeleteFunction={() => handleDeleteFunction(index)}
                                                 selected={currentFunction?.id === functionItem?.id}
