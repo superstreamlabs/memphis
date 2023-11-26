@@ -54,11 +54,21 @@ const FunctionData = ({ functionDetails }) => {
                 'GET',
                 `${ApiEndpoints.GET_MESSAGE_DETAILS}?dls_type=functions&station_name=${stationState?.stationMetaData?.name}&is_dls=true&partition_number=${stationState?.stationPartition}&message_id=${selectedMsg?.id}&message_seq=${selectedMsg?.message_seq}&function_id=${functionDetails?.function?.id}&row_number=-1`
             );
-            setMessageDetails(data);
-            setLoadMessageData(false);
+            arrangeData(data);
         } catch (error) {
             setLoadMessageData(false);
         }
+    };
+
+    const arrangeData = (data) => {
+        let updatedData = {};
+        updatedData['function_name'] = data?.function_name;
+        updatedData['message'] = data?.message;
+        updatedData['message']['data'] = messageParser('string', data?.message?.data);
+        updatedData['producer'] = data?.producer;
+        updatedData['error'] = data?.validation_error;
+        setMessageDetails(updatedData);
+        setLoadMessageData(false);
     };
 
     useEffect(() => {
@@ -162,7 +172,7 @@ const FunctionData = ({ functionDetails }) => {
                                         language={'json'}
                                         height="calc(100%)"
                                         width="calc(100%)"
-                                        value={JSON.stringify(messageDetails?.message, null, 2)}
+                                        value={JSON.stringify(messageDetails, null, 2)}
                                     />
                                 )}
                             </preview>
