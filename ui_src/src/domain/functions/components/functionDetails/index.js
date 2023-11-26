@@ -318,8 +318,16 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                                     ? '34px'
                                                     : '100px'
                                             }
-                                            backgroundColorType={selectedFunction?.installed && !selectedFunction?.updates_available ? 'white' : 'purple'}
-                                            border={selectedFunction?.installed && !selectedFunction?.updates_available ? 'gray-light' : null}
+                                            backgroundColorType={
+                                                (selectedFunction?.installed || selectedFunction?.installed_in_progress) && !selectedFunction?.updates_available
+                                                    ? 'white'
+                                                    : 'purple'
+                                            }
+                                            border={
+                                                (selectedFunction?.installed || selectedFunction?.installed_in_progress) && !selectedFunction?.updates_available
+                                                    ? 'gray-light'
+                                                    : null
+                                            }
                                             colorType={'white'}
                                             radiusType={'circle'}
                                             fontSize="12px"
