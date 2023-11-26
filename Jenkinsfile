@@ -300,7 +300,7 @@ pipeline {
     stage('Install gh + create new release'){
         when { branch 'latest' }
         steps {
-	        withCredentials([sshUserPrivateKey(keyFileVariable:'check',credentialsId: 'main-github')]) {
+		withCredentials([string(credentialsId: 'gh_token', variable: 'GH_TOKEN')]) {
 	            sh """
 	                sudo dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo -y
                     sudo dnf install gh -y
