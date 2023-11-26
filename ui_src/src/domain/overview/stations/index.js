@@ -114,16 +114,7 @@ const Stations = ({ createStationTrigger }) => {
                                 className="modal-btn"
                                 width="160px"
                                 height="34px"
-                                placeholder={
-                                    isCloud() && !state?.allowedActions?.can_create_stations ? (
-                                        <span className="upgrade">
-                                            Create a new station
-                                            <FaArrowCircleUp className="lock-feature-icon" />
-                                        </span>
-                                    ) : (
-                                        <span className="create-new">Create a new station</span>
-                                    )
-                                }
+                                placeholder={`Create a new station`}
                                 colorType="white"
                                 radiusType="circle"
                                 backgroundColorType="purple"

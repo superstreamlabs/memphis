@@ -199,7 +199,7 @@ const SlackIntegration = ({ close, value }) => {
 
                     <Form name="form" form={creationForm} autoComplete="off" className="integration-form">
                         {tabValue === 'Details' && <IntegrationDetails integrateDesc={slackConfiguration.integrateDesc} />}
-                        {tabValue === 'Logs details' && <IntegrationLogs integrationName={'slack'} />}
+                        {tabValue === 'Logs' && <IntegrationLogs integrationName={'slack'} />}
                         {tabValue === 'Configuration' && (
                             <div className="integration-body">
                                 <IntegrationDetails integrateDesc={slackConfiguration.integrateDesc} />

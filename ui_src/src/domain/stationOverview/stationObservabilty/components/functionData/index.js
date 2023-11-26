@@ -62,7 +62,7 @@ const FunctionData = ({ functionDetails }) => {
     };
 
     useEffect(() => {
-        getMessageDetails();
+        selectedMsg && getMessageDetails();
     }, [selectedMsg]);
 
     const getAttachedFunctionDlsMsgs = async () => {
