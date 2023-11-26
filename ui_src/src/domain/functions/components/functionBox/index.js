@@ -39,6 +39,7 @@ import AttachFunctionModal from '../attachFunctionModal';
 import CloudModal from '../../../../components/cloudModal';
 import TestMockEvent from '../../components/testFunctionModal/components/testMockEvent';
 import { Context } from '../../../../hooks/store';
+import TooltipComponent from '../../../../components/tooltip/tooltip';
 
 function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null, onApply, doneUninstall, startInstallation, funcIndex, referredFunction }) {
     const [state, dispatch] = useContext(Context);
@@ -206,40 +207,46 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                     disabled={!functionDetails?.installed || functionDetails?.installed_in_progress}
                                 />
                             )}
-                            {isValid && (!isCloud() || functionDetails?.installed) && (
-                                <Button
-                                    width="100px"
-                                    height="34px"
-                                    placeholder={
-                                        isCloud() && !state?.allowedActions?.can_apply_functions ? (
-                                            <span className="attach-btn">
-                                                <label>Attach</label>
-                                                <FaArrowCircleUp className="lock-feature-icon" />
-                                            </span>
-                                        ) : (
-                                            <span className="attach-btn">Attach</span>
-                                        )
-                                    }
-                                    purple-light
-                                    colorType="white"
-                                    radiusType="circle"
-                                    backgroundColorType={'purple'}
-                                    fontSize="12px"
-                                    fontFamily="InterSemiBold"
-                                    disabled={isCloud() && functionDetails?.installed_in_progress}
-                                    onClick={() => {
-                                        if (!isCloud()) setCloudModal(true);
-                                        else if (isTagsOn) setChooseStationModal(true);
-                                        else {
-                                            state?.allowedActions?.can_apply_functions ? onApply() : setOpenUpgradeModal(true);
-                                        }
-                                    }}
-                                />
+                            {(!isCloud() || functionDetails?.installed) && (
+                                <TooltipComponent text={functionDetails?.cloned_updates_invalid_reason}>
+                                    <span>
+                                        <Button
+                                            width="100px"
+                                            height="34px"
+                                            placeholder={
+                                                isCloud() && !state?.allowedActions?.can_apply_functions ? (
+                                                    <span className="attach-btn">
+                                                        <label>Attach</label>
+                                                        <FaArrowCircleUp className="lock-feature-icon" />
+                                                    </span>
+                                                ) : (
+                                                    <span className="attach-btn">Attach</span>
+                                                )
+                                            }
+                                            purple-light
+                                            colorType="white"
+                                            radiusType="circle"
+                                            backgroundColorType={'purple'}
+                                            fontSize="12px"
+                                            fontFamily="InterSemiBold"
+                                            disabled={(isCloud() && functionDetails?.installed_in_progress) || !isValid}
+                                            onClick={() => {
+                                                if (!isCloud()) setCloudModal(true);
+                                                else if (isTagsOn) setChooseStationModal(true);
+                                                else {
+                                                    state?.allowedActions?.can_apply_functions ? onApply() : setOpenUpgradeModal(true);
+                                                }
+                                            }}
+                                        />
+                                    </span>
+                                </TooltipComponent>
                             )}
 
                             {isCloud() && (
                                 <Button
-                                    width={functionDetails?.installed && !functionDetails?.updates_available ? '34px' : '100px'}
+                                    width={
+                                        (functionDetails?.installed || functionDetails?.installed_in_progress) && !functionDetails?.updates_available ? '34px' : '100px'
+                                    }
                                     height="34px"
                                     placeholder={
                                         functionDetails?.installed_in_progress ? (
@@ -324,7 +331,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
             </Drawer>
             <CloudModal type="upgrade" open={openUpgradeModal} handleClose={() => setOpenUpgradeModal(false)} />
             <Modal width={'75vw'} height={'80vh'} clickOutside={() => setIsTestFunctionModalOpen(false)} open={isTestFunctionModalOpen} displayButtons={false}>
-                <TestMockEvent functionDetails={funcDetails} open={isTestFunctionModalOpen} />
+                <TestMockEvent functionDetails={funcDetails} open={isTestFunctionModalOpen} selectedVersion="latest" />
             </Modal>
         </>
     );

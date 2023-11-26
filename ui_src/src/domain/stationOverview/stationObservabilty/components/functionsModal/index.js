@@ -263,7 +263,7 @@ const FunctionsModal = ({ applyFunction, referredFunction }) => {
                             <div className="functions-list">
                                 {filteredData?.map((functionItem, index) => (
                                     <FunctionBox
-                                        key={index}
+                                        key={`func-index-${index}`}
                                         funcDetails={functionItem}
                                         integrated={isIntegrated}
                                         referredFunction={referredFunction}

@@ -281,7 +281,7 @@ function FunctionList({ tabPrivate }) {
             <>
                 {filteredInstalledData?.map((func, index) => (
                     <FunctionBox
-                        key={index}
+                        key={`installed-${index}`}
                         funcDetails={func}
                         funcIndex={index}
                         integrated={integrated}
@@ -294,7 +294,7 @@ function FunctionList({ tabPrivate }) {
             <>
                 {filteredOtherData?.map((func, index) => (
                     <FunctionBox
-                        key={index}
+                        key={`other-${index}`}
                         funcDetails={func}
                         integrated={integrated}
                         funcIndex={index}

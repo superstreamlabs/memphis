@@ -80,6 +80,10 @@ const Messages = ({ referredFunction }) => {
     const stationName = url.split('stations/')[1];
 
     useEffect(() => {
+        activeTab === 'general' && setTabValue('Messages');
+    }, [activeTab]);
+
+    useEffect(() => {
         referredFunction && setActiveTab('functions');
         setChoseReferredFunction(referredFunction);
     }, [referredFunction]);

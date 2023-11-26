@@ -39,6 +39,7 @@ import SelectComponent from '../../../../components/select';
 import CloudModal from '../../../../components/cloudModal';
 import TestMockEvent from '../testFunctionModal/components/testMockEvent';
 import Modal from '../../../../components/modal';
+import Tooltip from '../../../../components/tooltip/tooltip';
 import { OWNER } from '../../../../const/globalConst';
 import { BsFileEarmarkCode, BsGit } from 'react-icons/bs';
 import { GoRepo } from 'react-icons/go';
@@ -181,7 +182,9 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                     '&function_name=' +
                     encodeURI(metaData?.function_name) +
                     '&path=' +
-                    encodeURI(path)
+                    encodeURI(path) +
+                    '&version=' +
+                    encodeURI(selectedVersion === 'latest' ? '' : selectedVersion)
             );
             setFileContent(response?.content);
         } catch (e) {
@@ -266,26 +269,32 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                             <>
                                 <div className="action-section-btn">
                                     <div className="header-flex">
-                                        <Button
-                                            placeholder={
-                                                isCloud() && !state?.allowedActions?.can_apply_functions ? (
-                                                    <span className="attach-btn">
-                                                        <label>Attach</label>
-                                                        <FaArrowCircleUp className="lock-feature-icon" />
-                                                    </span>
-                                                ) : (
-                                                    <span className="attach-btn">Attach</span>
-                                                )
-                                            }
-                                            width={'100px'}
-                                            backgroundColorType={'purple'}
-                                            colorType={'white'}
-                                            radiusType={'circle'}
-                                            fontSize="12px"
-                                            fontFamily="InterSemiBold"
-                                            onClick={() => (!isCloud() || state?.allowedActions?.can_apply_functions ? clickApply('attach') : setOpenUpgradeModal(true))}
-                                            disabled={selectedFunction?.installed_in_progress || !selectedFunction?.installed}
-                                        />
+                                        <Tooltip text={selectedFunction?.cloned_updates_invalid_reason}>
+                                            <span>
+                                                <Button
+                                                    placeholder={
+                                                        isCloud() && !state?.allowedActions?.can_apply_functions ? (
+                                                            <span className="attach-btn">
+                                                                <label>Attach</label>
+                                                                <FaArrowCircleUp className="lock-feature-icon" />
+                                                            </span>
+                                                        ) : (
+                                                            <span className="attach-btn">Attach</span>
+                                                        )
+                                                    }
+                                                    width={'100px'}
+                                                    backgroundColorType={'purple'}
+                                                    colorType={'white'}
+                                                    radiusType={'circle'}
+                                                    fontSize="12px"
+                                                    fontFamily="InterSemiBold"
+                                                    onClick={() =>
+                                                        !isCloud() || state?.allowedActions?.can_apply_functions ? clickApply('attach') : setOpenUpgradeModal(true)
+                                                    }
+                                                    disabled={selectedFunction?.installed_in_progress || !selectedFunction?.installed}
+                                                />
+                                            </span>
+                                        </Tooltip>
                                     </div>
                                     <div className="header-flex">
                                         <Button
@@ -304,7 +313,11 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                                     </div>
                                                 )
                                             }
-                                            width={selectedFunction?.installed && !selectedFunction?.updates_available ? '34px' : '100px'}
+                                            width={
+                                                (selectedFunction?.installed || selectedFunction?.installed_in_progress) && !selectedFunction?.updates_available
+                                                    ? '34px'
+                                                    : '100px'
+                                            }
                                             backgroundColorType={selectedFunction?.installed && !selectedFunction?.updates_available ? 'white' : 'purple'}
                                             border={selectedFunction?.installed && !selectedFunction?.updates_available ? 'gray-light' : null}
                                             colorType={'white'}
@@ -313,7 +326,9 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                             fontFamily="InterSemiBold"
                                             onClick={() => {
                                                 if (selectedFunction?.installed) {
-                                                    handleUnInstall();
+                                                    if (selectedFunction?.updates_available) {
+                                                        handleInstall();
+                                                    } else handleUnInstall();
                                                 } else {
                                                     handleInstall();
                                                 }
@@ -370,7 +385,7 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                 <CustomTabs tabs={['Details', 'Code']} value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
             </div>
             <Modal width={'75vw'} height={'80vh'} clickOutside={() => setIsTestFunctionModalOpen(false)} open={isTestFunctionModalOpen} displayButtons={false}>
-                <TestMockEvent functionDetails={selectedFunction} open={isTestFunctionModalOpen} />
+                <TestMockEvent functionDetails={selectedFunction} open={isTestFunctionModalOpen} selectedVersion={selectedVersion} />
             </Modal>
             {tabValue === 'Details' && (
                 <code is="x3d">
@@ -485,17 +500,35 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                     </div>
                     <div className="code-content-section">
                         <>
-                            <Button
-                                placeholder="Test"
-                                width={'100px'}
-                                backgroundColorType={'orange'}
-                                colorType={'black'}
-                                radiusType={'circle'}
-                                fontSize="12px"
-                                fontFamily="InterSemiBold"
-                                onClick={() => setIsTestFunctionModalOpen(true)}
-                                disabled={!selectedFunction?.installed}
-                            />
+                            {!selectedFunction?.installed ? (
+                                <Tooltip text="Install the function to enable test">
+                                    <span>
+                                        <Button
+                                            placeholder="Test"
+                                            width={'100px'}
+                                            backgroundColorType={'orange'}
+                                            colorType={'black'}
+                                            radiusType={'circle'}
+                                            fontSize="12px"
+                                            fontFamily="InterSemiBold"
+                                            onClick={() => setIsTestFunctionModalOpen(true)}
+                                            disabled={!selectedFunction?.installed}
+                                        />
+                                    </span>
+                                </Tooltip>
+                            ) : (
+                                <Button
+                                    placeholder="Test"
+                                    width={'100px'}
+                                    backgroundColorType={'orange'}
+                                    colorType={'black'}
+                                    radiusType={'circle'}
+                                    fontSize="12px"
+                                    fontFamily="InterSemiBold"
+                                    onClick={() => setIsTestFunctionModalOpen(true)}
+                                    disabled={!selectedFunction?.installed}
+                                />
+                            )}
                             <div className="code-content">
                                 {isFileContentLoading ? (
                                     <Spinner />
