@@ -71,6 +71,12 @@
             padding: 10px;
             border: #f8f8f8 solid;
             border-width: 1px 1px 0px 1px;
+            .loading {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 100%;
+            }
         }
     }
 }

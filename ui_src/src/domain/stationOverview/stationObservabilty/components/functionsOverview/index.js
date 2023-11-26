@@ -188,7 +188,7 @@ const FunctionsOverview = ({ referredFunction, dismissFunction, moveToGenralView
     const statisticsData = [
         { name: 'Awaiting msgs', data: stationState?.stationFunctions?.total_awaiting_messages?.toLocaleString() },
         { name: 'In process', data: stationState?.stationFunctions?.total_processed_messages?.toLocaleString() },
-        { name: 'Total invocations', data: stationState?.stationFunctions?.total_invocations?.toLocaleString() || 0 },
+        { name: 'Total invocations', data: stationState?.stationFunctions?.total_invocations?.toLocaleString() },
         { name: 'Avg Error rate', data: stationState?.stationFunctions?.average_error_rate },
         {
             name: 'Ordering',
@@ -254,7 +254,6 @@ const FunctionsOverview = ({ referredFunction, dismissFunction, moveToGenralView
                                                 changeActivition={(e) => changeActivition(functionItem?.id, e)}
                                                 onDeleteFunction={() => handleDeleteFunction(index)}
                                                 selected={currentFunction?.id === functionItem?.id}
-                                                requestInfo={() => setOpenFunctionDetails(true)}
                                             />
                                         ))}
                                         <div

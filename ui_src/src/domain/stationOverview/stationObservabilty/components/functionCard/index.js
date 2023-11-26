@@ -17,10 +17,13 @@ import { HiEllipsisVertical } from 'react-icons/hi2';
 import { ReactComponent as FunctionBoxTitleIcon } from '../../../../../assets/images/functionCardIcon.svg';
 import { ReactComponent as FunctionProcessingIcon } from '../../../../../assets/images/proccessingIcon.svg';
 import { ReactComponent as FunctionProcessingWarningIcon } from '../../../../../assets/images/processingWarningIcon.svg';
+import { IoClose } from 'react-icons/io5';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
 import { convertLongNumbers } from '../../../../../services/valueConvertor';
 import { StationStoreContext } from '../../../';
+import FunctionDetails from '../../../../functions/components/functionDetails';
+import { Drawer } from 'antd';
 
 export default function FunctionCard({
     onClick,
@@ -31,16 +34,25 @@ export default function FunctionCard({
     isGeneralView,
     isDeactive = false,
     selected,
-    changeActivition,
-    requestInfo
+    changeActivition
 }) {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [isActive, setIsActive] = useState(true);
     const [popoverFunctionContextMenu, setPopoverFunctionContextMenu] = useState(false);
+    const [openFunctionDetails, setOpenFunctionDetails] = useState(false);
+    const [selectedFunction, setSelectedFunction] = useState();
 
     useEffect(() => {
         setIsActive(!isDeactive);
     }, [isDeactive]);
+
+    useEffect(() => {
+        let func = functionItem;
+        func.stars = Math.random() + 4;
+        func.rates = Math.floor(Math.random() * (80 - 50 + 1)) + 50;
+        func.forks = Math.floor(Math.random() * (100 - 80 + 1)) + 80;
+        setSelectedFunction(func);
+    }, [functionItem]);
 
     const functionContextMenuStyles = {
         borderRadius: '8px',
@@ -116,7 +128,7 @@ export default function FunctionCard({
                 onClick={(e) => {
                     e.stopPropagation();
                     setPopoverFunctionContextMenu(false);
-                    requestInfo();
+                    setOpenFunctionDetails(true);
                 }}
             >
                 <div className="item">
@@ -193,6 +205,21 @@ export default function FunctionCard({
                     {convertLongNumbers(functionItem?.dls_msgs_count || 0)}
                 </div>
             </div>
+            <Drawer
+                placement="right"
+                size={'large'}
+                className="function-drawer"
+                onClose={(e) => {
+                    e.stopPropagation();
+                    setOpenFunctionDetails(false);
+                }}
+                destroyOnClose={true}
+                open={openFunctionDetails}
+                maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
+                closeIcon={<IoClose style={{ color: '#D1D1D1', width: '25px', height: '25px' }} />}
+            >
+                <FunctionDetails selectedFunction={selectedFunction} integrated={true} stationView />
+            </Drawer>
         </div>
     );
 }

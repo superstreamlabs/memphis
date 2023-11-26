@@ -152,6 +152,9 @@ dynamic-integration {
             justify-content: center;
             align-items: center;
         }
+        .api-details-github {
+            height: 100% !important;
+        }
 
         .api-details {
             height: calc(100% - 55px);

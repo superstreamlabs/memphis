@@ -12,18 +12,19 @@
 
 import './style.scss';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
 import Editor, { loader } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
-
+import { StationStoreContext } from '../../../';
 import CustomTabs from '../../../../../components/Tabs';
 import FunctionLogs from '../functionLogs';
 import { ReactComponent as MetricsIcon } from '../../../../../assets/images/metricsIcon.svg';
 import { ReactComponent as MetricsClockIcon } from '../../../../../assets/images/metricsClockIcon.svg';
 import { ReactComponent as MetricsErrorIcon } from '../../../../../assets/images/metricsErrorIcon.svg';
 import { parsingDate, messageParser } from '../../../../../services/valueConvertor';
+import Spinner from '../../../../../components/spinner';
 const tabValuesList = ['Information', 'Logs', 'Dead-letter'];
 loader.init();
 loader.config({ monaco });
@@ -32,10 +33,37 @@ const FunctionData = ({ functionDetails }) => {
     const [tabValue, setTabValue] = useState('Information');
     const [attachedFunctionDlsMsgs, setAttachedFunctionDlsMsgs] = useState([]);
     const [selectedMsg, setSelectedMsg] = useState(null);
+    const [messageDetails, setMessageDetails] = useState({});
+    const [stationState, stationDispatch] = useContext(StationStoreContext);
+    const [loadMessageData, setLoadMessageData] = useState(false);
 
     useEffect(() => {
         tabValue === tabValuesList[2] && getAttachedFunctionDlsMsgs();
     }, [tabValue]);
+
+    useEffect(() => {
+        if (attachedFunctionDlsMsgs?.length > 0) {
+            setSelectedMsg(attachedFunctionDlsMsgs[0]);
+        }
+    }, [attachedFunctionDlsMsgs]);
+
+    const getMessageDetails = async () => {
+        setMessageDetails({});
+        setLoadMessageData(true);
+        try {
+            const data = await httpRequest(
+                'GET',
+                `${ApiEndpoints.GET_MESSAGE_DETAILS}?dls_type=functions&station_name=${stationState?.stationMetaData?.name}&is_dls=true&partition_number=${stationState?.stationPartition}&message_id=${selectedMsg?.id}&message_seq=${selectedMsg?.message_seq}&function_id=${functionDetails?.function?.id}&row_number=-1`
+            );
+            setMessageDetails(data);
+        } catch (error) {
+            setLoadMessageData(false);
+        }
+    };
+
+    useEffect(() => {
+        getMessageDetails();
+    }, [selectedMsg]);
 
     const getAttachedFunctionDlsMsgs = async () => {
         try {
@@ -88,7 +116,7 @@ const FunctionData = ({ functionDetails }) => {
             {tabValue === tabValuesList[1] && <FunctionLogs functionId={functionDetails?.function?.id} />}
             {tabValue === tabValuesList[2] && (
                 <dls is="x3d">
-                    {attachedFunctionDlsMsgs && attachedFunctionDlsMsgs?.length > 0 && (
+                    {attachedFunctionDlsMsgs && attachedFunctionDlsMsgs?.length > 0 ? (
                         <>
                             <list is="x3d">
                                 <div className="msg-item-header">
@@ -103,15 +131,20 @@ const FunctionData = ({ functionDetails }) => {
                                                 onClick={() => setSelectedMsg(message)}
                                                 key={`dls-${index}`}
                                             >
-                                                <label className="date">{parsingDate(message?.message_details?.time_sent, true, true)}</label>
-                                                <label className="text">{messageParser('json', message?.message_details?.data)}</label>
+                                                <label className="date">{parsingDate(message?.message?.time_sent, true, true)}</label>
+                                                <label className="text">{messageParser('json', message?.message?.data)}</label>
                                             </div>
                                         );
                                     })}
                                 </div>
                             </list>
                             <preview is="x3d">
-                                {selectedMsg && (
+                                {selectedMsg && loadMessageData && (
+                                    <div className="loading">
+                                        <Spinner />
+                                    </div>
+                                )}
+                                {selectedMsg && !loadMessageData && (
                                     <Editor
                                         options={{
                                             minimap: { enabled: false },
@@ -129,11 +162,15 @@ const FunctionData = ({ functionDetails }) => {
                                         language={'json'}
                                         height="calc(100%)"
                                         width="calc(100%)"
-                                        value={JSON.stringify(selectedMsg?.message_details, null, 4)}
+                                        value={JSON.stringify(messageDetails?.message, null, 2)}
                                     />
                                 )}
                             </preview>
                         </>
+                    ) : (
+                        <div className="no-messages">
+                            <p>No messages to show</p>
+                        </div>
                     )}
                 </dls>
             )}

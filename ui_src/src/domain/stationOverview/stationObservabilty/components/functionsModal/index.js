@@ -32,7 +32,7 @@ import { ReactComponent as LockIcon } from '../../../../../assets/images/lockIco
 import { ReactComponent as RefreshIcon } from '../../../../../assets/images/refresh.svg';
 import { StationStoreContext } from '../../../';
 import { SyncOutlined } from '@ant-design/icons';
-
+import { showMessages } from '../../../../../services/genericServices';
 import { OWNER } from '../../../../../const/globalConst';
 import TooltipComponent from '../../../../../components/tooltip/tooltip';
 
@@ -49,10 +49,20 @@ const FunctionsModal = ({ applyFunction, referredFunction }) => {
     const [clickedFunction, setClickedFunction] = useState(null);
     const [selectedFunction, setSelectedFunction] = useState(null);
     const [stationState, stationDispatch] = useContext(StationStoreContext);
+    const [tabsCounter, setTabsCounter] = useState([0, 0, 0]);
+
+    const TABS = getFunctionsTabs();
 
     useEffect(() => {
         getAllFunctions();
     }, []);
+
+    useEffect(() => {
+        const memphisCount = filteredData?.filter((func) => func?.owner === OWNER)?.length;
+        const privateCount = filteredData?.filter((func) => func?.owner !== OWNER)?.length;
+        setTabsCounter([memphisCount + privateCount, memphisCount, privateCount]);
+    }, [filteredData]);
+
     useEffect(() => {
         let shouldRefresh = false;
         shouldRefresh = functionList?.some((func) => {
@@ -155,7 +165,23 @@ const FunctionsModal = ({ applyFunction, referredFunction }) => {
         }
     };
 
-    const TABS = getFunctionsTabs();
+    const handleInstall = async (clickedFunction) => {
+        const bodyRequest = {
+            function_name: clickedFunction?.function_name,
+            repo: clickedFunction?.repo,
+            owner: clickedFunction?.owner,
+            branch: clickedFunction?.branch,
+            scm_type: clickedFunction?.scm,
+            by_memphis: clickedFunction?.by_memphis
+        };
+        try {
+            await httpRequest('POST', ApiEndpoints.INSTALL_FUNCTION, bodyRequest);
+            showMessages('success', `We are ${clickedFunction?.updates_available ? 'updating' : 'installing'} the function for you. We will let you know once its done`);
+            getAllFunctions();
+        } catch (e) {
+            return;
+        }
+    };
 
     const handleInputsChange = (inputs) => {
         const newFunction = { ...selectedFunction };
@@ -190,6 +216,7 @@ const FunctionsModal = ({ applyFunction, referredFunction }) => {
                             : onFunctionApply(clickedFunction);
                     }}
                     handleUnInstall={() => handleUnInstall(clickedFunction)}
+                    handleInstall={() => handleInstall(clickedFunction)}
                 />
             ) : (
                 <>
@@ -213,7 +240,7 @@ const FunctionsModal = ({ applyFunction, referredFunction }) => {
                         </span>
                     </div>
                     <div className="fdm-body">
-                        <CustomTabs tabs={TABS} tabValue={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
+                        <CustomTabs tabs={TABS} tabValue={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabsCounter={tabsCounter} />
                         <SearchInput
                             placeholder="Search here"
                             colorType="navy"

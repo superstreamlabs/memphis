@@ -551,7 +551,6 @@ export const isCheckoutCompletedTrue = (url) => {
 export const showUpgradePlan = () => {
     return isCloud() && localStorage.getItem(LOCAL_STORAGE_PLAN) !== planType.BUSINESS;
 };
-
 export const getFunctionsTabs = () => [
     {
         name: 'All',

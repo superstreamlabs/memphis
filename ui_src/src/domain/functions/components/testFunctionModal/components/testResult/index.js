@@ -17,6 +17,7 @@ import Tag from '../../../../../../components/tag';
 import RadioButton from '../../../../../../components/radioButton';
 import Spinner from '../../../../../../components/spinner';
 import Copy from '../../../../../../components/copy';
+import Tooltip from '../../../../../../components/tooltip/tooltip';
 
 import { ColorPalette } from '../../../../../../const/globalConst';
 
@@ -26,11 +27,11 @@ const options = [
         value: 'All'
     },
     {
-        label: 'Success',
+        label: <Tooltip text="These messages will be passed to the next function in the chain">Success</Tooltip>,
         value: 'Success'
     },
     {
-        label: 'Failure',
+        label: <Tooltip text="These messages will end in the dead letter">Failure</Tooltip>,
         value: 'Failure'
     },
     {
@@ -124,7 +125,9 @@ const TestResult = ({ testResultData, loading }) => {
                 vertical={false}
                 height="25px"
                 fontFamily="InterSemiBold"
-                options={!testResult || testResult?.error === '' ? options : [{ label: 'Error', value: 'Error' }]}
+                options={
+                    !testResult || testResult?.error === '' ? options : [{ label: <Tooltip text="The function failed during execution">Error</Tooltip>, value: 'Error' }]
+                }
                 radioStyle="radiobtn-capitalize"
                 radioValue={responseTab}
                 onChange={(e) => setResponseTab(e.target.value)}
