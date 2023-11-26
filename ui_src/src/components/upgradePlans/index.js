@@ -92,6 +92,7 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
                 setTimeout(() => {
                     showMessages('success', 'Your plan has been successfully updatead.');
                 }, 1000);
+                getAllowedActions();
                 isExternal ? onClose() : setUpgradeModalOpen(false);
                 localStorage.setItem(LOCAL_STORAGE_PLAN, data.plan);
             }
@@ -104,7 +105,6 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
                 setReasonDowngrade('');
                 setIsCheck([]);
             }
-            getAllowedActions();
         }
     };
 

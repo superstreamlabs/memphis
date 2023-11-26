@@ -265,8 +265,14 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                     }
                                     colorType="white"
                                     radiusType="circle"
-                                    backgroundColorType={functionDetails?.installed && !functionDetails?.updates_available ? 'white' : 'purple'}
-                                    border={functionDetails?.installed && !functionDetails?.updates_available ? 'gray-light' : null}
+                                    backgroundColorType={
+                                        (functionDetails?.installed || functionDetails?.installed_in_progress) && !functionDetails?.updates_available ? 'white' : 'purple'
+                                    }
+                                    border={
+                                        (functionDetails?.installed || functionDetails?.installed_in_progress) && !functionDetails?.updates_available
+                                            ? 'gray-light'
+                                            : null
+                                    }
                                     fontSize="12px"
                                     fontFamily="InterSemiBold"
                                     disabled={!isValid || functionDetails?.installed_in_progress}
