@@ -46,7 +46,7 @@ import { ColorPalette } from './globalConst';
 import { Divider } from 'antd';
 
 export const getTabList = (intgrationName) => {
-    return INTEGRATION_LIST[intgrationName]?.hasLogs ? ['Configuration', 'Logs details'] : ['Configuration'];
+    return INTEGRATION_LIST[intgrationName]?.hasLogs ? ['Configuration', 'Logs'] : ['Configuration'];
 };
 
 export const CATEGORY_LIST = {
@@ -207,7 +207,7 @@ export const INTEGRATION_LIST = {
                     <p>Datadog</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label className="memphis">Mempis.dev</label>
+                        <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Open source</label>
                     </span>
@@ -258,7 +258,7 @@ export const INTEGRATION_LIST = {
                     <p>Slack</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label className="memphis">Mempis.dev</label>
+                        <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Open source</label>
                         <label className="oss-cloud-badge">Cloud</label>
@@ -294,7 +294,7 @@ export const INTEGRATION_LIST = {
                     <p>S3 Compatible Object Storage</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label className="memphis">Mempis.dev</label>
+                        <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Open source</label>
                         <label className="oss-cloud-badge">Cloud</label>
@@ -331,7 +331,7 @@ export const INTEGRATION_LIST = {
                     <p>Elasticsearch observability</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label className="memphis">Mempis.dev</label>
+                        <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Open source</label>
                     </span>
@@ -381,7 +381,7 @@ export const INTEGRATION_LIST = {
                     <p>Grafana</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label className="memphis">Mempis.dev</label>
+                        <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Open source</label>
                     </span>
@@ -426,7 +426,7 @@ export const INTEGRATION_LIST = {
                     <p>Zapier</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label className="memphis">Mempis.dev</label>
+                        <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Cloud</label>
                         <label className="oss-cloud-badge">Open source</label>
@@ -476,7 +476,7 @@ export const INTEGRATION_LIST = {
                     <p>Debezium and Postgres</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label className="memphis">Mempis.dev</label>
+                        <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Open source</label>
                         <label className="oss-cloud-badge">Cloud</label>
@@ -523,7 +523,7 @@ export const INTEGRATION_LIST = {
                     <p>GitHub</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label className="memphis">Mempis.dev</label>
+                        <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Cloud</label>
                     </span>
@@ -558,7 +558,7 @@ export const INTEGRATION_LIST = {
                     <p>PagerDuty</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label className="memphis">Mempis.dev</label>
+                        <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Open source</label>
                     </span>
@@ -592,7 +592,7 @@ export const INTEGRATION_LIST = {
                     <p>New Relic</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label className="memphis">Mempis.dev</label>
+                        <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Open source</label>
                     </span>
@@ -626,7 +626,7 @@ export const INTEGRATION_LIST = {
                     <p>influxDB</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label className="memphis">Mempis.dev</label>
+                        <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Open source</label>
                     </span>

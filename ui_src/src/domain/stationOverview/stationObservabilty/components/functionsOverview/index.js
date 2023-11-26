@@ -198,8 +198,8 @@ const FunctionsOverview = ({ referredFunction, dismissFunction, moveToGenralView
     return (
         <div className="station-function-overview">
             <functions-header is="x3d">
-                {statisticsData?.map((item) => (
-                    <div className="statistics-box">
+                {statisticsData?.map((item, index) => (
+                    <div className="statistics-box" key={`${item?.name}-${index}`}>
                         <div className="statistics-box-title">{item?.name}</div>
                         <div className="statistics-box-number">{item?.data?.toLocaleString()}</div>
                     </div>

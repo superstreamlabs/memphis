@@ -242,7 +242,7 @@ const GitHubIntegration = ({ close, value }) => {
                     <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs} />
                     <Form name="form" form={creationForm} autoComplete="off" className="integration-form">
                         {tabValue === 'Details' && <IntegrationDetails integrateDesc={githubConfiguration.integrateDesc} />}
-                        {tabValue === 'Logs details' && <IntegrationLogs integrationName={'github'} />}
+                        {tabValue === 'Logs' && <IntegrationLogs integrationName={'github'} />}
                         {tabValue === 'Configuration' && (
                             <div className="integration-body">
                                 <IntegrationDetails integrateDesc={githubConfiguration.integrateDesc} />
