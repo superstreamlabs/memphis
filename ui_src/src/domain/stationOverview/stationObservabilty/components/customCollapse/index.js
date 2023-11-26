@@ -115,7 +115,7 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                                 {parser === 'json' || parser === 'protobuf' ? <pre>{payload}</pre> : <p>{payload}</p>}
                             </>
                         )}
-                        {header === 'Validation error' && (
+                        {(header === 'Validation error' || header === 'Error') && (
                             <div className="message">
                                 <p>{data}</p>
                             </div>

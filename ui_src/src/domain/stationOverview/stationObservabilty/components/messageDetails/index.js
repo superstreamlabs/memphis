@@ -136,7 +136,8 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false, isFailedFunction
                 message: data.message?.data,
                 headers: data.message?.headers || {},
                 poisonedCGs: poisonedCGs,
-                validationError: data.validation_error || ''
+                validationError: data.validation_error || '',
+                function_name: data.function_name || ''
             };
             setMessageDetails(messageDetails);
         }
@@ -162,11 +163,16 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false, isFailedFunction
                                 {!isFailedFunctionMessage && messageDetails?.validationError !== '' && (
                                     <CustomCollapse status={false} header="Validation error" data={messageDetails?.validationError} message={true} />
                                 )}
+                                {isFailedFunctionMessage && messageDetails?.function_name !== '' && (
+                                    <div className="info-box">
+                                        <div>
+                                            <span className="title">Function</span>
+                                            <span className="content">{messageDetails?.function_name}</span>
+                                        </div>
+                                    </div>
+                                )}
                                 {isFailedFunctionMessage && messageDetails?.validationError !== '' && (
                                     <CustomCollapse status={false} header="Error" data={messageDetails?.validationError} message={true} />
-                                )}
-                                {isFailedFunctionMessage && messageDetails?.function_name !== '' && (
-                                    <CustomCollapse status={false} header="Function" data={messageDetails?.function_name} message={true} />
                                 )}
                                 <div className="info-box">
                                     <div>
