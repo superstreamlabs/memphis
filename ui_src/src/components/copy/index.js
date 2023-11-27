@@ -14,16 +14,22 @@ import React, { useState } from 'react';
 import { ReactComponent as CopyIcon } from '../../assets/images/copy.svg';
 import { ReactComponent as CopiedIcon } from '../../assets/images/copied.svg';
 import './style.scss';
+import { Popover } from 'antd';
+
+const overlayStylesPopover = {
+    width: '83px',
+    marginTop: '8px'
+};
 
 const Copy = ({ data, key, width = '16', text }) => {
-    const [copied, setCopied] = useState(null);
+    const [copied, setCopied] = useState(false);
 
     const handleCopyWithKey = (key, data) => {
         setCopied(key);
         data && navigator.clipboard.writeText(data);
         setTimeout(() => {
             setCopied(null);
-        }, 3000);
+        }, 1200);
     };
 
     const handleCopy = (data) => {
@@ -31,16 +37,29 @@ const Copy = ({ data, key, width = '16', text }) => {
         data && navigator.clipboard.writeText(data);
         setTimeout(() => {
             setCopied(false);
-        }, 3000);
+        }, 1200);
     };
 
     const CopyComponent = key ? (copied === key ? CopiedIcon : CopyIcon) : copied ? CopiedIcon : CopyIcon;
 
     return (
-        <div className="copy-wrapper" onClick={() => (key ? handleCopyWithKey(key, data) : handleCopy(data))}>
-            <CopyComponent alt="copy" width={width} />
-            {text && <span className={`copy-text ${copied && ' copied'}`}>{text}</span>}
-        </div>
+        <Popover
+            overlayInnerStyle={overlayStylesPopover}
+            overlayClassName="copy-wrapper-popover"
+            title="Copied"
+            trigger="click"
+            placement="bottom"
+            onOpenChange={() => setCopied(!copied)}
+            open={copied}
+            onClick={() => {
+                setCopied(false);
+            }}
+        >
+            <div className="copy-wrapper" onClick={() => (key ? handleCopyWithKey(key, data) : handleCopy(data))}>
+                <CopyComponent alt="copy" width={width} />
+                {text && <span className={`copy-text ${copied && ' copied'}`}>{text}</span>}
+            </div>
+        </Popover>
     );
 };
 
