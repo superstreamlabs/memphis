@@ -1,4 +1,9 @@
 .copy-wrapper {
+    &-popover {
+        .ant-popover-arrow {
+            display: initial!important;
+        }
+    }
     cursor: pointer;
     display: flex;
     align-items: center;
