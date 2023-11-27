@@ -179,7 +179,6 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 	if err != nil {
 		return err
 	}
-	// TODO: send response of DeleteAndGetAttachedFunctionsByStation to microservice to delete
 
 	return nil
 }
