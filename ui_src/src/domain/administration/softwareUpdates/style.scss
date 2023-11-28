@@ -63,6 +63,7 @@
                     font-family: 'InterMedium';
                     font-size: 16px;
                     max-width: 80%;
+                    text-align: center;
                 }
                 span {
                     color: #131313;
@@ -105,10 +106,10 @@
                     height: 11px;
                     border-radius: 50%;
                     background-color: #f00;
-
                     position: absolute;
-                    top: 0px;
-                    right: 0px;
+                    top: -1px;
+                    right: -1px;
+                    cursor: pointer;
                 }
                 .curr-version {
                     color: #6557ff;
@@ -126,6 +127,12 @@
                     background: rgba(101, 87, 255, 0.15);
                     padding: 5px 10px;
                 }
+            }
+            .change-log {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 5px;
             }
         }
     }

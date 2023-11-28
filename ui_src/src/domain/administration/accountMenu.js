@@ -35,8 +35,12 @@ function AccountMenu({ selectedMenuItem, setMenuItem }) {
             <div className="side-menu administration">
                 {!isCloud() && (
                     <>
-                        <div className={selectedMenuItem === 'version_upgrade' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('version_upgrade')}>
-                            {selectedMenuItem === 'version_upgrade' ? <VersionUpgradeColorIcon alt="versionUpgrade" /> : <VersionUpgradeGrayIcon alt="versionUpgrade" />}
+                        <div className={selectedMenuItem === 'system_information' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('system_information')}>
+                            {selectedMenuItem === 'system_information' ? (
+                                <VersionUpgradeColorIcon alt="versionUpgrade" />
+                            ) : (
+                                <VersionUpgradeGrayIcon alt="versionUpgrade" />
+                            )}
                             System information
                             {!state.isLatest && <div className="update-available">New version!</div>}
                         </div>

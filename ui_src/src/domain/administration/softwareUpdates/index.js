@@ -12,7 +12,7 @@
 
 import './style.scss';
 
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import Button from '../../../components/button';
 import CloudModal from '../../../components/cloudModal';
 import { Context } from '../../../hooks/store';
@@ -21,35 +21,113 @@ import { ReactComponent as RedirectWhiteIcon } from '../../../assets/images/expo
 import { ReactComponent as DocumentIcon } from '../../../assets/images/documentGroupIcon.svg';
 import { ReactComponent as DisordIcon } from '../../../assets/images/discordGroupIcon.svg';
 import { ReactComponent as WindowIcon } from '../../../assets/images/windowGroupIcon.svg';
+import { ApiEndpoints } from '../../../const/apiEndpoints';
+import { httpRequest } from '../../../services/http';
+import { GithubRequest } from '../../../services/githubRequests';
+import { LATEST_RELEASE_URL } from '../../../config';
+import { compareVersions } from '../../../services/valueConvertor';
 
 function SoftwareUpates({}) {
     const [state, dispatch] = useContext(Context);
     const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
-    const [version, setVersion] = useState({});
-    console.log(state);
+    const [systemData, setSystemData] = useState({});
+    const [version, setVersion] = useState('v' + state?.currentVersion);
+    const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
+    const [latestVersionUrl, setLatestVersionUrl] = useState('');
+
+    const systemDataComponents = [
+        { title: 'Amount of brokers', value: systemData?.total_amount_brokers },
+        { title: 'total stations', value: systemData?.total_stations },
+        { title: 'total users', value: systemData?.total_users },
+        { title: 'total schemas', value: systemData?.total_schemas }
+    ];
+
+    const informationPanelData = [
+        {
+            icon: <DocumentIcon />,
+            title: 'Read Our documentation',
+            description: (
+                <span>
+                    Read our documentation to learn more about <span> Memphis.dev</span>
+                </span>
+            ),
+            onClick: () => {
+                window.open('https://docs.memphis.dev/memphis/getting-started/readme', '_blank');
+            }
+        },
+        {
+            icon: <DisordIcon />,
+            title: 'Join our Discord',
+            description: (
+                <span>
+                    Find <span>Memphis.dev's</span> Open-Source contributors and maintainers here
+                </span>
+            ),
+            onClick: () => {
+                window.open('https://memphis.dev/discord', '_blank');
+            }
+        },
+        {
+            icon: <WindowIcon />,
+            title: 'Open a service request',
+            description: <span>If you have any questions or need assistance. </span>,
+            onClick: () => {
+                setIsCloudModalOpen(true);
+            }
+        }
+    ];
+
+    const genrateInformationPanel = (item, index) => (
+        <div className="item-component" key={index} onClick={() => item?.onClick()}>
+            {item?.icon}
+            <p>{item?.title}</p>
+            {item?.description}
+        </div>
+    );
 
     useEffect(() => {
-        setVersion({
-            currentVersion: 'v' + state?.currentVersion,
-            isUpdateAvailable: !state?.isLatest
-        });
-    }, [state]);
+        getSystemGeneralInfo();
+        getSystemVersion();
+    }, []);
+
+    const getSystemGeneralInfo = async () => {
+        try {
+            const data = await httpRequest('GET', `${ApiEndpoints.GET_SYSTEM_GENERAL_INFO}`);
+            setSystemData(data);
+        } catch (err) {
+            return;
+        }
+    };
+
+    const getSystemVersion = async () => {
+        try {
+            const data = await httpRequest('GET', ApiEndpoints.GET_CLUSTER_INFO);
+            if (data) {
+                setVersion('v' + data?.version);
+                const latest = await GithubRequest(LATEST_RELEASE_URL);
+                setLatestVersionUrl(latest[0].html_url);
+                const is_latest = compareVersions(data?.version, latest[0].name.replace('v', '').replace('-beta', '').replace('-latest', '').replace('-stable', ''));
+                setIsUpdateAvailable(!is_latest);
+            }
+        } catch (error) {}
+    };
+
     return (
         <div className="softwate-updates-container">
             <div className="rows">
                 <div className="item-component">
                     <div className="title-component">
-                        <div className="versions">
-                            <LogoTexeMemphis alt="Memphis logo" />
-                            <label className="curr-version">{version?.currentVersion}</label>
-                            {version?.isUpdateAvailable && <div className="red-dot" />}
+                        <div className="versions" onClick={() => isUpdateAvailable && window.open(latestVersionUrl, '_blank')}>
+                            <LogoTexeMemphis alt="Memphis logo" width="300px" />
+                            <label className="curr-version">{version}</label>
+                            {isUpdateAvailable && <div className="red-dot" />}
                         </div>
                         <Button
                             width="200px"
                             height="36px"
                             placeholder={
-                                <span className="">
-                                    <label>View Change log </label>
+                                <span className="change-log">
+                                    <label>View Change log</label>
                                     <RedirectWhiteIcon alt="redirect" />
                                 </span>
                             }
@@ -65,59 +143,16 @@ function SoftwareUpates({}) {
                     </div>
                 </div>
                 <div className="statistics">
-                    <div className="item-component wrapper">
-                        <label className="title">Amount of brokers</label>
-                        <label className="numbers">600</label>
-                    </div>
-                    <div className="item-component wrapper">
-                        <label className="title">total stations</label>
-                        <label className="numbers">600</label>
-                    </div>
-                    <div className="item-component wrapper">
-                        <label className="title">total users</label>
-                        <label className="numbers">600</label>
-                    </div>
-                    <div className="item-component wrapper">
-                        <label className="title">total schemas</label>
-                        <label className="numbers">600</label>
-                    </div>
+                    {systemDataComponents.map((item, index) => {
+                        return (
+                            <div className="item-component wrapper" key={`${item}-${index}`}>
+                                <label className="title">{item.title}</label>
+                                <label className="numbers">{item.value}</label>
+                            </div>
+                        );
+                    })}
                 </div>
-                <div className="charts">
-                    <div
-                        className="item-component"
-                        onClick={() => {
-                            window.open('https://docs.memphis.dev/memphis/getting-started/readme', '_blank');
-                        }}
-                    >
-                        <DocumentIcon />
-                        <p>Read Our documentation</p>
-                        <span>
-                            Read our documentation to learn more about <span> Memphis.dev</span>
-                        </span>
-                    </div>
-                    <div
-                        className="item-component"
-                        onClick={() => {
-                            window.open('https://memphis.dev/discord', '_blank');
-                        }}
-                    >
-                        <DisordIcon />
-                        <p>Join our Discord</p>
-                        <span>
-                            Find <span>Memphis.dev's</span> Open-Source contributors and maintainers here
-                        </span>
-                    </div>
-                    <div
-                        className="item-component"
-                        onClick={() => {
-                            setIsCloudModalOpen(true);
-                        }}
-                    >
-                        <WindowIcon />
-                        <p>Open a service request</p>
-                        <span>If you have any questions or need assistance. </span>
-                    </div>
-                </div>
+                <div className="charts">{informationPanelData.map((item, index) => genrateInformationPanel(item, index))}</div>
             </div>
             <CloudModal type={'bundle'} open={isCloudModalOpen} handleClose={() => setIsCloudModalOpen(false)} />
         </div>

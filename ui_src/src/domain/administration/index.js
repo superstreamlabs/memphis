@@ -59,9 +59,8 @@ function Administration({ step }) {
                 return <Integrations />;
             case 'cluster_configuration':
                 return <ClusterConfiguration />;
-            case 'version_upgrade':
+            case 'system_information':
                 if (!isCloud()) {
-                    // return <VersionUpgrade />;
                     return <SoftwareUpates />;
                 }
                 break;
@@ -80,7 +79,7 @@ function Administration({ step }) {
                 <AccountMenu selectedMenuItem={selectedMenuItem} setMenuItem={handleMenuItemChange} />
                 {isCloud() && <BillingMenu selectedMenuItem={selectedMenuItem} setMenuItem={handleMenuItemChange} />}
             </div>
-            {selectedMenuItem === 'version_upgrade' ? <>{renderSelectedComponent()}</> : <div className="setting-items">{renderSelectedComponent()}</div>}
+            {selectedMenuItem === 'system_information' ? <>{renderSelectedComponent()}</> : <div className="setting-items">{renderSelectedComponent()}</div>}
         </div>
     );
 }
