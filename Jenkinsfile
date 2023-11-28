@@ -43,7 +43,7 @@ pipeline {
     }
 
     stage('Tests - Install/upgrade Memphis cli - BETA') {
-        when { anyOf { branch 'master'; branch 'qa'}}
+        // when { anyOf { branch 'master'; branch 'qa'}}
         steps {
             sh """
             sudo npm uninstall memphis-dev-cli-beta -g
