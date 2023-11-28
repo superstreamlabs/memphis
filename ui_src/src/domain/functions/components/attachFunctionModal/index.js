@@ -31,7 +31,7 @@ import { isCloud } from '../../../../services/valueConvertor';
 import { Context } from '../../../../hooks/store';
 import LockFeature from '../../../../components/lockFeature';
 
-const AttachFunctionModal = ({ selectedFunction }) => {
+const AttachFunctionModal = ({ open, clickOutside, selectedFunction }) => {
     const createStationRef = useRef(null);
     const [state, dispatch] = useContext(Context);
     const [searchInput, setSearchInput] = useState('');
@@ -72,115 +72,130 @@ const AttachFunctionModal = ({ selectedFunction }) => {
     };
 
     return (
-        <div className="attach-station-modal-container">
-            {isLoading && <Loader />}
-            {!isLoading && filteredStations?.length === 0 && (
-                <div className="no-schema-to-display">
-                    <StationIcon width={50} height={50} />
-
-                    <p className="title">No stations yet</p>
-                    <p className="sub-title">Get started by creating your first station</p>
-                    <Button
-                        className="modal-btn"
-                        width="160px"
-                        height="34px"
-                        placeholder={`Create new station`}
-                        colorType="white"
-                        radiusType="circle"
-                        backgroundColorType="purple"
-                        fontSize="12px"
-                        fontFamily="InterSemiBold"
-                        aria-controls="usecse-menu"
-                        aria-haspopup="true"
-                        onClick={() => setNewStationModal(true)}
-                    />
+        <Modal
+            header={
+                <div className="modal-header">
+                    <p>Attach a function</p>
                 </div>
-            )}
-            {!isLoading && filteredStations?.length > 0 && (
-                <>
-                    <SearchInput
-                        placeholder={`Search station`}
-                        colorType="navy"
-                        backgroundColorType="none"
-                        borderRadiusType="circle"
-                        borderColorType="search-input"
-                        iconComponent={<SearchIcon />}
-                        onChange={handleSearch}
-                        value={searchInput}
-                        width="100%"
-                        height="35px"
-                    />
-                    <div className="schemas-list">
-                        {filteredStations?.map((station) => {
-                            return <SchemaItem key={station.name} schema={station} selected={selected} handleSelectedItem={(id) => setSelected(id)} type={'dls'} />;
-                        })}
-                    </div>
+            }
+            displayButtons={false}
+            height="400px"
+            width="352px"
+            clickOutside={clickOutside}
+            open={open}
+            hr={true}
+            className="use-schema-modal"
+        >
+            <div className="attach-station-modal-container">
+                {isLoading && <Loader />}
+                {!isLoading && filteredStations?.length === 0 && (
+                    <div className="no-schema-to-display">
+                        <StationIcon width={50} height={50} />
 
-                    <div className="buttons">
-                        <div className="add-schema" onClick={() => (!isCloud() || state?.allowedActions?.can_create_stations) && setNewStationModal(true)}>
-                            <AddRounded />
-                            <p>Add a new station </p>
-                            {isCloud() && !state?.allowedActions?.can_create_stations && <LockFeature />}
-                        </div>
+                        <p className="title">No stations yet</p>
+                        <p className="sub-title">Get started by creating your first station</p>
                         <Button
-                            width="100%"
-                            height="35px"
-                            placeholder="Attach"
+                            className="modal-btn"
+                            width="160px"
+                            height="34px"
+                            placeholder={`Create new station`}
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"
-                            fontSize="13px"
+                            fontSize="12px"
                             fontFamily="InterSemiBold"
-                            disabled={!selected}
-                            onClick={() =>
-                                history.push({
-                                    pathname: `${pathDomains.stations}/${selected}`,
-                                    selectedFunction: selectedFunction
-                                })
-                            }
+                            aria-controls="usecse-menu"
+                            aria-haspopup="true"
+                            onClick={() => setNewStationModal(true)}
                         />
                     </div>
-                </>
-            )}
-
-            <Modal
-                header={
-                    <div className="modal-header">
-                        <div className="header-img-container">
-                            <StationIcon className="headerImage" alt="stationImg" />
+                )}
+                {!isLoading && filteredStations?.length > 0 && (
+                    <>
+                        <SearchInput
+                            placeholder={`Search station`}
+                            colorType="navy"
+                            backgroundColorType="none"
+                            borderRadiusType="circle"
+                            borderColorType="search-input"
+                            iconComponent={<SearchIcon />}
+                            onChange={handleSearch}
+                            value={searchInput}
+                            width="100%"
+                            height="35px"
+                        />
+                        <div className="schemas-list">
+                            {filteredStations?.map((station) => {
+                                return <SchemaItem key={station.name} schema={station} selected={selected} handleSelectedItem={(id) => setSelected(id)} type={'dls'} />;
+                            })}
                         </div>
-                        <p>Create a new station</p>
-                        <label>
-                            A station is a distributed unit that stores the produced data{' '}
-                            <LearnMore url="https://docs.memphis.dev/memphis/memphis-broker/concepts/station" />
-                        </label>
-                    </div>
-                }
-                height="58vh"
-                width="1020px"
-                rBtnText="Create"
-                lBtnText="Cancel"
-                lBtnClick={() => {
-                    setNewStationModal(false);
-                }}
-                rBtnClick={() => {
-                    createStationRef.current();
-                    setNewStationModal(false);
-                }}
-                clickOutside={() => setNewStationModal(false)}
-                open={newStationModal}
-                isLoading={creatingProsessd}
-            >
-                <CreateStationForm
-                    createStationFormRef={createStationRef}
-                    setLoading={(e) => setCreatingProsessd(e)}
-                    finishUpdate={() => {
-                        getAllStations();
+
+                        <div className="buttons">
+                            <div className="add-schema" onClick={() => (!isCloud() || state?.allowedActions?.can_create_stations) && setNewStationModal(true)}>
+                                <AddRounded />
+                                <p>Add a new station </p>
+                                {isCloud() && !state?.allowedActions?.can_create_stations && <LockFeature />}
+                            </div>
+                            <Button
+                                width="100%"
+                                height="35px"
+                                placeholder="Attach"
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType="purple"
+                                fontSize="13px"
+                                fontFamily="InterSemiBold"
+                                disabled={!selected}
+                                onClick={() =>
+                                    history.push({
+                                        pathname: `${pathDomains.stations}/${selected}`,
+                                        selectedFunction: selectedFunction
+                                    })
+                                }
+                            />
+                        </div>
+                    </>
+                )}
+
+                <Modal
+                    header={
+                        <div className="modal-header">
+                            <div className="header-img-container">
+                                <StationIcon className="headerImage" alt="stationImg" />
+                            </div>
+                            <p>Create a new station</p>
+                            <label>
+                                A station is a distributed unit that stores the produced data{' '}
+                                <LearnMore url="https://docs.memphis.dev/memphis/memphis-broker/concepts/station" />
+                            </label>
+                        </div>
+                    }
+                    height="58vh"
+                    width="1020px"
+                    rBtnText="Create"
+                    lBtnText="Cancel"
+                    lBtnClick={() => {
+                        setNewStationModal(false);
                     }}
-                    noRedirect={true}
-                />
-            </Modal>
-        </div>
+                    rBtnClick={() => {
+                        createStationRef.current();
+                        setNewStationModal(false);
+                    }}
+                    clickOutside={() => setNewStationModal(false)}
+                    open={newStationModal}
+                    isLoading={creatingProsessd}
+                >
+                    <CreateStationForm
+                        createStationFormRef={createStationRef}
+                        setLoading={(e) => setCreatingProsessd(e)}
+                        finishUpdate={() => {
+                            getAllStations();
+                        }}
+                        noRedirect={true}
+                    />
+                </Modal>
+            </div>
+        </Modal>
     );
 };
 
