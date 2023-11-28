@@ -46,7 +46,8 @@ const Button = ({
     htmlType = 'submit',
     type = 'primary',
     fontFamily = 'Inter',
-    tooltip
+    tooltip,
+    isVisible = true
 }) => {
     const handleClick = (e) => {
         onClick(e);
@@ -95,13 +96,14 @@ const Button = ({
     };
 
     return (
+        (isVisible &&
         <div className="button-container" style={styleButtonContainer}>
             <TooltipComponent text={tooltip}>
                 <ButtonDesign {...fieldProps} className={disabled && 'noHover'}>
                     <span style={{ fontFamily: fontFamily }}>{placeholder}</span>
                 </ButtonDesign>
             </TooltipComponent>
-        </div>
+        </div>)
     );
 };
 

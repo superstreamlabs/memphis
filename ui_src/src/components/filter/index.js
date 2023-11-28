@@ -33,7 +33,7 @@ const initialState = {
     filterFields: []
 };
 
-const Filter = ({ filterComponent, height, applyFilter }) => {
+const Filter = ({ filterComponent, height, applyFilter, hideElement }) => {
     const [state, dispatch] = useContext(Context);
     const [filterState, filterDispatch] = useReducer(Reducer, initialState);
     const [filterFields, setFilterFields] = useState([]);
@@ -445,11 +445,12 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
     return (
         <FilterStoreContext.Provider value={[filterState, filterDispatch]}>
             {filterComponent !== 'syslogs' && (
+                (hideElement !== 'search' &&
                 <SearchInput
                     placeholder="Search"
                     colorType="navy"
                     backgroundColorType="gray-dark"
-                    width="288px"
+                    width={ hideElement === 'search' ? "288px" : "100%" }
                     height="34px"
                     borderColorType="none"
                     boxShadowsType="none"
@@ -457,8 +458,9 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                     iconComponent={<SearchIcon alt="searchIcon" />}
                     onChange={handleSearch}
                     value={searchInput}
-                />
+                />)
             )}
+            {(hideElement !== 'filter' &&
             <Popover placement="bottomLeft" content={content} trigger="click" onOpenChange={handleOpenChange} open={filterState.isOpen}>
                 <Button
                     className="modal-btn"
@@ -479,7 +481,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                     boxShadowStyle="float"
                     onClick={() => {}}
                 />
-            </Popover>
+            </Popover>)}
         </FilterStoreContext.Provider>
     );
 };

@@ -130,6 +130,7 @@ function SchemaList({ createNew }) {
                         aria-haspopup="true"
                         boxShadowStyle="float"
                         disabled={isCheck?.length === 0}
+                        isVisible={isCheck?.length !== 0}
                         onClick={() => setDeleteModal(true)}
                     />
                     <Button
@@ -146,7 +147,7 @@ function SchemaList({ createNew }) {
                         disabled={state?.schemaFilteredList?.length === 0}
                         onClick={() => onCheckedAll()}
                     />
-                    <Filter filterComponent="schemaverse" height="34px" />
+                    <Filter filterComponent="schemaverse" height="34px" hideElement="search" />
                     <Button
                         width="160px"
                         height="34px"
@@ -161,6 +162,10 @@ function SchemaList({ createNew }) {
                         onClick={createNewSchema}
                     />
                 </div>
+            </div>
+
+            <div className="schema-list-top">
+                <Filter filterComponent="schemaverse" height="34px" hideElement="filter" />
             </div>
 
             <div className="schema-list">

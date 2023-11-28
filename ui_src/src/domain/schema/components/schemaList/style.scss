@@ -12,6 +12,16 @@
     }
 
     .schema-list {
+
+        &-top {
+            display: flex;
+            margin-top: 1rem;
+            width: 100%;
+            .search-input-container {
+                flex: 1;
+            }
+        }
+
         height: calc(95vh - 80px);
         width: 100%;
         position: relative;
