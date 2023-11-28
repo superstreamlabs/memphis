@@ -90,9 +90,9 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
                 dispatch({ type: 'SET_ENTITLEMENTS', payload: data.entitlements });
                 await refreshData();
                 setTimeout(() => {
-                    showMessages('success', 'Your plan has been successfully updatead.');
+                    showMessages('success', 'Your plan has been successfully updated.');
                 }, 1000);
-                getAllowedActions();
+                await getAllowedActions();
                 isExternal ? onClose() : setUpgradeModalOpen(false);
                 localStorage.setItem(LOCAL_STORAGE_PLAN, data.plan);
             }

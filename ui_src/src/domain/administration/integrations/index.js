@@ -28,6 +28,7 @@ import Input from '../../../components/Input';
 import Tag from '../../../components/tag';
 import { showMessages } from '../../../services/genericServices';
 import { useLocation } from 'react-router-dom';
+import {entitlementChecker} from "../../../utils/plan";
 
 const Integrations = () => {
     const [state, dispatch] = useContext(Context);
@@ -40,7 +41,7 @@ const Integrations = () => {
     const location = useLocation();
     const queryParameters = new URLSearchParams(location.search);
 
-    const storageTiringLimits = state?.userData?.entitlements && state?.userData?.entitlements['feature-storage-tiering'] ? false : true;
+    const storageTiringLimits = !entitlementChecker(state, 'feature-storage-tiering');
 
     useEffect(() => {
         const process = async () => {
