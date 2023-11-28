@@ -28,7 +28,7 @@ pipeline {
 	    	minikube start
                 kubectl config use-context minikube
                 kubectl create namespace memphis-$unique_id --dry-run=client -o yaml | kubectl apply -f -
-                aws s3 cp s3://memphis-jenkins-backup-bucket/regcred.yaml .
+                gsutil cp gs://memphis-jenkins-backup-bucket/regcred.yaml .
                 kubectl apply -f regcred.yaml -n memphis-$unique_id
                 kubectl patch serviceaccount default -p '{\"imagePullSecrets\": [{\"name\": \"regcred\"}]}' -n memphis-$unique_id
             """
