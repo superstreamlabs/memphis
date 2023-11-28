@@ -288,7 +288,9 @@ const StationOverviewHeader = () => {
                             </div>
                             {stationState?.stationSocketData?.schema !== undefined && Object.keys(stationState?.stationSocketData?.schema).length !== 0 && (
                                 <div className="name-and-version">
-                                    <p>{stationState?.stationSocketData?.schema?.name}</p>
+                                    <OverflowTip className="station-name" text={stationState?.stationSocketData?.schema?.name} maxWidth="190px">
+                                        {stationState?.stationSocketData?.schema?.name}
+                                    </OverflowTip>
                                     <FiberManualRecord />
                                     <p>v{stationState?.stationSocketData?.schema?.version_number}</p>
                                 </div>
@@ -392,7 +394,9 @@ const StationOverviewHeader = () => {
                                 {dls && (
                                     <div className="flex-section">
                                         <UpRightArrow />
-                                        <p className="tag">{dls}</p>
+                                        <OverflowTip className="tag" text={dls} maxWidth="190px">
+                                            {dls}
+                                        </OverflowTip>
                                     </div>
                                 )}
                             </div>
