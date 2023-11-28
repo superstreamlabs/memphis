@@ -44,7 +44,7 @@ pipeline {
     }
 
     stage('Tests - Install/upgrade Memphis cli - BETA') {
-        // when { anyOf { branch 'master'; branch 'qa'}}
+        when { anyOf { branch 'gcp_deploy'; branch 'qa'}}
         steps {
             sh """
             sudo npm uninstall memphis-dev-cli-beta -g
@@ -70,7 +70,7 @@ pipeline {
     ////////////////////////////////////////
 
     stage('Tests - Docker compose install - Master') {
-        // when { branch 'master' }
+        when { branch 'gcp_deploy' }
         steps {
             sh "rm -rf memphis-docker"
             dir ('memphis-devops'){
@@ -114,7 +114,7 @@ pipeline {
     }
 
     stage('Tests - Remove Docker compose - Master') {
-        when { branch 'master' }
+        when { branch 'gcp_deploy' }
         steps {
             sh """
             docker-compose -f ./memphis-devops/docker/docker-compose-master-tests-broker.yml -p memphis down
