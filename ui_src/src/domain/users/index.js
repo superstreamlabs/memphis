@@ -36,7 +36,6 @@ import Modal from '../../components/modal';
 import Table from '../../components/table';
 import DeleteItemsModal from '../../components/deleteItemsModal';
 import CloudModal from '../../components/cloudModal';
-import {isCurrentUser} from "../../utils/user";
 
 function Users() {
     const [state, dispatch] = useContext(Context);
@@ -264,7 +263,6 @@ function Users() {
             key: 'action',
             render: (_, record) => (
                 <div className="user-action">
-                    {(!isCurrentUser(record.id) &&
                     <Button
                         width="115px"
                         height="30px"
@@ -283,7 +281,7 @@ function Users() {
                         onClick={() => {
                             deleteUser(record.username, record.user_type);
                         }}
-                    />)}
+                    />
                 </div>
             )
         }
@@ -414,7 +412,6 @@ function Users() {
                                 />
                             </>
                         ) : (
-                            (!isCurrentUser(record.id) &&
                             <Button
                                 width="115px"
                                 height="30px"
@@ -434,7 +431,7 @@ function Users() {
                                 onClick={() => {
                                     deleteUser(record.username, record.user_type);
                                 }}
-                            />)
+                            />
                         )}
                     </div>
                 )

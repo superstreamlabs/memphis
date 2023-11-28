@@ -153,7 +153,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false, isFailedFunction
 
     return (
         <>
-            <div className={`message-wrapper ${isDls && !isFailedSchemaMessage && 'message-wrapper-dls'}`}>
+            <div className={`message-wrapper ${isDls && !isFailedSchemaMessage && !isFailedFunctionMessage && 'message-wrapper-dls'}`}>
                 {loadMessageData ? (
                     loader()
                 ) : stationState?.selectedRowId && Object.keys(messageDetails).length > 0 ? (
