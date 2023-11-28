@@ -1,0 +1,132 @@
+.softwate-updates-container {
+    height: 100%;
+    width: 100%;
+    padding: 20px 20px 20px 0px;
+    .rows {
+        height: 100%;
+        width: 100%;
+        display: grid;
+        grid-template-rows: 15% 20% 35%;
+        gap: 20px;
+
+        .title {
+            color: #6557ff;
+            font-family: 'InterBold';
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        .statistics {
+            display: grid;
+            grid-template-columns: 23% 23% 23% 23%;
+            justify-content: space-between;
+            .wrapper {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                gap: 20px;
+            }
+            .numbers {
+                color: #171717;
+                font-size: 30px;
+                font-family: 'InterBold';
+            }
+        }
+        .charts {
+            display: grid;
+            grid-template-columns: 32% 32% 32%;
+            justify-content: space-between;
+
+            .item-component {
+                width: 100%;
+                border-radius: 8px;
+                background-color: #ffffff;
+                box-shadow: 0px 23px 44px 0px rgba(176, 183, 195, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+                border-radius: 8px;
+                padding: 30px;
+
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+
+                cursor: pointer;
+
+                svg {
+                    margin-bottom: 16px;
+                }
+
+                p {
+                    margin: 0px;
+                    margin-bottom: 8px;
+                    color: #151515;
+                    font-family: 'InterMedium';
+                    font-size: 16px;
+                    max-width: 80%;
+                }
+                span {
+                    color: #131313;
+                    font-family: 'Inter';
+                    font-size: 12px;
+                    max-width: 60%;
+                    text-align: center;
+
+                    span {
+                        color: #6557ff;
+                        font-family: 'InterMedium';
+                        font-size: 12px;
+                        text-decoration-line: underline;
+                    }
+                }
+            }
+        }
+        .item-component {
+            width: 100%;
+            border-radius: 8px;
+            background-color: #ffffff;
+            box-shadow: 0px 23px 44px 0px rgba(176, 183, 195, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+            border-radius: 8px;
+            padding: 30px;
+        }
+        .title-component {
+            height: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            .versions {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+
+                position: relative;
+
+                .red-dot {
+                    width: 11px;
+                    height: 11px;
+                    border-radius: 50%;
+                    background-color: #f00;
+
+                    position: absolute;
+                    top: 0px;
+                    right: 0px;
+                }
+                .curr-version {
+                    color: #6557ff;
+                    font-size: 14px;
+                    font-weight: 600;
+                    border-radius: 32px;
+                    border: 1px solid #eaeaea;
+                    padding: 5px 10px;
+                }
+                .new-version {
+                    color: #6557ff;
+                    font-size: 14px;
+                    font-weight: 600;
+                    border-radius: 32px;
+                    background: rgba(101, 87, 255, 0.15);
+                    padding: 5px 10px;
+                }
+            }
+        }
+    }
+}
