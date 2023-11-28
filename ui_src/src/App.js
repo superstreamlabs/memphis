@@ -200,7 +200,7 @@ const App = withRouter(() => {
     const handleUpdatePlan = async () => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.REFRESH_BILLING_PLAN);
-            dispatch({ type: 'SET_ENTITLEMENTS', payload: data });
+            dispatch({ type: 'SET_ENTITLEMENTS', payload: data?.entitelments });
             setRefreshPlan(false);
             showMessages('success', 'Your plan has been successfully updated.');
         } catch (error) {
