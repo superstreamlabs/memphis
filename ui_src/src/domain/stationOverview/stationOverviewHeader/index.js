@@ -567,7 +567,7 @@ const StationOverviewHeader = () => {
                     <DeleteItemsModal
                         title="Disabling dead-letter consumption will stop pushing new dead-letter messages"
                         desc={
-                            <span>
+                            <span className="disable-consumption-modal">
                                 Station <strong>{stationState?.stationMetaData?.name}</strong> will be disconnected from <strong className="dls-name">{dls} </strong>.
                             </span>
                         }
