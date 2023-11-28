@@ -26,6 +26,7 @@ pipeline {
         steps {
             sh """
 	    	minikube start
+            minikube addons enable gcp-auth --refresh
                 kubectl config use-context minikube
                 kubectl create namespace memphis-$unique_id --dry-run=client -o yaml | kubectl apply -f -
                 gsutil cp gs://memphis-jenkins-backup-bucket/regcred.yaml .
