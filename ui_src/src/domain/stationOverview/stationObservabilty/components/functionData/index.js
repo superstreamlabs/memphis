@@ -23,13 +23,20 @@ import FunctionLogs from '../functionLogs';
 import { ReactComponent as MetricsIcon } from '../../../../../assets/images/metricsIcon.svg';
 import { ReactComponent as MetricsClockIcon } from '../../../../../assets/images/metricsClockIcon.svg';
 import { ReactComponent as MetricsErrorIcon } from '../../../../../assets/images/metricsErrorIcon.svg';
+import { ReactComponent as GitIcon } from '../../../../../assets/images/gitIcon.svg';
+import { ReactComponent as CodeGrayIcon } from '../../../../../assets/images/codeGrayIcon.svg';
+import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
 import { parsingDate, messageParser } from '../../../../../services/valueConvertor';
 import Spinner from '../../../../../components/spinner';
+import { Drawer } from 'antd';
+import { IoClose } from 'react-icons/io5';
+import OverflowTip from '../../../../../components/tooltip/overflowtip';
+
 const tabValuesList = ['Information', 'Logs', 'Dead-letter'];
 loader.init();
 loader.config({ monaco });
 
-const FunctionData = ({ functionDetails }) => {
+const FunctionData = ({ open, onClose, setOpenFunctionDetails, functionDetails }) => {
     const [tabValue, setTabValue] = useState('Information');
     const [attachedFunctionDlsMsgs, setAttachedFunctionDlsMsgs] = useState([]);
     const [selectedMsg, setSelectedMsg] = useState(null);
@@ -85,106 +92,138 @@ const FunctionData = ({ functionDetails }) => {
     };
 
     return (
-        <div className="function-data-container">
-            <CustomTabs tabs={tabValuesList} size={'small'} tabValue={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
-            {tabValue === tabValuesList[0] && (
-                <div className="metrics-wrapper">
-                    <div className="metrics">
-                        <div className="metrics-img">
-                            <MetricsIcon />
+        <Drawer
+            placement="bottom"
+            open={open}
+            height={'300px'}
+            onClose={onClose}
+            closeIcon={<IoClose style={{ color: '#D1D1D1', width: '25px', height: '25px' }} />}
+            maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
+            headerStyle={{ padding: '0px' }}
+            bodyStyle={{ padding: '0 20px' }}
+            destroyOnClose={true}
+            title={
+                <div className="ms-function-details-top">
+                    <div className="left">
+                        <OverflowTip text={functionDetails?.function?.function_name}>
+                            <span>{functionDetails?.function?.function_name}</span>
+                        </OverflowTip>
+                        <div className="ms-function-details-badge">
+                            <GitIcon />
+                            <OverflowTip text={functionDetails?.function?.repo}>{functionDetails?.function?.repo}</OverflowTip>
                         </div>
-                        <div className="metrics-body">
-                            <div className="metrics-body-title">Total invocations</div>
-                            <div className="metrics-body-subtitle">{functionDetails?.metrics?.total_invocations?.toLocaleString() || 0}</div>
+                        <div className="ms-function-details-badge">
+                            <CodeGrayIcon />
+                            {functionDetails?.function?.language}
                         </div>
                     </div>
-                    <div className="metrics-divider"></div>
-                    <div className="metrics">
-                        <div className="metrics-img">
-                            <MetricsClockIcon />
+                    <div className="right">
+                        <PurpleQuestionMark className="info-icon" alt="Integration info" onClick={setOpenFunctionDetails} />
+                    </div>
+                </div>
+            }
+        >
+            <div className="function-data-container">
+                <CustomTabs tabs={tabValuesList} size={'small'} tabValue={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
+                {tabValue === tabValuesList[0] && (
+                    <div className="metrics-wrapper">
+                        <div className="metrics">
+                            <div className="metrics-img">
+                                <MetricsIcon />
+                            </div>
+                            <div className="metrics-body">
+                                <div className="metrics-body-title">Total invocations</div>
+                                <div className="metrics-body-subtitle">{functionDetails?.metrics?.total_invocations?.toLocaleString() || 0}</div>
+                            </div>
                         </div>
-                        <div className="metrics-body">
-                            <div className="metrics-body-title">Av. Processing time</div>
-                            <div className="metrics-body-subtitle">
-                                {functionDetails?.metrics?.average_processing_time}
-                                <span>/ms</span>
+                        <div className="metrics-divider"></div>
+                        <div className="metrics">
+                            <div className="metrics-img">
+                                <MetricsClockIcon />
+                            </div>
+                            <div className="metrics-body">
+                                <div className="metrics-body-title">Av. Processing time</div>
+                                <div className="metrics-body-subtitle">
+                                    {functionDetails?.metrics?.average_processing_time}
+                                    <span>/ms</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="metrics-divider"></div>
+                        <div className="metrics">
+                            <div className="metrics-img">
+                                <MetricsErrorIcon />
+                            </div>
+                            <div className="metrics-body">
+                                <div className="metrics-body-title">Error rate</div>
+                                <div className="metrics-body-subtitle">{functionDetails?.metrics?.error_rate}%</div>
                             </div>
                         </div>
                     </div>
-                    <div className="metrics-divider"></div>
-                    <div className="metrics">
-                        <div className="metrics-img">
-                            <MetricsErrorIcon />
-                        </div>
-                        <div className="metrics-body">
-                            <div className="metrics-body-title">Error rate</div>
-                            <div className="metrics-body-subtitle">{functionDetails?.metrics?.error_rate}%</div>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {tabValue === tabValuesList[1] && <FunctionLogs functionId={functionDetails?.function?.id} />}
-            {tabValue === tabValuesList[2] && (
-                <dls is="x3d">
-                    {attachedFunctionDlsMsgs && attachedFunctionDlsMsgs?.length > 0 ? (
-                        <>
-                            <list is="x3d">
-                                <div className="msg-item-header">
-                                    <label className="date">Time</label>
-                                    <label className="text">Text</label>
-                                </div>
-                                <div className="messages-list">
-                                    {attachedFunctionDlsMsgs?.map((message, index) => {
-                                        return (
-                                            <div
-                                                className={`msg-item ${index % 2 === 0 ? 'even' : 'odd'} ${selectedMsg?.id === message?.id ? 'selected' : undefined}`}
-                                                onClick={() => setSelectedMsg(message)}
-                                                key={`dls-${index}`}
-                                            >
-                                                <label className="date">{parsingDate(message?.message?.time_sent, true, true)}</label>
-                                                <label className="text">{messageParser('json', message?.message?.data)}</label>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </list>
-                            <preview is="x3d">
-                                {selectedMsg && loadMessageData && (
-                                    <div className="loading">
-                                        <Spinner />
+                )}
+                {tabValue === tabValuesList[1] && <FunctionLogs functionId={functionDetails?.function?.id} />}
+                {tabValue === tabValuesList[2] && (
+                    <dls is="x3d">
+                        {attachedFunctionDlsMsgs && attachedFunctionDlsMsgs?.length > 0 ? (
+                            <>
+                                <list is="x3d">
+                                    <div className="msg-item-header">
+                                        <label className="date">Time</label>
+                                        <label className="text">Text</label>
                                     </div>
-                                )}
-                                {selectedMsg && !loadMessageData && (
-                                    <Editor
-                                        options={{
-                                            minimap: { enabled: false },
-                                            scrollbar: { verticalScrollbarSize: 0, horizontalScrollbarSize: 0 },
-                                            scrollBeyondLastLine: false,
-                                            roundedSelection: false,
-                                            formatOnPaste: true,
-                                            formatOnType: true,
-                                            fontSize: '12px',
-                                            fontFamily: 'Inter',
-                                            lineNumbers: 'off',
-                                            readOnly: true
-                                        }}
-                                        className="editor-message"
-                                        language={'json'}
-                                        height="calc(100%)"
-                                        width="calc(100%)"
-                                        value={JSON.stringify(messageDetails, null, 2)}
-                                    />
-                                )}
-                            </preview>
-                        </>
-                    ) : (
-                        <div className="no-messages">
-                            <p>No messages to show</p>
-                        </div>
-                    )}
-                </dls>
-            )}
-        </div>
+                                    <div className="messages-list">
+                                        {attachedFunctionDlsMsgs?.map((message, index) => {
+                                            return (
+                                                <div
+                                                    className={`msg-item ${index % 2 === 0 ? 'even' : 'odd'} ${selectedMsg?.id === message?.id ? 'selected' : undefined}`}
+                                                    onClick={() => setSelectedMsg(message)}
+                                                    key={`dls-${index}`}
+                                                >
+                                                    <label className="date">{parsingDate(message?.message?.time_sent, true, true)}</label>
+                                                    <label className="text">{messageParser('json', message?.message?.data)}</label>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </list>
+                                <preview is="x3d">
+                                    {selectedMsg && loadMessageData && (
+                                        <div className="loading">
+                                            <Spinner />
+                                        </div>
+                                    )}
+                                    {selectedMsg && !loadMessageData && (
+                                        <Editor
+                                            options={{
+                                                minimap: { enabled: false },
+                                                scrollbar: { verticalScrollbarSize: 0, horizontalScrollbarSize: 0 },
+                                                scrollBeyondLastLine: false,
+                                                roundedSelection: false,
+                                                formatOnPaste: true,
+                                                formatOnType: true,
+                                                fontSize: '12px',
+                                                fontFamily: 'Inter',
+                                                lineNumbers: 'off',
+                                                readOnly: true
+                                            }}
+                                            className="editor-message"
+                                            language={'json'}
+                                            height="calc(100%)"
+                                            width="calc(100%)"
+                                            value={JSON.stringify(messageDetails, null, 2)}
+                                        />
+                                    )}
+                                </preview>
+                            </>
+                        ) : (
+                            <div className="no-messages">
+                                <p>No messages to show</p>
+                            </div>
+                        )}
+                    </dls>
+                )}
+            </div>
+        </Drawer>
     );
 };
 

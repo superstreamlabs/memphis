@@ -16,13 +16,14 @@ import { useState, useEffect } from 'react';
 import { ReactComponent as TestEventModalIcon } from '../../../../../../assets/images/testEventModalcon.svg';
 import Button from '../../../../../../components/button';
 import Input from '../../../../../../components/Input';
+import Modal from '../../../../../../components/modal';
 import Editor from '@monaco-editor/react';
 import TestResult from '../testResult';
 import { generateJSONWithMaxLength } from '../../../../../../services/valueConvertor';
 import { httpRequest } from '../../../../../../services/http';
 import { ApiEndpoints } from '../../../../../../const/apiEndpoints';
 
-const TestMockEvent = ({ functionDetails, open, selectedVersion }) => {
+const TestMockEvent = ({ functionDetails, open, selectedVersion, clickOutside }) => {
     const [testMock, setTestMock] = useState('');
     const [inputs, setInputs] = useState(null);
     const [testResultData, setTestResult] = useState(null);
@@ -107,102 +108,106 @@ const TestMockEvent = ({ functionDetails, open, selectedVersion }) => {
     };
 
     return (
-        <div className="test-modal">
-            <div className="titleIcon">
-                <TestEventModalIcon />
-            </div>
-            <div className="header">
-                <div className="title-container">
-                    <p className="title">Test the function</p>
+        <Modal width={'75vw'} height={'80vh'} clickOutside={() => clickOutside()} open={open} displayButtons={false}>
+            <div className="test-modal">
+                <div className="titleIcon">
+                    <TestEventModalIcon />
                 </div>
-                <Button
-                    width="120px"
-                    height="40px"
-                    placeholder={'Test'}
-                    colorType="black"
-                    radiusType="circle"
-                    backgroundColorType={'orange'}
-                    fontSize="12px"
-                    fontWeight="bold"
-                    onClick={() => {
-                        setTestResult(null);
-                        testEvent();
-                    }}
-                    isLoading={isLoading}
-                />
-            </div>
-            <div className="test-area">
-                <div className="text-area-wrapper">
-                    <span className="title-span">
-                        <label className="title">Event data</label>{' '}
-                        {missingMockIndicator && <span className="missing-mock">{`(The file 'test.json' is cannot be found. Creating artificial data instead)`}</span>}
-                    </span>
-
-                    <div className="text-area">
-                        <Editor
-                            options={{
-                                minimap: { enabled: false },
-                                scrollbar: { verticalScrollbarSize: 0, horizontalScrollbarSize: 0 },
-                                scrollBeyondLastLine: false,
-                                roundedSelection: false,
-                                formatOnPaste: true,
-                                formatOnType: true,
-                                readOnly: false,
-                                fontSize: '12px',
-                                fontFamily: 'Inter',
-                                lineNumbers: 'off',
-                                automaticLayout: true
-                            }}
-                            language={'json'}
-                            height="calc(100%)"
-                            overflowY={'auto'}
-                            defaultValue={testMock}
-                            value={testMock}
-                            key={'tested'}
-                            onChange={(value) => setTestMock(value)}
-                        />
+                <div className="header">
+                    <div className="title-container">
+                        <p className="title">Test the function</p>
                     </div>
-                    {inputs && inputs?.length > 0 && (
-                        <>
-                            <label className="title-inputs">Inputs</label>
-                            <label className="description-inputs">Not sure how to fill in the inputs? Head over the function`s README for more information</label>
-                            <div className="inputs-section">
-                                {inputs?.map((input, index) => (
-                                    <span className="input-row" key={`${input?.name}${index}`}>
-                                        <Input
-                                            placeholder={input?.name}
-                                            type="text"
-                                            radiusType="semi-round"
-                                            colorType="gray"
-                                            backgroundColorType="light-gray"
-                                            borderColorType="gray"
-                                            height="40px"
-                                            fontSize="14px"
-                                            value={input?.name}
-                                            disabled
-                                        />
-                                        <Input
-                                            placeholder={'Value'}
-                                            type="text"
-                                            radiusType="semi-round"
-                                            colorType="black"
-                                            backgroundColorType="none"
-                                            borderColorType="gray"
-                                            height="40px"
-                                            fontSize="14px"
-                                            onBlur={(e) => handleChange(e, index)}
-                                            onChange={(e) => handleChange(e, index)}
-                                            value={input?.value}
-                                        />
-                                    </span>
-                                ))}
-                            </div>
-                        </>
-                    )}
+                    <Button
+                        width="120px"
+                        height="40px"
+                        placeholder={'Test'}
+                        colorType="black"
+                        radiusType="circle"
+                        backgroundColorType={'orange'}
+                        fontSize="12px"
+                        fontWeight="bold"
+                        onClick={() => {
+                            setTestResult(null);
+                            testEvent();
+                        }}
+                        isLoading={isLoading}
+                    />
                 </div>
-                <TestResult testResultData={testResultData} loading={isLoading} />
+                <div className="test-area">
+                    <div className="text-area-wrapper">
+                        <span className="title-span">
+                            <label className="title">Event data</label>{' '}
+                            {missingMockIndicator && (
+                                <span className="missing-mock">{`(The file 'test.json' is cannot be found. Creating artificial data instead)`}</span>
+                            )}
+                        </span>
+
+                        <div className="text-area">
+                            <Editor
+                                options={{
+                                    minimap: { enabled: false },
+                                    scrollbar: { verticalScrollbarSize: 0, horizontalScrollbarSize: 0 },
+                                    scrollBeyondLastLine: false,
+                                    roundedSelection: false,
+                                    formatOnPaste: true,
+                                    formatOnType: true,
+                                    readOnly: false,
+                                    fontSize: '12px',
+                                    fontFamily: 'Inter',
+                                    lineNumbers: 'off',
+                                    automaticLayout: true
+                                }}
+                                language={'json'}
+                                height="calc(100%)"
+                                overflowY={'auto'}
+                                defaultValue={testMock}
+                                value={testMock}
+                                key={'tested'}
+                                onChange={(value) => setTestMock(value)}
+                            />
+                        </div>
+                        {inputs && inputs?.length > 0 && (
+                            <>
+                                <label className="title-inputs">Inputs</label>
+                                <label className="description-inputs">Not sure how to fill in the inputs? Head over the function`s README for more information</label>
+                                <div className="inputs-section">
+                                    {inputs?.map((input, index) => (
+                                        <span className="input-row" key={`${input?.name}${index}`}>
+                                            <Input
+                                                placeholder={input?.name}
+                                                type="text"
+                                                radiusType="semi-round"
+                                                colorType="gray"
+                                                backgroundColorType="light-gray"
+                                                borderColorType="gray"
+                                                height="40px"
+                                                fontSize="14px"
+                                                value={input?.name}
+                                                disabled
+                                            />
+                                            <Input
+                                                placeholder={'Value'}
+                                                type="text"
+                                                radiusType="semi-round"
+                                                colorType="black"
+                                                backgroundColorType="none"
+                                                borderColorType="gray"
+                                                height="40px"
+                                                fontSize="14px"
+                                                onBlur={(e) => handleChange(e, index)}
+                                                onChange={(e) => handleChange(e, index)}
+                                                value={input?.value}
+                                            />
+                                        </span>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                    <TestResult testResultData={testResultData} loading={isLoading} />
+                </div>
             </div>
-        </div>
+        </Modal>
     );
 };
 

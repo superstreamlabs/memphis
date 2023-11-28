@@ -85,7 +85,7 @@
                     width: 100%;
                     position: absolute;
                     left: 0;
-                    top: 50.5px;
+                    top: 48.5px;
                     display: flex;
                     flex-wrap: nowrap;
                     overflow: hidden;
@@ -101,7 +101,7 @@
                     display: flex;
                     flex-direction: column;
                     justify-content: flex-end;
-                    margin-left: 25px;
+                    margin-left: 10px;
                 }
 
                 &-cards {
@@ -287,10 +287,6 @@
         gap: 40px;
         margin: 8px 0;
     }
-
-    &-img {
-    }
-
     &-body {
         &-title {
             color: #b5b5b5;
