@@ -69,7 +69,7 @@ pipeline {
     ////////////////////////////////////////
 
     stage('Tests - Docker compose install - Master') {
-        when { branch 'master' }
+        // when { branch 'master' }
         steps {
             sh "rm -rf memphis-docker"
             dir ('memphis-devops'){
