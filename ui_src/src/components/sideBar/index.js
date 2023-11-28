@@ -208,16 +208,16 @@ function SideBar() {
     const PopoverActionItem = ({ icon, name, onClick, upgrade }) => {
         upgrade && setBannerType('upgrade');
         return (
-            <div className="item-wrap">
-                <div
-                    className="item"
-                    onClick={() => {
-                        if (upgrade) {
-                            setCloudModalOpen(true);
-                            setPopoverQuickActions(false);
-                        } else onClick();
-                    }}
-                >
+            <div
+                className="item-wrap"
+                onClick={() => {
+                    if (upgrade) {
+                        setCloudModalOpen(true);
+                        setPopoverQuickActions(false);
+                    } else onClick();
+                }}
+            >
+                <div className="item">
                     <span className="icons">{icon}</span>
                     <p className="item-title">{name}</p>
                 </div>

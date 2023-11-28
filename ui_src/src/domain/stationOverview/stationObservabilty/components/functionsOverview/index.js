@@ -16,14 +16,10 @@ import React, { useContext, useEffect, useState } from 'react';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
 import { Context } from '../../../../../hooks/store';
-import Modal from '../../../../../components/modal';
 import { StationStoreContext } from '../../../';
 import { ReactComponent as AddFunctionIcon } from '../../../../../assets/images/addFunction.svg';
 import { ReactComponent as PlusIcon } from '../../../../../assets/images/plusIcon.svg';
 import { ReactComponent as ProcessedIcon } from '../../../../../assets/images/processIcon.svg';
-import { ReactComponent as GitIcon } from '../../../../../assets/images/gitIcon.svg';
-import { ReactComponent as CodeGrayIcon } from '../../../../../assets/images/codeGrayIcon.svg';
-import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
 import { IoClose } from 'react-icons/io5';
 import { Drawer } from 'antd';
 import dataPassLineLottie from '../../../../../assets/lotties/dataPassLine.json';
@@ -185,6 +181,8 @@ const FunctionsOverview = ({ referredFunction, dismissFunction, moveToGenralView
         setCurrentFunction(null);
     };
 
+    const isDataMoving = stationState?.stationSocketData?.connected_producers?.length > 0 && stationState?.stationMetaData?.is_native;
+
     const statisticsData = [
         { name: 'Awaiting msgs', data: stationState?.stationFunctions?.total_awaiting_messages?.toLocaleString() },
         { name: 'In process', data: stationState?.stationFunctions?.total_processed_messages?.toLocaleString() },
@@ -209,29 +207,10 @@ const FunctionsOverview = ({ referredFunction, dismissFunction, moveToGenralView
                 <div className="tab-functions">
                     <div className="tab-functions-inner">
                         <div className="tab-functions-inner-line">
-                            {stationState?.stationMetaData?.is_native ? (
-                                <>
-                                    {stationState?.stationSocketData?.connected_producers?.length === 0 && (
-                                        <>
-                                            <Lottie animationData={dataPassLineEmptyLottie} loop={true} />
-                                            <Lottie animationData={dataPassLineEmptyLottie} loop={true} />
-                                        </>
-                                    )}
-                                    {stationState?.stationSocketData?.connected_producers?.length > 0 && (
-                                        <>
-                                            <Lottie animationData={dataPassLineLottie} loop={true} />
-                                            <Lottie animationData={dataPassLineLottie} loop={true} />
-                                        </>
-                                    )}
-                                </>
-                            ) : (
-                                <>
-                                    <Lottie animationData={dataPassLineEmptyLottie} loop={true} />
-                                    <Lottie animationData={dataPassLineEmptyLottie} loop={true} />
-                                </>
-                            )}
+                            <Lottie animationData={isDataMoving ? dataPassLineLottie : dataPassLineEmptyLottie} loop={true} />
+                            <Lottie animationData={isDataMoving ? dataPassLineLottie : dataPassLineEmptyLottie} loop={true} />
                         </div>
-                        {(!stationState?.stationFunctions?.functions || isLoading) && (
+                        {isLoading && (
                             <div className="loading">
                                 <Spinner />
                             </div>
@@ -256,12 +235,7 @@ const FunctionsOverview = ({ referredFunction, dismissFunction, moveToGenralView
                                                 selected={currentFunction?.id === functionItem?.id}
                                             />
                                         ))}
-                                        <div
-                                            className="tab-functions-inner-add"
-                                            onClick={() => {
-                                                setOpenFunctionsModal(true);
-                                            }}
-                                        >
+                                        <div className="tab-functions-inner-add" onClick={() => setOpenFunctionsModal(true)}>
                                             <PlusIcon />
                                         </div>
                                     </div>
@@ -286,24 +260,15 @@ const FunctionsOverview = ({ referredFunction, dismissFunction, moveToGenralView
                     </div>
                 </div>
             </functions-list>
-            <Modal
+            <FunctionsModal
+                applyFunction={(requestBody) => handleAddFunction(requestBody)}
                 open={openFunctionsModal}
                 clickOutside={() => {
                     setOpenFunctionsModal(false);
                     dismissFunction();
                 }}
-                displayButtons={false}
-                className="ms-function-details-modal"
-                height="95vh"
-                width="1200px"
-            >
-                <FunctionsModal
-                    applyFunction={(requestBody) => {
-                        handleAddFunction(requestBody);
-                    }}
-                    referredFunction={referredFunction}
-                />
-            </Modal>
+                referredFunction={referredFunction}
+            />
             <Drawer
                 placement="right"
                 size={'large'}
@@ -316,41 +281,12 @@ const FunctionsOverview = ({ referredFunction, dismissFunction, moveToGenralView
             >
                 <FunctionDetails selectedFunction={currentFunction} integrated={true} stationView />
             </Drawer>
-            <Drawer
-                placement="bottom"
+            <FunctionData
                 open={openBottomDetails}
-                height={'300px'}
                 onClose={() => setOpenBottomDetails(false)}
-                closeIcon={<IoClose style={{ color: '#D1D1D1', width: '25px', height: '25px' }} />}
-                maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
-                headerStyle={{ padding: '0px' }}
-                bodyStyle={{ padding: '0 20px' }}
-                destroyOnClose={true}
-                title={
-                    <>
-                        <div className="ms-function-details-top">
-                            <div className="left">
-                                <OverflowTip text={functionDetails?.function?.function_name}>
-                                    <span>{functionDetails?.function?.function_name}</span>
-                                </OverflowTip>
-                                <div className="ms-function-details-badge">
-                                    <GitIcon />
-                                    <OverflowTip text={functionDetails?.function?.repo}>{functionDetails?.function?.repo}</OverflowTip>
-                                </div>
-                                <div className="ms-function-details-badge">
-                                    <CodeGrayIcon />
-                                    {functionDetails?.function?.language}
-                                </div>
-                            </div>
-                            <div className="right">
-                                <PurpleQuestionMark className="info-icon" alt="Integration info" onClick={() => setOpenFunctionDetails(true)} />
-                            </div>
-                        </div>
-                    </>
-                }
-            >
-                <FunctionData functionDetails={functionDetails} />
-            </Drawer>
+                functionDetails={functionDetails}
+                setOpenFunctionDetails={() => setOpenFunctionDetails(true)}
+            />
         </div>
     );
 };

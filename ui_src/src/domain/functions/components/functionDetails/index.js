@@ -17,7 +17,8 @@ import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import rehypeSlug from 'rehype-slug';
 import emoji from 'emoji-dictionary';
-import Editor from '@monaco-editor/react';
+import Editor, { loader } from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
 import { FiGitCommit } from 'react-icons/fi';
 import { BiDownload } from 'react-icons/bi';
 import { GoFileDirectoryFill } from 'react-icons/go';
@@ -38,7 +39,6 @@ import CustomTabs from '../../../../components/Tabs';
 import SelectComponent from '../../../../components/select';
 import CloudModal from '../../../../components/cloudModal';
 import TestMockEvent from '../testFunctionModal/components/testMockEvent';
-import Modal from '../../../../components/modal';
 import Tooltip from '../../../../components/tooltip/tooltip';
 import { OWNER } from '../../../../const/globalConst';
 import { BsFileEarmarkCode, BsGit } from 'react-icons/bs';
@@ -52,6 +52,9 @@ import { getCodingLanguage } from '../../../../utils/languages';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { isCloud } from '../../../../services/valueConvertor';
 import { Context } from '../../../../hooks/store';
+
+loader.init();
+loader.config({ monaco });
 
 function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, clickApply, onBackToFunction = null, stationView }) {
     const [state, dispatch] = useContext(Context);
@@ -212,8 +215,34 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
             ?.replace(/`/g, '\\`');
     };
 
+    const shortInstallBtn = (selectedFunction?.installed || selectedFunction?.installed_in_progress) && !selectedFunction?.updates_available;
+    const installBtnPlaceholder = selectedFunction?.installed_in_progress ? (
+        ''
+    ) : selectedFunction?.installed ? (
+        <div className="code-btn">
+            {selectedFunction?.updates_available ? <BiDownload className="Install" /> : <DeleteIcon className="Uninstall" />}
+            {selectedFunction?.updates_available ? <label>Update</label> : null}
+        </div>
+    ) : (
+        <div className="code-btn">
+            <BiDownload className="Install" />
+            <label>Install</label>
+        </div>
+    );
+
+    const handleInstallBtnClick = () => {
+        if (selectedFunction?.installed) {
+            if (selectedFunction?.updates_available) {
+                handleInstall();
+            } else handleUnInstall();
+        } else {
+            handleInstall();
+        }
+        onBackToFunction && onBackToFunction();
+    };
+
     return (
-        <div className="function-drawer-container">
+        <div className="function-drawer-container" onClick={(e) => e.stopPropagation()}>
             {onBackToFunction && (
                 <div className="back-to-function" onClick={onBackToFunction}>
                     <ArrowBackIcon />
@@ -298,51 +327,16 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                     </div>
                                     <div className="header-flex">
                                         <Button
-                                            placeholder={
-                                                metaData?.installed_in_progress ? (
-                                                    ''
-                                                ) : selectedFunction?.installed ? (
-                                                    <div className="code-btn">
-                                                        {selectedFunction?.updates_available ? <BiDownload className="Install" /> : <DeleteIcon className="Uninstall" />}
-                                                        {selectedFunction?.updates_available ? <label>Update</label> : null}
-                                                    </div>
-                                                ) : (
-                                                    <div className="code-btn">
-                                                        <BiDownload className="Install" />
-                                                        <label>Install</label>
-                                                    </div>
-                                                )
-                                            }
-                                            width={
-                                                (selectedFunction?.installed || selectedFunction?.installed_in_progress) && !selectedFunction?.updates_available
-                                                    ? '34px'
-                                                    : '100px'
-                                            }
-                                            backgroundColorType={
-                                                (selectedFunction?.installed || selectedFunction?.installed_in_progress) && !selectedFunction?.updates_available
-                                                    ? 'white'
-                                                    : 'purple'
-                                            }
-                                            border={
-                                                (selectedFunction?.installed || selectedFunction?.installed_in_progress) && !selectedFunction?.updates_available
-                                                    ? 'gray-light'
-                                                    : null
-                                            }
-                                            colorType={'white'}
+                                            placeholder={installBtnPlaceholder}
+                                            colorType={metaData?.installed_in_progress || selectedFunction?.installed_in_progress ? 'purple' : 'white'}
+                                            width={shortInstallBtn ? '34px' : '100px'}
+                                            backgroundColorType={shortInstallBtn ? 'white' : 'purple'}
+                                            border={shortInstallBtn ? 'gray-light' : null}
                                             radiusType={'circle'}
                                             fontSize="12px"
                                             fontFamily="InterSemiBold"
-                                            onClick={() => {
-                                                if (selectedFunction?.installed) {
-                                                    if (selectedFunction?.updates_available) {
-                                                        handleInstall();
-                                                    } else handleUnInstall();
-                                                } else {
-                                                    handleInstall();
-                                                }
-                                                onBackToFunction && onBackToFunction();
-                                            }}
-                                            isLoading={metaData?.installed_in_progress}
+                                            onClick={handleInstallBtnClick}
+                                            isLoading={metaData?.installed_in_progress || selectedFunction?.installed_in_progress}
                                             disabled={!selectedFunction?.is_valid || selectedFunction?.installed_in_progress}
                                         />
                                     </div>
@@ -392,9 +386,12 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
             <div>
                 <CustomTabs tabs={['Details', 'Code']} value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
             </div>
-            <Modal width={'75vw'} height={'80vh'} clickOutside={() => setIsTestFunctionModalOpen(false)} open={isTestFunctionModalOpen} displayButtons={false}>
-                <TestMockEvent functionDetails={selectedFunction} open={isTestFunctionModalOpen} selectedVersion={selectedVersion} />
-            </Modal>
+            <TestMockEvent
+                functionDetails={selectedFunction}
+                clickOutside={() => setIsTestFunctionModalOpen(false)}
+                open={isTestFunctionModalOpen}
+                selectedVersion={selectedVersion}
+            />
             {tabValue === 'Details' && (
                 <code is="x3d">
                     <span className="readme">
@@ -534,7 +531,7 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                     fontSize="12px"
                                     fontFamily="InterSemiBold"
                                     onClick={() => setIsTestFunctionModalOpen(true)}
-                                    disabled={!selectedFunction?.installed}
+                                    disabled={!selectedFunction?.installed || selectedFunction?.installed_in_progress}
                                 />
                             )}
                             <div className="code-content">
