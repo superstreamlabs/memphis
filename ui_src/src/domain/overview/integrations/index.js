@@ -28,6 +28,7 @@ import { ApiEndpoints } from '../../../const/apiEndpoints';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import ErrorRoundedIcon from '@material-ui/icons/ErrorRounded';
 import LockFeature from '../../../components/lockFeature';
+import {entitlementChecker} from "../../../utils/plan";
 
 const Integrations = () => {
     const [state, dispatch] = useContext(Context);
@@ -39,7 +40,7 @@ const Integrations = () => {
     ]);
     const history = useHistory();
     const ref = useRef();
-    const storageTiringLimits = state?.userData?.entitlements && state?.userData?.entitlements['feature-storage-tiering'] ? false : true;
+    const storageTiringLimits = !entitlementChecker(state, 'feature-storage-tiering');
 
     useEffect(() => {
         getallIntegration();
