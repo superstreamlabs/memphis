@@ -25,6 +25,7 @@ pipeline {
     stage('Create memphis namespace in Kubernetes'){
         steps {
             sh """
+            yum install lsof -y
 	    	minikube start
             minikube addons enable gcp-auth --refresh
                 kubectl config use-context minikube
