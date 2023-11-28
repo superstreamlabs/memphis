@@ -168,7 +168,7 @@ export default function FunctionCard({
     return (
         <div className={`ms-function-card`} onClick={() => isActive && onClick && onClick()}>
             <Tooltip text="Awaiting messages">
-                <div className={`ms-function-card-badge-left ${!selectedFunction?.activated ? 'deactivated' : undefined}`}>
+                <div className={`ms-function-card-badge-left badge ${!selectedFunction?.activated ? 'deactivated' : undefined}`}>
                     <FunctionProcessingWarningIcon />
                     {convertLongNumbers(selectedFunction?.pending_messages || 0)}
                 </div>
@@ -176,7 +176,7 @@ export default function FunctionCard({
             <div className={`ms-function-card-top`}>
                 {
                     <Tooltip text="In process">
-                        <div className={`ms-function-card-badge-top ${!selectedFunction?.activated ? 'deactivated' : undefined}`}>
+                        <div className={`ms-function-card-badge-top badge ${!selectedFunction?.activated ? 'deactivated' : undefined}`}>
                             <FunctionProcessingIcon />
                             {convertLongNumbers(functionItem?.in_process_messages || 0)}
                         </div>
@@ -202,13 +202,11 @@ export default function FunctionCard({
 
                     <div className={`ms-function-card-title ${!selectedFunction?.activated ? 'deactivated-function' : undefined}`}>
                         <FunctionBoxTitleIcon />
-                        <div>
-                            <span>{selectedFunction?.name}</span>
-                        </div>
+                        <span>{selectedFunction?.name}</span>
                     </div>
                 </div>
                 <Tooltip text="Dead-letter">
-                    <div className={`ms-function-card-badge-bottom ${!selectedFunction?.activated ? 'deactivated' : undefined}`}>
+                    <div className={`ms-function-card-badge-bottom badge ${!selectedFunction?.activated ? 'deactivated' : undefined}`}>
                         <FunctionProcessingIcon />
                         {convertLongNumbers(functionItem?.dls_msgs_count || 0)}
                     </div>

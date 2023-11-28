@@ -303,6 +303,8 @@ const Messages = ({ referredFunction }) => {
             amount = stationState?.stationSocketData?.poison_messages?.length;
         else if (tabValue === tabs[1] && subTabValue === subTabs[1]?.name && stationState?.stationSocketData?.schema_failed_messages?.length > 0)
             amount = stationState?.stationSocketData?.schema_failed_messages?.length;
+        else if (tabValue === tabs[1] && subTabValue === subTabs[2]?.name && stationState?.stationSocketData?.functions_failed_messages?.length > 0)
+            amount = stationState?.stationSocketData?.functions_failed_messages?.length;
         return (
             amount > 0 && (
                 <div className="messages-amount">
@@ -379,7 +381,7 @@ const Messages = ({ referredFunction }) => {
                                 (tabValue === tabs[1] &&
                                     ((subTabValue === subTabs[0]?.name && stationState?.stationSocketData?.poison_messages?.length > 0) ||
                                         (subTabValue === subTabs[1]?.name && stationState?.stationSocketData?.schema_failed_messages?.length > 0) ||
-                                        (subTabValue === subTabs[1]?.name && stationState?.stationSocketData?.functions_failed_messages?.length > 0)))) && (
+                                        (subTabValue === subTabs[2]?.name && stationState?.stationSocketData?.functions_failed_messages?.length > 0)))) && (
                                 <Button
                                     width="80px"
                                     height="32px"
