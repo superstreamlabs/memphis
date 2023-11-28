@@ -30,6 +30,7 @@ import CloudModal from '../../components/cloudModal';
 import { FaArrowCircleUp } from 'react-icons/fa';
 import { Context } from '../../hooks/store';
 import Station from './components/station';
+import {entitlementChecker} from "../../utils/plan";
 
 const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
     const [state, dispatch] = useContext(Context);
@@ -182,12 +183,12 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                         <div
                             className="close-wrapper"
                             onClick={() => {
-                                if (!expend && state?.userData?.entitlements && !state?.userData?.entitlements['feature-graph-overview']) {
+                                if (!expend && !entitlementChecker(state, 'feature-graph-overview')) {
                                     setOpenCloudModal(true);
                                 } else {
                                     if (expend) {
                                         setExpended(false);
-                                    } else if (state?.userData?.entitlements && state?.userData?.entitlements['feature-graph-overview']) {
+                                    } else if (entitlementChecker(state, 'feature-graph-overview')) {
                                         setExpended(true);
                                     }
                                 }
@@ -196,7 +197,7 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                             {expend && <IoClose />}
 
                             {!expend && <MdZoomOutMap />}
-                            {!expend && state?.userData?.entitlements && !state?.userData?.entitlements['feature-graph-overview'] && (
+                            {!expend && !entitlementChecker(state, 'feature-graph-overview') && (
                                 <FaArrowCircleUp className="lock-feature-icon" />
                             )}
                         </div>
@@ -229,7 +230,7 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                         edges={edges}
                         fit={true}
                         ref={ref}
-                        zoomable={state?.userData?.entitlements && state?.userData?.entitlements['feature-graph-overview'] ? true : false}
+                        zoomable={entitlementChecker(state, 'feature-graph-overview')}
                         maxZoom={0.1}
                         minZoom={-0.9}
                         maxHeight={nodes.length > 3 ? nodes.length * 350 : 900}
