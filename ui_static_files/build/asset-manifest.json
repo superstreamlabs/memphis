@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.e9270f18.css",
-    "main.js": "/static/js/main.d8144a03.js",
+    "main.css": "/static/css/main.d84f6e1f.css",
+    "main.js": "/static/js/main.713664b1.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -199,6 +199,7 @@
     "static/media/dls_enable_icon.svg": "/static/media/dls_enable_icon.03a3706804e0d1fc7b44336af88b1314.svg",
     "static/media/processingWarningIcon.svg": "/static/media/processingWarningIcon.00f598e5931d44b097434117ba250df9.svg",
     "static/media/partitionIcon.svg": "/static/media/partitionIcon.366540a11872c42c760905b6708b4af3.svg",
+    "static/media/index.umd.cjs": "/static/media/index.umd.411bcbb098030aa2d966.cjs",
     "static/media/deadLetter.svg": "/static/media/deadLetter.0806dd1e9dce011b6b909e31634b0311.svg",
     "static/media/errorindication.svg": "/static/media/errorindication.6f6e388f5a1f899e9d6c810addcaf2d9.svg",
     "static/media/totalMsgIcon.svg": "/static/media/totalMsgIcon.6915a97cf4f9c4b6b9113182f34576d2.svg",
@@ -315,7 +316,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.e9270f18.css",
-    "static/js/main.d8144a03.js"
+    "static/css/main.d84f6e1f.css",
+    "static/js/main.713664b1.js"
   ]
 }
