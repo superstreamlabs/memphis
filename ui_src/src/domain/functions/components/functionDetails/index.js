@@ -298,7 +298,7 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                             <>
                                 <div className="action-section-btn">
                                     <div className="header-flex">
-                                        <Tooltip text={selectedFunction?.cloned_updates_invalid_reason}>
+                                        <Tooltip text={selectedFunction?.invalid_reason}>
                                             <span>
                                                 <Button
                                                     placeholder={

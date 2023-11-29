@@ -259,7 +259,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                 />
                             )}
                             {isCloud() && (
-                                <TooltipComponent text={functionDetails?.cloned_updates_invalid_reason}>
+                                <TooltipComponent text={functionDetails?.invalid_reason}>
                                     <span>
                                         <Button
                                             width={installShortBtn ? '34px' : '100px'}
