@@ -479,7 +479,7 @@ const Messages = ({ referredFunction }) => {
                                 title={
                                     <>
                                         <span>Dead-letter station configuration</span>
-                                        <Button
+                                        {/* <Button
                                             width="130px"
                                             height="25px"
                                             placeholder={
@@ -496,13 +496,33 @@ const Messages = ({ referredFunction }) => {
                                             fontWeight={600}
                                             disabled={!stationState?.stationMetaData?.is_native}
                                             onClick={() => (dls ? setDisableModal(true) : setUseDlsModal(true))}
-                                        />
+                                        /> */}
                                     </>
                                 }
                                 desc="Triggers for storing messages in the dead-letter station."
-                                rightSection={false}
+                                // rightSection={false}
+                                data={[
+                                    <Button
+                                        width="130px"
+                                        height="25px"
+                                        placeholder={
+                                            <div className="use-dls-button">
+                                                {dls ? <DisconnectIcon /> : <UpRightArrow />}
+                                                <p>{dls ? 'Disable' : 'Enable'} Consumption</p>
+                                            </div>
+                                        }
+                                        colorType={dls ? 'white' : 'black'}
+                                        radiusType="circle"
+                                        backgroundColorType={dls ? 'red' : 'orange'}
+                                        fontSize="10px"
+                                        fontFamily="InterSemiBold"
+                                        fontWeight={600}
+                                        disabled={!stationState?.stationMetaData?.is_native}
+                                        onClick={() => (dls ? setDisableModal(true) : setUseDlsModal(true))}
+                                    />
+                                ]}
                             >
-                                <DlsConfig />
+                                {/* <DlsConfig /> */}
                             </DetailBox>
                             <div className="horizontal-divider" />
                             <DetailBox
@@ -546,7 +566,6 @@ const Messages = ({ referredFunction }) => {
                             )}
                             {stationState?.stationSocketData?.followers?.length > 0 && !isCloud() && stationState?.stationPartition !== -1 && (
                                 <>
-                                    {' '}
                                     <DetailBox
                                         icon={<FollowersIcon width={24} alt="followersImg" />}
                                         title={'Followers'}
