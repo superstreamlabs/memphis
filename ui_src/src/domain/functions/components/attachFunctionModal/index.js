@@ -44,8 +44,8 @@ const AttachFunctionModal = ({ open, clickOutside, selectedFunction }) => {
     const history = useHistory();
 
     useEffect(() => {
-        getAllStations();
-    }, []);
+        open && getAllStations();
+    }, [open]);
 
     useEffect(() => {
         if (searchInput === '') {
