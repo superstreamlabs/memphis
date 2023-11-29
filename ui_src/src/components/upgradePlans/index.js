@@ -191,6 +191,17 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
             >
                 <Fragment>
                     <div className="instructions-redirect">
+                        {downgradeInstructions['feature-integration-slack'] && (
+                            <div className="redirect-section">
+                                <div className="violations-list">
+                                    <p className="violation-title"> Using Slack integration is violating the new plan</p>
+                                    <div className="hint-line">
+                                        <HiOutlineExclamationCircle />
+                                        <span>Please fix the following issues before performing a downgrade</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         {downgradeInstructions['feature-management-users'] && (
                             <div className="redirect-section">
                                 <p className="violation-title">Too many management users ({downgradeInstructions['feature-management-users']['usage']})</p>
@@ -280,8 +291,26 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
                                         </div>
                                     </div>
                                 )}
-                            </div>
-                        )}
+                                {downgradeInstructions['feature-apply-functions'] && (
+                                    <div className="violations-list">
+                                        <p className="violation-title">Some stations have attached functions</p>
+                                        <div className="hint-line">
+                                            <HiOutlineExclamationCircle />
+                                            <span>The plan you are about to downgrade does not allow to use attached functions feature</span>
+                                        </div>
+                                    </div>
+                                )}
+                                {downgradeInstructions['feature-dls-consumption-linkage'] && (
+                                    <div className="violations-list">
+                                        <p className="violation-title">Some stations are utilizing the DLS linkage feature</p>
+                                        <div className="hint-line">
+                                            <HiOutlineExclamationCircle />
+                                            <span>The plan you are about to downgrade to does not allow to use DLS linkage feature</span>
+                                        </div>
+                                    </div>
+                                )}
+                                </div>
+                            )}
                     </div>
                     <div className="instructions-button">
                         <Button
