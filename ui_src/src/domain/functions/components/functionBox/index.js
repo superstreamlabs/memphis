@@ -161,7 +161,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
         }
     };
 
-    const installShortBtn = (functionDetails?.installed || functionDetails?.installed_in_progress) && !functionDetails?.updates_available;
+    const installShortBtn = functionDetails?.installed_in_progress || (functionDetails?.installed && !functionDetails?.updates_available);
     const installBtnPlaceholder = functionDetails?.installed_in_progress ? ( //loader
         ''
     ) : functionDetails?.installed ? (
@@ -210,7 +210,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                     </commits>
                                 </deatils>
                                 <description is="x3d">
-                                    {isValid ? (
+                                    {isValid || (!isValid && functionDetails?.installed) ? (
                                         functionDetails?.description
                                     ) : (
                                         <Skeleton.Button
@@ -222,7 +222,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                             </div>
                         </div>
                         <div onClick={(e) => e.stopPropagation()} className="install-button">
-                            {!isValid && (
+                            {!isValid && !functionDetails?.installed && (
                                 <div className="warning">
                                     <IoIosInformationCircle style={{ fontSize: '20px', color: '#fc3400' }} />
                                     <OverflowTip text={functionDetails?.invalid_reason} maxWidth={'260px'} textColor="#fc3400">
@@ -259,13 +259,13 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                 />
                             )}
                             {isCloud() && (
-                                <TooltipComponent text={functionDetails?.invalid_reason}>
+                                <TooltipComponent text={functionDetails?.installed ? functionDetails?.invalid_reason : ''}>
                                     <span>
                                         <Button
                                             width={installShortBtn ? '34px' : '100px'}
                                             height="34px"
                                             placeholder={installBtnPlaceholder}
-                                            colorType="white"
+                                            colorType={installShortBtn ? 'purple' : 'white'}
                                             radiusType="circle"
                                             backgroundColorType={installShortBtn ? 'white' : 'purple'}
                                             border={installShortBtn ? 'gray-light' : null}
@@ -281,7 +281,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                         </div>
                     </div>
                 </header>
-                {isTagsOn && isValid && !functionDetails?.installed && (
+                {isTagsOn && (isValid || (!isValid && functionDetails?.installed)) && (
                     <footer is="x3d" style={{ borderTop: !functionDetails?.tags || functionDetails?.tags?.length === 0 ? 'none' : '' }}>
                         <TagsList
                             tagsToShow={functionDetails?.tags?.length > 5 ? 5 : functionDetails?.tags?.length}

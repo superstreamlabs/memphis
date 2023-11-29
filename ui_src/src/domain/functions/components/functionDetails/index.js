@@ -71,6 +71,7 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
     const [isFileContentLoading, setIsFileContentLoading] = useState(false);
     const [loading, setLoading] = useState(false);
     const [openUpgradeModal, setOpenUpgradeModal] = useState(false);
+    const [path, setPath] = useState(null);
 
     const emojiSupport = (text) => text?.replace(/:\w+:/gi, (name) => emoji?.getUnicode(name));
     const formattedMarkdownContent = (text) => text.replace((/`/g, '\\`'));
@@ -78,6 +79,20 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
     useEffect(() => {
         getFunctionDetails();
     }, [selectedFunction, selectedVersion]);
+
+    useEffect(() => {
+        if (path) {
+            setFileContent('');
+            getFileContent(path);
+        }
+    }, [selectedVersion]);
+
+    useEffect(() => {
+        if (tabValue === 'Details') {
+            setFileContent(null);
+            setPath(null);
+        }
+    }, [tabValue]);
 
     useEffect(() => {
         buildTree(files);
@@ -201,6 +216,7 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
         if (!path) return;
         const lang = path?.split('.');
         lang?.length > 1 && setSelectedLanguage(lang[lang.length - 1]);
+        setPath(path);
         getFileContent(path);
     };
 
@@ -215,7 +231,7 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
             ?.replace(/`/g, '\\`');
     };
 
-    const shortInstallBtn = (selectedFunction?.installed || selectedFunction?.installed_in_progress) && !selectedFunction?.updates_available;
+    const shortInstallBtn = selectedFunction?.installed_in_progress || (selectedFunction?.installed && !selectedFunction?.updates_available);
     const installBtnPlaceholder = selectedFunction?.installed_in_progress ? (
         ''
     ) : selectedFunction?.installed ? (
@@ -298,47 +314,45 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                             <>
                                 <div className="action-section-btn">
                                     <div className="header-flex">
-                                        <Tooltip text={selectedFunction?.invalid_reason}>
-                                            <span>
-                                                <Button
-                                                    placeholder={
-                                                        isCloud() && !state?.allowedActions?.can_apply_functions ? (
-                                                            <span className="attach-btn">
-                                                                <label>Attach</label>
-                                                                <FaArrowCircleUp className="lock-feature-icon" />
-                                                            </span>
-                                                        ) : (
-                                                            <span className="attach-btn">Attach</span>
-                                                        )
-                                                    }
-                                                    width={'100px'}
-                                                    backgroundColorType={'purple'}
-                                                    colorType={'white'}
-                                                    radiusType={'circle'}
-                                                    fontSize="12px"
-                                                    fontFamily="InterSemiBold"
-                                                    onClick={() =>
-                                                        !isCloud() || state?.allowedActions?.can_apply_functions ? clickApply('attach') : setOpenUpgradeModal(true)
-                                                    }
-                                                    disabled={selectedFunction?.installed_in_progress || !selectedFunction?.installed}
-                                                />
-                                            </span>
-                                        </Tooltip>
-                                    </div>
-                                    <div className="header-flex">
                                         <Button
-                                            placeholder={installBtnPlaceholder}
-                                            colorType={metaData?.installed_in_progress || selectedFunction?.installed_in_progress ? 'purple' : 'white'}
-                                            width={shortInstallBtn ? '34px' : '100px'}
-                                            backgroundColorType={shortInstallBtn ? 'white' : 'purple'}
-                                            border={shortInstallBtn ? 'gray-light' : null}
+                                            placeholder={
+                                                isCloud() && !state?.allowedActions?.can_apply_functions ? (
+                                                    <span className="attach-btn">
+                                                        <label>Attach</label>
+                                                        <FaArrowCircleUp className="lock-feature-icon" />
+                                                    </span>
+                                                ) : (
+                                                    <span className="attach-btn">Attach</span>
+                                                )
+                                            }
+                                            width={'100px'}
+                                            backgroundColorType={'purple'}
+                                            colorType={'white'}
                                             radiusType={'circle'}
                                             fontSize="12px"
                                             fontFamily="InterSemiBold"
-                                            onClick={handleInstallBtnClick}
-                                            isLoading={metaData?.installed_in_progress || selectedFunction?.installed_in_progress}
-                                            disabled={!selectedFunction?.is_valid || selectedFunction?.installed_in_progress}
+                                            onClick={() => (!isCloud() || state?.allowedActions?.can_apply_functions ? clickApply('attach') : setOpenUpgradeModal(true))}
+                                            disabled={selectedFunction?.installed_in_progress || !selectedFunction?.installed}
                                         />
+                                    </div>
+                                    <div className="header-flex">
+                                        <Tooltip text={selectedFunction?.invalid_reason}>
+                                            <span>
+                                                <Button
+                                                    placeholder={installBtnPlaceholder}
+                                                    colorType={shortInstallBtn ? 'purple' : 'white'}
+                                                    width={shortInstallBtn ? '34px' : '100px'}
+                                                    backgroundColorType={shortInstallBtn ? 'white' : 'purple'}
+                                                    border={shortInstallBtn ? 'gray-light' : null}
+                                                    radiusType={'circle'}
+                                                    fontSize="12px"
+                                                    fontFamily="InterSemiBold"
+                                                    onClick={handleInstallBtnClick}
+                                                    isLoading={metaData?.installed_in_progress || selectedFunction?.installed_in_progress}
+                                                    disabled={!selectedFunction?.is_valid || selectedFunction?.installed_in_progress}
+                                                />
+                                            </span>
+                                        </Tooltip>
                                     </div>
                                 </div>
                             </>
