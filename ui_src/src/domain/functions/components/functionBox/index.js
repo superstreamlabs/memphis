@@ -254,7 +254,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                     backgroundColorType={'purple'}
                                     fontSize="12px"
                                     fontFamily="InterSemiBold"
-                                    disabled={(isCloud() && functionDetails?.installed_in_progress) || !isValid}
+                                    disabled={isCloud() && functionDetails?.installed_in_progress}
                                     onClick={handleAttach}
                                 />
                             )}
@@ -281,7 +281,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                         </div>
                     </div>
                 </header>
-                {isTagsOn && isValid && (
+                {isTagsOn && isValid && !functionDetails?.installed && (
                     <footer is="x3d" style={{ borderTop: !functionDetails?.tags || functionDetails?.tags?.length === 0 ? 'none' : '' }}>
                         <TagsList
                             tagsToShow={functionDetails?.tags?.length > 5 ? 5 : functionDetails?.tags?.length}
@@ -291,7 +291,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                         />
                     </footer>
                 )}
-                {isTagsOn && !isValid && (
+                {isTagsOn && !isValid && !functionDetails?.installed && (
                     <footer is="x3d">
                         <Skeleton.Button active={false} />
                         <Skeleton.Button active={false} />
