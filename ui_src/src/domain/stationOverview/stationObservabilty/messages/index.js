@@ -504,6 +504,7 @@ const Messages = ({ referredFunction }) => {
                             >
                                 <DlsConfig />
                             </DetailBox>
+                            <div className="horizontal-divider" />
                             <DetailBox
                                 icon={<PurgeIcon width={24} alt="purgeIcon" />}
                                 title={'Purge'}
@@ -523,35 +524,44 @@ const Messages = ({ referredFunction }) => {
                                     />
                                 ]}
                             ></DetailBox>
+                            <div className="horizontal-divider" />
+
                             {!isCloud() && stationState?.stationPartition !== -1 && (
-                                <DetailBox
-                                    icon={<LeaderIcon width={24} alt="leaderIcon" />}
-                                    title={'Leader'}
-                                    desc={
-                                        <span>
-                                            The current leader of this station.{' '}
-                                            <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
-                                                Learn more
-                                            </a>
-                                        </span>
-                                    }
-                                    data={[stationState?.stationSocketData?.leader]}
-                                />
+                                <>
+                                    <DetailBox
+                                        icon={<LeaderIcon width={24} alt="leaderIcon" />}
+                                        title={'Leader'}
+                                        desc={
+                                            <span>
+                                                The current leader of this station.{' '}
+                                                <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
+                                                    Learn more
+                                                </a>
+                                            </span>
+                                        }
+                                        data={[stationState?.stationSocketData?.leader]}
+                                    />
+                                    <div className="horizontal-divider" />
+                                </>
                             )}
                             {stationState?.stationSocketData?.followers?.length > 0 && !isCloud() && stationState?.stationPartition !== -1 && (
-                                <DetailBox
-                                    icon={<FollowersIcon width={24} alt="followersImg" />}
-                                    title={'Followers'}
-                                    desc={
-                                        <span>
-                                            The brokers that contain a replica of this station and in case of failure will replace the leader.{' '}
-                                            <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
-                                                Learn more
-                                            </a>
-                                        </span>
-                                    }
-                                    data={stationState?.stationSocketData?.followers}
-                                />
+                                <>
+                                    {' '}
+                                    <DetailBox
+                                        icon={<FollowersIcon width={24} alt="followersImg" />}
+                                        title={'Followers'}
+                                        desc={
+                                            <span>
+                                                The brokers that contain a replica of this station and in case of failure will replace the leader.{' '}
+                                                <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
+                                                    Learn more
+                                                </a>
+                                            </span>
+                                        }
+                                        data={stationState?.stationSocketData?.followers}
+                                    />
+                                    <div className="horizontal-divider" />
+                                </>
                             )}
 
                             <DetailBox

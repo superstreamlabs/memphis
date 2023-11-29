@@ -5,6 +5,15 @@
         display: flex;
         justify-content: space-between;
         margin-bottom: 5px;
+        .separator {
+            opacity: 0.1;
+            background: #979797;
+            width: 1px;
+            display: flex;
+            height: 20px;
+            align-self: center;
+            margin: 0 5px;
+        }
         .header-dls {
             font-size: 14px;
             font-family: 'InterSemiBold';
@@ -16,8 +25,10 @@
             line-height: 15px;
             color: #b4b4b4;
             margin-bottom: 0;
+            width: 250px;
         }
         .switch-button {
+            margin-top: 19px;
             margin-left: 10px;
         }
         .ant-switch {
