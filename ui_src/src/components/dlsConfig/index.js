@@ -62,22 +62,27 @@ const DlsConfig = () => {
                     <p className="header-dls">Unacknowledged</p>
                     <p className="sub-header-dls">Messages that exceeded the maximum delivery attempts</p>
                 </div>
-                <div className="separator" />
-                <Switcher onChange={() => updateDlsConfigurations(true, false)} checked={dlsTypes?.poison} loading={dlsLoading?.poison} />
-            </div>
-            <div className="toggle-dls-config">
                 <div>
                     <p className="header-dls">Schema violation</p>
                     <p className="sub-header-dls">Messages that failed schema validation</p>
                 </div>
+            </div>
+            <div className="right-side">
                 <div className="separator" />
-                <Switcher
-                    disabled={!stationState?.stationMetaData?.is_native}
-                    onChange={() => updateDlsConfigurations(false, true)}
-                    checked={dlsTypes?.schemaverse}
-                    tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
-                    loading={dlsLoading?.schemaverse}
-                />
+                <div className="toggle-dls-config">
+                    <div className="detail-data">
+                        <Switcher onChange={() => updateDlsConfigurations(true, false)} checked={dlsTypes?.poison} loading={dlsLoading?.poison} />
+                    </div>
+                    <div className="detail-data">
+                        <Switcher
+                            disabled={!stationState?.stationMetaData?.is_native}
+                            onChange={() => updateDlsConfigurations(false, true)}
+                            checked={dlsTypes?.schemaverse}
+                            tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
+                            loading={dlsLoading?.schemaverse}
+                        />
+                    </div>
+                </div>
             </div>
         </div>
     );

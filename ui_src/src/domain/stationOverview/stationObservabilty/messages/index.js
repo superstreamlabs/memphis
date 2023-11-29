@@ -476,31 +476,8 @@ const Messages = ({ referredFunction }) => {
                         <div className="details">
                             <DetailBox
                                 icon={<DlsEnableIcon width={24} alt="dlsEnableIcon" />}
-                                title={
-                                    <>
-                                        <span>Dead-letter station configuration</span>
-                                        {/* <Button
-                                            width="130px"
-                                            height="25px"
-                                            placeholder={
-                                                <div className="use-dls-button">
-                                                    {dls ? <DisconnectIcon /> : <UpRightArrow />}
-                                                    <p>{dls ? 'Disable' : 'Enable'} Consumption</p>
-                                                </div>
-                                            }
-                                            colorType={dls ? 'white' : 'black'}
-                                            radiusType="circle"
-                                            backgroundColorType={dls ? 'red' : 'orange'}
-                                            fontSize="10px"
-                                            fontFamily="InterSemiBold"
-                                            fontWeight={600}
-                                            disabled={!stationState?.stationMetaData?.is_native}
-                                            onClick={() => (dls ? setDisableModal(true) : setUseDlsModal(true))}
-                                        /> */}
-                                    </>
-                                }
+                                title={<span>Dead-letter station configuration</span>}
                                 desc="Triggers for storing messages in the dead-letter station."
-                                // rightSection={false}
                                 data={[
                                     <Button
                                         width="130px"
@@ -522,9 +499,9 @@ const Messages = ({ referredFunction }) => {
                                     />
                                 ]}
                             >
-                                {/* <DlsConfig /> */}
+                                <DlsConfig />
                             </DetailBox>
-                            <div className="horizontal-divider" />
+                            <Divider />
                             <DetailBox
                                 icon={<PurgeIcon width={24} alt="purgeIcon" />}
                                 title={'Purge'}
@@ -543,9 +520,9 @@ const Messages = ({ referredFunction }) => {
                                         onClick={() => modalPurgeFlip(true)}
                                     />
                                 ]}
+                                showDivider
                             ></DetailBox>
-                            <div className="horizontal-divider" />
-
+                            <Divider />
                             {!isCloud() && stationState?.stationPartition !== -1 && (
                                 <>
                                     <DetailBox
@@ -560,8 +537,9 @@ const Messages = ({ referredFunction }) => {
                                             </span>
                                         }
                                         data={[stationState?.stationSocketData?.leader]}
+                                        showDivider
                                     />
-                                    <div className="horizontal-divider" />
+                                    <Divider />
                                 </>
                             )}
                             {stationState?.stationSocketData?.followers?.length > 0 && !isCloud() && stationState?.stationPartition !== -1 && (
@@ -578,8 +556,9 @@ const Messages = ({ referredFunction }) => {
                                             </span>
                                         }
                                         data={stationState?.stationSocketData?.followers}
+                                        showDivider
                                     />
-                                    <div className="horizontal-divider" />
+                                    <Divider />
                                 </>
                             )}
 
@@ -595,6 +574,7 @@ const Messages = ({ referredFunction }) => {
                                     </span>
                                 }
                                 data={[msToUnits(stationState?.stationSocketData?.idempotency_window_in_ms)]}
+                                showDivider
                             />
                         </div>
                     )}
