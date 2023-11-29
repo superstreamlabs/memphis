@@ -75,17 +75,14 @@ const FunctionsModal = ({ open, clickOutside, applyFunction, referredFunction })
     useEffect(() => {
         let result = functionList;
         if (tabValue === 'Private') {
-            result = result?.filter((func) => func?.owner !== OWNER && func?.is_valid);
+            result = result?.filter((func) => func?.owner !== OWNER);
         } else if (tabValue === 'Memphis') {
-            result = result?.filter((func) => func?.owner === OWNER && func?.is_valid);
-        } else {
-            result = result?.filter((func) => func?.is_valid);
+            result = result?.filter((func) => func?.owner === OWNER);
         }
         if (searchInput.length > 0) {
             result = result?.filter(
                 (func) =>
-                    (func?.function_name?.toLowerCase()?.includes(searchInput?.toLowerCase()) && func?.is_valid) ||
-                    (func?.description?.toLowerCase()?.includes(searchInput.toLowerCase()) && func?.is_valid)
+                    func?.function_name?.toLowerCase()?.includes(searchInput?.toLowerCase()) || func?.description?.toLowerCase()?.includes(searchInput.toLowerCase())
             );
         }
         setFilteredData(result);
@@ -111,6 +108,7 @@ const FunctionsModal = ({ open, clickOutside, applyFunction, referredFunction })
                 ?.sort((a, b) => (a.function_name > b.function_name ? 1 : -1));
 
             const other = updatedData?.other
+                ?.filter((func) => func?.is_valid)
                 ?.map((func, index) => {
                     if (func?.owner === OWNER) {
                         func.stars = Math.random() + 4;
