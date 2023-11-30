@@ -1,5 +1,6 @@
 .create-schema-wrapper {
-    width: calc(100% - 90px);
+    width: calc(100% - var(--main-container-sidebar-width));
+    transition: .3s ease-in-out;
     position: absolute;
     min-width: 700px;
     height: 100%;

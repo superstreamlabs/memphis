@@ -29,7 +29,9 @@ import {
     LOCAL_STORAGE_USER_PASS_BASED_AUTH,
     LOCAL_STORAGE_WS_PORT,
     USER_IMAGE,
-    LOCAL_STORAGE_PLAN
+    LOCAL_STORAGE_PLAN,
+    LOCAL_STORAGE_FULL_NAME,
+    LOCAL_STORAGE_USER_NAME
 } from './const/localStorageConsts';
 import { CLOUD_URL, ENVIRONMENT, HANDLE_REFRESH_INTERVAL, WS_PREFIX, WS_SERVER_URL_PRODUCTION } from './config';
 import { isCheckoutCompletedTrue, isCloud } from './services/valueConvertor';
