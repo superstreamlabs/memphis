@@ -54,7 +54,6 @@ import Overview from './domain/overview';
 import Loader from './components/loader';
 import Functions from './domain/functions';
 import { Context } from './hooks/store';
-import Profile from './domain/profile';
 import pathDomains from './router';
 import Users from './domain/users';
 
