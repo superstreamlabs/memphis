@@ -13,19 +13,29 @@
 import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
-import Button from '../../../components/button';
-import CloudModal from '../../../components/cloudModal';
-import { Context } from '../../../hooks/store';
+import { ReactComponent as DeleteWrapperIcon } from '../../../assets/images/deleteWrapperIcon.svg';
 import { ReactComponent as LogoTexeMemphis } from '../../../assets/images/logoTexeMemphis.svg';
 import { ReactComponent as RedirectWhiteIcon } from '../../../assets/images/exportWhite.svg';
 import { ReactComponent as DocumentIcon } from '../../../assets/images/documentGroupIcon.svg';
 import { ReactComponent as DisordIcon } from '../../../assets/images/discordGroupIcon.svg';
 import { ReactComponent as WindowIcon } from '../../../assets/images/windowGroupIcon.svg';
+import DeleteItemsModal from '../../../components/deleteItemsModal';
+import CloudModal from '../../../components/cloudModal';
+import Button from '../../../components/button';
+import Modal from '../../../components/modal';
+import Copy from '../../../components/copy';
+import { Context } from '../../../hooks/store';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
-import { httpRequest } from '../../../services/http';
-import { GithubRequest } from '../../../services/githubRequests';
 import { LATEST_RELEASE_URL } from '../../../config';
 import { compareVersions } from '../../../services/valueConvertor';
+import { GithubRequest } from '../../../services/githubRequests';
+import { isCloud } from '../../../services/valueConvertor';
+import { httpRequest } from '../../../services/http';
+import AuthService from '../../../services/auth';
+import { Checkbox } from 'antd';
+import ImgUploader from './imgUploader';
+import { LOCAL_STORAGE_USER_TYPE, LOCAL_STORAGE_ACCOUNT_ID } from '../../../const/localStorageConsts';
+import TooltipComponent from '../../../components/tooltip/tooltip';
 
 function SoftwareUpates({}) {
     const [state, dispatch] = useContext(Context);
@@ -34,7 +44,10 @@ function SoftwareUpates({}) {
     const [version, setVersion] = useState('v' + state?.currentVersion);
     const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
     const [latestVersionUrl, setLatestVersionUrl] = useState('');
-
+    const [userType, setUserType] = useState('');
+    const [open, modalFlip] = useState(false);
+    const [checkboxdeleteAccount, setCheckboxdeleteAccount] = useState(false);
+    const [delateLoader, setDelateLoader] = useState(false);
     const systemDataComponents = [
         { title: 'Amount of brokers', value: systemData?.total_amount_brokers },
         { title: 'total stations', value: systemData?.total_stations },
@@ -79,15 +92,18 @@ function SoftwareUpates({}) {
 
     const genrateInformationPanel = (item, index) => (
         <div className="item-component" key={index} onClick={() => item?.onClick()}>
-            {item?.icon}
-            <p>{item?.title}</p>
-            {item?.description}
+            <div className="info-item">
+                {item?.icon}
+                <p>{item?.title}</p>
+                {item?.description}
+            </div>
         </div>
     );
 
     useEffect(() => {
         getSystemGeneralInfo();
         getSystemVersion();
+        setUserType(localStorage.getItem(LOCAL_STORAGE_USER_TYPE));
     }, []);
 
     const getSystemGeneralInfo = async () => {
@@ -112,6 +128,18 @@ function SoftwareUpates({}) {
         } catch (error) {}
     };
 
+    const removeMyUser = async () => {
+        setDelateLoader(true);
+        try {
+            await httpRequest('DELETE', `${ApiEndpoints.REMOVE_MY_UER}`);
+            modalFlip(false);
+            AuthService.logout();
+        } catch (err) {
+            setDelateLoader(false);
+            return;
+        }
+    };
+
     return (
         <div className="softwate-updates-container">
             <div className="rows">
@@ -119,7 +147,15 @@ function SoftwareUpates({}) {
                     <div className="title-component">
                         <div className="versions" onClick={() => isUpdateAvailable && window.open(latestVersionUrl, '_blank')}>
                             <LogoTexeMemphis alt="Memphis logo" width="300px" />
-                            <label className="curr-version">{version}</label>
+                            {isCloud() ? (
+                                <div className="hostname">
+                                    <p>Account ID : </p>
+                                    <span>{localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)}</span>
+                                    <Copy width="12" data={localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)} />
+                                </div>
+                            ) : (
+                                <label className="curr-version">{version}</label>
+                            )}
                             {isUpdateAvailable && <div className="red-dot" />}
                         </div>
                         <Button
@@ -145,16 +181,90 @@ function SoftwareUpates({}) {
                 <div className="statistics">
                     {systemDataComponents.map((item, index) => {
                         return (
-                            <div className="item-component wrapper" key={`${item}-${index}`}>
-                                <label className="title">{item.title}</label>
-                                <label className="numbers">{item.value}</label>
+                            <div className="item-component" key={`${item}-${index}`}>
+                                <span className="stat-item">
+                                    <label className="title">{item.title}</label>
+                                    <label className="numbers">{item.value}</label>
+                                </span>
                             </div>
                         );
                     })}
                 </div>
                 <div className="charts">{informationPanelData.map((item, index) => genrateInformationPanel(item, index))}</div>
+
+                <div className="item-component">
+                    <ImgUploader />
+                </div>
+                <div className="item-component">
+                    <div className="delete-account-section">
+                        <p className="account-title">{isCloud() ? 'Delete your organization' : 'Delete your account'}</p>
+                        {isCloud() ? (
+                            <label className="delete-account-description">
+                                When you delete your organization, you will lose access to Memphis, and your entire organization data will be permanently deleted. You can
+                                cancel the deletion for 14 days.
+                            </label>
+                        ) : (
+                            <label className="delete-account-description">
+                                When you delete your account, you will lose access to Memphis, and your profile will be permanently deleted. You can cancel the deletion
+                                for 14 days.
+                            </label>
+                        )}
+
+                        <div className="delete-account-checkbox">
+                            <Checkbox
+                                checked={checkboxdeleteAccount}
+                                disabled={(isCloud() && userType !== 'root') || (!isCloud() && userType === 'root')}
+                                onChange={() => setCheckboxdeleteAccount(!checkboxdeleteAccount)}
+                                name="delete-account"
+                            >
+                                <p className={(isCloud() && userType !== 'root') || (!isCloud() && userType === 'root') ? 'disabled' : ''}>
+                                    Confirm that I want to delete my {isCloud() ? 'organization' : 'account'}.
+                                </p>
+                            </Checkbox>
+                        </div>
+                        <Button
+                            className="modal-btn"
+                            width="200px"
+                            height="36px"
+                            placeholder={isCloud() ? 'Delete organization' : 'Delete account'}
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="red"
+                            border="none"
+                            boxShadowsType="red"
+                            fontSize="14px"
+                            fontWeight="600"
+                            aria-haspopup="true"
+                            disabled={!checkboxdeleteAccount}
+                            onClick={() => modalFlip(true)}
+                        />
+                    </div>
+                </div>
             </div>
             <CloudModal type={'bundle'} open={isCloudModalOpen} handleClose={() => setIsCloudModalOpen(false)} />
+            <Modal
+                header={<DeleteWrapperIcon alt="deleteWrapperIcon" />}
+                width="520px"
+                height="270px"
+                displayButtons={false}
+                clickOutside={() => modalFlip(false)}
+                open={open}
+            >
+                <DeleteItemsModal
+                    title={isCloud() ? 'Delete your organization' : 'Delete your account'}
+                    desc={
+                        <>
+                            Are you sure you want to delete {isCloud() ? 'your organization' : 'your account'}?
+                            <br />
+                            Please note that this action is irreversible.
+                        </>
+                    }
+                    buttontxt={<>I understand, delete my {isCloud() ? 'organization' : 'account'}</>}
+                    handleDeleteSelected={() => removeMyUser()}
+                    loader={delateLoader}
+                />
+                <br />
+            </Modal>
         </div>
     );
 }

@@ -1,0 +1,35 @@
+.upload-logo-container {
+    display: flex;
+    gap: 20px;
+    .logoimg {
+        border-radius: 8px;
+        border: 1px solid #ededed;
+        background: #f9f9f9;
+        border-radius: 8px;
+        height: 100px;
+        width: 100px;
+    }
+    .company-logo-right {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        .company-logo-title {
+            color: #242424;
+            font-family: 'Inter';
+            font-weight: 600;
+            font-size: 18px;
+            margin-bottom: 0px;
+        }
+        .company-logo-description {
+            font-family: 'Inter';
+            font-size: 12px;
+            color: rgba(74, 73, 92, 0.8);
+        }
+        .update-remove-logo {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+    }
+}
