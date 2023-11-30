@@ -28,11 +28,11 @@ import Tooltip from '../../../../../components/tooltip/tooltip';
 
 export default function FunctionCard({
     onClick,
+    onClickMenu,
     stationName,
     partiotionNumber,
     onDeleteFunction,
     functionItem,
-    isGeneralView,
     isDeactive = false,
     selected,
     changeActivition
@@ -190,8 +190,9 @@ export default function FunctionCard({
                                 placement="bottom"
                                 content={functionContextMenu}
                                 trigger="click"
-                                onOpenChange={() => {
+                                onOpenChange={(e) => {
                                     setPopoverFunctionContextMenu(!popoverFunctionContextMenu);
+                                    e && onClickMenu();
                                 }}
                                 open={popoverFunctionContextMenu}
                             >

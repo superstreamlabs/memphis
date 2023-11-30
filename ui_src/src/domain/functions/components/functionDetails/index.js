@@ -136,10 +136,10 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
     );
 
     const buildTree = (files) => {
-        files = files.sort((a, b) => a.localeCompare(b));
+        files = files?.sort((a, b) => a.localeCompare(b));
         let tree = [];
         let root = {};
-        files.forEach((filePath, index) => {
+        files?.forEach((filePath, index) => {
             const pathParts = filePath.split('/');
             if (pathParts.length === 1) {
                 root = {
@@ -231,13 +231,13 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
             ?.replace(/`/g, '\\`');
     };
 
-    const shortInstallBtn = selectedFunction?.installed_in_progress || (selectedFunction?.installed && !selectedFunction?.updates_available);
-    const installBtnPlaceholder = selectedFunction?.installed_in_progress ? (
+    const shortInstallBtn = metaData?.installed_in_progress || (metaData?.installed && !metaData?.updates_available);
+    const installBtnPlaceholder = metaData?.installed_in_progress ? (
         ''
     ) : selectedFunction?.installed ? (
         <div className="code-btn">
-            {selectedFunction?.updates_available ? <BiDownload className="Install" /> : <DeleteIcon className="Uninstall" />}
-            {selectedFunction?.updates_available ? <label>Update</label> : null}
+            {metaData?.updates_available ? <BiDownload className="Install" /> : <DeleteIcon className="Uninstall" />}
+            {metaData?.updates_available ? <label>Update</label> : null}
         </div>
     ) : (
         <div className="code-btn">
@@ -247,8 +247,8 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
     );
 
     const handleInstallBtnClick = () => {
-        if (selectedFunction?.installed) {
-            if (selectedFunction?.updates_available) {
+        if (metaData?.installed) {
+            if (metaData?.updates_available) {
                 handleInstall();
             } else handleUnInstall();
         } else {
@@ -267,22 +267,22 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
             )}
 
             <div className="drawer-header ">
-                {selectedFunction?.image ? (
-                    <img src={selectedFunction?.image} alt="Function icon" height="120px" width="120px" />
+                {metaData?.image ? (
+                    <img src={metaData?.image} alt="Function icon" height="120px" width="120px" />
                 ) : (
                     <FunctionIcon alt="Function icon" height="120px" width="120px" />
                 )}
 
                 <div className="right-side">
-                    <div className="title">{selectedFunction?.function_name || selectedFunction?.name}</div>
+                    <div className="title">{metaData?.function_name || metaData?.name}</div>
                     <div>
                         <deatils is="x3d">
                             <div className="function-owner">
-                                {selectedFunction?.owner === OWNER && <MemphisFunctionIcon alt="Memphis function icon" height="15px" />}
-                                <owner is="x3d">{selectedFunction?.owner === OWNER ? 'Memphis.dev' : selectedFunction?.owner}</owner>
+                                {metaData?.owner === OWNER && <MemphisFunctionIcon alt="Memphis function icon" height="15px" />}
+                                <owner is="x3d">{metaData?.owner === OWNER ? 'Memphis.dev' : metaData?.owner}</owner>
                             </div>
                             <Divider type="vertical" />
-                            {selectedFunction?.owner === OWNER && (
+                            {metaData?.owner === OWNER && (
                                 <>
                                     <downloads is="x3d">
                                         <BiDownload className="download-icon" />
@@ -298,15 +298,15 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                             )}
                             <commits is="x3d">
                                 <FiGitCommit />
-                                <OverflowTip text={parsingDate(selectedFunction?.installed_updated_at || metaData?.installed_updated_at, true, true)} width={'220px'}>
-                                    Last modified on {parsingDate(selectedFunction?.installed_updated_at || metaData?.installed_updated_at, true, true)}
+                                <OverflowTip text={parsingDate(metaData?.installed_updated_at, true, true)} width={'220px'}>
+                                    Last modified on {parsingDate(metaData?.installed_updated_at, true, true)}
                                 </OverflowTip>
                             </commits>
                         </deatils>
                     </div>
                     <description is="x3d">
-                        <OverflowTip text={selectedFunction?.description} width={'520px'}>
-                            {selectedFunction?.description}
+                        <OverflowTip text={metaData?.description} width={'520px'}>
+                            {metaData?.description}
                         </OverflowTip>
                     </description>
                     <actions is="x3d">
@@ -332,11 +332,11 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                             fontSize="12px"
                                             fontFamily="InterSemiBold"
                                             onClick={() => (!isCloud() || state?.allowedActions?.can_apply_functions ? clickApply('attach') : setOpenUpgradeModal(true))}
-                                            disabled={selectedFunction?.installed_in_progress || !selectedFunction?.installed}
+                                            disabled={metaData?.installed_in_progress || !metaData?.installed}
                                         />
                                     </div>
                                     <div className="header-flex">
-                                        <Tooltip text={selectedFunction?.invalid_reason}>
+                                        <Tooltip text={metaData?.invalid_reason}>
                                             <span>
                                                 <Button
                                                     placeholder={installBtnPlaceholder}
@@ -348,8 +348,8 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                                     fontSize="12px"
                                                     fontFamily="InterSemiBold"
                                                     onClick={handleInstallBtnClick}
-                                                    isLoading={metaData?.installed_in_progress || selectedFunction?.installed_in_progress}
-                                                    disabled={!selectedFunction?.is_valid || selectedFunction?.installed_in_progress}
+                                                    isLoading={metaData?.installed_in_progress}
+                                                    disabled={!metaData?.is_valid || metaData?.installed_in_progress}
                                                 />
                                             </span>
                                         </Tooltip>
@@ -369,8 +369,8 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                     fontFamily="InterSemiBold"
                                     onClick={() =>
                                         window.open(
-                                            `https://github.com/${selectedFunction?.owner}/${selectedFunction?.repo}/tree/${selectedFunction?.branch}/${
-                                                selectedFunction?.function_name || selectedFunction?.name
+                                            `https://github.com/${metaData?.owner}/${metaData?.repo}/tree/${metaData?.branch}/${
+                                                metaData?.function_name || metaData?.name
                                             }`
                                         )
                                     }
@@ -387,7 +387,7 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                 fontSize="12px"
                                 fontFamily="InterSemiBold"
                                 value={`Version: ${selectedVersion}`}
-                                disabled={!selectedFunction?.installed}
+                                disabled={!metaData?.installed}
                                 onChange={(e) => {
                                     setSelectedVersion(e);
                                 }}
@@ -401,7 +401,7 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                 <CustomTabs tabs={['Details', 'Code']} value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
             </div>
             <TestMockEvent
-                functionDetails={selectedFunction}
+                functionDetails={metaData}
                 clickOutside={() => setIsTestFunctionModalOpen(false)}
                 open={isTestFunctionModalOpen}
                 selectedVersion={selectedVersion}
@@ -432,16 +432,16 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                 <info is="x3d">
                                     <repo is="x3d">
                                         <GoRepo />
-                                        <label>{selectedFunction?.repo}</label>
+                                        <label>{metaData?.repo}</label>
                                     </repo>
                                     <branch is="x3d">
                                         <GithubBranchIcon />
-                                        <label>{selectedFunction?.branch}</label>
+                                        <label>{metaData?.branch}</label>
                                     </branch>
-                                    {selectedFunction?.is_valid && (
+                                    {metaData?.is_valid && (
                                         <language is="x3d">
                                             <CodeBlackIcon />
-                                            <label>{selectedFunction?.language}</label>
+                                            <label>{metaData?.language}</label>
                                         </language>
                                     )}
                                 </info>
@@ -449,7 +449,7 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                             <Divider />
                             <label className="label-title">Social</label>
                             <deatils is="x3d">
-                                {selectedFunction?.owner === OWNER && (
+                                {metaData?.owner === OWNER && (
                                     <>
                                         <downloads is="x3d">
                                             <BiDownload className="download-icon" />
@@ -465,21 +465,16 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                 )}
                                 <commits is="x3d">
                                     <FiGitCommit />
-                                    <OverflowTip text={parsingDate(selectedFunction?.installed_updated_at || metaData?.installed_updated_at, true, true)} width={'210px'}>
-                                        Last modified on {parsingDate(selectedFunction?.installed_updated_at || metaData?.installed_updated_at, true, true)}
+                                    <OverflowTip text={parsingDate(metaData?.installed_updated_at, true, true)} width={'210px'}>
+                                        Last modified on {parsingDate(metaData?.installed_updated_at, true, true)}
                                     </OverflowTip>
                                 </commits>
                             </deatils>
                             <Divider />
-                            {selectedFunction?.is_valid && (
+                            {metaData?.is_valid && (
                                 <>
                                     <label className="label-title">Tags</label>
-                                    <TagsList
-                                        tagsToShow={3}
-                                        tags={selectedFunction?.tags}
-                                        entityType="function"
-                                        entityName={selectedFunction?.function_name || selectedFunction?.name}
-                                    />
+                                    <TagsList tagsToShow={3} tags={metaData?.tags} entityType="function" entityName={metaData?.function_name || metaData?.name} />
                                     <Divider />
                                 </>
                             )}
@@ -519,7 +514,7 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                     </div>
                     <div className="code-content-section">
                         <>
-                            {!selectedFunction?.installed ? (
+                            {!metaData?.installed ? (
                                 <Tooltip text="Install the function to enable test">
                                     <span>
                                         <Button
@@ -531,7 +526,7 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                             fontSize="12px"
                                             fontFamily="InterSemiBold"
                                             onClick={() => setIsTestFunctionModalOpen(true)}
-                                            disabled={!selectedFunction?.installed}
+                                            disabled={!metaData?.installed}
                                         />
                                     </span>
                                 </Tooltip>
@@ -545,7 +540,7 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                     fontSize="12px"
                                     fontFamily="InterSemiBold"
                                     onClick={() => setIsTestFunctionModalOpen(true)}
-                                    disabled={!selectedFunction?.installed || selectedFunction?.installed_in_progress}
+                                    disabled={!metaData?.installed || metaData?.installed_in_progress}
                                 />
                             )}
                             <div className="code-content">
