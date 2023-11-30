@@ -228,6 +228,7 @@ const FunctionsOverview = ({ referredFunction, dismissFunction, moveToGenralView
                                                     setCurrentFunction(functionItem);
                                                     setOpenBottomDetails(true);
                                                 }}
+                                                onClickMenu={() => setCurrentFunction(functionItem)}
                                                 updatedFunctionList={(data) => stationDispatch({ type: 'UPDATE_FUNCTION_LIST', payload: data?.functions['1'] })}
                                                 key={`${functionItem?.id}-${index}`}
                                                 changeActivition={(e) => changeActivition(functionItem?.id, e)}

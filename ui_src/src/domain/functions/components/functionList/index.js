@@ -287,6 +287,7 @@ function FunctionList({ tabPrivate }) {
                         integrated={integrated}
                         getAllFunctions={getAllFunctions}
                         doneUninstall={doneUninstall}
+                        startInstallation={() => startInstallation(index, true)}
                     />
                 ))}
             </>

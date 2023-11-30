@@ -45,6 +45,7 @@ import CustomTabs from '../Tabs';
 import Button from '../button';
 import Input from '../Input';
 import Modal from '../modal';
+import {entitlementChecker} from "../../utils/plan";
 
 const retanionOptions = [
     {
@@ -117,7 +118,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const [modalIsOpen, modalFlip] = useState(false);
     const [retentionViolation, setRetentionViolation] = useState(false);
     const [partitonViolation, setPartitonViolation] = useState(false);
-    const storageTiringLimits = isCloud() && state?.userData?.entitlements && state?.userData?.entitlements['feature-storage-tiering'];
+    const storageTiringLimits = isCloud() && entitlementChecker(state, 'feature-storage-tiering');
     const tabs = [
         { name: 'Local storage tier', checked: true },
         { name: 'Remote storage tier', checked: selectedTier2Option || false }

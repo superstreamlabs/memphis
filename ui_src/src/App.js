@@ -54,7 +54,6 @@ import Overview from './domain/overview';
 import Loader from './components/loader';
 import Functions from './domain/functions';
 import { Context } from './hooks/store';
-import Profile from './domain/profile';
 import pathDomains from './router';
 import Users from './domain/users';
 
@@ -200,7 +199,7 @@ const App = withRouter(() => {
     const handleUpdatePlan = async () => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.REFRESH_BILLING_PLAN);
-            dispatch({ type: 'SET_ENTITLEMENTS', payload: data });
+            dispatch({ type: 'SET_ENTITLEMENTS', payload: data?.entitelments });
             setRefreshPlan(false);
             showMessages('success', 'Your plan has been successfully updated.');
         } catch (error) {
