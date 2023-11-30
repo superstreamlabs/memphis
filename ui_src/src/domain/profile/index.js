@@ -14,13 +14,10 @@ import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
 
-import { LOCAL_STORAGE_ACCOUNT_ID, LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_USER_TYPE, USER_IMAGE } from '../../const/localStorageConsts';
+import { LOCAL_STORAGE_AVATAR_ID, USER_IMAGE } from '../../const/localStorageConsts';
 import { ApiEndpoints } from '../../const/apiEndpoints';
-import { isCloud } from '../../services/valueConvertor';
 import { httpRequest } from '../../services/http';
-import AuthService from '../../services/auth';
 import { Context } from '../../hooks/store';
-import { Divider } from 'antd';
 
 function Profile() {
     const [state, dispatch] = useContext(Context);
@@ -82,21 +79,6 @@ function Profile() {
                         })}
                     </div>
                 </div>
-                <Divider />
-                {!isCloud() && (
-                    <>
-                        <div className="organization-id-section">
-                            <p className="title">Account ID</p>
-                            <label className="organization-id-description">
-                                Your account ID is a unique identifier for your organization. It is used to identify your organization in Memphis
-                            </label>
-                            <div className="organization-id">
-                                <p className="id">{localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)}</p>
-                            </div>
-                        </div>
-                        <Divider />
-                    </>
-                )}
             </div>
         </div>
     );
