@@ -30,6 +30,7 @@ export const ApiEndpoints = {
     SKIP_GET_STARTED: '/usermgmt/skipGetStarted',
     GET_FILTER_DETAILS: '/usermgmt/getFilterDetails',
     SEND_TRACE: '/usermgmt/sendTrace',
+    GET_SYSTEM_GENERAL_INFO: '/monitoring/getSystemGeneralInfo',
 
     //Station
     CREATE_STATION: '/stations/createStation',

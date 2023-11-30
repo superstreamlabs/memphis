@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.6b25ff02.css",
-    "main.js": "/static/js/main.d54b192f.js",
+    "main.css": "/static/css/main.6183b82b.css",
+    "main.js": "/static/js/main.cbe31c5c.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -100,6 +100,7 @@
     "static/media/avatar3.svg": "/static/media/avatar3.ac8230d938d0a52f4500.svg",
     "static/media/avatar6.svg": "/static/media/avatar6.70de23d5482748918c82.svg",
     "static/media/grafanaps.png": "/static/media/grafanaps.a1064265cbe0c53f0d01.png",
+    "static/media/logoTexeMemphis.svg": "/static/media/logoTexeMemphis.a0eb949fb855023ee3c107254cabd6b4.svg",
     "static/media/datadogMetricsps.png": "/static/media/datadogMetricsps.1499ed3dd93864f786d4.png",
     "static/media/grafanaIcon.svg": "/static/media/grafanaIcon.fab6c489e404c8b49be8da7181a654bb.svg",
     "static/media/slackLogo.svg": "/static/media/slackLogo.85c9e715c432e8d73f13b4b860378f32.svg",
@@ -205,6 +206,7 @@
     "static/media/totalMsgIcon.svg": "/static/media/totalMsgIcon.6915a97cf4f9c4b6b9113182f34576d2.svg",
     "static/media/purgeWrapperIcon.svg": "/static/media/purgeWrapperIcon.c7fe42fb7489dae37e6971645954a1d2.svg",
     "static/media/functionIcon.svg": "/static/media/functionIcon.4ec91a1181725170e7d1ea8b375b3068.svg",
+    "static/media/windowGroupIcon.svg": "/static/media/windowGroupIcon.024124ea74161f96dae72e21b97750d2.svg",
     "static/media/logsIcon.svg": "/static/media/logsIcon.523c7dfba8286920ef9f710678e327da.svg",
     "static/media/functionCardIcon.svg": "/static/media/functionCardIcon.b9a0a8a193310091eca7bab9f43f5bd2.svg",
     "static/media/asyncIcon.svg": "/static/media/asyncIcon.263cde6ac835b02e46217b9561d11eee.svg",
@@ -215,12 +217,14 @@
     "static/media/vueSaxIcon.svg": "/static/media/vueSaxIcon.c5ffa6c5e70154c0392551b96b3f2228.svg",
     "static/media/UIHostname.svg": "/static/media/UIHostname.b2ab65aacef8f92173d8a888cfba0978.svg",
     "static/media/errorModal.svg": "/static/media/errorModal.56ec5d38d44a26bcd6582fe4a2df085f.svg",
+    "static/media/discordGroupIcon.svg": "/static/media/discordGroupIcon.e23f2f013425425b7501927b2442607e.svg",
     "static/media/typeIcon.svg": "/static/media/typeIcon.e663a2d8562816001bdd4feae921295d.svg",
     "static/media/purpleQuestionMark.svg": "/static/media/purpleQuestionMark.618465703f77864c6b5364e691143575.svg",
     "static/media/backIcon.svg": "/static/media/backIcon.be12eb6ec289ed5a4dc8d64dd8adec0f.svg",
     "static/media/repoPurple.svg": "/static/media/repoPurple.28e50d61834d16d583ffea7e2bc2fd49.svg",
     "static/media/disconAlertIcon.svg": "/static/media/disconAlertIcon.264ca4be9b5847e8305d5526a988f29c.svg",
     "static/media/warningCircle.svg": "/static/media/warningCircle.35b628c068d0871aa55a59e28a393ffb.svg",
+    "static/media/documentGroupIcon.svg": "/static/media/documentGroupIcon.ecefe11a5f9fc25b0264b8fba3ce3413.svg",
     "static/media/usersIconActive.svg": "/static/media/usersIconActive.b85b8f2e28394e7e41d2d5e18774ec50.svg",
     "static/media/logsActive.svg": "/static/media/logsActive.dd10b6ca576cba4444205502394b8456.svg",
     "static/media/storage.svg": "/static/media/storage.6a918fd2ccba4582d4b45da508962d21.svg",
@@ -288,6 +292,7 @@
     "static/media/statusIcon.svg": "/static/media/statusIcon.467d50bd45147a0b7f2025f839f921c9.svg",
     "static/media/errorIcon.svg": "/static/media/errorIcon.144c977e7c2255ab2320f8551b518bca.svg",
     "static/media/infoNotificationIcon.svg": "/static/media/infoNotificationIcon.b2cae38850a86ae5ffa748e2a6954074.svg",
+    "static/media/exportWhite.svg": "/static/media/exportWhite.3649b943679729f784317728e0be2259.svg",
     "static/media/redirectWhite.svg": "/static/media/redirectWhite.a7fe5174002203ec6fbbe70642f1635b.svg",
     "static/media/componentIcon.svg": "/static/media/componentIcon.c7e98367f39a7a5e86d1da122feba8af.svg",
     "static/media/arrowBackIcon.svg": "/static/media/arrowBackIcon.1289affd6cc44720027524db1863a3a8.svg",
@@ -316,7 +321,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.6b25ff02.css",
-    "static/js/main.d54b192f.js"
+    "static/css/main.6183b82b.css",
+    "static/js/main.cbe31c5c.js"
   ]
 }

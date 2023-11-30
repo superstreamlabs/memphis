@@ -240,7 +240,7 @@ function SideBar() {
                     setPopoverQuickActions(false);
                     createStationModalFlip(true);
                 }}
-                upgrade={!state?.allowedActions?.can_create_stations}
+                upgrade={isCloud() && !state?.allowedActions?.can_create_stations}
             />
             <PopoverActionItem
                 icon={<NewSchemaIcon className="icons-sidebar" />}
@@ -262,7 +262,7 @@ function SideBar() {
                     setPopoverQuickActions(false);
                     addUserModalFlip(true);
                 }}
-                upgrade={!state?.allowedActions?.can_create_users}
+                upgrade={isCloud() && !state?.allowedActions?.can_create_users}
             />
             <PopoverActionItem
                 icon={<NewIntegrationIcon className="icons-sidebar" />}
@@ -313,7 +313,7 @@ function SideBar() {
                 icon={<SettingOutlined className="icons-sidebar" />}
                 name="Administration"
                 onClick={() => {
-                    history.replace(`${pathDomains.administration}/integrations`);
+                    history.replace(`${pathDomains.administration}/system_information`);
                     setPopoverOpenSetting(false);
                 }}
             />
@@ -535,7 +535,7 @@ function SideBar() {
                     <version
                         is="x3d"
                         style={{ cursor: !state.isLatest ? 'pointer' : 'default' }}
-                        onClick={() => (!state.isLatest ? history.replace(`${pathDomains.administration}/version_upgrade`) : null)}
+                        onClick={() => (!state.isLatest ? history.replace(`${pathDomains.administration}/system_information`) : null)}
                     >
                         {!state.isLatest && <div className="update-note" />}
                         <p>v{state.currentVersion}</p>

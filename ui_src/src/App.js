@@ -524,7 +524,7 @@ const App = withRouter(() => {
                             />
                             <PrivateRoute
                                 exact
-                                path={`${pathDomains.administration}/version_upgrade`}
+                                path={`${pathDomains.administration}/system_information`}
                                 component={<AppWrapper content={<Administration />}></AppWrapper>}
                             />
                             <PrivateRoute

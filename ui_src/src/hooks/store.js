@@ -43,7 +43,8 @@ const initialState = {
     logsFilter: [],
     integrationsList: [],
     isLatest: true,
-    currentVersion: ''
+    currentVersion: '',
+    allowedActions: null
 };
 
 const Store = ({ children }) => {
