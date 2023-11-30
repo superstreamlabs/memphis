@@ -1,10 +1,30 @@
 .dls-config-container {
     margin-top: 10px;
     overflow-y: auto;
+    display: flex;
+    justify-content: space-between;
+    height: 100%;
+    .separator {
+        opacity: 0.3;
+        background: radial-gradient(163199.99% 35.29% at 50% 50%, #979797 0%, rgba(151, 151, 151, 0) 100%);
+        width: 2px;
+        display: flex;
+        height: 100%;
+        align-self: center;
+        margin: 0 5px;
+    }
+    .right-side {
+        display: flex;
+        min-width: 130px;
+        margin-right: 10px;
+    }
     .toggle-dls-config {
         display: flex;
         justify-content: space-between;
+        align-items: flex-start;
+        flex-direction: column;
         margin-bottom: 5px;
+
         .header-dls {
             font-size: 14px;
             font-family: 'InterSemiBold';
@@ -16,8 +36,10 @@
             line-height: 15px;
             color: #b4b4b4;
             margin-bottom: 0;
+            width: 250px;
         }
         .switch-button {
+            margin-top: 19px;
             margin-left: 10px;
         }
         .ant-switch {

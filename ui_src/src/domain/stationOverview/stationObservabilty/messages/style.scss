@@ -21,7 +21,9 @@
     border-radius: 8px;
     background: white;
     position: relative;
-
+    .ant-divider-horizontal {
+        margin: 5px 0;
+    }
     .top {
         padding: 12px 22px;
 
@@ -441,11 +443,10 @@
         margin-left: 2.5%;
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        justify-content: space-between;
         height: calc(100% - 60px);
         overflow: scroll;
     }
-
     .use-dls-button {
         display: flex;
         flex-direction: row;
