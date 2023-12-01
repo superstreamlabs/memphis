@@ -1,5 +1,6 @@
 .users-container {
-    width: calc(100% - 90px);
+    width: calc(100% - var(--main-container-sidebar-width));
+    transition: .3s ease-in-out;
     position: absolute;
     padding: 1vw;
     min-width: 700px;

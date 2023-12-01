@@ -59,6 +59,7 @@ import { FaArrowCircleUp } from 'react-icons/fa';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import Logo from '../../assets/images/logo.svg';
+import FullLogo from '../../assets/images/fullLogo.svg';
 import AuthService from '../../services/auth';
 import { sendTrace, useGetAllowedActions } from '../../services/genericServices';
 import { Context } from '../../hooks/store';
@@ -74,29 +75,13 @@ import CreateUserDetails from '../../domain/users/createUserDetails';
 import UpgradePlans from '../upgradePlans';
 import { FaBook, FaDiscord } from 'react-icons/fa';
 import { BiEnvelope } from 'react-icons/bi';
+import { ReactComponent as ArrowRight } from '../../assets/images/arrowRight.svg';
+import { ReactComponent as PlusGrayIcon } from '../../assets/images/plusIconGray.svg';
+import { ReactComponent as CloudUploadIcon } from '../../assets/images/cloudUpload.svg';
+import { ReactComponent as ArrowTopGrayIcon } from '../../assets/images/arrowTopGray.svg';
+import { ReactComponent as SunIcon } from '../../assets/images/sun.svg';
+import { ReactComponent as MoonIcon } from '../../assets/images/moon.svg';
 
-const overlayStyles = {
-    borderRadius: '8px',
-    width: '230px',
-    paddingTop: '5px',
-    paddingBottom: '5px',
-    marginBottom: '10px'
-};
-
-const quickActionsStyles = {
-    borderRadius: '8px',
-    width: '250px',
-    paddingTop: '5px',
-    paddingBottom: '5px',
-    marginBottom: '10px'
-};
-
-const supportContextMenuStyles = {
-    borderRadius: '8px',
-    paddingTop: '5px',
-    paddingBottom: '5px',
-    marginBottom: '10px'
-};
 const overlayStylesSupport = {
     marginTop: window.innerHeight > 560 && 'calc(100vh - 560px)',
     borderRadius: '8px',
@@ -126,6 +111,33 @@ function SideBar() {
     const [createUserLoader, setCreateUserLoader] = useState(false);
     const [bannerType, setBannerType] = useState('');
     const getAllowedActions = useGetAllowedActions();
+    const [expandSidebar, setExpandSidebar] = useState(false);
+
+    const overlayStylesUser = {
+        borderRadius: '8px',
+        width: '230px',
+        paddingTop: '5px',
+        paddingBottom: '5px',
+        marginBottom: '10px',
+        marginLeft: expandSidebar ? '100px' : '',
+    };
+
+    const quickActionsStyles = {
+        borderRadius: '8px',
+        width: '250px',
+        paddingTop: '5px',
+        paddingBottom: '5px',
+        marginBottom: '10px',
+        marginLeft: expandSidebar ? '100px' : '',
+    };
+
+    const supportContextMenuStyles = {
+        borderRadius: '8px',
+        paddingTop: '5px',
+        paddingBottom: '5px',
+        marginBottom: '10px',
+        marginLeft: expandSidebar ? '100px' : '',
+    };
 
     const getCompanyLogo = useCallback(async () => {
         try {
@@ -164,6 +176,10 @@ function SideBar() {
         setAvatarImage(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID) || state?.userData?.avatar_id);
     }, [state]);
 
+    useEffect(() => {
+        document.documentElement.style.setProperty('--main-container-sidebar-width', expandSidebar ? '205px' : '90px');
+    }, [expandSidebar]);
+
     const setAvatarImage = (avatarId) => {
         SetAvatarUrl(require(`../../assets/images/bots/avatar${avatarId}.svg`));
     };
@@ -197,7 +213,7 @@ function SideBar() {
 
     const MenuItem = ({ icon, activeIcon, name, route, onClick, onMouseEnter, onMouseLeave, badge }) => {
         return (
-            <div className="item-wrapper" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onClick={onClick}>
+            <div className={"item-wrapper " + (state.route === route ? 'ms-active' : '')} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onClick={onClick}>
                 <div className="icon">{state.route === route ? activeIcon : hoveredItem === route ? activeIcon : icon}</div>
                 <p className={state.route === route ? 'checked' : 'name'}>{name}</p>
                 {badge && <label className="badge">{badge}</label>}
@@ -397,12 +413,15 @@ function SideBar() {
     );
 
     return (
-        <div className="sidebar-container">
+        <div className={"sidebar-container " + ( expandSidebar ? 'expand' : 'collapse' )}>
             <div className="upper-icons">
+                <div className={'upper-icons-toggle ' + ( expandSidebar ? 'open' : 'close' )} onClick={ () => {setExpandSidebar(!expandSidebar)}}>
+                    <ArrowRight/>
+                </div>
                 <span className="logo-wrapper">
                     <img
-                        src={isCloud() ? state?.companyLogo || Logo : Logo}
-                        width="45"
+                        src={isCloud() ? state?.companyLogo || (expandSidebar ? FullLogo : Logo) : (expandSidebar ? FullLogo : Logo)}
+                        width={expandSidebar ? 'auto' : '45'}
                         height="45"
                         className="logoimg"
                         alt="logo"
@@ -411,18 +430,43 @@ function SideBar() {
                     <EditIcon alt="edit" className="edit-logo" onClick={() => history.replace(`${pathDomains.administration}/profile`)} />
                 </span>
 
+                {( isCloud() &&
+                <div className="item-wrapper">
+                    <div className="menu-item-env">
+                        <div className="menu-item-env-badge">Coming  Soon</div>
+                        {( expandSidebar ?
+                            <>
+                                <div className="menu-item-env-left">
+                                    <div className="menu-item-env-title">Production</div>
+                                    <div className="menu-item-env-subtitle">Memphis.dev</div>
+                                </div>
+                                <div className="menu-item-env-right">
+                                    <ArrowTopGrayIcon/>
+                                    <ArrowTopGrayIcon style={{transform: 'rotate(180deg)'}} />
+                                </div>
+                            </>
+                            :
+                            <>
+                                <div className="menu-item-env-collapsed">P</div>
+                            </>
+                        )}
+                    </div>
+                </div>)}
+
                 <Popover
                     overlayInnerStyle={quickActionsStyles}
-                    placement="rightBottom"
+                    placement="right"
                     content={contentQuickStart}
                     trigger="click"
                     onOpenChange={() => setPopoverQuickActions(!popoverQuickActoins)}
                     open={popoverQuickActoins}
+                    key={expandSidebar ? 'expanded-PopoverQuickActions' : 'collapsed-PopoverQuickActions'}
                 >
                     <div className="item-wrapper" onMouseEnter={() => setHoveredItem('actions')} onMouseLeave={() => setHoveredItem('')}>
                         <div className="icon">
-                            <QuickActionBtn alt="Quick actions" onClick={() => sendTrace('quick-actions-click', {})} />
+                            <PlusGrayIcon alt="Quick actions" onClick={() => sendTrace('quick-actions-click', {})} />
                         </div>
+                        <p>{expandSidebar ? 'Create New' : 'Create'}</p>
                     </div>
                 </Popover>
                 <MenuItem
@@ -501,6 +545,7 @@ function SideBar() {
                     trigger="click"
                     onOpenChange={() => setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu)}
                     open={popoverOpenSupportContextMenu}
+                    key={expandSidebar ? 'expanded-PopoverOpenSupportContextMenu' : 'collapsed-PopoverOpenSupportContextMenu'}
                 >
                     <MenuItem
                         icon={<SupportIcon alt="SupportIcon" width={20} height={20} />}
@@ -512,8 +557,22 @@ function SideBar() {
                     />
                 </Popover>
 
+                <div className="item-wrapper ms-appearance-wrapper">
+                    <div className="ms-appearance">
+                        <div className="ms-appearance-badge">Coming soon</div>
+                        <div className="ms-appearance-light ms-active">
+                            <SunIcon/>
+                            <span className="ms-appearance-text">Light</span>
+                        </div>
+                        <div className="ms-appearance-dark">
+                            <MoonIcon/>
+                            <span className="ms-appearance-text">Dark</span>
+                        </div>
+                    </div>
+                </div>
+
                 <Popover
-                    overlayInnerStyle={overlayStyles}
+                    overlayInnerStyle={overlayStylesUser}
                     placement="right"
                     content={contentSetting}
                     trigger="click"
@@ -521,14 +580,24 @@ function SideBar() {
                     open={popoverOpenSetting}
                 >
                     <div className="sub-icon-wrapper" onClick={() => setPopoverOpenSetting(true)}>
-                        <img
-                            className={`sandboxUserImg ${(state.route === 'profile' || state.route === 'administration') && 'sandboxUserImgSelected'}`}
-                            src={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? localStorage.getItem(USER_IMAGE) : avatarUrl}
-                            referrerPolicy="no-referrer"
-                            width={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 35 : 25}
-                            height={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 35 : 25}
-                            alt="avatar"
-                        />
+                        <div className="sidebar-user-info">
+                            <img
+                                className={`sidebar-user-info-img sandboxUserImg ${(state.route === 'profile' || state.route === 'administration') && 'sandboxUserImgSelected'}`}
+                                src={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? localStorage.getItem(USER_IMAGE) : avatarUrl}
+                                referrerPolicy="no-referrer"
+                                width={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 35 : 25}
+                                height={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 35 : 25}
+                                alt="avatar"
+                            />
+                            <div className="sidebar-user-info-bottom">
+                                <div className="sidebar-user-info-name">
+                                    {localStorage.getItem(LOCAL_STORAGE_FULL_NAME) && localStorage.getItem(LOCAL_STORAGE_FULL_NAME)}
+                                </div>
+                                <div className="sidebar-user-info-email">
+                                    {localStorage.getItem(LOCAL_STORAGE_USER_NAME) && localStorage.getItem(LOCAL_STORAGE_USER_NAME)}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </Popover>
                 {!isCloud() && (
@@ -545,6 +614,7 @@ function SideBar() {
                     <UpgradePlans
                         content={
                             <div className="upgrade-button-wrapper">
+                                <CloudUploadIcon className="upgrade-plan-icon" style={{marginRight: '5px'}} />
                                 <p className="upgrade-plan">Upgrade</p>
                             </div>
                         }
