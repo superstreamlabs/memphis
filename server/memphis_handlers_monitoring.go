@@ -510,6 +510,19 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
+	stationsActAsDlsStation, err := db.GetStationsByDlsStationName(stationName.Ext(), user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetStationsByDlsStationName: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	usedAsDlsStations := make([]string, 0)
+	if len(stationsActAsDlsStation) > 0 {
+		for _, dlsStation := range stationsActAsDlsStation {
+			usedAsDlsStations = append(usedAsDlsStations, dlsStation.Name)
+		}
+	}
 	var functionsEnabled bool
 	if station.Version >= 2 {
 		functionsEnabled = true
@@ -744,6 +757,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"functions_enabled":               functionsEnabled,
 			"max_amount_of_allowed_producers": usageLimit,
 			"connectors":                      connectors,
+			"act_as_dls_station_in_stations":  usedAsDlsStations,
 		}
 	} else {
 		var emptyResponse struct{}
@@ -777,6 +791,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				"functions_enabled":               functionsEnabled,
 				"max_amount_of_allowed_producers": usageLimit,
 				"connectors":                      connectors,
+				"act_as_dls_station_in_stations":  usedAsDlsStations,
 			}
 		} else {
 			response = gin.H{
@@ -807,6 +822,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				"functions_enabled":               functionsEnabled,
 				"max_amount_of_allowed_producers": usageLimit,
 				"connectors":                      connectors,
+				"act_as_dls_station_in_stations":  usedAsDlsStations,
 			}
 		}
 	}
