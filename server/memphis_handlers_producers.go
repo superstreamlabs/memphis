@@ -252,7 +252,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]models.ExtendedProducer, []models.ExtendedProducer, []models.ExtendedProducer, error) { // for socket io endpoint
 	producers, err := db.GetAllProducersByStationID(station.ID)
 	if err != nil {
-		return producers, producers, producers, err
+		return []models.ExtendedProducer{}, []models.ExtendedProducer{}, []models.ExtendedProducer{}, err
 	}
 
 	var connectedProducers []models.ExtendedProducer
@@ -265,19 +265,36 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 			continue
 		}
 
-		producerRes := models.ExtendedProducer{
-			ID:          producer.ID,
-			Name:        producer.Name,
-			StationName: producer.StationName,
-			UpdatedAt:   producer.UpdatedAt,
-			IsActive:    producer.IsActive,
-			Count:       producer.Count,
+		producerExtendedRes := models.ExtendedProducerRes{
+			ID:                         producer.ID,
+			Name:                       producer.Name,
+			StationName:                producer.StationName,
+			UpdatedAt:                  producer.UpdatedAt,
+			IsActive:                   producer.IsActive,
+			DisconnedtedProducersCount: producer.DisconnedtedProducersCount,
+			ConnectedProducersCount:    producer.ConnectedProducersCount,
 		}
 
 		producersNames = append(producersNames, producer.Name)
 		if producer.IsActive {
+			producerRes := models.ExtendedProducer{
+				ID:          producerExtendedRes.ID,
+				Name:        producerExtendedRes.Name,
+				StationName: producerExtendedRes.StationName,
+				UpdatedAt:   producerExtendedRes.UpdatedAt,
+				IsActive:    producerExtendedRes.IsActive,
+				Count:       producerExtendedRes.ConnectedProducersCount,
+			}
 			connectedProducers = append(connectedProducers, producerRes)
 		} else {
+			producerRes := models.ExtendedProducer{
+				ID:          producerExtendedRes.ID,
+				Name:        producerExtendedRes.Name,
+				StationName: producerExtendedRes.StationName,
+				UpdatedAt:   producerExtendedRes.UpdatedAt,
+				IsActive:    producerExtendedRes.IsActive,
+				Count:       producerExtendedRes.DisconnedtedProducersCount,
+			}
 			disconnectedProducers = append(disconnectedProducers, producerRes)
 		}
 	}

@@ -2670,44 +2670,46 @@ func GetNotDeletedProducersByStationID(stationId int) ([]models.Producer, error)
 	}
 	return producers, nil
 }
-func GetAllProducersByStationID(stationId int) ([]models.ExtendedProducer, error) {
+func GetAllProducersByStationID(stationId int) ([]models.ExtendedProducerRes, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return []models.ExtendedProducer{}, err
+		return []models.ExtendedProducerRes{}, err
 	}
 	defer conn.Release()
 	query := `SELECT
-			p.id,
-			p.name,
-			p.type,
-			p.connection_id,
-			p.updated_at,
-			s.name,
-			p.is_active,
-			COUNT(CASE WHEN p.is_active THEN 1 END) OVER (PARTITION BY p.name) AS count_producers
-			FROM producers AS p
-			LEFT JOIN stations AS s ON s.id = p.station_id
-			WHERE p.station_id = $1
-			ORDER BY p.name, p.is_active DESC, p.updated_at DESC
-			LIMIT 5000;`
+    p.id,
+    p.name,
+    p.type,
+    p.connection_id,
+    p.updated_at,
+    s.name,
+    p.is_active,
+	COUNT(CASE WHEN p.is_active THEN 1 END) OVER (PARTITION BY p.name) AS connected_producers_count,
+	COUNT(CASE WHEN NOT p.is_active THEN 1 END) OVER (PARTITION BY p.name) AS disconnected_producers_count
+FROM producers AS p
+LEFT JOIN stations AS s ON s.id = p.station_id
+WHERE p.station_id = $1
+ORDER BY p.name, p.is_active, p.updated_at DESC
+LIMIT 5000;
+`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producers_by_station_id", query)
 	if err != nil {
-		return []models.ExtendedProducer{}, err
+		return []models.ExtendedProducerRes{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId)
 	if err != nil {
-		return []models.ExtendedProducer{}, err
+		return []models.ExtendedProducerRes{}, err
 	}
 	defer rows.Close()
 
-	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedProducer])
+	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedProducerRes])
 	if err != nil {
-		return []models.ExtendedProducer{}, err
+		return []models.ExtendedProducerRes{}, err
 	}
 	if len(producers) == 0 {
-		return []models.ExtendedProducer{}, nil
+		return []models.ExtendedProducerRes{}, nil
 	}
 	return producers, nil
 }
