@@ -2370,3 +2370,7 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetails(messageId int, dlsType str
 
 	return dlsMsgResponse, nil
 }
+
+func getUsageLimitProduersLimitPerStation(tenantName, stationName string) (float64, error) {
+	return -1, nil
+}
