@@ -594,7 +594,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		}
 	}
 
-	usageLimit, err := getUsageLimitProduersLimitPerStation(user.TenantName, user.Username, body.StationName)
+	usageLimit, err := getUsageLimitProduersLimitPerStation(user.TenantName, body.StationName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData: At getUsageLimitProduersLimitPerStation %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

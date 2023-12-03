@@ -2691,7 +2691,7 @@ func GetAllProducersByStationID(stationId int) ([]models.ExtendedProducerRes, er
 FROM producers AS p
 LEFT JOIN stations AS s ON s.id = p.station_id
 WHERE p.station_id = $1
-ORDER BY p.name, p.is_active, p.updated_at DESC
+ORDER BY p.name, p.is_active DESC, p.updated_at DESC
 LIMIT 5000;
 `
 	stmt, err := conn.Conn().Prepare(ctx, "get_producers_by_station_id", query)
