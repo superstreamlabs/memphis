@@ -58,6 +58,7 @@
     "start": "PORT=5555 react-scripts start",
     "oss": "REACT_APP_CLOUD=false PORT=5556 react-scripts start",
     "build": "GENERATE_SOURCEMAP=false BUILD_PATH='./../ui_static_files/build' react-scripts build",
+    "ci-build": "CI=false GENERATE_SOURCEMAP=false BUILD_PATH='../ui_static_files/build' react-scripts --openssl-legacy-provider build",
     "test": "jest",
     "eject": "react-scripts eject"
   },
