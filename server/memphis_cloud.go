@@ -2349,6 +2349,10 @@ func shouldCreateFunctionDlsStream() bool {
 	return false
 }
 
+func shouldCreateConnectorsStream() bool {
+	return false
+}
+
 func (pmh PoisonMessagesHandler) GetDlsMessageDetails(messageId int, dlsType string, tenantName string) (models.DlsMessageResponseWithFunc, error) {
 	dlsMsg, err := pmh.GetDlsMessageDetailsById(messageId, dlsType, tenantName)
 	if err != nil {
@@ -2373,4 +2377,8 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetails(messageId int, dlsType str
 
 func getUsageLimitProduersLimitPerStation(tenantName, stationName string) (float64, error) {
 	return -1, nil
+}
+
+func (s *Server) GetConnectorsByStationAndPartition(stationID, partitionNumber, numOfPartitions int) ([]map[string]string, error) {
+	return []map[string]string{}, nil
 }
