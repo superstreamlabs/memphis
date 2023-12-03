@@ -1190,6 +1190,37 @@ func GetStationByName(name string, tenantName string) (bool, models.Station, err
 	return true, stations[0], nil
 }
 
+func GetStationByDlsStationName(name string, tenantName string) ([]models.Station, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.Station{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM stations WHERE dls_station = $1 AND (is_deleted = false) AND tenant_name = $2`
+	stmt, err := conn.Conn().Prepare(ctx, "get_stations_act_as_dls_station_by_name", query)
+	if err != nil {
+		return []models.Station{}, err
+	}
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, tenantName)
+	if err != nil {
+		return []models.Station{}, err
+	}
+	defer rows.Close()
+	stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Station])
+	if err != nil {
+		return []models.Station{}, err
+	}
+	if len(stations) == 0 {
+		return []models.Station{}, nil
+	}
+	return stations, nil
+}
+
 func GetStationById(stationId int, tenantName string) (bool, models.Station, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()

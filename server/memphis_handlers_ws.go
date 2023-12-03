@@ -386,6 +386,18 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 		return map[string]any{}, err
 	}
 
+	stationsActAsDlsStation, err := db.GetStationByDlsStationName(sn.Ext(), station.TenantName)
+	if err != nil {
+		return map[string]any{}, err
+	}
+
+	usedAsDlsStations := make([]string, 0)
+	if len(stationsActAsDlsStation) > 0 {
+		for _, dlsStation := range stationsActAsDlsStation {
+			usedAsDlsStations = append(usedAsDlsStations, dlsStation.Name)
+		}
+	}
+
 	if err == ErrNoSchema { // non native stations will always reach this point
 		if !station.IsNative {
 			cp, dp, cc, dc := getFakeProdsAndConsForPreview()
@@ -416,6 +428,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 				"resend_disabled":                 station.ResendDisabled,
 				"functions_enabled":               functionsEnabled,
 				"max_amount_of_allowed_producers": usageLimit,
+				"act_as_dls_station_in_stations":  usedAsDlsStations,
 			}
 		} else {
 			response = map[string]any{
@@ -445,6 +458,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 				"resend_disabled":                 station.ResendDisabled,
 				"functions_enabled":               functionsEnabled,
 				"max_amount_of_allowed_producers": usageLimit,
+				"act_as_dls_station_in_stations":  usedAsDlsStations,
 			}
 		}
 
@@ -490,6 +504,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 		"resend_disabled":                 station.ResendDisabled,
 		"functions_enabled":               functionsEnabled,
 		"max_amount_of_allowed_producers": usageLimit,
+		"act_as_dls_station_in_stations":  usedAsDlsStations,
 	}
 
 	return response, nil
