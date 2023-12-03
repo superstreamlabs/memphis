@@ -61,6 +61,7 @@ const (
 	MEMPHIS_GLOBAL_ACCOUNT      = "$memphis"
 	integrationsAuditLogsStream = "$memphis_integrations_audit_logs"
 	systemTasksStreamName       = "$memphis_system_tasks"
+	connectorsLogsStream        = "$memphis_connectors_logs"
 )
 
 var noLimit = -1
@@ -142,6 +143,7 @@ var (
 	INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED bool
 	SYSTEM_TASKS_STREAM_CREATED            bool
 	FUNCTIONS_TASKS_CONSUMER_CREATED       bool
+	CONNECTORS_LOGS_STREAM_CREATED         bool
 )
 
 type Messages []models.MessageDetails
@@ -466,6 +468,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		}
 		DLS_FUNCTIONS_CONSUMER_CREATED = true
 	}
+
 	// delete the old version throughput stream
 	if THROUGHPUT_LEGACY_STREAM_EXIST {
 		err = s.memphisDeleteStream(s.MemphisGlobalAccountString(), throughputStreamName)
@@ -555,6 +558,26 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			return
 		}
 		FUNCTIONS_TASKS_CONSUMER_CREATED = true
+	}
+
+	// create connectors logs stream
+	if shouldCreateConnectorsStream() && !CONNECTORS_LOGS_STREAM_CREATED {
+		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
+			Name:         connectorsLogsStream,
+			Subjects:     []string{connectorsLogsStream + ".>"},
+			Retention:    LimitsPolicy,
+			MaxAge:       time.Hour * 24 * 7, // 7 days
+			MaxConsumers: -1,
+			MaxMsgsPer:   200,
+			Discard:      DiscardOld,
+			Storage:      FileStorage,
+			Replicas:     replicas,
+		})
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+		CONNECTORS_LOGS_STREAM_CREATED = true
 	}
 
 	successCh <- nil

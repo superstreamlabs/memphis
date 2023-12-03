@@ -681,6 +681,13 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			station.TieredStorageEnabled = false
 		}
 	}
+
+	connectors, err := mh.S.GetConnectorsByStationAndPartition(station.ID, body.PartitionNumber, len(station.PartitionsList))
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetConnectorsByStationAndPartition: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
 	var response gin.H
 
 	// Check when the schema object in station is not empty, not optional for non native stations
@@ -736,6 +743,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"resend_disabled":                 station.ResendDisabled,
 			"functions_enabled":               functionsEnabled,
 			"max_amount_of_allowed_producers": usageLimit,
+			"connectors":                      connectors,
 		}
 	} else {
 		var emptyResponse struct{}
@@ -768,6 +776,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				"resend_disabled":                 station.ResendDisabled,
 				"functions_enabled":               functionsEnabled,
 				"max_amount_of_allowed_producers": usageLimit,
+				"connectors":                      connectors,
 			}
 		} else {
 			response = gin.H{
@@ -797,6 +806,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				"resend_disabled":                 station.ResendDisabled,
 				"functions_enabled":               functionsEnabled,
 				"max_amount_of_allowed_producers": usageLimit,
+				"connectors":                      connectors,
 			}
 		}
 	}

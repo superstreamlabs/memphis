@@ -1309,6 +1309,8 @@ func (a *Account) EnableJetStream(limits map[string]JetStreamAccountLimits) erro
 			SYSTEM_TASKS_STREAM_CREATED = true
 		case dlsFunctionsStream:
 			DLS_FUNCTIONS_STREAM_CREATED = true
+		case connectorsLogsStream:
+			CONNECTORS_LOGS_STREAM_CREATED = true
 		}
 		// added by Memphis ***
 
@@ -1343,6 +1345,8 @@ func (a *Account) EnableJetStream(limits map[string]JetStreamAccountLimits) erro
 			FUNCTIONS_TASKS_CONSUMER_CREATED = true
 		case dlsFunctionsStream:
 			DLS_FUNCTIONS_CONSUMER_CREATED = true
+		case connectorsLogsStream:
+			CONNECTORS_LOGS_STREAM_CREATED = true
 		}
 		// added by Memphis ***
 

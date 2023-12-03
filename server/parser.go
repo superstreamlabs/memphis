@@ -942,7 +942,8 @@ func (c *client) parse(buf []byte) error {
 					!c.isWebsocket() &&
 					!strings.Contains(c.opts.Name, "MEMPHIS HTTP LOGGER") &&
 					!strings.Contains(c.opts.Name, "MEMPHIS CLOUD FUNCTIONS ADMINISTRATION") &&
-					!strings.Contains(c.opts.Name, "MEMPHIS CLOUD FUNCTIONS ENGINE") {
+					!strings.Contains(c.opts.Name, "MEMPHIS CLOUD FUNCTIONS ENGINE") &&
+					!strings.Contains(c.opts.Name, "MEMPHIS CLOUD CONNECTORS ENGINE") {
 					if !s.validateAccIdInUsername(c.opts.Username) {
 						goto accountIdErr
 					}
@@ -963,7 +964,8 @@ func (c *client) parse(buf []byte) error {
 					!c.isWebsocket() &&
 					!strings.Contains(c.opts.Name, "MEMPHIS HTTP LOGGER") &&
 					!strings.Contains(c.opts.Name, "MEMPHIS CLOUD FUNCTIONS ADMINISTRATION") &&
-					!strings.Contains(c.opts.Name, "MEMPHIS CLOUD FUNCTIONS ENGINE") {
+					!strings.Contains(c.opts.Name, "MEMPHIS CLOUD FUNCTIONS ENGINE") &&
+					!strings.Contains(c.opts.Name, "MEMPHIS CLOUD CONNECTORS ENGINE") {
 					if db.MetadataDbClient.Client == nil { // server is not ready yet to get new connections
 						goto authErr
 					}
