@@ -1190,7 +1190,7 @@ func GetStationByName(name string, tenantName string) (bool, models.Station, err
 	return true, stations[0], nil
 }
 
-func GetStationByDlsStationName(name string, tenantName string) ([]models.Station, error) {
+func GetStationsByDlsStationName(name string, tenantName string) ([]models.Station, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)

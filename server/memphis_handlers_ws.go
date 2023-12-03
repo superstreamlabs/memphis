@@ -386,7 +386,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 		return map[string]any{}, err
 	}
 
-	stationsActAsDlsStation, err := db.GetStationByDlsStationName(sn.Ext(), station.TenantName)
+	stationsActAsDlsStation, err := db.GetStationsByDlsStationName(sn.Ext(), station.TenantName)
 	if err != nil {
 		return map[string]any{}, err
 	}

@@ -510,9 +510,9 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
-	stationsActAsDlsStation, err := db.GetStationByDlsStationName(stationName.Ext(), user.TenantName)
+	stationsActAsDlsStation, err := db.GetStationsByDlsStationName(stationName.Ext(), user.TenantName)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetStationByDlsStationName: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetStationsByDlsStationName: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
