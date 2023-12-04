@@ -31,17 +31,6 @@ type Producer struct {
 }
 
 type ExtendedProducer struct {
-	ID           int       `json:"id"`
-	Name         string    `json:"name"`
-	Type         string    `json:"type,omitempty"`
-	ConnectionId string    `json:"connection_id,omitempty"`
-	UpdatedAt    time.Time `json:"created_at"`
-	StationName  string    `json:"station_name"`
-	IsActive     bool      `json:"is_active"`
-	Count        int       `json:"count"`
-}
-
-type ExtendedProducerRes struct {
 	ID                         int       `json:"id"`
 	Name                       string    `json:"name"`
 	Type                       string    `json:"type,omitempty"`

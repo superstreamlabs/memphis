@@ -213,8 +213,8 @@ const ProduceConsumList = ({ producer }) => {
                                             <OverflowTip text={row.name} width={'100px'}>
                                                 {row.name}
                                             </OverflowTip>
-                                            <OverflowTip text={row.count} width={'70px'}>
-                                                {row.count}
+                                            <OverflowTip text={row.connected_producers_count} width={'70px'}>
+                                                {row.connected_producers_count}
                                             </OverflowTip>
                                             <span className="status-icon" style={{ width: '38px' }}>
                                                 <StatusIndication is_active={row.is_active} is_deleted={row.is_active} />
