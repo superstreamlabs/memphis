@@ -265,7 +265,7 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 			continue
 		}
 
-		producerExtendedRes := models.ExtendedProducerRes{
+		producerExtendedRes := models.ExtendedProducer{
 			ID:                         producer.ID,
 			Name:                       producer.Name,
 			StationName:                producer.StationName,
@@ -277,25 +277,9 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 
 		producersNames = append(producersNames, producer.Name)
 		if producer.IsActive {
-			producerRes := models.ExtendedProducer{
-				ID:          producerExtendedRes.ID,
-				Name:        producerExtendedRes.Name,
-				StationName: producerExtendedRes.StationName,
-				UpdatedAt:   producerExtendedRes.UpdatedAt,
-				IsActive:    producerExtendedRes.IsActive,
-				Count:       producerExtendedRes.ConnectedProducersCount,
-			}
-			connectedProducers = append(connectedProducers, producerRes)
+			connectedProducers = append(connectedProducers, producerExtendedRes)
 		} else {
-			producerRes := models.ExtendedProducer{
-				ID:          producerExtendedRes.ID,
-				Name:        producerExtendedRes.Name,
-				StationName: producerExtendedRes.StationName,
-				UpdatedAt:   producerExtendedRes.UpdatedAt,
-				IsActive:    producerExtendedRes.IsActive,
-				Count:       producerExtendedRes.DisconnedtedProducersCount,
-			}
-			disconnectedProducers = append(disconnectedProducers, producerRes)
+			disconnectedProducers = append(disconnectedProducers, producerExtendedRes)
 		}
 	}
 
