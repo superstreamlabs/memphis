@@ -135,14 +135,16 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 		if len(station.PartitionsList) == 0 {
 			err = s.RemoveStream(station.TenantName, stationName.Intern())
 			if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
-				return err
+				s.Errorf("[tenant: %v]removeStationResources at RemoveStream: Station %v: %v", station.TenantName, station.Name, err.Error())
+				// TODO add retry
 			}
 		} else {
 			for _, p := range station.PartitionsList {
 				streamName := fmt.Sprintf("%v$%v", stationName.Intern(), p)
 				err = s.RemoveStream(station.TenantName, streamName)
 				if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
-					return err
+					s.Errorf("[tenant: %v]removeStationResources at RemoveStream: Station %v: %v", station.TenantName, station.Name, err.Error())
+					// TODO add retry
 				}
 			}
 		}
