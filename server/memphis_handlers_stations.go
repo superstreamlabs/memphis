@@ -182,6 +182,11 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 		return err
 	}
 
+	err = deleteConnectorsStationResources(station.TenantName, station.ID)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

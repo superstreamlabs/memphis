@@ -160,7 +160,11 @@ func removeTenantResources(tenantName string, user models.User) error {
 	if err != nil {
 		return err
 	}
-	// TODO: send response of DeleteAndGetAttachedFunctionsByStation to microservice to delete
+
+	err = deleteConnectorsTenantResources(tenantName)
+	if err != nil {
+		return err
+	}
 
 	err = db.RemoveStationsByTenant(tenantName)
 	if err != nil {
