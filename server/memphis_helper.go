@@ -157,17 +157,17 @@ func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 }
 
 func jsApiRequest[R any](tenantName string, s *Server, subject, kind string, msg []byte, resp *R) error {
-	account, err := s.lookupAccount(tenantName)
-	if err != nil {
-		return err
-	}
-	reply := s.getJsApiReplySubject()
-
 	// use buffered lock to limit amount of concurrent jsapi requests
 	if s.memphis.jsApiMu != nil {
 		s.memphis.jsApiMu.Lock()
 		defer s.memphis.jsApiMu.Unlock()
 	}
+
+	account, err := s.lookupAccount(tenantName)
+	if err != nil {
+		return err
+	}
+	reply := s.getJsApiReplySubject()
 
 	timeout := time.After(40 * time.Second)
 	respCh := make(chan []byte)
@@ -175,7 +175,7 @@ func jsApiRequest[R any](tenantName string, s *Server, subject, kind string, msg
 	if err != nil {
 		return err
 	}
-	// send on global account
+
 	s.sendInternalAccountMsgWithReply(account, subject, reply, nil, msg, true)
 
 	// wait for response to arrive
@@ -525,7 +525,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			Name:         systemTasksStreamName,
 			Subjects:     []string{systemTasksStreamName + ".>"},
 			Retention:    WorkQueuePolicy,
-			MaxAge:       time.Hour * 24 * 3, // 3 days
+			MaxAge:       time.Hour * 24,
 			MaxConsumers: -1,
 			MaxMsgsPer:   -1,
 			Discard:      DiscardOld,
