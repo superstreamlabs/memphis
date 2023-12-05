@@ -398,6 +398,11 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 		}
 	}
 
+	connectors, err := s.GetConnectorsByStationAndPartition(station.ID, partitionNumber, len(station.PartitionsList))
+	if err != nil {
+		return map[string]any{}, err
+	}
+
 	if err == ErrNoSchema { // non native stations will always reach this point
 		if !station.IsNative {
 			cp, dp, cc, dc := getFakeProdsAndConsForPreview()
@@ -428,6 +433,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 				"resend_disabled":                 station.ResendDisabled,
 				"functions_enabled":               functionsEnabled,
 				"max_amount_of_allowed_producers": usageLimit,
+				"connectors":                      connectors,
 				"act_as_dls_station_in_stations":  usedAsDlsStations,
 			}
 		} else {
@@ -458,6 +464,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 				"resend_disabled":                 station.ResendDisabled,
 				"functions_enabled":               functionsEnabled,
 				"max_amount_of_allowed_producers": usageLimit,
+				"connectors":                      connectors,
 				"act_as_dls_station_in_stations":  usedAsDlsStations,
 			}
 		}
@@ -504,6 +511,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 		"resend_disabled":                 station.ResendDisabled,
 		"functions_enabled":               functionsEnabled,
 		"max_amount_of_allowed_producers": usageLimit,
+		"connectors":                      connectors,
 		"act_as_dls_station_in_stations":  usedAsDlsStations,
 	}
 
