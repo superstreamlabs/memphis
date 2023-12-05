@@ -244,6 +244,18 @@ const StationOverviewHeader = () => {
                                 <b>Partitions: </b>
                                 {stationState?.stationMetaData?.partitions_number === 0 ? 1 : stationState?.stationMetaData?.partitions_number}
                             </p>
+                            <div className="flex-details-wrapper">
+                                <p style={{display: 'flex'}}>
+                                    <b style={{marginRight: '5px'}}>Dead-letter for: </b>
+                                    {
+                                        stationState?.stationSocketData?.act_as_dls_station_in_stations && stationState?.stationSocketData?.act_as_dls_station_in_stations.length ?
+                                            <OverflowTip text={stationState?.stationSocketData?.act_as_dls_station_in_stations.join(', ')} maxWidth={'70px'}>
+                                                {stationState?.stationSocketData?.act_as_dls_station_in_stations.join(', ')}
+                                            </OverflowTip>
+                                            : <MinusOutlined style={{ color: '#2E2C34' }} />
+                                    }
+                                </p>
+                            </div>
                         </div>
                         <div className="storage-section">
                             <p>
