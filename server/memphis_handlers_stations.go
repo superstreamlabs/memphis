@@ -250,7 +250,6 @@ func (s *Server) createStationDirectIntern(c *client,
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
-
 	if exist {
 		jsApiResp.Error = NewJSStreamNameExistError()
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
@@ -273,11 +272,20 @@ func (s *Server) createStationDirectIntern(c *client,
 	if csr.DlsStation != "" {
 		canCreate := ValidataAccessToFeature(csr.TenantName, "feature-dls-consumption-linkage")
 		if !canCreate {
-			errMsg := fmt.Sprintf("cannot create station with DLS linkage, please upgrade your plan to enjoy this feature")
+			errMsg := fmt.Sprint("cannot create station with DLS linkage, please upgrade your plan to enjoy this feature")
 			serv.Warnf("[tenant: %v][user:%v]CreateStation %v", csr.TenantName, csr.Username, errMsg)
 			jsApiResp.Error = NewJSStreamCreateError(err)
 			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
+		} else {
+			canCreate, stationsLimit := ValidataUsageLimitOfFeature(csr.TenantName, "feature-stations-limitation", stationsCount+2)
+			if !canCreate {
+				errMsg := fmt.Errorf("cannot create DLS station (max amount of stations for this plan :%v)", stationsLimit)
+				serv.Warnf("[tenant: %v][user:%v]CreateStation %v", csr.TenantName, csr.Username, errMsg)
+				jsApiResp.Error = NewJSStreamCreateError(errMsg)
+				respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, errMsg)
+				return
+			}
 		}
 	}
 
@@ -290,7 +298,6 @@ func (s *Server) createStationDirectIntern(c *client,
 	}
 
 	canCreate, partitionLimit := ValidataUsageLimitOfFeature(csr.TenantName, "feature-partitions-per-station", csr.PartitionsNumber)
-
 	if (!canCreate || csr.PartitionsNumber < 1) && isNative {
 		var errMsg error
 		if canCreate {
@@ -410,23 +417,6 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	if shouldCreateStream {
-		for p := 1; p <= csr.PartitionsNumber; p++ {
-			err = s.CreateStream(csr.TenantName, stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled, p, true)
-			if err != nil {
-				if IsNatsErr(err, JSStreamReplicasNotSupportedErr) {
-					serv.Warnf("[tenant: %v][user:%v]CreateStationDirect: Station %v: Station can not be created, probably since replicas count is larger than the cluster size", csr.TenantName, csr.Username, stationName.Ext())
-					respondWithErr(s.MemphisGlobalAccountString(), s, reply, errors.New("station can not be created, probably since replicas count is larger than the cluster size"))
-					return
-				}
-
-				serv.Errorf("[tenant: %v][user:%v]createStationDirect: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
-				respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
-				return
-			}
-			partitionsList = append(partitionsList, p)
-		}
-	}
 	exist, user, err := memphis_cache.GetUser(username, csr.TenantName, false)
 	if err != nil {
 		serv.Warnf("[tenant: %v][user:%v]createStationDirect at memphis_cache.GetUser: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
@@ -438,8 +428,16 @@ func (s *Server) createStationDirectIntern(c *client,
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
+
 	if csr.DlsStation != "" {
-		exist, _, err := db.GetStationByName(csr.DlsStation, user.TenantName)
+		DlsStation, err := StationNameFromStr(csr.DlsStation)
+		if err != nil {
+			serv.Warnf("[tenant: %v][user:%v]createStationDirect at StationNameFromStr: Station %v: %v", csr.TenantName, csr.Username, csr.DlsStation, err.Error())
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+			return
+		}
+		exist, _, err := db.GetStationByName(DlsStation.Ext(), user.TenantName)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user:%v]createStationDirect at DLS GetStationByName: %v", csr.TenantName, csr.Username, err.Error())
 			respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
@@ -485,6 +483,33 @@ func (s *Server) createStationDirectIntern(c *client,
 				}
 
 			}
+		}
+	}
+
+	if shouldCreateStream {
+		for p := 1; p <= csr.PartitionsNumber; p++ {
+			err = s.CreateStream(csr.TenantName, stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled, p, true)
+			if err != nil {
+				// remove all partitions that were created
+				for _, partition := range partitionsList {
+					streamName := fmt.Sprintf("%v$%v", stationName.Intern(), partition)
+					err = s.RemoveStream(csr.TenantName, streamName)
+					if err != nil {
+						serv.Errorf("[tenant: %v][user: %v]CreateStationDirect at RemoveStream: Station %v: %v", user.TenantName, user.Username, csr.StationName, err.Error())
+					}
+				}
+
+				if IsNatsErr(err, JSStreamReplicasNotSupportedErr) {
+					serv.Warnf("[tenant: %v][user:%v]CreateStationDirect: Station %v: Station can not be created, probably since replicas count is larger than the cluster size", csr.TenantName, csr.Username, stationName.Ext())
+					respondWithErr(s.MemphisGlobalAccountString(), s, reply, errors.New("station can not be created, probably since replicas count is larger than the cluster size"))
+					return
+				}
+
+				serv.Errorf("[tenant: %v][user:%v]createStationDirect: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
+				respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+				return
+			}
+			partitionsList = append(partitionsList, p)
 		}
 	}
 
@@ -835,7 +860,7 @@ func (sh StationsHandler) GetStations(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, gin.H{
-		"stations":           stations,
+		"stations": stations,
 	})
 }
 
@@ -890,11 +915,18 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			serv.Warnf("[tenant: %v][user:%v]CreateStation %v", user.TenantName, user.Username, errMsg)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 			return
+		} else {
+			canCreate, stationsLimit := ValidataUsageLimitOfFeature(tenantName, "feature-stations-limitation", stationsCount+2)
+			if !canCreate {
+				errMsg := fmt.Errorf("cannot create DLS station (max amount of stations for this plan :%v)", stationsLimit)
+				serv.Warnf("[tenant: %v][user:%v]CreateStation %v", user.TenantName, user.Username, errMsg)
+				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+				return
+			}
 		}
 	}
 
 	canCreate, partitionLimit := ValidataUsageLimitOfFeature(tenantName, "feature-partitions-per-station", body.PartitionsNumber)
-
 	if !canCreate || body.PartitionsNumber < 1 {
 		var errMsg error
 		if canCreate {
@@ -1029,24 +1061,15 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		body.IdempotencyWindow = 100 // minimum is 100 millis
 	}
 
-	for p := 1; p <= body.PartitionsNumber; p++ {
-		err = sh.S.CreateStream(tenantName, stationName, retentionType, body.RetentionValue, body.StorageType, body.IdempotencyWindow, body.Replicas, body.TieredStorageEnabled, p, true)
+	if body.DlsStation != "" {
+		dlsStationName, err := StationNameFromStr(body.DlsStation)
 		if err != nil {
-			if IsNatsErr(err, JSInsufficientResourcesErr) {
-				serv.Warnf("[tenant: %v][user: %v]CreateStation: Station %v: Station can not be created, probably since replicas count is larger than the cluster size", user.TenantName, user.Username, body.Name)
-				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station can not be created, probably since replicas count is larger than the cluster size"})
-				return
-			}
-
-			serv.Errorf("[tenant: %v][user: %v]CreateStation at CreateStream: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+			serv.Errorf("[tenant: %v][user:%v]CreateStation at DLS StationNameFromStr: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-		partitionsList = append(partitionsList, p)
-	}
 
-	if body.DlsStation != "" {
-		exist, _, err := db.GetStationByName(body.DlsStation, user.TenantName)
+		exist, _, err := db.GetStationByName(dlsStationName.Ext(), user.TenantName)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user:%v]CreateStation at DLS GetStationByName: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1054,12 +1077,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		}
 		if !exist {
 			var created bool
-			dlsStationName, err := StationNameFromStr(body.DlsStation)
-			if err != nil {
-				serv.Errorf("[tenant: %v][user:%v]CreateStation at DLS StationNameFromStr: %v", user.TenantName, user.Username, err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
 			_, created, err = CreateDefaultStation(user.TenantName, sh.S, dlsStationName, user.ID, user.Username, "", 0)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user:%v]CreateStation at DLS CreateDefaultStation: %v", user.TenantName, user.Username, err.Error())
@@ -1093,6 +1110,31 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 			}
 		}
+	}
+
+	for p := 1; p <= body.PartitionsNumber; p++ {
+		err = sh.S.CreateStream(tenantName, stationName, retentionType, body.RetentionValue, body.StorageType, body.IdempotencyWindow, body.Replicas, body.TieredStorageEnabled, p, true)
+		if err != nil {
+			// remove all partitions that were created
+			for _, partition := range partitionsList {
+				streamName := fmt.Sprintf("%v$%v", stationName.Intern(), partition)
+				err = sh.S.RemoveStream(tenantName, streamName)
+				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v]CreateStation at RemoveStream: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+				}
+			}
+
+			if IsNatsErr(err, JSInsufficientResourcesErr) {
+				serv.Warnf("[tenant: %v][user: %v]CreateStation: Station %v: Station can not be created, probably since replicas count is larger than the cluster size", user.TenantName, user.Username, body.Name)
+				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station can not be created, probably since replicas count is larger than the cluster size"})
+				return
+			}
+
+			serv.Errorf("[tenant: %v][user: %v]CreateStation at CreateStream: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		partitionsList = append(partitionsList, p)
 	}
 
 	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled, tenantName, partitionsList, 2, body.DlsStation)
