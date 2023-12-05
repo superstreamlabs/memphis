@@ -2382,3 +2382,11 @@ func getUsageLimitProduersLimitPerStation(tenantName, stationName string) (float
 func (s *Server) GetConnectorsByStationAndPartition(stationID, partitionNumber, numOfPartitions int) ([]map[string]string, error) {
 	return []map[string]string{}, nil
 }
+
+func deleteConnectorsStationResources(tenantName string, stationID int) error {
+	return nil
+}
+
+func deleteConnectorsTenantResources(tenantName string) error {
+	return nil
+}
