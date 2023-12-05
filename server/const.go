@@ -41,7 +41,7 @@ var (
 
 const (
 	// VERSION is the current version for the memphis.
-	VERSION = "1.4.0"
+	VERSION = "1.4.1"
 
 	DEFAULT_SERVER_NAME                        = "memphis-0"
 	DEFAULT_WS_PORT                            = 7770
