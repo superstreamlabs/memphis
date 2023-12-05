@@ -274,7 +274,7 @@ func (s *Server) createStationDirectIntern(c *client,
 	if csr.DlsStation != "" {
 		canCreate := ValidataAccessToFeature(csr.TenantName, "feature-dls-consumption-linkage")
 		if !canCreate {
-			errMsg := fmt.Sprint("cannot create station with DLS linkage, please upgrade your plan to enjoy this feature")
+			errMsg := "cannot create station with DLS linkage, please upgrade your plan to enjoy this feature"
 			serv.Warnf("[tenant: %v][user:%v]CreateStation %v", csr.TenantName, csr.Username, errMsg)
 			jsApiResp.Error = NewJSStreamCreateError(err)
 			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
