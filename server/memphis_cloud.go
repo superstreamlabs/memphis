@@ -2456,12 +2456,13 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 
 	var confUsers configUsers
 	if rootUserCreated {
-		configFilePath := os.Getenv("INITIAL_CONFIG_FILE")
-		if configFilePath == "" {
+		initialConfigFile := os.Getenv("INITIAL_CONFIG_FILE")
+		fmt.Println("initialConfigFile", initialConfigFile)
+		if initialConfigFile == "" {
 			return 0, fmt.Errorf("INITIAL_CONFIG_FILE environment variable is not set.")
 		}
 
-		err := json.Unmarshal([]byte(configFilePath), &confUsers)
+		err := json.Unmarshal([]byte(initialConfigFile), &confUsers)
 		if err != nil {
 			return 0, err
 		}
