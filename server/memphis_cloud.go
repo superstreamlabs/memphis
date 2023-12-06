@@ -2446,7 +2446,7 @@ func convertToUsers(usersData []interface{}) []userDetails {
 	for _, userData := range usersData {
 		userMap := userData.(map[interface{}]interface{})
 		users = append(users, userDetails{
-			Username: userMap["user"].(string),
+			User:     userMap["user"].(string),
 			Password: userMap["password"].(string),
 		})
 	}
@@ -2454,7 +2454,7 @@ func convertToUsers(usersData []interface{}) []userDetails {
 }
 
 type userDetails struct {
-	Username string `json:"username" yaml:"username"`
+	User     string `json:"user" yaml:"user"`
 	Password string `json:"password" yaml:"password"`
 }
 
@@ -2476,71 +2476,48 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 			return 0, fmt.Errorf("INITIAL_CONFIG_FILE environment variable is not set.")
 		}
 
-		// 		initialConfigFile = `users:
-		// mgmt:
-		// - user: admin
-		// password: admin
-		// - user: test_mgmt
-		// password: test
-		// - user: test
-		// password: test
-		// client:
-		// - user: test_app
-		// password: test
-		// - user: test_app2
-		// password: test
-		// `
+		if configuration.DEV_ENV == "true" {
+			// for local env with launch json
+			err := json.Unmarshal([]byte(initialConfigFile), &confUsers)
+			if err != nil {
+				return 0, err
+			}
+		} else {
+			// for docker env
+			var data map[string]interface{}
+			err := yaml.Unmarshal([]byte(initialConfigFile), &data)
+			if err != nil {
+				return 0, err
+			}
 
-		fmt.Println("env dev test", configuration.DEV_ENV, configuration.DOCKER_ENV)
-		var data map[string]interface{}
-		err := yaml.Unmarshal([]byte(initialConfigFile), &data)
-		if err != nil {
-			fmt.Println("Error unmarshalling YAML:", err)
-			return 0, err
+			confUsers = configUsers{
+				Users: struct {
+					Mgmt   []userDetails `json:"mgmt" yaml:"mgmt"`
+					Client []userDetails `json:"client" yaml:"client"`
+				}{
+					Mgmt:   convertToUsers(data["users"].(map[interface{}]interface{})["mgmt"].([]interface{})),
+					Client: convertToUsers(data["users"].(map[interface{}]interface{})["client"].([]interface{})),
+				},
+			}
 		}
-
-		// for docker env
-		// err := yaml.Unmarshal([]byte(initialConfigFile), &confUsers)
-		// if err != nil {
-		// 	return 0, err
-		// }
 
 		fmt.Println("after unmarshal", confUsers)
-		fmt.Println("after unmarshal data", data)
 
-		config := configUsers{
-			Users: struct {
-				Mgmt   []userDetails `json:"mgmt" yaml:"mgmt"`
-				Client []userDetails `json:"client" yaml:"client"`
-			}{
-				Mgmt:   convertToUsers(data["users"].(map[interface{}]interface{})["mgmt"].([]interface{})),
-				Client: convertToUsers(data["users"].(map[interface{}]interface{})["client"].([]interface{})),
-			},
-		}
-
-		fmt.Println("config", config)
-
-		// for local env with launch json
-		// err := json.Unmarshal([]byte(initialConfigFile), &confUsers)
-		// if err != nil {
-		// 	return 0, err
-		// }
-
-		for _, mgmtUser := range config.Users.Mgmt {
-			fmt.Println("mgmtUser.Username", mgmtUser.Username)
-			err = createUser(mgmtUser.Username, "management", mgmtUser.Password)
+		for _, mgmtUser := range confUsers.Users.Mgmt {
+			fmt.Println("mgmtUser.Username", mgmtUser.User)
+			err := createUser(mgmtUser.User, "management", mgmtUser.Password)
 			if err != nil {
 				return 0, err
 			}
 		}
 
-		for _, user := range config.Users.Client {
-			err = createUser(user.Username, "application", user.Password)
+		for _, user := range confUsers.Users.Client {
+			err := createUser(user.User, "application", user.Password)
 			if err != nil {
 				return 0, err
 			}
 		}
-		lenUsers = len(config.Users.Mgmt) + len(config.Users.Client)
+		lenUsers = len(confUsers.Users.Mgmt) + len(confUsers.Users.Client)
 	}
 
 	return lenUsers, nil
