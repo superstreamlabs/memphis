@@ -30,6 +30,9 @@ import Modal from '../../../../components/modal';
 import { StationStoreContext } from '../..';
 import ProduceMessages from '../../../../components/produceMessages';
 import { ReactComponent as ErrorModalIcon } from '../../../../assets/images/errorModal.svg';
+import {isCloud} from "../../../../services/valueConvertor";
+import CloudOnly from "../../../../components/cloudOnly";
+import TooltipComponent from "../../../../components/tooltip/tooltip";
 
 const ProduceConsumList = ({ producer }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -154,7 +157,13 @@ const ProduceConsumList = ({ producer }) => {
                 <div className="header">
                     {producer && (
                         <>
-                            <p className="title">Producers {producersList?.length > 0 && `(${producersList?.length})`}</p>
+                            <p className="title">
+                                <TooltipComponent text="max allowed producers" placement="right">
+                                    <>
+                                        Producers ({producersList?.length > 0 && producersList?.length }{ isCloud() && '/' + stationState?.stationSocketData?.max_amount_of_allowed_producers })
+                                    </>
+                                </TooltipComponent>
+                            </p>
                             <Button
                                 className="producer-btn"
                                 width="100px"
@@ -213,9 +222,11 @@ const ProduceConsumList = ({ producer }) => {
                                             <OverflowTip text={row.name} width={'100px'}>
                                                 {row.name}
                                             </OverflowTip>
-                                            <OverflowTip text={row.connected_producers_count} width={'70px'}>
-                                                {row.connected_producers_count}
-                                            </OverflowTip>
+                                            <div style={{width: "92px", maxWidth: "100%"}}>
+                                                <TooltipComponent text="connected | disconnected" placement="right">
+                                                    {row.connected_producers_count + ' | ' + row.disconnected_producers_count}
+                                                </TooltipComponent>
+                                            </div>
                                             <span className="status-icon" style={{ width: '38px' }}>
                                                 <StatusIndication is_active={row.is_active} is_deleted={row.is_active} />
                                             </span>
