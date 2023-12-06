@@ -36,6 +36,7 @@ import (
 	"github.com/memphisdev/memphis/memphis_cache"
 	"github.com/memphisdev/memphis/models"
 	"github.com/memphisdev/memphis/utils"
+	"gopkg.in/yaml.v2"
 
 	dockerClient "github.com/docker/docker/client"
 	"github.com/gin-contrib/cors"
@@ -2462,10 +2463,18 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 			return 0, fmt.Errorf("INITIAL_CONFIG_FILE environment variable is not set.")
 		}
 
-		err := json.Unmarshal([]byte(initialConfigFile), &confUsers)
+		// for docker env
+		err := yaml.Unmarshal([]byte(initialConfigFile), &confUsers)
 		if err != nil {
 			return 0, err
 		}
+
+		fmt.Println("after unmarshal", confUsers)
+		// for local env with launch json
+		// err := json.Unmarshal([]byte(initialConfigFile), &confUsers)
+		// if err != nil {
+		// 	return 0, err
+		// }
 
 		for _, mgmtUser := range confUsers.Users.Mgmt {
 			err = createUser(mgmtUser.Username, "management", mgmtUser.Password)
