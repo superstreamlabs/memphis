@@ -15,17 +15,16 @@ import React from 'react';
 import { Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 
-const antIcon = (
-    <LoadingOutlined
-        style={{
-            fontSize: 18,
-            color: 'var(--purple)'
-        }}
-        spin
-    />
-);
-
-const Spinner = () => {
+const Spinner = ({ fontSize }) => {
+    const antIcon = (
+        <LoadingOutlined
+            style={{
+                fontSize: fontSize || 18,
+                color: 'var(--purple)'
+            }}
+            spin
+        />
+    );
     return (
         <div className="spinner-container">
             <Spin indicator={antIcon} />

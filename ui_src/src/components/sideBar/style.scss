@@ -12,34 +12,36 @@
 
     .sidebar-user-info {
         cursor: pointer;
-        &-img {}
+        &-img {
+        }
         &-bottom {
             display: none;
         }
     }
 
     opacity: 1;
-    transition: all .3s ease-in-out;
+    transition: all 0.3s ease-in-out;
 
     &.expand {
-        animation: expandAnimation .5s ease-out forwards;
+        animation: expandAnimation 0.5s ease-out forwards;
         width: 205px;
     }
 
     &.collapse {
-        animation: collapseAnimation .5s ease-in-out forwards;
+        animation: collapseAnimation 0.5s ease-in-out forwards;
         width: 90px;
     }
 
     @keyframes expandAnimation {
-        0%, 35% {
+        0%,
+        35% {
             opacity: 0;
         }
         50% {
-            opacity: .3;
+            opacity: 0.3;
         }
         75% {
-            opacity: .65;
+            opacity: 0.65;
         }
         100% {
             opacity: 1;
@@ -57,9 +59,9 @@
     @mixin comingSoonBadge {
         position: absolute;
         border-radius: 32px;
-        background: var(--Purply-blue, #6557FF);
+        background: var(--Purply-blue, #6557ff);
         padding: 4px 8px;
-        color: #FFF;
+        color: #fff;
         text-align: center;
         font-size: 8px;
         font-style: normal;
@@ -77,8 +79,9 @@
             align-items: center;
             margin: 0 10px 15px;
             padding-top: 8px;
-            border-top: 1px solid #E4E4E4;
-            &-img {}
+            border-top: 1px solid #e4e4e4;
+            &-img {
+            }
             &-bottom {
                 display: flex;
                 flex-direction: column;
@@ -99,12 +102,12 @@
                 font-style: normal;
                 font-weight: 400;
                 line-height: normal;
-                opacity: .4;
+                opacity: 0.4;
                 text-align: left;
             }
         }
         .upgrade-plan-icon {
-            display: initial!important;
+            display: initial !important;
         }
         .item-wrapper {
             flex-direction: row;
@@ -122,7 +125,8 @@
                     top: -8px;
                     right: 5px;
                 }
-                &-left {}
+                &-left {
+                }
                 &-right {
                     display: flex;
                     align-items: center;
@@ -138,7 +142,7 @@
                     text-align: left;
                 }
                 &-subtitle {
-                    color: #6D6C7C;
+                    color: #6d6c7c;
                     font-size: 10px;
                     font-style: normal;
                     font-weight: 500;
@@ -175,13 +179,13 @@
             }
             &.ms-active {
                 border-radius: 4px;
-                background: rgba(101, 87, 255, 0.20);
+                background: rgba(101, 87, 255, 0.2);
                 position: relative;
                 &:after {
                     content: '';
                     position: absolute;
                     border-radius: 0px 4px 4px 0px;
-                    background: #6557FF;
+                    background: #6557ff;
                     height: 100%;
                     width: 3px;
                     top: 0;
@@ -204,7 +208,7 @@
             align-items: initial;
             .item-wrapper:first-child {
                 padding-top: 16px;
-                border-top: 1px solid #E4E4E4;
+                border-top: 1px solid #e4e4e4;
             }
         }
     }
@@ -221,16 +225,15 @@
     }
 
     .item-wrapper {
-
         .menu-item-env {
             padding: 9px 16px;
             border-radius: 6px;
-            border: 1px solid #6557FF;
-            background: #E8E5FF;
+            border: 1px solid #6557ff;
+            background: #e8e5ff;
             margin-bottom: 15px;
             position: relative;
             &-collapsed {
-                color: var(--Purply-blue, #6557FF);
+                color: var(--Purply-blue, #6557ff);
                 font-size: 18px;
                 font-style: normal;
                 font-weight: 600;
@@ -246,7 +249,7 @@
 
         .ms-appearance {
             border-radius: 32px;
-            background: #F0F0F0;
+            background: #f0f0f0;
             padding: 4px;
             display: flex;
             position: relative;
@@ -267,18 +270,18 @@
                 align-items: center;
                 justify-content: center;
                 padding: 6px;
-                opacity: .4;
+                opacity: 0.4;
             }
             .ms-active {
                 padding: 6px;
                 border-radius: 32px;
                 border: 0.5px solid rgba(0, 0, 0, 0.04);
-                background: var(--system-background-light-primary, #FFF);
+                background: var(--system-background-light-primary, #fff);
                 box-shadow: 0px 1px 1px 0px rgba(0, 0, 0, 0.08);
                 opacity: 1;
             }
             &-dark {
-                opacity: .4;
+                opacity: 0.4;
                 padding: 6px;
                 flex: 0 0 50%;
                 display: flex;
@@ -329,7 +332,7 @@
             height: 16px;
             background: white;
             border-radius: 50%;
-            fill: #FFF;
+            fill: #fff;
             filter: drop-shadow(0px 1px 3px rgba(0, 0, 0, 0.12));
             display: flex;
             justify-items: center;
@@ -339,7 +342,7 @@
             cursor: pointer;
             padding: 5px;
             z-index: 2;
-            transition: .2s linear;
+            transition: 0.2s linear;
             &.open {
                 transform: scale(-1, -1);
             }
@@ -348,7 +351,6 @@
                 width: 100%;
             }
         }
-
         .logo-wrapper {
             position: relative;
             .edit-logo {
@@ -432,6 +434,7 @@
                 justify-content: center;
                 margin-bottom: 10px;
                 cursor: pointer;
+
                 p {
                     line-height: 12px;
                     margin: 0;
@@ -582,6 +585,7 @@
 .ant-popover-placement-rightTop {
     left: 60px !important;
 }
+
 .support-container {
     a {
         color: #6557ff;
