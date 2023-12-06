@@ -1,15 +1,3 @@
-// Copyright 2012-2018 The NATS Authors
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 package conf
 
 import "testing"
@@ -1483,6 +1471,8 @@ func TestJSONCompat(t *testing.T) {
 			expected: []item{
 				{itemKey, "http_port", 3, 28},
 				{itemInteger, "8223", 3, 40},
+				{itemKey, "}", 4, 25},
+				{itemEOF, "", 0, 0},
 			},
 		},
 		{
@@ -1490,14 +1480,16 @@ func TestJSONCompat(t *testing.T) {
 			input: `
                         {
                           "http_port": 8223,
-                          "port": 4223
+                          "port": 6667
                         }
                         `,
 			expected: []item{
 				{itemKey, "http_port", 3, 28},
 				{itemInteger, "8223", 3, 40},
 				{itemKey, "port", 4, 28},
-				{itemInteger, "4223", 4, 35},
+				{itemInteger, "6667", 4, 35},
+				{itemKey, "}", 5, 25},
+				{itemEOF, "", 0, 0},
 			},
 		},
 		{
@@ -1505,7 +1497,7 @@ func TestJSONCompat(t *testing.T) {
 			input: `
                         {
                           "http_port": 8223,
-                          "port": 4223,
+                          "port": 6667,
                           "max_payload": "5MB",
                           "debug": true,
                           "max_control_line": 1024
@@ -1515,24 +1507,27 @@ func TestJSONCompat(t *testing.T) {
 				{itemKey, "http_port", 3, 28},
 				{itemInteger, "8223", 3, 40},
 				{itemKey, "port", 4, 28},
-				{itemInteger, "4223", 4, 35},
+				{itemInteger, "6667", 4, 35},
 				{itemKey, "max_payload", 5, 28},
 				{itemString, "5MB", 5, 43},
 				{itemKey, "debug", 6, 28},
 				{itemBool, "true", 6, 36},
 				{itemKey, "max_control_line", 7, 28},
 				{itemInteger, "1024", 7, 47},
+				{itemKey, "}", 8, 25},
+				{itemEOF, "", 0, 0},
 			},
 		},
 		{
 			name: "should support JSON not prettified",
-			input: `{"http_port": 8224,"port": 4224}
+			input: `{"http_port": 8224,"port": 6668}
                         `,
 			expected: []item{
 				{itemKey, "http_port", 1, 2},
 				{itemInteger, "8224", 1, 14},
 				{itemKey, "port", 1, 20},
-				{itemInteger, "4224", 1, 27},
+				{itemInteger, "6668", 1, 27},
+				{itemEOF, "", 0, 0},
 			},
 		},
 		{
@@ -1545,11 +1540,13 @@ func TestJSONCompat(t *testing.T) {
 				{itemInteger, "8225", 1, 14},
 				{itemKey, "port", 1, 20},
 				{itemInteger, "4225", 1, 27},
+				{itemKey, "}", 2, 25},
+				{itemEOF, "", 0, 0},
 			},
 		},
 		{
 			name: "should support uglified JSON with inner blocks",
-			input: `{"http_port": 8227,"port": 4227,"write_deadline": "1h","cluster": {"port": 6222,"routes": ["nats://127.0.0.1:6666","nats://127.0.0.1:4223","nats://127.0.0.1:4224"]}}
+			input: `{"http_port": 8227,"port": 4227,"write_deadline": "1h","cluster": {"port": 6222,"routes": ["nats://127.0.0.1:6666","nats://127.0.0.1:6667","nats://127.0.0.1:6668"]}}
                         `,
 			expected: []item{
 				{itemKey, "http_port", 1, 2},
@@ -1565,10 +1562,12 @@ func TestJSONCompat(t *testing.T) {
 				{itemKey, "routes", 1, 81},
 				{itemArrayStart, "", 1, 91},
 				{itemString, "nats://127.0.0.1:6666", 1, 92},
-				{itemString, "nats://127.0.0.1:4223", 1, 116},
-				{itemString, "nats://127.0.0.1:4224", 1, 140},
+				{itemString, "nats://127.0.0.1:6667", 1, 116},
+				{itemString, "nats://127.0.0.1:6667", 1, 140},
 				{itemArrayEnd, "", 1, 163},
 				{itemMapEnd, "", 1, 164},
+				{itemKey, "}", 14, 25},
+				{itemEOF, "", 0, 0},
 			},
 		},
 		{
@@ -1582,8 +1581,8 @@ func TestJSONCompat(t *testing.T) {
                             "port": 6222,
                             "routes": [
                               "nats://127.0.0.1:6666",
-                              "nats://127.0.0.1:4223",
-                              "nats://127.0.0.1:4224"
+                              "nats://127.0.0.1:6667",
+                              "nats://127.0.0.1:6668"
                             ]
                           }
                         }
@@ -1602,10 +1601,39 @@ func TestJSONCompat(t *testing.T) {
 				{itemKey, "routes", 8, 30},
 				{itemArrayStart, "", 8, 40},
 				{itemString, "nats://127.0.0.1:6666", 9, 32},
-				{itemString, "nats://127.0.0.1:4223", 10, 32},
-				{itemString, "nats://127.0.0.1:4224", 11, 32},
+				{itemString, "nats://127.0.0.1:6667", 10, 32},
+				{itemString, "nats://127.0.0.1:6668", 11, 32},
 				{itemArrayEnd, "", 12, 30},
 				{itemMapEnd, "", 13, 28},
+				{itemKey, "}", 14, 25},
+				{itemEOF, "", 0, 0},
+			},
+		},
+		{
+			name: "should support JSON with blocks",
+			input: `{
+                          "jetstream": {
+                            "store_dir": "/tmp/nats"
+                            "max_mem": 1000000,
+                          },
+                          "port": 6666,
+                          "server_name": "nats1"
+                        }
+                        `,
+			expected: []item{
+				{itemKey, "jetstream", 2, 28},
+				{itemMapStart, "", 2, 41},
+				{itemKey, "store_dir", 3, 30},
+				{itemString, "/tmp/nats", 3, 43},
+				{itemKey, "max_mem", 4, 30},
+				{itemInteger, "1000000", 4, 40},
+				{itemMapEnd, "", 5, 28},
+				{itemKey, "port", 6, 28},
+				{itemInteger, "6666", 6, 35},
+				{itemKey, "server_name", 7, 28},
+				{itemString, "nats1", 7, 43},
+				{itemKey, "}", 8, 25},
+				{itemEOF, "", 0, 0},
 			},
 		},
 	} {

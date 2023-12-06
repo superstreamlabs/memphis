@@ -61,8 +61,6 @@ var (
 	ErrInvalidSequence = errors.New("invalid sequence")
 	// ErrSequenceMismatch is returned when storing a raw message and the expected sequence is wrong.
 	ErrSequenceMismatch = errors.New("expected sequence does not match store")
-	// ErrPurgeArgMismatch is returned when PurgeEx is called with sequence > 1 and keep > 0.
-	ErrPurgeArgMismatch = errors.New("sequence > 1 && keep > 0 not allowed")
 )
 
 // StoreMsg is the stored message format for messages that are retained by the Store layer.
@@ -157,6 +155,9 @@ type SimpleState struct {
 	Msgs  uint64 `json:"messages"`
 	First uint64 `json:"first_seq"`
 	Last  uint64 `json:"last_seq"`
+
+	// Internal usage for when the first needs to be updated before use.
+	firstNeedsUpdate bool
 }
 
 // LostStreamData indicates msgs that have been lost.

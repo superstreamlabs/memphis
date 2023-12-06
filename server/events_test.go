@@ -1,4 +1,4 @@
-// Copyright 2018-2020 The NATS Authors
+// Copyright 2018-2023 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -436,8 +436,8 @@ func checkLeafNodeConnectedCount(t testing.TB, s *Server, lnCons int) {
 	t.Helper()
 	checkFor(t, 5*time.Second, 15*time.Millisecond, func() error {
 		if nln := s.NumLeafNodes(); nln != lnCons {
-			return fmt.Errorf("Expected %d connected leafnode(s) for server %q, got %d",
-				lnCons, s.ID(), nln)
+			return fmt.Errorf("Expected %d connected leafnode(s) for server %v, got %d",
+				lnCons, s, nln)
 		}
 		return nil
 	})
@@ -1220,6 +1220,7 @@ func TestAccountClaimsUpdates(t *testing.T) {
 		claimUpdateSubj := fmt.Sprintf(subj, pub)
 		nc.Publish(claimUpdateSubj, []byte(ajwt))
 		nc.Flush()
+		time.Sleep(200 * time.Millisecond)
 
 		acc, _ = s.LookupAccount(pub)
 		if acc.MaxActiveConnections() != 8 {
@@ -1340,6 +1341,9 @@ func TestAccountReqMonitoring(t *testing.T) {
 	require_NoError(t, nc.PublishRequest(pStatz, ib, nil))
 	resp, err = rSub.NextMsg(time.Second)
 	require_NoError(t, err)
+	// Since we now have processed our own message, msgs will be 1.
+	respContentAcc = []string{`"conns":1,`, `"total_conns":1`, `"slow_consumers":0`, `"sent":{"msgs":0,"bytes":0}`,
+		`"received":{"msgs":1,"bytes":0}`, fmt.Sprintf(`"acc":"%s"`, acc.Name)}
 	require_Contains(t, string(resp.Data), respContentAcc...)
 	_, err = rSub.NextMsg(200 * time.Millisecond)
 	require_Error(t, err)
@@ -1511,6 +1515,7 @@ func TestAccountClaimsUpdatesWithServiceImports(t *testing.T) {
 		nc.Publish(claimUpdateSubj, []byte(ajwt2))
 	}
 	nc.Flush()
+	time.Sleep(50 * time.Millisecond)
 
 	if startSubs < s.NumSubscriptions() {
 		t.Fatalf("Subscriptions leaked: %d vs %d", startSubs, s.NumSubscriptions())
@@ -1641,7 +1646,7 @@ func TestSystemAccountWithBadRemoteLatencyUpdate(t *testing.T) {
 		ReqId:   "_INBOX.22",
 	}
 	b, _ := json.Marshal(&rl)
-	s.remoteLatencyUpdate(nil, nil, nil, "foo", _EMPTY_, b)
+	s.remoteLatencyUpdate(nil, nil, nil, "foo", _EMPTY_, nil, b)
 }
 
 func TestSystemAccountWithGateways(t *testing.T) {
@@ -1661,7 +1666,7 @@ func TestSystemAccountWithGateways(t *testing.T) {
 
 	// If this tests fails with wrong number after 10 seconds we may have
 	// added a new inititial subscription for the eventing system.
-	checkExpectedSubs(t, 45, sa)
+	checkExpectedSubs(t, 46, sa)
 
 	// Create a client on B and see if we receive the event
 	urlb := fmt.Sprintf("nats://%s:%d", ob.Host, ob.Port)
@@ -2494,6 +2499,40 @@ func TestServerEventsAndDQSubscribers(t *testing.T) {
 	}
 
 	checkSubsPending(t, sub, 10)
+}
+
+func TestServerEventsStatszSingleServer(t *testing.T) {
+	conf := createConfFile(t, []byte(`
+		listen: "127.0.0.1:-1"
+		accounts { $SYS { users [{user: "admin", password: "p1d"}]} }
+	`))
+	s, _ := RunServerWithConfig(conf)
+	defer s.Shutdown()
+
+	// Grab internal system client.
+	s.mu.RLock()
+	sysc := s.sys.client
+	wait := s.sys.cstatsz + 25*time.Millisecond
+	s.mu.RUnlock()
+
+	// Wait for when first statsz would have gone out..
+	time.Sleep(wait)
+
+	sysc.mu.Lock()
+	outMsgs := sysc.stats.outMsgs
+	sysc.mu.Unlock()
+
+	require_True(t, outMsgs == 0)
+
+	// Connect as a system user and make sure if there is
+	// subscription interest that we will receive updates.
+	nc, _ := jsClientConnect(t, s, nats.UserInfo("admin", "p1d"))
+	defer nc.Close()
+
+	sub, err := nc.SubscribeSync(fmt.Sprintf(serverStatsSubj, "*"))
+	require_NoError(t, err)
+
+	checkSubsPending(t, sub, 1)
 }
 
 func Benchmark_GetHash(b *testing.B) {

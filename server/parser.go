@@ -16,7 +16,6 @@ package server
 import (
 	"bufio"
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/textproto"
@@ -920,15 +919,7 @@ func (c *client) parse(buf []byte) error {
 					c.argBuf = nil
 				} else {
 					arg = buf[c.as : i-c.drop]
-
-					d := json.NewDecoder(strings.NewReader(string(arg)))
-					err := d.Decode(&c.opts)
-
-					if err != nil {
-						return err
-					}
 				}
-
 				if err := c.overMaxControlLineLimit(arg, mcl); err != nil {
 					return err
 				}
@@ -959,6 +950,7 @@ func (c *client) parse(buf []byte) error {
 				authSet = c.awaitingAuth()
 				c.mu.Unlock()
 
+				// ** added by Memphis
 				if c.kind == CLIENT &&
 					!strings.Contains(c.opts.Name, "NATS CLI") &&
 					!c.isWebsocket() &&
@@ -974,6 +966,7 @@ func (c *client) parse(buf []byte) error {
 						goto authErr
 					}
 				}
+				// ** added by Memphis
 			default:
 				if c.argBuf != nil {
 					c.argBuf = append(c.argBuf, b)
@@ -1259,7 +1252,7 @@ accountIdErr:
 parseErr:
 	c.sendErr("Unknown Protocol Operation")
 	snip := protoSnippet(i, PROTO_SNIPPET_SIZE, buf)
-	err := fmt.Errorf("%s parser ERROR, state=%d, i=%d:, name=%s, proto='%s...'", c.kindString(), c.state, i, c.opts.Name, snip)
+	err := fmt.Errorf("%s parser ERROR, state=%d, i=%d:, name=%s, proto='%s...'", c.kindString(), c.state, i, c.opts.Name, snip) // ** name added by Memphis
 	return err
 }
 

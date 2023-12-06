@@ -971,6 +971,7 @@ func TestJetStreamClusterRestoreSingleConsumer(t *testing.T) {
 	c.stopAll()
 	c.restartAll()
 	c.waitOnLeader()
+	c.waitOnStreamLeader("$G", "foo")
 
 	s = c.randomServer()
 	nc, js = jsClientConnect(t, s)
@@ -3719,6 +3720,7 @@ func TestJetStreamClusterAccountPurge(t *testing.T) {
 				resolver: {
 					type: full
 					dir: '%s/jwt'
+					timeout: "10ms"
 				}`, ojwt, syspub, storeDir)
 		})
 	defer c.shutdown()
@@ -3891,7 +3893,6 @@ func TestJetStreamClusterAccountPurge(t *testing.T) {
 		}
 		c.restartAll()
 		checkForDirs(t, 6, 4)
-		c.waitOnClusterReady() // unfortunately, this does not wait until leader is not catching up.
 		purge(t)
 		checkForDirs(t, 0, 0)
 		c.stopAll()
@@ -5818,18 +5819,6 @@ func TestJetStreamClusterFailMirrorsAndSources(t *testing.T) {
 		})
 	}
 
-	testPrefix("mirror-bad-deliverprefix", JSStreamExternalDelPrefixOverlapsErrF, StreamConfig{
-		Name:    "MY_MIRROR_TEST",
-		Storage: FileStorage,
-		Mirror: &StreamSource{
-			Name: "TEST",
-			External: &ExternalStream{
-				ApiPrefix: "RI.JS.API",
-				// this will result in test.test.> which test.> would match
-				DeliverPrefix: "test",
-			},
-		},
-	})
 	testPrefix("mirror-bad-apiprefix", JSStreamExternalApiOverlapErrF, StreamConfig{
 		Name:    "MY_MIRROR_TEST",
 		Storage: FileStorage,
@@ -5839,18 +5828,6 @@ func TestJetStreamClusterFailMirrorsAndSources(t *testing.T) {
 				ApiPrefix:     "$JS.API",
 				DeliverPrefix: "here",
 			},
-		},
-	})
-	testPrefix("source-bad-deliverprefix", JSStreamExternalDelPrefixOverlapsErrF, StreamConfig{
-		Name:    "MY_SOURCE_TEST",
-		Storage: FileStorage,
-		Sources: []*StreamSource{{
-			Name: "TEST",
-			External: &ExternalStream{
-				ApiPrefix:     "RI.JS.API",
-				DeliverPrefix: "test",
-			},
-		},
 		},
 	})
 	testPrefix("source-bad-apiprefix", JSStreamExternalApiOverlapErrF, StreamConfig{

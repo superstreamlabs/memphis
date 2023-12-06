@@ -335,6 +335,7 @@ func copyStrings(src []string) []string {
 	return dst
 }
 
+// ** added by Memphis
 // copyMaps make a new map of the same size than `src` and copy its content.
 // If `src` is nil, then this returns `nil`
 func copyMaps(src map[string]string) map[string]string {
@@ -347,3 +348,5 @@ func copyMaps(src map[string]string) map[string]string {
 	}
 	return dst
 }
+
+// ** added by Memphis
