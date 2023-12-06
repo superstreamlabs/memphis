@@ -244,6 +244,18 @@ const StationOverviewHeader = () => {
                                 <b>Partitions: </b>
                                 {stationState?.stationMetaData?.partitions_number === 0 ? 1 : stationState?.stationMetaData?.partitions_number}
                             </p>
+                            <div className="flex-details-wrapper">
+                                <p style={{display: 'flex'}}>
+                                    <b style={{marginRight: '5px'}}>Dead-letter for: </b>
+                                    {
+                                        stationState?.stationSocketData?.act_as_dls_station_in_stations && stationState?.stationSocketData?.act_as_dls_station_in_stations.length ?
+                                        <OverflowTip text={stationState?.stationSocketData?.act_as_dls_station_in_stations.join(', ')} maxWidth={'70px'}>
+                                            {stationState?.stationSocketData?.act_as_dls_station_in_stations.join(', ')}
+                                        </OverflowTip>
+                                        : <MinusOutlined style={{ color: '#2E2C34' }} />
+                                    }
+                                </p>
+                            </div>
                         </div>
                         <div className="storage-section">
                             <p>
@@ -273,7 +285,9 @@ const StationOverviewHeader = () => {
                                     <p className="schema-title">Schema validation</p>
                                     {stationState?.stationSocketData?.schema !== undefined && Object.keys(stationState?.stationSocketData?.schema).length !== 0 && (
                                         <div className="schema-details sd-flex">
-                                            {stationState?.stationSocketData?.schema?.updates_available && <ActiveBadge content="Updates available" active={false} />}
+                                            {stationState?.stationSocketData?.schema?.updates_available &&
+                                            stationState?.stationSocketData?.schema?.updates_available.length &&
+                                                <ActiveBadge content="Updates available" active={false} />}
                                         </div>
                                     )}
                                 </div>
@@ -295,7 +309,7 @@ const StationOverviewHeader = () => {
                                     <p>v{stationState?.stationSocketData?.schema?.version_number}</p>
                                 </div>
                             )}
-                            {stationState?.stationSocketData?.schema === undefined ||
+                            {stationState?.stationSocketData?.schema &&
                                 (Object.keys(stationState?.stationSocketData?.schema).length === 0 ? (
                                     <>
                                         <div className="add-new">
@@ -334,7 +348,8 @@ const StationOverviewHeader = () => {
                                             boxShadowStyle="float"
                                             onClick={() => setDeleteModal(true)}
                                         />
-                                        {stationState?.stationSocketData?.schema?.updates_available && (
+                                        {stationState?.stationSocketData?.schema?.updates_available &&
+                                        stationState?.stationSocketData?.schema?.updates_available.length && (
                                             <Button
                                                 width="80px"
                                                 height="16px"

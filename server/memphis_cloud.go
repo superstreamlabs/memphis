@@ -2351,6 +2351,10 @@ func shouldCreateFunctionDlsStream() bool {
 	return false
 }
 
+func shouldCreateConnectorsStream() bool {
+	return false
+}
+
 func (pmh PoisonMessagesHandler) GetDlsMessageDetails(messageId int, dlsType string, tenantName string) (models.DlsMessageResponseWithFunc, error) {
 	dlsMsg, err := pmh.GetDlsMessageDetailsById(messageId, dlsType, tenantName)
 	if err != nil {
@@ -2552,4 +2556,16 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 	}
 
 	return lenUsers, nil
+}
+
+func (s *Server) GetConnectorsByStationAndPartition(stationID, partitionNumber, numOfPartitions int) ([]map[string]string, error) {
+	return []map[string]string{}, nil
+}
+
+func deleteConnectorsStationResources(tenantName string, stationID int) error {
+	return nil
+}
+
+func deleteConnectorsTenantResources(tenantName string) error {
+	return nil
 }

@@ -13,13 +13,18 @@
 import './style.scss';
 
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Space } from 'antd';
+import { Space, Popover } from 'antd';
 import { Virtuoso } from 'react-virtuoso';
 import { FiPlayCircle } from 'react-icons/fi';
-
 import { ReactComponent as WaitingProducerIcon } from '../../../../assets/images/waitingProducer.svg';
 import { ReactComponent as WaitingConsumerIcon } from '../../../../assets/images/waitingConsumer.svg';
 import { ReactComponent as PlayVideoIcon } from '../../../../assets/images/playVideoIcon.svg';
+import { ReactComponent as PurplePlus } from '../../../../assets/images/purplePlus.svg';
+import { ReactComponent as ProducerIcon } from '../../../../assets/images/producerIcon.svg';
+import { ReactComponent as ConnectIcon } from '../../../../assets/images/connectIcon.svg';
+import { IoPlayCircleOutline, IoRemoveCircleOutline, IoPause } from 'react-icons/io5';
+
+import { HiDotsVertical } from 'react-icons/hi';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { ReactComponent as UnsupportedIcon } from '../../../../assets/images/unsupported.svg';
 import StatusIndication from '../../../../components/indication';
@@ -29,12 +34,41 @@ import Button from '../../../../components/button';
 import Modal from '../../../../components/modal';
 import { StationStoreContext } from '../..';
 import ProduceMessages from '../../../../components/produceMessages';
+import ConnectorModal from '../../../../components/connectorModal';
 import { ReactComponent as ErrorModalIcon } from '../../../../assets/images/errorModal.svg';
+import { ApiEndpoints } from '../../../../const/apiEndpoints';
+import { httpRequest } from '../../../../services/http';
+import { loader } from '@monaco-editor/react';
+import Spinner from '../../../../components/spinner';
+
+const overlayStylesConnectors = {
+    borderRadius: '8px',
+    width: '230px',
+    paddingTop: '5px',
+    paddingBottom: '5px',
+    marginBottom: '10px'
+};
+
+const overlayStyleConnectors = { borderRadius: '8px', width: '150px', paddingTop: '5px', paddingBottom: '5px' };
+
+const MenuItem = ({ name, onClick, icon, disabled, loader }) => {
+    return (
+        <div className="item-wrapper-connectors" onClick={onClick} style={disabled ? { opacity: 0.5, cursor: 'not-allowed' } : {}}>
+            <span className="item-name">
+                {icon}
+                <label style={disabled ? { opacity: 0.5, cursor: 'not-allowed' } : {}}>{name}</label>
+            </span>
+            {loader && <Spinner alt="loading" />}
+        </div>
+    );
+};
 
 const ProduceConsumList = ({ producer }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [selectedRowIndex, setSelectedRowIndex] = useState(0);
     const [producersList, setProducersList] = useState([]);
+    const [connectorsSourceList, setConnectorsSourceList] = useState([]);
+    const [connectorsSinkList, setConnectorsSinkList] = useState([]);
     const [cgsList, setCgsList] = useState([]);
     const [openProduceMessages, setOpenProduceMessages] = useState(false);
     const [cgDetails, setCgDetails] = useState([]);
@@ -44,15 +78,126 @@ const ProduceConsumList = ({ producer }) => {
     const [produceloading, setProduceLoading] = useState(false);
     const [openNoConsumer, setOpenNoConsumer] = useState(false);
     const [activeConsumerList, setActiveConsumerList] = useState([]);
+    const [openProducerPopover, setOpenProducerPopover] = useState(false);
+    const [openConnectorPopover, setOpenConnectorPopover] = useState(false);
+    const [openConnectorPopoverItem, setOpenConnectorPopoverItem] = useState(null);
+    const [selectedConnector, setSelectedConnector] = useState(null);
+    const [openConnectorModal, setOpenConnectorModal] = useState(false);
+    const [loading, setLoader] = useState(false);
 
+    const producerItemsList = [
+        {
+            action: 'Produce Synthetic Data',
+            onClick: () => {
+                setOpenProduceMessages(true);
+                setOpenProducerPopover(false);
+            }
+        },
+        {
+            action: 'Develop a Producer',
+            onClick: () => {
+                setOpenCreateProducer(true);
+                setOpenProducerPopover(false);
+            }
+        },
+        {
+            action: 'Produce using REST',
+            onClick: () => {
+                // setOpenProduceMessages(true);
+                setOpenProducerPopover(false);
+            },
+            disabled: true
+        },
+        {
+            action: 'Add a Source',
+            onClick: () => {
+                setOpenConnectorModal(true);
+                setOpenProducerPopover(false);
+            }
+        }
+    ];
+
+    const removeConnector = async (type) => {
+        setLoader(true);
+        try {
+            await httpRequest('POST', ApiEndpoints.REMOVE_CONNECTOR, {
+                connector_id: selectedConnector?.id
+            });
+            if (type === 'source') {
+                let newConnecorList = [...connectorsSourceList];
+                newConnecorList.splice(openConnectorPopoverItem, 1);
+                setConnectorsSourceList(newConnecorList);
+            }
+            if (type === 'sink') {
+                let newConnecorList = [...connectorsSinkList];
+                newConnecorList.splice(openConnectorPopoverItem, 1);
+                setConnectorsSinkList(newConnecorList);
+            }
+            setLoader(false);
+            setOpenConnectorPopover(false);
+        } catch (error) {
+            setLoader(false);
+        }
+    };
+
+    const startConnector = async (type) => {
+        setLoader(true);
+        try {
+            await httpRequest('POST', ApiEndpoints.START_CONNECTOR, {
+                connector_id: selectedConnector?.id
+            });
+            if (type === 'source') {
+                let newConnecorList = [...connectorsSourceList];
+                newConnecorList[openConnectorPopoverItem].is_active = true;
+                setConnectorsSourceList(newConnecorList);
+            }
+            if (type === 'sink') {
+                let newConnecorList = [...connectorsSinkList];
+                newConnecorList[openConnectorPopoverItem].is_active = true;
+                setConnectorsSinkList(newConnecorList);
+            }
+            setLoader(false);
+            setOpenConnectorPopover(false);
+        } catch (error) {
+            setLoader(false);
+        }
+    };
+    const stopConnector = async (type) => {
+        setLoader(true);
+        try {
+            await httpRequest('POST', ApiEndpoints.STOP_CONNECTOR, {
+                connector_id: selectedConnector?.id
+            });
+            if (type === 'source') {
+                let newConnecorList = [...connectorsSourceList];
+                newConnecorList[openConnectorPopoverItem].is_active = false;
+                setConnectorsSourceList(newConnecorList);
+            }
+            if (type === 'sink') {
+                let newConnecorList = [...connectorsSinkList];
+                newConnecorList[openConnectorPopoverItem].is_active = false;
+                setConnectorsSinkList(newConnecorList);
+            }
+            setLoader(false);
+            setOpenConnectorPopover(false);
+        } catch (error) {
+            setLoader(false);
+        }
+    };
+
+    const handleNewConnector = (connector, source) => {
+        source ? setConnectorsSourceList([...connectorsSourceList, connector]) : setConnectorsSinkList([...connectorsSinkList, ...connector]);
+    };
     useEffect(() => {
         if (producer) {
             let [result, activeConsumers] = concatFunction('producer', stationState?.stationSocketData);
             setProducersList(result);
+            setConnectorsSourceList(stationState?.stationSocketData?.connectors?.filter((connector) => connector?.connector_type === 'source'));
             setActiveConsumerList(activeConsumers);
         } else {
             let result = concatFunction('cgs', stationState?.stationSocketData);
             setCgsList(result);
+            setConnectorsSinkList(stationState?.stationSocketData?.connectors?.filter((connector) => connector?.connector_type === 'sink'));
         }
     }, [stationState?.stationSocketData]);
 
@@ -153,46 +298,62 @@ const ProduceConsumList = ({ producer }) => {
             <div className="pubSub-list-container">
                 <div className="header">
                     {producer && (
-                        <>
-                            <p className="title">Producers {producersList?.length > 0 && `(${producersList?.length})`}</p>
-                            <Button
-                                className="producer-btn"
-                                width="100px"
-                                height="30px"
-                                placeholder={
-                                    <div className="producer-placeholder">
-                                        <PlayVideoIcon width={18} alt="playVideoIcon" />
-                                        <span>Produce</span>
-                                    </div>
-                                }
-                                colorType={'purple'}
-                                radiusType="circle"
-                                border={'gray-light'}
-                                backgroundColorType={'white'}
-                                fontSize="12px"
-                                fontFamily="InterSemiBold"
-                                onClick={() => setOpenProduceMessages(true)}
-                            />
-                        </>
+                        <span className="poduce-consume-header">
+                            <p className="title">
+                                Sources {(producersList?.length > 0 || connectorsSourceList?.length > 0) && `(${producersList?.length + connectorsSourceList?.length})`}
+                            </p>
+                            <Popover
+                                overlayInnerStyle={overlayStylesConnectors}
+                                placement="bottomLeft"
+                                content={producerItemsList?.map((item, index) => (
+                                    <MenuItem key={`${index}-${item.action}`} name={item.action} onClick={item.onClick} disabled={item?.disabled} />
+                                ))}
+                                trigger="click"
+                                onOpenChange={() => setOpenProducerPopover(!openProducerPopover)}
+                                open={openProducerPopover}
+                            >
+                                <PurplePlus alt="Add source" className="add" />
+                            </Popover>
+                        </span>
                     )}
-                    {!producer && <p className="title">Consumer groups {cgsList?.length > 0 && `(${cgsList?.length})`}</p>}
+                    {!producer && (
+                        <span className="poduce-consume-header">
+                            <p className="title">
+                                Consumer groups {(cgsList?.length > 0 || connectorsSinkList?.length > 0) && `(${cgsList?.length + connectorsSinkList?.length})`}
+                            </p>
+                            <Popover
+                                overlayInnerStyle={overlayStylesConnectors}
+                                placement="bottomLeft"
+                                content={producerItemsList?.map((item, index) => (
+                                    <MenuItem key={`${index}-${item.action}`} name={item.action} onClick={item.onClick} />
+                                ))}
+                                trigger="click"
+                                onOpenChange={() => setOpenProducerPopover(!openProducerPopover)}
+                                open={openProducerPopover}
+                            >
+                                <PurplePlus alt="Add source" className="add" />
+                            </Popover>
+                        </span>
+                    )}
                 </div>
-                {producer && producersList?.length > 0 && (
+                {producer && (producersList?.length > 0 || connectorsSourceList?.length > 0) && (
                     <div className="coulmns-table">
                         <span style={{ width: '100px' }}>Name</span>
                         <span style={{ width: '100px' }}>Count</span>
                         <span style={{ width: '35px' }}>Status</span>
+                        <span style={{ width: '20px' }}></span>
                     </div>
                 )}
-                {!producer && cgsList.length > 0 && (
+                {!producer && (cgsList.length > 0 || connectorsSinkList?.length > 0) && (
                     <div className="coulmns-table">
                         <span style={{ width: '60px' }}>Name</span>
                         <span style={{ width: '100px', textAlign: 'center' }}>Unacknowledged</span>
                         <span style={{ width: '80px', textAlign: 'center' }}>Unprocessed</span>
                         <span style={{ width: '35px', textAlign: 'center' }}>Status</span>
+                        <span style={{ width: '20px' }}></span>
                     </div>
                 )}
-                {(producersList?.length > 0 || cgsList?.length > 0) && (
+                {(producersList?.length > 0 || connectorsSourceList?.length > 0 || connectorsSinkList?.length > 0 || cgsList?.length > 0) && (
                     <div className="rows-wrapper">
                         <div
                             className="list-container"
@@ -204,55 +365,124 @@ const ProduceConsumList = ({ producer }) => {
                                 })`
                             }}
                         >
-                            {producer && producersList?.length > 0 && (
+                            {producer && (producersList?.length > 0 || connectorsSourceList?.length > 0) && (
                                 <Virtuoso
-                                    data={producersList}
+                                    data={[...producersList, ...connectorsSourceList]}
                                     overscan={100}
                                     itemContent={(index, row) => (
-                                        <div className={returnClassName(index, row.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'producer')}>
-                                            <OverflowTip text={row.name} width={'100px'}>
-                                                {row.name}
-                                            </OverflowTip>
+                                        <div className={returnClassName(index, row?.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'producer')}>
+                                            <span className="connector-name">
+                                                {row?.connector_connection_id ? <ConnectIcon /> : <ProducerIcon />}
+                                                <OverflowTip text={row.name} width={'80px'}>
+                                                    {row.name}
+                                                </OverflowTip>
+                                            </span>
+
                                             <OverflowTip text={row.count} width={'70px'}>
-                                                {row.count}
+                                                {row.count || 1}
                                             </OverflowTip>
-                                            <span className="status-icon" style={{ width: '38px' }}>
+                                            <span className="status-icon">
                                                 <StatusIndication is_active={row.is_active} is_deleted={row.is_active} />
                                             </span>
+                                            <Popover
+                                                overlayInnerStyle={overlayStyleConnectors}
+                                                placement="bottomLeft"
+                                                onOpenChange={() => {
+                                                    setOpenConnectorPopoverItem(index);
+                                                    setSelectedConnector(row);
+                                                    setOpenConnectorPopover(!openConnectorPopover);
+                                                }}
+                                                open={openConnectorPopover && openConnectorPopoverItem === index}
+                                                content={
+                                                    <>
+                                                        <MenuItem
+                                                            name={!row?.is_active ? 'Pause' : 'Play'}
+                                                            onClick={() => (row?.is_active ? stopConnector('source') : startConnector('source'))}
+                                                            icon={row?.is_active ? <IoPause /> : <IoPlayCircleOutline />}
+                                                        />
+                                                        <MenuItem
+                                                            name={'Disconnect'}
+                                                            onClick={() => removeConnector('source')}
+                                                            icon={<IoRemoveCircleOutline />}
+                                                            loader={loading && openConnectorPopoverItem === index}
+                                                        />
+                                                    </>
+                                                }
+                                                trigger="click"
+                                            >
+                                                <div
+                                                    className={`connector-options${openConnectorPopover && openConnectorPopoverItem === index ? '-selected' : ''}`}
+                                                    onClick={(e) => row?.connector_connection_id && e.stopPropagation()}
+                                                >
+                                                    {row?.connector_connection_id && <HiDotsVertical alt="actions" />}
+                                                </div>
+                                            </Popover>
                                         </div>
                                     )}
                                 />
                             )}
-                            {!producer && cgsList?.length > 0 && (
+                            {!producer && (cgsList?.length > 0 || connectorsSinkList?.length > 0) && (
                                 <Virtuoso
-                                    data={cgsList}
+                                    data={[...cgsList, ...connectorsSinkList]}
                                     overscan={100}
                                     itemContent={(index, row) => (
-                                        <div className={returnClassName(index, row.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'consumer')}>
-                                            <OverflowTip text={row.name} width={'80px'}>
-                                                {row.name}
-                                            </OverflowTip>
+                                        <div className={returnClassName(index, row?.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'consumer')}>
+                                            <span className="connector-name">
+                                                {row?.connector_connection_id ? <ConnectIcon /> : <ProducerIcon />}
+                                                <OverflowTip text={row.name} width={'80px'}>
+                                                    {row.name}
+                                                </OverflowTip>
+                                            </span>
                                             <OverflowTip
-                                                text={row.poison_messages.toLocaleString()}
+                                                text={row?.poison_messages?.toLocaleString()}
                                                 width={'80px'}
                                                 textAlign={'center'}
-                                                textColor={row.poison_messages > 0 ? '#F7685B' : null}
+                                                textColor={row?.poison_messages > 0 ? '#F7685B' : null}
                                             >
-                                                {row.poison_messages.toLocaleString()}
+                                                {row?.poison_messages?.toLocaleString()}
                                             </OverflowTip>
-                                            <OverflowTip text={row.unprocessed_messages.toLocaleString()} width={'80px'} textAlign={'center'}>
-                                                {row.unprocessed_messages.toLocaleString()}
+                                            <OverflowTip text={row?.unprocessed_messages?.toLocaleString()} width={'80px'} textAlign={'center'}>
+                                                {row?.unprocessed_messages?.toLocaleString()}
                                             </OverflowTip>
                                             <span className="status-icon" style={{ width: '35px' }}>
-                                                <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
+                                                <StatusIndication is_active={row?.is_active} is_deleted={row?.is_deleted} />
                                             </span>
+                                            <Popover
+                                                overlayInnerStyle={overlayStyleConnectors}
+                                                placement="bottomLeft"
+                                                onOpenChange={() => {
+                                                    setOpenConnectorPopoverItem(index);
+                                                    setOpenConnectorPopover(!openConnectorPopover);
+                                                }}
+                                                open={openConnectorPopover && openConnectorPopoverItem === index}
+                                                content={
+                                                    <>
+                                                        <MenuItem
+                                                            name={!row?.is_active ? 'Pause' : 'Play'}
+                                                            onClick={() => (row?.is_active ? stopConnector('sink') : startConnector('sink'))}
+                                                            icon={row?.is_active ? <IoPause /> : <IoPlayCircleOutline />}
+                                                        />
+                                                        <MenuItem name={'Disconnect'} onClick={() => removeConnector('sink')} icon={<IoRemoveCircleOutline />} />
+                                                    </>
+                                                }
+                                                trigger="click"
+                                            >
+                                                <div
+                                                    className="connector-options"
+                                                    onClick={(e) => {
+                                                        if (row?.connector_connection_id) e.stopPropagation();
+                                                    }}
+                                                >
+                                                    {row?.connector_connection_id && <HiDotsVertical alt="actions" />}
+                                                </div>
+                                            </Popover>
                                         </div>
                                     )}
                                 />
                             )}
                         </div>
                         <div style={{ marginRight: '10px' }} id={producer ? 'producer-details' : 'consumer-details'}>
-                            {producer && producersList?.length > 0}
+                            {producer && (producersList?.length > 0 || connectorsSourceList?.length > 0)}
                             {!producer && cgsList?.length > 0 && (
                                 <Space direction="vertical">
                                     <CustomCollapse header="Details" status={false} defaultOpen={true} data={cgDetails.details} />
@@ -262,7 +492,8 @@ const ProduceConsumList = ({ producer }) => {
                         </div>
                     </div>
                 )}
-                {((producer && producersList?.length === 0) || (!producer && cgsList?.length === 0)) && (
+                {((producer && producersList?.length === 0 && connectorsSourceList?.length === 0) ||
+                    (!producer && cgsList?.length === 0 && connectorsSinkList?.length === 0)) && (
                     <div className="waiting-placeholder">
                         {producer ? <WaitingProducerIcon width={62} alt="producer" /> : <WaitingConsumerIcon width={62} alt="producer" />}
                         <p>{`No ${producer ? 'producers' : 'consumers'} yet`}</p>
@@ -307,15 +538,7 @@ const ProduceConsumList = ({ producer }) => {
                     </div>
                 )}
             </div>
-            <Modal
-                width="1200px"
-                height="780px"
-                clickOutside={() => {
-                    setOpenCreateConsumer(false);
-                }}
-                open={openCreateConsumer}
-                displayButtons={false}
-            >
+            <Modal width="1200px" height="780px" clickOutside={() => setOpenCreateConsumer(false)} open={openCreateConsumer} displayButtons={false}>
                 <SdkExample withHeader={true} showTabs={false} stationName={stationState?.stationMetaData?.name} consumer={true} />
             </Modal>
             <Modal
@@ -405,6 +628,12 @@ const ProduceConsumList = ({ producer }) => {
                 <p className="no-consumer-message--p">The message will not be stored</p>
                 <label className="no-consumer-message--label">When using ack-based retention, a message will not be stored if no consumers are connected.</label>
             </Modal>
+            <ConnectorModal
+                open={openConnectorModal}
+                clickOutside={() => setOpenConnectorModal(false)}
+                newConnecor={(connector, source) => handleNewConnector(connector, source)}
+                source={producer}
+            />
         </div>
     );
 };

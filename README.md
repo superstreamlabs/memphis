@@ -1,4 +1,4 @@
-[![Github (6)](https://github.com/memphisdev/memphis/assets/107035359/bc2feafc-946c-4569-ab8d-836bc0181890)](https://www.functions.memphis.dev/)
+[![Github functions new banner (1)](https://github.com/memphisdev/memphis/assets/107035359/7f89dcba-b897-4164-93b3-fec252341960)](https://www.functions.memphis.dev/)
 <p align="center">
 <a href="https://memphis.dev/discord"><img src="https://img.shields.io/discord/963333392844328961?color=6557ff&label=discord" alt="Discord"></a>
 <a href="https://github.com/memphisdev/memphis/issues?q=is%3Aissue+is%3Aclosed"><img src="https://img.shields.io/github/issues-closed/memphisdev/memphis?color=6557ff"></a> 
@@ -16,8 +16,8 @@
 
   <h4>
 
-**[Memphis.dev](https://memphis.dev)** is more than a broker. It's a new streaming stack.<br>
-Memphis.dev is a highly scalable event streaming and processing engine.<br>
+**[Memphis.dev](https://memphis.dev)** Is The First Data Streaming Platform Designed For Backend Developers<br>
+To Build Event-driven And Real-time Features Faster Than Ever.<br>
 
 <img width="177" alt="cloud_native 2 (5)" src="https://github.com/memphisdev/memphis/assets/107035359/a20ea11c-d509-42bb-a46c-e388c8424101">
 

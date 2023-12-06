@@ -11,11 +11,16 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 package db
 
-const testEventsTable = ``
-const functionsTable = ``
-const attachedFunctionsTable = ``
-const functionsEngineWorkersTable = ``
-const scheduledFunctionWorkersTable = ``
+const (
+	testEventsTable               = ``
+	functionsTable                = ``
+	attachedFunctionsTable        = ``
+	functionsEngineWorkersTable   = ``
+	scheduledFunctionWorkersTable = ``
+	connectorsEngineWorkersTable  = ``
+	connectorsConnectionsTable    = ``
+	connectorsTable               = ``
+)
 
 type FunctionSchema struct {
 	ID               int    `json:"id"`

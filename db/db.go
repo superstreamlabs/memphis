@@ -613,7 +613,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
 
-	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterDlsMsgsTable, dlsMessagesTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterConnectionsTable, asyncTasksTable, alterAsyncTasks, testEventsTable, functionsTable, attachedFunctionsTable, sharedLocksTable, functionsEngineWorkersTable, scheduledFunctionWorkersTable}
+	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterDlsMsgsTable, dlsMessagesTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterConnectionsTable, asyncTasksTable, alterAsyncTasks, testEventsTable, functionsTable, attachedFunctionsTable, sharedLocksTable, functionsEngineWorkersTable, scheduledFunctionWorkersTable, connectorsEngineWorkersTable, connectorsConnectionsTable, connectorsTable}
 
 	for _, table := range tables {
 		_, err := db.Exec(ctx, table)
@@ -2701,12 +2701,12 @@ func GetNotDeletedProducersByStationID(stationId int) ([]models.Producer, error)
 	}
 	return producers, nil
 }
-func GetAllProducersByStationID(stationId int) ([]models.ExtendedProducerRes, error) {
+func GetAllProducersByStationID(stationId int) ([]models.ExtendedProducer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return []models.ExtendedProducerRes{}, err
+		return []models.ExtendedProducer{}, err
 	}
 	defer conn.Release()
 	query := `SELECT
@@ -2727,20 +2727,20 @@ LIMIT 5000;
 `
 	stmt, err := conn.Conn().Prepare(ctx, "get_producers_by_station_id", query)
 	if err != nil {
-		return []models.ExtendedProducerRes{}, err
+		return []models.ExtendedProducer{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId)
 	if err != nil {
-		return []models.ExtendedProducerRes{}, err
+		return []models.ExtendedProducer{}, err
 	}
 	defer rows.Close()
 
-	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedProducerRes])
+	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedProducer])
 	if err != nil {
-		return []models.ExtendedProducerRes{}, err
+		return []models.ExtendedProducer{}, err
 	}
 	if len(producers) == 0 {
-		return []models.ExtendedProducerRes{}, nil
+		return []models.ExtendedProducer{}, nil
 	}
 	return producers, nil
 }

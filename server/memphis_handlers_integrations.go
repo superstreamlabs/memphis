@@ -28,6 +28,7 @@ import (
 )
 
 const sendNotificationType = "send_notification"
+const INTEGRATIONS_AUDIT_LOGS_CONSUMER = "$memphis_integrations_audit_logs_consumer"
 
 type IntegrationsHandler struct{ S *Server }
 

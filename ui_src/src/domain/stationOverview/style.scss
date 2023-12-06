@@ -3,16 +3,15 @@
     transition: .3s ease-in-out;
     position: absolute;
     padding: 1vw;
-    height: calc(100%);
     overflow: auto;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    gap: 30px;
     .overview-header {
         min-width: 1370px;
     }
     .station-observability {
-        margin-top: 20px;
         min-width: 1280px;
         height: 100%;
         display: flex;

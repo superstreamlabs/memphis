@@ -61,6 +61,7 @@ const (
 	MEMPHIS_GLOBAL_ACCOUNT      = "$memphis"
 	integrationsAuditLogsStream = "$memphis_integrations_audit_logs"
 	systemTasksStreamName       = "$memphis_system_tasks"
+	connectorsLogsStream        = "$memphis_connectors_logs"
 )
 
 var noLimit = -1
@@ -142,6 +143,7 @@ var (
 	INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED bool
 	SYSTEM_TASKS_STREAM_CREATED            bool
 	FUNCTIONS_TASKS_CONSUMER_CREATED       bool
+	CONNECTORS_LOGS_STREAM_CREATED         bool
 )
 
 type Messages []models.MessageDetails
@@ -155,17 +157,17 @@ func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 }
 
 func jsApiRequest[R any](tenantName string, s *Server, subject, kind string, msg []byte, resp *R) error {
-	account, err := s.lookupAccount(tenantName)
-	if err != nil {
-		return err
-	}
-	reply := s.getJsApiReplySubject()
-
 	// use buffered lock to limit amount of concurrent jsapi requests
 	if s.memphis.jsApiMu != nil {
 		s.memphis.jsApiMu.Lock()
 		defer s.memphis.jsApiMu.Unlock()
 	}
+
+	account, err := s.lookupAccount(tenantName)
+	if err != nil {
+		return err
+	}
+	reply := s.getJsApiReplySubject()
 
 	timeout := time.After(40 * time.Second)
 	respCh := make(chan []byte)
@@ -173,7 +175,7 @@ func jsApiRequest[R any](tenantName string, s *Server, subject, kind string, msg
 	if err != nil {
 		return err
 	}
-	// send on global account
+
 	s.sendInternalAccountMsgWithReply(account, subject, reply, nil, msg, true)
 
 	// wait for response to arrive
@@ -466,6 +468,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		}
 		DLS_FUNCTIONS_CONSUMER_CREATED = true
 	}
+
 	// delete the old version throughput stream
 	if THROUGHPUT_LEGACY_STREAM_EXIST {
 		err = s.memphisDeleteStream(s.MemphisGlobalAccountString(), throughputStreamName)
@@ -522,7 +525,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			Name:         systemTasksStreamName,
 			Subjects:     []string{systemTasksStreamName + ".>"},
 			Retention:    WorkQueuePolicy,
-			MaxAge:       time.Hour * 24 * 3, // 3 days
+			MaxAge:       time.Hour * 24,
 			MaxConsumers: -1,
 			MaxMsgsPer:   -1,
 			Discard:      DiscardOld,
@@ -555,6 +558,26 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			return
 		}
 		FUNCTIONS_TASKS_CONSUMER_CREATED = true
+	}
+
+	// create connectors logs stream
+	if shouldCreateConnectorsStream() && !CONNECTORS_LOGS_STREAM_CREATED {
+		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
+			Name:         connectorsLogsStream,
+			Subjects:     []string{connectorsLogsStream + ".>"},
+			Retention:    LimitsPolicy,
+			MaxAge:       time.Hour * 24 * 7, // 7 days
+			MaxConsumers: -1,
+			MaxMsgsPer:   200,
+			Discard:      DiscardOld,
+			Storage:      FileStorage,
+			Replicas:     replicas,
+		})
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+		CONNECTORS_LOGS_STREAM_CREATED = true
 	}
 
 	successCh <- nil

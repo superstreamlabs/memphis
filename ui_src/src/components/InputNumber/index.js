@@ -18,7 +18,7 @@ import React from 'react';
 import ArrowDropDownRounded from '@material-ui/icons/ArrowDropDownRounded';
 import ArrowDropUpRounded from '@material-ui/icons/ArrowDropUpRounded';
 
-const InputNumberComponent = ({ min, max, onChange, value, placeholder, disabled, bordered = false }) => {
+const InputNumberComponent = ({ min, max, onChange, value, placeholder, disabled, bordered = false, style }) => {
     const handleChange = (e) => {
         onChange(e);
     };
@@ -34,6 +34,7 @@ const InputNumberComponent = ({ min, max, onChange, value, placeholder, disabled
             placeholder={placeholder}
             disabled={disabled}
             className="input-number-wrapper"
+            style={style}
             controls={{ downIcon: <ArrowDropDownRounded />, upIcon: <ArrowDropUpRounded /> }}
         />
     );
