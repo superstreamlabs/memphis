@@ -174,14 +174,11 @@ func main() {
 
 	// create user from env variable or config file
 	var lenUsers int
-	fmt.Println("create users to tocker env from variable env")
 	if os.Getenv("DOCKER_ENV") == "true" {
-		fmt.Println("docker env")
 		lenUsers, err = server.CreateUserFromConfigFile(rootUserCreated)
 		if err != nil {
 			fmt.Printf("Failed create user from config file: %s", err)
 		}
-		fmt.Println("end CreateUserFromConfigFile")
 	}
 
 	// Configure the options from the flags/config file

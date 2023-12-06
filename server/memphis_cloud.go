@@ -2444,11 +2444,27 @@ func createUser(userName, userType, password string) error {
 func convertToUsers(usersData []interface{}) []userDetails {
 	var users []userDetails
 	for _, userData := range usersData {
-		userMap := userData.(map[interface{}]interface{})
-		users = append(users, userDetails{
-			User:     userMap["user"].(string),
-			Password: userMap["password"].(string),
-		})
+		userMap, ok := userData.(map[interface{}]interface{})
+		if ok {
+			userVal := ""
+			passwordVal := ""
+			_, okUser := userMap["user"].(string)
+			if okUser {
+				userVal = userMap["user"].(string)
+			}
+
+			_, okPass := userMap["password"].(string)
+			if okPass {
+				passwordVal = userMap["password"].(string)
+			}
+
+			if ok && okPass {
+				users = append(users, userDetails{
+					User:     userVal,
+					Password: passwordVal,
+				})
+			}
+		}
 	}
 	return users
 }
@@ -2490,21 +2506,36 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 				return 0, err
 			}
 
+			usersMapData := map[interface{}]interface{}{}
+			usersMapDataMgmt := []interface{}{}
+			usersMapDataClient := []interface{}{}
+
+			usersMap, usersOk := data["users"].(map[interface{}]interface{})
+			if usersOk {
+				usersMapData = usersMap
+				usersMgmtMap, usersMgmtOk := usersMapData["mgmt"].([]interface{})
+				if usersMgmtOk {
+					usersMapDataMgmt = usersMgmtMap
+				}
+
+				usersClientMap, usersClientOk := usersMapData["client"].([]interface{})
+				if usersClientOk {
+					usersMapDataClient = usersClientMap
+				}
+			}
+
 			confUsers = configUsers{
 				Users: struct {
 					Mgmt   []userDetails `json:"mgmt" yaml:"mgmt"`
 					Client []userDetails `json:"client" yaml:"client"`
 				}{
-					Mgmt:   convertToUsers(data["users"].(map[interface{}]interface{})["mgmt"].([]interface{})),
-					Client: convertToUsers(data["users"].(map[interface{}]interface{})["client"].([]interface{})),
+					Mgmt:   convertToUsers(usersMapDataMgmt),
+					Client: convertToUsers(usersMapDataClient),
 				},
 			}
 		}
 
-		fmt.Println("after unmarshal", confUsers)
-
 		for _, mgmtUser := range confUsers.Users.Mgmt {
-			fmt.Println("mgmtUser.Username", mgmtUser.User)
 			err := createUser(mgmtUser.User, "management", mgmtUser.Password)
 			if err != nil {
 				return 0, err
