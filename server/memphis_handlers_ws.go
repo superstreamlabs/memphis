@@ -477,6 +477,9 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 		return map[string]any{}, err
 	}
 	updatesAvailable := !schemaVersion.Active
+	if schema.Name == "" && schema.Type == "" && station.SchemaVersionNumber == 0 {
+		updatesAvailable = false
+	}
 	schemaDetails := models.StationOverviewSchemaDetails{
 		SchemaName:       schema.Name,
 		VersionNumber:    station.SchemaVersionNumber,
