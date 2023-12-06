@@ -179,7 +179,7 @@ func (s *Server) EnableJetStream(config *JetStreamConfig) error {
 		return fmt.Errorf("jetstream already enabled")
 	}
 
-	s.Noticef("Starting JetStream")
+	// s.Noticef("Starting JetStream") // ** deleted by Memphis
 	if config == nil || config.MaxMemory <= 0 || config.MaxStore <= 0 {
 		var storeDir, domain string
 		var maxStore, maxMem int64
@@ -465,7 +465,7 @@ func (s *Server) restartJetStream() error {
 		MaxStore:  opts.JetStreamMaxStore,
 		Domain:    opts.JetStreamDomain,
 	}
-	s.Noticef("Restarting JetStream")
+	// s.Noticef("Restarting JetStream") // ** deleted by Memphis
 	err := s.EnableJetStream(&cfg)
 	if err != nil {
 		s.Warnf("Can't start JetStream: %v", err)

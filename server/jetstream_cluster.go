@@ -711,7 +711,7 @@ func (s *Server) enableJetStreamClustering() error {
 		return nil
 	}
 
-	s.Noticef("Starting JetStream cluster")
+	// s.Noticef("Starting JetStream cluster") // ** deleted by Memphis
 	// We need to determine if we have a stable cluster name and expected number of servers.
 	s.Debugf("JetStream cluster checking for stable cluster name and peers")
 
