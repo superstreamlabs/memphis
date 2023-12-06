@@ -2478,21 +2478,21 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 		// password: test
 		// `
 
-		// for docker env
-		err := yaml.Unmarshal([]byte(initialConfigFile), &confUsers)
+		var data map[string]interface{}
+		err := yaml.Unmarshal([]byte(initialConfigFile), &data)
 		if err != nil {
+			fmt.Println("Error unmarshalling YAML:", err)
 			return 0, err
 		}
+
+		// for docker env
+		// err := yaml.Unmarshal([]byte(initialConfigFile), &confUsers)
+		// if err != nil {
+		// 	return 0, err
+		// }
 
 		fmt.Println("after unmarshal", confUsers)
-
-		jsonResult, err := json.MarshalIndent(config, "", "  ")
-		if err != nil {
-			fmt.Println("Error marshalling to JSON:", err)
-			return 0, err
-		}
-
-		fmt.Println(string(jsonResult))
+		fmt.Println("after unmarshal data", data)
 
 		// for local env with launch json
 		// err := json.Unmarshal([]byte(initialConfigFile), &confUsers)
