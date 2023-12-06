@@ -60,10 +60,7 @@ function Administration({ step }) {
             case 'cluster_configuration':
                 return <ClusterConfiguration />;
             case 'system_information':
-                if (!isCloud()) {
-                    return <SoftwareUpates />;
-                }
-                break;
+                return <SoftwareUpates />;
             case 'usage':
                 return <Requests />;
             case 'payments':

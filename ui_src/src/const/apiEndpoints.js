@@ -52,6 +52,10 @@ export const ApiEndpoints = {
     PRODUCE: '/stations/produce',
     ATTACH_DLS: '/stations/attachDlsStation',
     DETACH_DLS: '/stations/detachDlsStation',
+    CREATE_CONNECTOR: '/stations/createConnector',
+    REMOVE_CONNECTOR: '/stations/removeConnector',
+    START_CONNECTOR: '/stations/startConnector',
+    STOP_CONNECTOR: '/stations/stopConnector',
 
     //Async Tasks
     GET_ASYNC_TASKS: '/asyncTasks/getAsyncTasks',

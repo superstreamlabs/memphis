@@ -1,11 +1,15 @@
-.input-number-wrapper{
-    svg{
+.input-number-wrapper {
+    svg {
         color: black;
     }
-
 }
 .ant-input-number {
     border-radius: 4px;
+    border: 1px solid var(--gray);
+}
+
+.ant-input-number:hover {
+    border-color: var(--gray);
     border: 1px solid var(--gray);
 }
 
