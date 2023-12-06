@@ -2445,14 +2445,14 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 	// check if this is first upload of memphis broker and not every restart
 	type configUsers struct {
 		Users struct {
-			Mgmt   []User `json:"mgmt"`
-			Client []User `json:"client"`
-		} `json:"users"`
+			Mgmt   []User `json:"mgmt" yaml:"mgmt"`
+			Client []User `json:"client" yaml:"client"`
+		} `json:"users" yaml:"users"`
 	}
 
 	type user struct {
-		User     string `json:"user"`
-		Password string `json:"password"`
+		User     string `json:"user" yaml:"user"`
+		Password string `json:"password" yaml:"password"`
 	}
 
 	var confUsers configUsers
@@ -2463,6 +2463,21 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 			return 0, fmt.Errorf("INITIAL_CONFIG_FILE environment variable is not set.")
 		}
 
+		// 		initialConfigFile = `users:
+		// mgmt:
+		// - user: admin
+		// password: admin
+		// - user: test_mgmt
+		// password: test
+		// - user: test
+		// password: test
+		// client:
+		// - user: test_app
+		// password: test
+		// - user: test_app2
+		// password: test
+		// `
+
 		// for docker env
 		err := yaml.Unmarshal([]byte(initialConfigFile), &confUsers)
 		if err != nil {
@@ -2470,6 +2485,15 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 		}
 
 		fmt.Println("after unmarshal", confUsers)
+
+		jsonResult, err := json.MarshalIndent(config, "", "  ")
+		if err != nil {
+			fmt.Println("Error marshalling to JSON:", err)
+			return 0, err
+		}
+
+		fmt.Println(string(jsonResult))
+
 		// for local env with launch json
 		// err := json.Unmarshal([]byte(initialConfigFile), &confUsers)
 		// if err != nil {
