@@ -162,7 +162,7 @@ func main() {
 	fs := flag.NewFlagSet(exe, flag.ExitOnError)
 	fs.Usage = usage
 
-	metadataDb, err := server.InitializeMetadataStorage()
+	metadataDb, rootUserCreated, err := server.InitializeMetadataStorage()
 	if err != nil {
 		server.PrintAndDie(fmt.Sprintf("%s: %s", exe, err))
 	}
@@ -170,6 +170,15 @@ func main() {
 	err = server.InitializeCloudComponents()
 	if err != nil {
 		server.PrintAndDie(fmt.Sprintf("Failed initializing InitializeCloudComponents: %s: %s", exe, err))
+	}
+
+	// create user from env variable or config file
+	var lenUsers int
+	if os.Getenv("DOCKER_ENV") == "true" {
+		lenUsers, err = server.CreateUserFromConfigFile(rootUserCreated)
+		if err != nil {
+			fmt.Printf("Failed create user from config file: %s", err)
+		}
 	}
 
 	// Configure the options from the flags/config file
@@ -190,6 +199,9 @@ func main() {
 		server.PrintAndDie(fmt.Sprintf("%s: %s", exe, err))
 	}
 
+	if lenUsers > 0 {
+		s.Noticef("[tenant: %v]loaded %d users from config file", s.MemphisGlobalAccountString(), lenUsers)
+	}
 	// Configure the logger based on the flags
 	s.ConfigureLogger()
 

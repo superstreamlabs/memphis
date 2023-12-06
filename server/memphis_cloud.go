@@ -23,6 +23,7 @@ import (
 	"math"
 	"math/rand"
 	"net/http"
+	"os"
 	"runtime"
 	"sort"
 	"strconv"
@@ -153,17 +154,17 @@ func GetStationMaxAge(retentionType, tenantName string, retentionValue int) time
 	return time.Duration(0)
 }
 
-func CreateRootUserOnFirstSystemLoad() error {
+func CreateRootUserOnFirstSystemLoad() (bool, error) {
 	password := configuration.ROOT_PASSWORD
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 	if err != nil {
-		return err
+		return false, err
 	}
 	hashedPwdString := string(hashedPwd)
 
 	created, err := db.UpsertUserUpdatePassword(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, serv.MemphisGlobalAccountString())
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -199,7 +200,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 		})
 	}
 
-	return nil
+	return created, nil
 }
 
 func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bool, error) {
@@ -2373,4 +2374,113 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetails(messageId int, dlsType str
 
 func getUsageLimitProduersLimitPerStation(tenantName, stationName string) (float64, error) {
 	return -1, nil
+}
+
+func createUser(userName, userType, password string) error {
+	username := strings.ToLower(userName)
+	usernameError := validateUsername(username)
+	if usernameError != nil {
+		return usernameError
+	}
+
+	userTypeToLower := strings.ToLower(userType)
+	userTypeError := validateUserType(userTypeToLower)
+	if userTypeError != nil {
+		return userTypeError
+	}
+
+	avatarId := 1
+	if password == "" {
+		return fmt.Errorf("Password was not provided for user %s", username)
+	}
+	passwordErr := validatePassword(password)
+	if passwordErr != nil {
+		return passwordErr
+	}
+
+	if userType == "management" {
+		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+		if err != nil {
+			return err
+		}
+		password = string(hashedPwd)
+	}
+
+	fullName := ""
+	subscription := false
+	pending := false
+	team := ""
+	position := ""
+	owner := ""
+	description := ""
+	var err error
+	if userType == "application" {
+		if configuration.USER_PASS_BASED_AUTH {
+			if password == "" {
+				return fmt.Errorf("Password was not provided for user for user %v", username)
+			}
+			password, err = EncryptAES([]byte(password))
+			if err != nil {
+				return err
+			}
+		}
+	}
+	_, err = db.CreateUser(username, userType, password, fullName, subscription, avatarId, serv.MemphisGlobalAccountString(), pending, team, position, owner, description)
+	if err != nil {
+		return err
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analyticsParams := map[string]interface{}{
+			"username": username,
+		}
+		analytics.SendEvent(serv.MemphisGlobalAccountString(), username, analyticsParams, "user-add-user")
+	}
+	return nil
+}
+
+func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
+	// check if this is first upload of memphis broker and not every restart
+	type configUsers struct {
+		Users struct {
+			Mgmt   []User `json:"mgmt"`
+			Client []User `json:"client"`
+		} `json:"users"`
+	}
+
+	type user struct {
+		User     string `json:"user"`
+		Password string `json:"password"`
+	}
+
+	var confUsers configUsers
+	if rootUserCreated {
+		configFilePath := os.Getenv("INITIAL_CONFIG_FILE")
+		if configFilePath == "" {
+			return 0, fmt.Errorf("INITIAL_CONFIG_FILE environment variable is not set.")
+		}
+
+		err := json.Unmarshal([]byte(configFilePath), &confUsers)
+		if err != nil {
+			return 0, err
+		}
+
+		for _, mgmtUser := range confUsers.Users.Mgmt {
+			err = createUser(mgmtUser.Username, "management", mgmtUser.Password)
+			if err != nil {
+				return 0, err
+			}
+		}
+
+		for _, user := range confUsers.Users.Client {
+			err = createUser(user.Username, "application", user.Password)
+			if err != nil {
+				return 0, err
+			}
+		}
+	}
+
+	lenUsers := len(confUsers.Users.Mgmt) + len(confUsers.Users.Client)
+	return lenUsers, nil
 }
