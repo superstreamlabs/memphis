@@ -2468,6 +2468,7 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 	}
 
 	var confUsers configUsers
+	lenUsers := 0
 	if rootUserCreated {
 		initialConfigFile := os.Getenv("INITIAL_CONFIG_FILE")
 		fmt.Println("initialConfigFile", initialConfigFile)
@@ -2490,6 +2491,7 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 		// password: test
 		// `
 
+		fmt.Println("env dev test", configuration.DEV_ENV, configuration.DOCKER_ENV)
 		var data map[string]interface{}
 		err := yaml.Unmarshal([]byte(initialConfigFile), &data)
 		if err != nil {
@@ -2524,7 +2526,7 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 		// 	return 0, err
 		// }
 
-		for _, mgmtUser := range confUsers.Users.Mgmt {
+		for _, mgmtUser := range config.Users.Mgmt {
 			fmt.Println("mgmtUser.Username", mgmtUser.Username)
 			err = createUser(mgmtUser.Username, "management", mgmtUser.Password)
 			if err != nil {
@@ -2532,14 +2534,14 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 			}
 		}
 
-		for _, user := range confUsers.Users.Client {
+		for _, user := range config.Users.Client {
 			err = createUser(user.Username, "application", user.Password)
 			if err != nil {
 				return 0, err
 			}
 		}
+		lenUsers = len(config.Users.Mgmt) + len(config.Users.Client)
 	}
 
-	lenUsers := len(confUsers.Users.Mgmt) + len(confUsers.Users.Client)
 	return lenUsers, nil
 }
