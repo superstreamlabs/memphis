@@ -2441,18 +2441,30 @@ func createUser(userName, userType, password string) error {
 	return nil
 }
 
+func convertToUsers(usersData []interface{}) []userDetails {
+	var users []userDetails
+	for _, userData := range usersData {
+		userMap := userData.(map[interface{}]interface{})
+		users = append(users, userDetails{
+			Username: userMap["user"].(string),
+			Password: userMap["password"].(string),
+		})
+	}
+	return users
+}
+
+type userDetails struct {
+	Username string `json:"username" yaml:"username"`
+	Password string `json:"password" yaml:"password"`
+}
+
 func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 	// check if this is first upload of memphis broker and not every restart
 	type configUsers struct {
 		Users struct {
-			Mgmt   []User `json:"mgmt" yaml:"mgmt"`
-			Client []User `json:"client" yaml:"client"`
+			Mgmt   []userDetails `json:"mgmt" yaml:"mgmt"`
+			Client []userDetails `json:"client" yaml:"client"`
 		} `json:"users" yaml:"users"`
-	}
-
-	type user struct {
-		User     string `json:"user" yaml:"user"`
-		Password string `json:"password" yaml:"password"`
 	}
 
 	var confUsers configUsers
@@ -2493,6 +2505,18 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 
 		fmt.Println("after unmarshal", confUsers)
 		fmt.Println("after unmarshal data", data)
+
+		config := configUsers{
+			Users: struct {
+				Mgmt   []userDetails `json:"mgmt" yaml:"mgmt"`
+				Client []userDetails `json:"client" yaml:"client"`
+			}{
+				Mgmt:   convertToUsers(data["users"].(map[interface{}]interface{})["mgmt"].([]interface{})),
+				Client: convertToUsers(data["users"].(map[interface{}]interface{})["client"].([]interface{})),
+			},
+		}
+
+		fmt.Println("config", config)
 
 		// for local env with launch json
 		// err := json.Unmarshal([]byte(initialConfigFile), &confUsers)
