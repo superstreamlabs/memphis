@@ -2501,6 +2501,7 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 		// }
 
 		for _, mgmtUser := range confUsers.Users.Mgmt {
+			fmt.Println("mgmtUser.Username", mgmtUser.Username)
 			err = createUser(mgmtUser.Username, "management", mgmtUser.Password)
 			if err != nil {
 				return 0, err
