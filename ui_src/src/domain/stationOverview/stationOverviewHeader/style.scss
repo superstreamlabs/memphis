@@ -64,13 +64,13 @@
     }
     .details {
         margin-top: 30px;
-        display: flex;
         justify-content: space-between;
         height: 85px;
         align-items: center;
         width: 100%;
         display: grid;
         grid-template-columns: 20% 55% 20%;
+        min-height: 114px;
         .main-details {
             font-size: 12px;
             padding: 0 15px;

@@ -262,7 +262,7 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                             <InputNumberComponent
                                 min={1}
                                 max={isCloud() ? 1000 : 1}
-                                onChange={(e) =>creationForm.setFieldsValue({'amount': e})}
+                                onChange={(e) => creationForm.setFieldsValue({'amount': e})}
                                 value={formFields.amount}
                                 placeholder={formFields.amount || 1}
                                 disabled={!isCloud()}
