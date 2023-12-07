@@ -1,0 +1,43 @@
+name: Multi-Language CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Run Super-Linter
+      uses: github/super-linter@v4
+      env:
+        RUN_LOCAL: true
+        DEFAULT_BRANCH: main
+        VALIDATE_ALL_CODEBASE: false
+
+    # - name: Run Python script
+    #   run: |
+    #     python3 path/to/your/python_script.py
+    #   working-directory: ${{ github.workspace }}
+
+    - name: Run Go script
+      run: |
+        go run /SDK-GO/main.go
+      working-directory: ${{ github.workspace }}
+
+    # - name: Run Node.js script
+    #   run: |
+    #     npm install
+    #     node path/to/your/node_script.js
+    #   working-directory: ${{ github.workspace }}
+
+    # - name: Run TypeScript script
+    #   run: |
+    #     npm install -g typescript
+    #     tsc path/to/your/typescript_script.ts
+    #   working-directory: ${{ github.workspace }}
