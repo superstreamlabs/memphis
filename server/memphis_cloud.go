@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
 	"math/rand"
 	"net/http"
@@ -2502,7 +2503,7 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 			if err != nil {
 				return 0, err
 			}
-		} else {
+		} else if configuration.DOCKER_ENV == "true" {
 			// for docker env
 			var data map[string]interface{}
 			err := yaml.Unmarshal([]byte(initialConfigFile), &data)
@@ -2537,6 +2538,15 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 					Client: convertToUsers(usersMapDataClient),
 				},
 			}
+		} else {
+			fmt.Println("read kyaml")
+			yamlFilePath := "/etc/nats-config/inital.conf"
+			yamlData, err := ioutil.ReadFile(yamlFilePath)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			fmt.Println("yamlData", string(yamlData))
 		}
 
 		for _, mgmtUser := range confUsers.Users.Mgmt {
