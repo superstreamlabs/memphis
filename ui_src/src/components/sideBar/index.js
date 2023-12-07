@@ -119,7 +119,7 @@ function SideBar() {
         paddingTop: '5px',
         paddingBottom: '5px',
         marginBottom: '10px',
-        marginLeft: expandSidebar ? '100px' : '',
+        marginLeft: expandSidebar ? '100px' : ''
     };
 
     const quickActionsStyles = {
@@ -128,7 +128,7 @@ function SideBar() {
         paddingTop: '5px',
         paddingBottom: '5px',
         marginBottom: '10px',
-        marginLeft: expandSidebar ? '100px' : '',
+        marginLeft: expandSidebar ? '100px' : ''
     };
 
     const supportContextMenuStyles = {
@@ -136,7 +136,7 @@ function SideBar() {
         paddingTop: '5px',
         paddingBottom: '5px',
         marginBottom: '10px',
-        marginLeft: expandSidebar ? '100px' : '',
+        marginLeft: expandSidebar ? '100px' : ''
     };
 
     const getCompanyLogo = useCallback(async () => {
@@ -213,7 +213,7 @@ function SideBar() {
 
     const MenuItem = ({ icon, activeIcon, name, route, onClick, onMouseEnter, onMouseLeave, badge }) => {
         return (
-            <div className={"item-wrapper " + (state.route === route ? 'ms-active' : '')} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onClick={onClick}>
+            <div className={'item-wrapper ' + (state.route === route ? 'ms-active' : '')} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onClick={onClick}>
                 <div className="icon">{state.route === route ? activeIcon : hoveredItem === route ? activeIcon : icon}</div>
                 <p className={state.route === route ? 'checked' : 'name'}>{name}</p>
                 {badge && <label className="badge">{badge}</label>}
@@ -396,9 +396,6 @@ function SideBar() {
                         trigger="click"
                         onOpenChange={() => setPopoverOpenSupport(!popoverOpenSupport)}
                         open={popoverOpenSupport}
-                        onClick={() => {
-                            setPopoverOpenSupportContextMenu(false);
-                        }}
                     >
                         <div className="item">
                             <span className="icons">
@@ -413,14 +410,19 @@ function SideBar() {
     );
 
     return (
-        <div className={"sidebar-container " + ( expandSidebar ? 'expand' : 'collapse' )}>
+        <div className={'sidebar-container ' + (expandSidebar ? 'expand' : 'collapse')}>
             <div className="upper-icons">
-                <div className={'upper-icons-toggle ' + ( expandSidebar ? 'open' : 'close' )} onClick={ () => {setExpandSidebar(!expandSidebar)}}>
-                    <ArrowRight/>
+                <div
+                    className={'upper-icons-toggle ' + (expandSidebar ? 'open' : 'close')}
+                    onClick={() => {
+                        setExpandSidebar(!expandSidebar);
+                    }}
+                >
+                    <ArrowRight />
                 </div>
                 <span className="logo-wrapper">
                     <img
-                        src={isCloud() ? state?.companyLogo || (expandSidebar ? FullLogo : Logo) : (expandSidebar ? FullLogo : Logo)}
+                        src={isCloud() ? state?.companyLogo || (expandSidebar ? FullLogo : Logo) : expandSidebar ? FullLogo : Logo}
                         width={expandSidebar ? 'auto' : '45'}
                         height="45"
                         className="logoimg"
@@ -430,28 +432,29 @@ function SideBar() {
                     <EditIcon alt="edit" className="edit-logo" onClick={() => history.replace(`${pathDomains.administration}/profile`)} />
                 </span>
 
-                {( isCloud() &&
-                <div className="item-wrapper">
-                    <div className="menu-item-env">
-                        <div className="menu-item-env-badge">Coming  Soon</div>
-                        {( expandSidebar ?
-                            <>
-                                <div className="menu-item-env-left">
-                                    <div className="menu-item-env-title">Production</div>
-                                    <div className="menu-item-env-subtitle">Memphis.dev</div>
-                                </div>
-                                <div className="menu-item-env-right">
-                                    <ArrowTopGrayIcon/>
-                                    <ArrowTopGrayIcon style={{transform: 'rotate(180deg)'}} />
-                                </div>
-                            </>
-                            :
-                            <>
-                                <div className="menu-item-env-collapsed">P</div>
-                            </>
-                        )}
+                {isCloud() && (
+                    <div className="item-wrapper">
+                        <div className="menu-item-env">
+                            <div className="menu-item-env-badge">Coming Soon</div>
+                            {expandSidebar ? (
+                                <>
+                                    <div className="menu-item-env-left">
+                                        <div className="menu-item-env-title">Production</div>
+                                        <div className="menu-item-env-subtitle">Memphis.dev</div>
+                                    </div>
+                                    <div className="menu-item-env-right">
+                                        <ArrowTopGrayIcon />
+                                        <ArrowTopGrayIcon style={{ transform: 'rotate(180deg)' }} />
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="menu-item-env-collapsed">P</div>
+                                </>
+                            )}
+                        </div>
                     </div>
-                </div>)}
+                )}
 
                 <Popover
                     overlayInnerStyle={quickActionsStyles}
@@ -561,11 +564,11 @@ function SideBar() {
                     <div className="ms-appearance">
                         <div className="ms-appearance-badge">Coming soon</div>
                         <div className="ms-appearance-light ms-active">
-                            <SunIcon/>
+                            <SunIcon />
                             <span className="ms-appearance-text">Light</span>
                         </div>
                         <div className="ms-appearance-dark">
-                            <MoonIcon/>
+                            <MoonIcon />
                             <span className="ms-appearance-text">Dark</span>
                         </div>
                     </div>
@@ -582,7 +585,9 @@ function SideBar() {
                     <div className="sub-icon-wrapper" onClick={() => setPopoverOpenSetting(true)}>
                         <div className="sidebar-user-info">
                             <img
-                                className={`sidebar-user-info-img sandboxUserImg ${(state.route === 'profile' || state.route === 'administration') && 'sandboxUserImgSelected'}`}
+                                className={`sidebar-user-info-img sandboxUserImg ${
+                                    (state.route === 'profile' || state.route === 'administration') && 'sandboxUserImgSelected'
+                                }`}
                                 src={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? localStorage.getItem(USER_IMAGE) : avatarUrl}
                                 referrerPolicy="no-referrer"
                                 width={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 35 : 25}
@@ -614,7 +619,7 @@ function SideBar() {
                     <UpgradePlans
                         content={
                             <div className="upgrade-button-wrapper">
-                                <CloudUploadIcon className="upgrade-plan-icon" style={{marginRight: '5px'}} />
+                                <CloudUploadIcon className="upgrade-plan-icon" style={{ marginRight: '5px' }} />
                                 <p className="upgrade-plan">Upgrade</p>
                             </div>
                         }
