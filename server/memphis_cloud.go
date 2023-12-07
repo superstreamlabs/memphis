@@ -2388,15 +2388,18 @@ func getUsageLimitProduersLimitPerStation(tenantName, stationName string) (float
 }
 
 func createUser(userName, userType, password string) error {
-	fmt.Println("create user")
+	fmt.Println("create user", userName, userType, password)
 	username := strings.ToLower(userName)
+	fmt.Println("username", username)
 	usernameError := validateUsername(username)
+	fmt.Println("usernameError", usernameError)
 	if usernameError != nil {
 		return usernameError
 	}
 
 	userTypeToLower := strings.ToLower(userType)
 	userTypeError := validateUserType(userTypeToLower)
+	fmt.Println("userTypeError", userTypeError)
 	if userTypeError != nil {
 		return userTypeError
 	}
@@ -2406,16 +2409,20 @@ func createUser(userName, userType, password string) error {
 		return fmt.Errorf("Password was not provided for user %s", username)
 	}
 	passwordErr := validatePassword(password)
+	fmt.Println("passwordErr", passwordErr)
 	if passwordErr != nil {
 		return passwordErr
 	}
 
 	if userType == "management" {
+		fmt.Println("generate")
 		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 		if err != nil {
 			return err
 		}
+		fmt.Println("hashedPwd", hashedPwd)
 		password = string(hashedPwd)
+		fmt.Println("pass", password)
 	}
 
 	fullName := ""
