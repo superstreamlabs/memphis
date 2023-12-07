@@ -2486,7 +2486,6 @@ type configUsers struct {
 }
 
 func parseYamlFile(initialConfigFile string) (configUsers, error) {
-	// for docker env
 	var data map[string]interface{}
 	err := yaml.Unmarshal([]byte(initialConfigFile), &data)
 	if err != nil {
@@ -2526,7 +2525,6 @@ func parseYamlFile(initialConfigFile string) (configUsers, error) {
 
 func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 	// check if this is first upload of memphis broker and not every restart
-
 	var confUsers configUsers
 	lenUsers := 0
 	if rootUserCreated {
