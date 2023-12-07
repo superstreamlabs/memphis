@@ -201,7 +201,7 @@ func CreateRootUserOnFirstSystemLoad() (bool, error) {
 			}
 		})
 	}
-
+	fmt.Println("created", created)
 	return created, nil
 }
 
