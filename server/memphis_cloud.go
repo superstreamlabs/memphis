@@ -2579,7 +2579,7 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 			if err != nil {
 				return 0, err
 			}
-			fmt.Println("confUsers k8s", confUsers)
+			fmt.Println("confUsers k8s", confUsers.Users, confUsers.Users.Mgmt)
 		}
 
 		for _, mgmtUser := range confUsers.Users.Mgmt {
@@ -2587,6 +2587,7 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 			if err != nil {
 				return 0, err
 			}
+			fmt.Println("create mgmt users")
 		}
 
 		for _, user := range confUsers.Users.Client {
@@ -2594,6 +2595,7 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 			if err != nil {
 				return 0, err
 			}
+			fmt.Println("create client users")
 		}
 		lenUsers = len(confUsers.Users.Mgmt) + len(confUsers.Users.Client)
 	}
