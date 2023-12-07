@@ -2557,7 +2557,7 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 			}
 		} else {
 			fmt.Println("read kyaml")
-			yamlFilePath := "/etc/nats-config/inital.conf"
+			yamlFilePath := "/etc/nats-config/initial.conf"
 			yamlData, err := ioutil.ReadFile(yamlFilePath)
 			if err != nil {
 				fmt.Println(err)
