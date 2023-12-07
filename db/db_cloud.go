@@ -55,3 +55,7 @@ func DeleteAndGetAttachedFunctionsByTenant(tenantName string) ([]FunctionSchema,
 func DeleteAllTestEvents(tenantName string) error {
 	return nil
 }
+
+func DeleteScheduledFunctionWorkersByTenant(tenantName string) error {
+	return nil
+}

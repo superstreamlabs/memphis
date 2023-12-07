@@ -161,17 +161,22 @@ func removeTenantResources(tenantName string, user models.User) error {
 		return err
 	}
 
+	err = sendDeleteAllFunctionsReqToMS(user, tenantName, "github", "", "", "aws_lambda", "", true)
+	if err != nil {
+		return err
+	}
+
+	err = db.DeleteScheduledFunctionWorkersByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
 	err = deleteConnectorsTenantResources(tenantName)
 	if err != nil {
 		return err
 	}
 
 	err = db.RemoveStationsByTenant(tenantName)
-	if err != nil {
-		return err
-	}
-
-	err = sendDeleteAllFunctionsReqToMS(user, tenantName, "github", "", "", "aws_lambda", "", true)
 	if err != nil {
 		return err
 	}
