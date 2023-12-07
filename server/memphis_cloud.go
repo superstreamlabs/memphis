@@ -2497,15 +2497,24 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 	lenUsers := 0
 	fmt.Println("CreateUserFromConfigFile", rootUserCreated)
 	if rootUserCreated {
-		initialConfigFile := os.Getenv("INITIAL_CONFIG_FILE")
-		fmt.Println("initialConfigFile", initialConfigFile)
-		if initialConfigFile == "" {
-			return 0, fmt.Errorf("INITIAL_CONFIG_FILE environment variable is not set.")
+		var initialConfigFile string
+		k8sEnv := true
+		if configuration.DOCKER_ENV == "true" || configuration.LOCAL_CLUSTER_ENV {
+			k8sEnv = false
+		}
+
+		if configuration.DEV_ENV == "true" && !k8sEnv || configuration.DOCKER_ENV == "true" {
+			initialConfigFile = os.Getenv("INITIAL_CONFIG_FILE")
+			fmt.Println("initialConfigFile", initialConfigFile)
+			if initialConfigFile == "" {
+				return 0, fmt.Errorf("INITIAL_CONFIG_FILE environment variable is not set.")
+			}
+
 		}
 
 		fmt.Println("create user from config file")
 
-		if configuration.DEV_ENV == "true" {
+		if configuration.DEV_ENV == "true" && !k8sEnv {
 			// for local env with launch json
 			err := json.Unmarshal([]byte(initialConfigFile), &confUsers)
 			if err != nil {
