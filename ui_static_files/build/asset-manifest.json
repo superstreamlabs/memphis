@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.985ba7b2.css",
-    "main.js": "/static/js/main.ed9e3a3a.js",
+    "main.css": "/static/css/main.376cde5b.css",
+    "main.js": "/static/js/main.d3300c02.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -97,6 +97,7 @@
     "static/media/avatar7.svg": "/static/media/avatar7.74ad285f40c41b292e0a.svg",
     "static/media/avatar2.svg": "/static/media/avatar2.3888ed3399490ce77911.svg",
     "static/media/avatar5.svg": "/static/media/avatar5.e669200d2b88559aa969.svg",
+    "static/media/awsKinesis.svg": "/static/media/awsKinesis.64fe6f045454a1e653e8e2b6a2805bc9.svg",
     "static/media/avatar3.svg": "/static/media/avatar3.ac8230d938d0a52f4500.svg",
     "static/media/avatar6.svg": "/static/media/avatar6.70de23d5482748918c82.svg",
     "static/media/grafanaps.png": "/static/media/grafanaps.a1064265cbe0c53f0d01.png",
@@ -104,6 +105,7 @@
     "static/media/datadogMetricsps.png": "/static/media/datadogMetricsps.1499ed3dd93864f786d4.png",
     "static/media/grafanaIcon.svg": "/static/media/grafanaIcon.fab6c489e404c8b49be8da7181a654bb.svg",
     "static/media/slackLogo.svg": "/static/media/slackLogo.85c9e715c432e8d73f13b4b860378f32.svg",
+    "static/media/kafkaIcon.svg": "/static/media/kafkaIcon.55141e9dac5efc55c985e2db1c6a421f.svg",
     "static/media/codicon.ttf": "/static/media/codicon.b797181c93b3755f4fa1.ttf",
     "static/media/graphOverview.svg": "/static/media/graphOverview.625afdb73bbf4040996811a8face93ac.svg",
     "static/media/datadogIcon.svg": "/static/media/datadogIcon.50af3f4d4c0af10fbedefe809eebd0e1.svg",
@@ -124,6 +126,7 @@
     "static/media/upgrade4.webp": "/static/media/upgrade4.736f480ef6b857370186.webp",
     "static/media/cloud2.webp": "/static/media/cloud2.095c8418d92872035040.webp",
     "static/media/upgradeBanner.svg": "/static/media/upgradeBanner.2be3c6b95abef06e5a889715a023742d.svg",
+    "static/media/s3LogoIcon.svg": "/static/media/s3LogoIcon.297391bd3a8ab5b6eac7da75567f995f.svg",
     "static/media/zapierBanner.webp": "/static/media/zapierBanner.70a1c6dc379accb0b0ad.webp",
     "static/media/fullLogo.svg": "/static/media/fullLogo.64576cea4e4d8598370f3e03920a2604.svg",
     "static/media/404.svg": "/static/media/404.9e16e4461a6da4e6a1562ae4ced0939f.svg",
@@ -160,8 +163,10 @@
     "static/media/Calendar.svg": "/static/media/Calendar.af439a1c292c3e762d5df5de98f89502.svg",
     "static/media/newUserIcon.svg": "/static/media/newUserIcon.33b372f9d3e986e63ef6ab845da63c29.svg",
     "static/media/signup.svg": "/static/media/signup.c41faf7613261ce831d03037fb47806b.svg",
+    "static/media/connectIcon.svg": "/static/media/connectIcon.2937b8cc7c1d70d14d160bb250298df8.svg",
     "static/media/newIntegrationIcon.svg": "/static/media/newIntegrationIcon.d8bd0b9b70229f62b6d27283c1de5fc1.svg",
     "static/media/editIcon.svg": "/static/media/editIcon.1bc57053f82f152a5ea3301ae06862cd.svg",
+    "static/media/connectorIcon.svg": "/static/media/connectorIcon.a1d2a5a1cb6e58ea11b9a9d233a46f4c.svg",
     "static/media/gitIcon.svg": "/static/media/gitIcon.42f668fc1035f8e12ea0262f2fd70dca.svg",
     "static/media/githubBranchIcon.svg": "/static/media/githubBranchIcon.584358d0c1bebd525947ddc5abc29bf3.svg",
     "static/media/schemaIcon.svg": "/static/media/schemaIcon.0a6892a86a18f11ccf9f3b88dcb32d8f.svg",
@@ -234,6 +239,7 @@
     "static/media/quickActionBtn.svg": "/static/media/quickActionBtn.128d63b0fb71e3b92c6d2a045472f13b.svg",
     "static/media/memphisFunctionIcon.svg": "/static/media/memphisFunctionIcon.eb8845f201448eb7f0846d760bd1cdaa.svg",
     "static/media/integrated.svg": "/static/media/integrated.d41f7d8e37e5b9404c9156672c0469fe.svg",
+    "static/media/producerIcon.svg": "/static/media/producerIcon.37cc3a30a0e54a4b85ad25ce2965da0e.svg",
     "static/media/journey.svg": "/static/media/journey.d33d5d460049fb64a1c3b972f2b5c965.svg",
     "static/media/disableIcon.svg": "/static/media/disableIcon.f950d5c0e68f76432d0000536f990553.svg",
     "static/media/awaitingIcon.svg": "/static/media/awaitingIcon.59904187bbec884701238d6235024deb.svg",
@@ -253,6 +259,7 @@
     "static/media/functionsIconActive.svg": "/static/media/functionsIconActive.d78e7df2228cec87552c5f52d0de75b8.svg",
     "static/media/tagsIcon.svg": "/static/media/tagsIcon.105d4c97471f48d8cae78fa570b12475.svg",
     "static/media/star.svg": "/static/media/star.8699de919483296eb55b8a677dbb5c7e.svg",
+    "static/media/purplePlus.svg": "/static/media/purplePlus.bfe969de4dc4fe79e31969de689acb4c.svg",
     "static/media/arrowRight.svg": "/static/media/arrowRight.1428c8d12a7b93f1b5cd7329e0837761.svg",
     "static/media/warnIcon.svg": "/static/media/warnIcon.bcd5179783b0503822d46c2ea334fb9b.svg",
     "static/media/arrowTopGray.svg": "/static/media/arrowTopGray.477b72b2dfd5c2a271571bbb94ad27e9.svg",
@@ -296,6 +303,7 @@
     "static/media/checkIcon.svg": "/static/media/checkIcon.b8dcbac926b46e866e90f5a752109035.svg",
     "static/media/moon.svg": "/static/media/moon.590cf459cb4f07df168f5d70837fa872.svg",
     "static/media/statusIcon.svg": "/static/media/statusIcon.467d50bd45147a0b7f2025f839f921c9.svg",
+    "static/media/clean_disconnected_producers.svg": "/static/media/clean_disconnected_producers.b846b33ced8bd85de6326521fb7e6399.svg",
     "static/media/errorIcon.svg": "/static/media/errorIcon.144c977e7c2255ab2320f8551b518bca.svg",
     "static/media/infoNotificationIcon.svg": "/static/media/infoNotificationIcon.b2cae38850a86ae5ffa748e2a6954074.svg",
     "static/media/exportWhite.svg": "/static/media/exportWhite.3649b943679729f784317728e0be2259.svg",
@@ -327,7 +335,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.985ba7b2.css",
-    "static/js/main.ed9e3a3a.js"
+    "static/css/main.376cde5b.css",
+    "static/js/main.d3300c02.js"
   ]
 }
