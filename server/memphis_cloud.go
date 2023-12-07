@@ -2490,6 +2490,7 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 
 	var confUsers configUsers
 	lenUsers := 0
+	fmt.Println("CreateUserFromConfigFile", rootUserCreated)
 	if rootUserCreated {
 		initialConfigFile := os.Getenv("INITIAL_CONFIG_FILE")
 		fmt.Println("initialConfigFile", initialConfigFile)
