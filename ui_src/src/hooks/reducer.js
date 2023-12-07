@@ -73,6 +73,11 @@ const Reducer = (state, action) => {
                 ...state,
                 userData: newUserData
             };
+        case 'SET_PLAN_TYPE':
+            return {
+                ...state,
+                isFreePlan: action.payload
+            };
         case 'SET_SOCKET_DETAILS':
             return {
                 ...state,
