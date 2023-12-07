@@ -1984,6 +1984,13 @@ func (c *client) sendErrAndDebug(err string) {
 	c.Debugf(err)
 }
 
+// *** added by Memphis
+func (c *client) sendErrAndWarn(funcName, err string) {
+	c.sendErr(err)
+	// c.Warnf("[tenant: %s]%s: %s", c.acc.GetName(), funcName, err)
+}
+// added by Memphis ***
+
 func (c *client) authTimeout() {
 	c.sendErrAndDebug("Authentication Timeout")
 	c.closeConnection(AuthenticationTimeout)
