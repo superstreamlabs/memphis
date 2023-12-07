@@ -9,6 +9,15 @@
         display: flex;
         position: relative;
         width: 100%;
+        &-center {
+            align-items: center;
+            svg {
+                display: flex;
+            }
+            .detail-title-wrapper .detail-title {
+                padding-bottom: 0!important;
+            }
+        }
         .detail-img {
             margin-right: 10px;
         }

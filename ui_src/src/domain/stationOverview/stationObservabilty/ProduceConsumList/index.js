@@ -40,6 +40,8 @@ import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
 import { loader } from '@monaco-editor/react';
 import Spinner from '../../../../components/spinner';
+import TooltipComponent from "../../../../components/tooltip/tooltip";
+import {isCloud} from "../../../../services/valueConvertor";
 
 const overlayStylesConnectors = {
     borderRadius: '8px',
@@ -293,6 +295,12 @@ const ProduceConsumList = ({ producer }) => {
         } else return 'pubSub-row';
     };
 
+    const countProducers = (producersList) => {
+        const connected = producersList?.reduce((accumulator, item) => accumulator + item.connected_producers_count, 0)
+        const disconnected = producersList?.reduce((accumulator, item) => accumulator + item.disconnected_producers_count, 0)
+        return connected + disconnected;
+    }
+
     return (
         <div className="station-observabilty-side">
             <div className="pubSub-list-container">
@@ -300,7 +308,13 @@ const ProduceConsumList = ({ producer }) => {
                     {producer && (
                         <span className="poduce-consume-header">
                             <p className="title">
-                                Sources {(producersList?.length > 0 || connectorsSourceList?.length > 0) && `(${producersList?.length + connectorsSourceList?.length})`}
+                                <TooltipComponent text="max allowed producers" placement="right">
+                                    <>
+                                        Sources
+                                        ({ producersList?.length > 0 && countProducers(producersList) || 0 }
+                                        { isCloud() && '/' + stationState?.stationSocketData?.max_amount_of_allowed_producers})
+                                    </>
+                                </TooltipComponent>
                             </p>
                             <Popover
                                 overlayInnerStyle={overlayStylesConnectors}
@@ -378,10 +392,12 @@ const ProduceConsumList = ({ producer }) => {
                                                 </OverflowTip>
                                             </span>
 
-                                            <OverflowTip text={row.count} width={'70px'}>
-                                                {row.count || 1}
-                                            </OverflowTip>
-                                            <span className="status-icon">
+                                            <div style={{width: "92px", maxWidth: "100%"}}>
+                                                <TooltipComponent text="connected / disconnected" placement="right">
+                                                    {row.connected_producers_count + ' / ' + row.disconnected_producers_count}
+                                                </TooltipComponent>
+                                            </div>
+                                            <span className="status-icon" style={{ width: '38px' }}>
                                                 <StatusIndication is_active={row.is_active} is_deleted={row.is_active} />
                                             </span>
                                             <Popover

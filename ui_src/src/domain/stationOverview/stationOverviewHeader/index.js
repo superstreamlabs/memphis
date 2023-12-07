@@ -283,15 +283,18 @@ const StationOverviewHeader = () => {
                             <div className="schema-header">
                                 <div className="schema-version">
                                     <p className="schema-title">Schema validation</p>
-                                    {stationState?.stationSocketData?.schema !== undefined && Object.keys(stationState?.stationSocketData?.schema).length !== 0 && (
+                                    {(!stationState?.stationSocketData?.schema?.name && !stationState?.stationSocketData?.schema?.schema_type) ||
+                                        stationState?.stationSocketData?.schema !== undefined &&
+                                        Object.keys(stationState?.stationSocketData?.schema).length !== 0 && (
                                         <div className="schema-details sd-flex">
                                             {stationState?.stationSocketData?.schema?.updates_available &&
-                                            stationState?.stationSocketData?.schema?.updates_available.length &&
-                                                <ActiveBadge content="Updates available" active={false} />}
+                                            <ActiveBadge content="Updates available" active={false} />}
                                         </div>
                                     )}
                                 </div>
-                                {stationState?.stationSocketData?.schema !== undefined && Object.keys(stationState?.stationSocketData?.schema).length !== 0 && (
+                                {(!stationState?.stationSocketData?.schema?.name && !stationState?.stationSocketData?.schema?.schema_type) ||
+                                    stationState?.stationSocketData?.schema !== undefined &&
+                                    Object.keys(stationState?.stationSocketData?.schema).length !== 0 && (
                                     <RedirectIcon
                                         width={15}
                                         height={15}
@@ -300,7 +303,9 @@ const StationOverviewHeader = () => {
                                     />
                                 )}
                             </div>
-                            {stationState?.stationSocketData?.schema !== undefined && Object.keys(stationState?.stationSocketData?.schema).length !== 0 && (
+                            {(!stationState?.stationSocketData?.schema?.name && !stationState?.stationSocketData?.schema?.schema_type) ||
+                                stationState?.stationSocketData?.schema !== undefined &&
+                                Object.keys(stationState?.stationSocketData?.schema).length !== 0 && (
                                 <div className="name-and-version">
                                     <OverflowTip className="station-name" text={stationState?.stationSocketData?.schema?.name} maxWidth="190px">
                                         {stationState?.stationSocketData?.schema?.name}
@@ -309,30 +314,28 @@ const StationOverviewHeader = () => {
                                     <p>v{stationState?.stationSocketData?.schema?.version_number}</p>
                                 </div>
                             )}
-                            {stationState?.stationSocketData?.schema &&
-                                (Object.keys(stationState?.stationSocketData?.schema).length === 0 ? (
-                                    <>
-                                        <div className="add-new">
-                                            <Button
-                                                width="120px"
-                                                height="25px"
-                                                placeholder={
-                                                    <div className="use-schema-button">
-                                                        <Add />
-                                                        <p>Enforce schema</p>
-                                                    </div>
-                                                }
-                                                tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
-                                                colorType="white"
-                                                radiusType="circle"
-                                                backgroundColorType="purple"
-                                                fontSize="12px"
-                                                fontFamily="InterSemiBold"
-                                                disabled={!stationState?.stationMetaData?.is_native}
-                                                onClick={() => setUseSchemaModal(true)}
-                                            />
-                                        </div>
-                                    </>
+                            {((!stationState?.stationSocketData?.schema?.name && !stationState?.stationSocketData?.schema?.schema_type) ||
+                                Object.keys(stationState?.stationSocketData?.schema).length === 0 ? (
+                                    <div className="add-new">
+                                        <Button
+                                            width="120px"
+                                            height="25px"
+                                            placeholder={
+                                                <div className="use-schema-button">
+                                                    <Add />
+                                                    <p>Enforce schema</p>
+                                                </div>
+                                            }
+                                            tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
+                                            colorType="white"
+                                            radiusType="circle"
+                                            backgroundColorType="purple"
+                                            fontSize="12px"
+                                            fontFamily="InterSemiBold"
+                                            disabled={!stationState?.stationMetaData?.is_native}
+                                            onClick={() => setUseSchemaModal(true)}
+                                        />
+                                    </div>
                                 ) : (
                                     <div className="buttons">
                                         <Button
@@ -348,8 +351,7 @@ const StationOverviewHeader = () => {
                                             boxShadowStyle="float"
                                             onClick={() => setDeleteModal(true)}
                                         />
-                                        {stationState?.stationSocketData?.schema?.updates_available &&
-                                        stationState?.stationSocketData?.schema?.updates_available.length && (
+                                        {stationState?.stationSocketData?.schema?.updates_available && (
                                             <Button
                                                 width="80px"
                                                 height="16px"
