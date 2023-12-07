@@ -175,7 +175,7 @@ func main() {
 	// create user from env variable or config file
 	var lenUsers int
 	var errCreateUsers error
-	// check if this is first upload of memphis broker and not every restart
+	// check if this is first load of memphis broker and not every restart
 	if rootUserCreated {
 		lenUsers, errCreateUsers = server.CreateUsersFromConfigOnFirstSystemLoad()
 	}
@@ -198,7 +198,7 @@ func main() {
 		server.PrintAndDie(fmt.Sprintf("%s: %s", exe, err))
 	}
 
-	// we do this check here and not below the function creating the users because we need the s *Server for logs
+	// we do this check here and not below the function creating the users - CreateUsersFromConfigOnFirstSystemLoad because we need the s *Server for logs
 	if errCreateUsers != nil {
 		s.Warnf("[tenant: %v]Failed create users from config file", s.MemphisGlobalAccountString(), errCreateUsers.Error())
 	}
