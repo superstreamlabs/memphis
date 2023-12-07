@@ -619,7 +619,10 @@ const Messages = ({ referredFunction }) => {
                                             backgroundColorType="red"
                                             fontSize="12px"
                                             fontWeight="600"
-                                            disabled={disableLoaderCleanDisconnectedProducers || stationState?.stationSocketData?.disconnected_producers?.reduce((accumulator, item) => accumulator + item.disconnected_producers_count, 0) === 0}
+                                            disabled={disableLoaderCleanDisconnectedProducers ||
+                                                stationState?.stationSocketData?.disconnected_producers?.reduce((accumulator, item) => accumulator + item.disconnected_producers_count, 0) === 0 &&
+                                                stationState?.stationSocketData?.connected_producers?.reduce((accumulator, item) => accumulator + item.disconnected_producers_count, 0) === 0
+                                            }
                                             onClick={() => cleanDisconnectedProducers(stationState?.stationMetaData?.id)}
                                             isLoading={disableLoaderCleanDisconnectedProducers}
                                             tooltip={stationState?.stationSocketData?.disconnected_producers?.reduce((accumulator, item) => accumulator + item.disconnected_producers_count, 0) === 0 && "Nothing to clean"}
