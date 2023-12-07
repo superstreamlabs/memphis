@@ -201,7 +201,8 @@ func main() {
 	}
 
 	if errCreateUsers != nil {
-		s.Warnf("[tenant: %v]Failed create users from config file", s.MemphisGlobalAccountString(), errCreateUsers)
+		fmt.Println("errCreateUsers errCreateUsers")
+		s.Warnf("[tenant: %v]Failed create users from config file", s.MemphisGlobalAccountString(), errCreateUsers.Error())
 	}
 
 	if lenUsers > 0 {
