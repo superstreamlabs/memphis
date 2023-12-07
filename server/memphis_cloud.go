@@ -2388,6 +2388,7 @@ func getUsageLimitProduersLimitPerStation(tenantName, stationName string) (float
 }
 
 func createUser(userName, userType, password string) error {
+	fmt.Println("create user")
 	username := strings.ToLower(userName)
 	usernameError := validateUsername(username)
 	if usernameError != nil {
@@ -2436,11 +2437,13 @@ func createUser(userName, userType, password string) error {
 			}
 		}
 	}
+	fmt.Println("before db.CreatUser")
 	_, err = db.CreateUser(username, userType, password, fullName, subscription, avatarId, serv.MemphisGlobalAccountString(), pending, team, position, owner, description)
 	if err != nil {
 		return err
 	}
 
+	fmt.Println("after create user")
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		analyticsParams := map[string]interface{}{
@@ -2593,7 +2596,7 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 		}
 
 		for _, user := range confUsers.Users.Client {
-			fmt.Println("mgmt", user)
+			fmt.Println("client", user)
 			err := createUser(user.User, "application", user.Password)
 			if err != nil {
 				return 0, err
