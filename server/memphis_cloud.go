@@ -164,11 +164,6 @@ func CreateRootUserOnFirstSystemLoad() (bool, error) {
 	}
 	hashedPwdString := string(hashedPwd)
 
-	//for test
-	exist, user, _ := db.GetUserByUsername("root", "$memphis")
-	fmt.Println("user test", exist, user)
-	//
-
 	created, err := db.UpsertUserUpdatePassword(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, serv.MemphisGlobalAccountString())
 	if err != nil {
 		return false, err
@@ -206,7 +201,6 @@ func CreateRootUserOnFirstSystemLoad() (bool, error) {
 			}
 		})
 	}
-	fmt.Println("created", created)
 	return created, nil
 }
 
@@ -2388,18 +2382,14 @@ func getUsageLimitProduersLimitPerStation(tenantName, stationName string) (float
 }
 
 func createUser(userName, userType, password string) error {
-	fmt.Println("create user", userName, userType, password)
 	username := strings.ToLower(userName)
-	fmt.Println("username", username)
 	usernameError := validateUsername(username)
-	fmt.Println("usernameError", usernameError)
 	if usernameError != nil {
 		return usernameError
 	}
 
 	userTypeToLower := strings.ToLower(userType)
 	userTypeError := validateUserType(userTypeToLower)
-	fmt.Println("userTypeError", userTypeError)
 	if userTypeError != nil {
 		return userTypeError
 	}
@@ -2409,20 +2399,16 @@ func createUser(userName, userType, password string) error {
 		return fmt.Errorf("Password was not provided for user %s", username)
 	}
 	passwordErr := validatePassword(password)
-	fmt.Println("passwordErr", passwordErr)
 	if passwordErr != nil {
 		return passwordErr
 	}
 
 	if userType == "management" {
-		fmt.Println("generate")
 		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 		if err != nil {
 			return err
 		}
-		fmt.Println("hashedPwd", hashedPwd)
 		password = string(hashedPwd)
-		fmt.Println("pass", password)
 	}
 
 	fullName := ""
@@ -2444,13 +2430,11 @@ func createUser(userName, userType, password string) error {
 			}
 		}
 	}
-	fmt.Println("before db.CreatUser")
 	_, err = db.CreateUser(username, userType, password, fullName, subscription, avatarId, serv.MemphisGlobalAccountString(), pending, team, position, owner, description)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("after create user")
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		analyticsParams := map[string]interface{}{
@@ -2545,7 +2529,6 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 
 	var confUsers configUsers
 	lenUsers := 0
-	fmt.Println("CreateUserFromConfigFile", rootUserCreated)
 	if rootUserCreated {
 		var initialConfigFile string
 		k8sEnv := true
@@ -2555,13 +2538,10 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 
 		if configuration.DEV_ENV == "true" && !k8sEnv || configuration.DOCKER_ENV == "true" {
 			initialConfigFile = os.Getenv("INITIAL_CONFIG_FILE")
-			fmt.Println("initialConfigFile", initialConfigFile)
 			if initialConfigFile == "" {
 				return 0, fmt.Errorf("INITIAL_CONFIG_FILE environment variable is not set.")
 			}
 		}
-
-		fmt.Println("create user from config file")
 
 		if configuration.DEV_ENV == "true" && !k8sEnv {
 			// for local env with launch json
@@ -2576,43 +2556,32 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 				return 0, err
 			}
 		} else {
-			fmt.Println("read kyaml")
 			yamlFilePath := "/etc/nats-config/initial.conf"
 			yamlData, err := ioutil.ReadFile(yamlFilePath)
 			if err != nil {
 				return 0, err
 			}
 
-			fmt.Println("yamlData", string(yamlData))
-
 			confUsers, err = parseYamlFile(string(yamlData))
 			if err != nil {
 				return 0, err
 			}
-			fmt.Println("confUsers k8s", confUsers.Users, confUsers.Users.Mgmt)
 		}
-		fmt.Println("confUsers k8s test", confUsers.Users.Client, "mgmt", confUsers.Users.Mgmt)
 
 		for _, mgmtUser := range confUsers.Users.Mgmt {
-			fmt.Println("mgmt", mgmtUser)
 			err := createUser(mgmtUser.User, "management", mgmtUser.Password)
-			fmt.Println("err create user", err)
 			if err != nil {
 				return 0, err
 			}
-			fmt.Println("create mgmt users")
 		}
 
 		for _, user := range confUsers.Users.Client {
-			fmt.Println("client", user)
 			err := createUser(user.User, "application", user.Password)
 			if err != nil {
 				return 0, err
 			}
-			fmt.Println("create client users")
 		}
 		lenUsers = len(confUsers.Users.Mgmt) + len(confUsers.Users.Client)
-		fmt.Println("lenUsers", lenUsers)
 	}
 
 	return lenUsers, nil
