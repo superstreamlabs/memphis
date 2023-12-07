@@ -2484,14 +2484,54 @@ type userDetails struct {
 	Password string `json:"password" yaml:"password"`
 }
 
-func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
-	// check if this is first upload of memphis broker and not every restart
-	type configUsers struct {
-		Users struct {
+type configUsers struct {
+	Users struct {
+		Mgmt   []userDetails `json:"mgmt" yaml:"mgmt"`
+		Client []userDetails `json:"client" yaml:"client"`
+	} `json:"users" yaml:"users"`
+}
+
+func parseYamlFile(initialConfigFile string) (configUsers, error) {
+	// for docker env
+	var data map[string]interface{}
+	err := yaml.Unmarshal([]byte(initialConfigFile), &data)
+	if err != nil {
+		return configUsers{}, err
+	}
+
+	usersMapData := map[interface{}]interface{}{}
+	usersMapDataMgmt := []interface{}{}
+	usersMapDataClient := []interface{}{}
+
+	usersMap, usersOk := data["users"].(map[interface{}]interface{})
+	if usersOk {
+		usersMapData = usersMap
+		usersMgmtMap, usersMgmtOk := usersMapData["mgmt"].([]interface{})
+		if usersMgmtOk {
+			usersMapDataMgmt = usersMgmtMap
+		}
+
+		usersClientMap, usersClientOk := usersMapData["client"].([]interface{})
+		if usersClientOk {
+			usersMapDataClient = usersClientMap
+		}
+	}
+
+	confUsers := configUsers{
+		Users: struct {
 			Mgmt   []userDetails `json:"mgmt" yaml:"mgmt"`
 			Client []userDetails `json:"client" yaml:"client"`
-		} `json:"users" yaml:"users"`
+		}{
+			Mgmt:   convertToUsers(usersMapDataMgmt),
+			Client: convertToUsers(usersMapDataClient),
+		},
 	}
+
+	return confUsers, nil
+}
+
+func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
+	// check if this is first upload of memphis broker and not every restart
 
 	var confUsers configUsers
 	lenUsers := 0
@@ -2509,7 +2549,6 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 			if initialConfigFile == "" {
 				return 0, fmt.Errorf("INITIAL_CONFIG_FILE environment variable is not set.")
 			}
-
 		}
 
 		fmt.Println("create user from config file")
@@ -2521,49 +2560,26 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 				return 0, err
 			}
 		} else if configuration.DOCKER_ENV == "true" {
-			// for docker env
-			var data map[string]interface{}
-			err := yaml.Unmarshal([]byte(initialConfigFile), &data)
+			var err error
+			confUsers, err = parseYamlFile(initialConfigFile)
 			if err != nil {
 				return 0, err
-			}
-
-			usersMapData := map[interface{}]interface{}{}
-			usersMapDataMgmt := []interface{}{}
-			usersMapDataClient := []interface{}{}
-
-			usersMap, usersOk := data["users"].(map[interface{}]interface{})
-			if usersOk {
-				usersMapData = usersMap
-				usersMgmtMap, usersMgmtOk := usersMapData["mgmt"].([]interface{})
-				if usersMgmtOk {
-					usersMapDataMgmt = usersMgmtMap
-				}
-
-				usersClientMap, usersClientOk := usersMapData["client"].([]interface{})
-				if usersClientOk {
-					usersMapDataClient = usersClientMap
-				}
-			}
-
-			confUsers = configUsers{
-				Users: struct {
-					Mgmt   []userDetails `json:"mgmt" yaml:"mgmt"`
-					Client []userDetails `json:"client" yaml:"client"`
-				}{
-					Mgmt:   convertToUsers(usersMapDataMgmt),
-					Client: convertToUsers(usersMapDataClient),
-				},
 			}
 		} else {
 			fmt.Println("read kyaml")
 			yamlFilePath := "/etc/nats-config/initial.conf"
 			yamlData, err := ioutil.ReadFile(yamlFilePath)
 			if err != nil {
-				fmt.Println(err)
+				return 0, err
 			}
 
 			fmt.Println("yamlData", string(yamlData))
+
+			confUsers, err = parseYamlFile(string(yamlData))
+			if err != nil {
+				return 0, err
+			}
+			fmt.Println("confUsers k8s", confUsers)
 		}
 
 		for _, mgmtUser := range confUsers.Users.Mgmt {
