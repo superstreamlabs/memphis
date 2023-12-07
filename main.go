@@ -175,10 +175,11 @@ func main() {
 	// create user from env variable or config file
 	var lenUsers int
 	// if os.Getenv("DOCKER_ENV") == "true" {
-	lenUsers, err = server.CreateUserFromConfigFile(rootUserCreated)
+	lenUsers, errCreateUsers := server.CreateUserFromConfigFile(rootUserCreated)
 	if err != nil {
 		fmt.Printf("Failed create user from config file: %s", err)
 	}
+	fmt.Println("check", errCreateUsers)
 	// }
 
 	// Configure the options from the flags/config file
@@ -197,6 +198,10 @@ func main() {
 	s, err := server.NewServer(opts)
 	if err != nil {
 		server.PrintAndDie(fmt.Sprintf("%s: %s", exe, err))
+	}
+
+	if errCreateUsers != nil {
+		s.Warnf("[tenant: %v]Failed create users from config file", s.MemphisGlobalAccountString(), errCreateUsers)
 	}
 
 	if lenUsers > 0 {
