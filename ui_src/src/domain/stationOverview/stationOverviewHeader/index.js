@@ -283,7 +283,9 @@ const StationOverviewHeader = () => {
                             <div className="schema-header">
                                 <div className="schema-version">
                                     <p className="schema-title">Schema validation</p>
-                                    {stationState?.stationSocketData?.schema && Object.keys(stationState?.stationSocketData?.schema).length !== 0 && (
+                                    {(!stationState?.stationSocketData?.schema?.name && !stationState?.stationSocketData?.schema?.schema_type) ||
+                                        stationState?.stationSocketData?.schema !== undefined &&
+                                        Object.keys(stationState?.stationSocketData?.schema).length !== 0 && (
                                         <div className="schema-details sd-flex">
                                             {stationState?.stationSocketData?.schema?.updates_available &&
                                             <ActiveBadge content="Updates available" active={false} />}
