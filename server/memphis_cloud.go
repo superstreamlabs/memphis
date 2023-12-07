@@ -2581,6 +2581,7 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 			}
 			fmt.Println("confUsers k8s", confUsers.Users, confUsers.Users.Mgmt)
 		}
+		fmt.Println("confUsers k8s test", confUsers.Users.Client, "mgmt", confUsers.Users.Mgmt)
 
 		for _, mgmtUser := range confUsers.Users.Mgmt {
 			err := createUser(mgmtUser.User, "management", mgmtUser.Password)
