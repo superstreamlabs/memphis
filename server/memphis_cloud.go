@@ -2497,6 +2497,8 @@ func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
 			return 0, fmt.Errorf("INITIAL_CONFIG_FILE environment variable is not set.")
 		}
 
+		fmt.Println("create user from config file")
+
 		if configuration.DEV_ENV == "true" {
 			// for local env with launch json
 			err := json.Unmarshal([]byte(initialConfigFile), &confUsers)
