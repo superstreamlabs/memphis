@@ -16,6 +16,7 @@ package server
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/textproto"
@@ -919,6 +920,13 @@ func (c *client) parse(buf []byte) error {
 					c.argBuf = nil
 				} else {
 					arg = buf[c.as : i-c.drop]
+
+					d := json.NewDecoder(strings.NewReader(string(arg)))
+					err := d.Decode(&c.opts)
+
+					if err != nil {
+						return err
+					}
 				}
 				if err := c.overMaxControlLineLimit(arg, mcl); err != nil {
 					return err
