@@ -128,6 +128,7 @@ function OverView() {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
             arrangeData(data);
+            dispatch({ type: 'SET_PLAN_TYPE', payload: data?.billing_details?.is_free_plan });
             setisLoading(false);
         } catch (error) {
             setisLoading(false);
@@ -305,10 +306,10 @@ function OverView() {
                                         <StreamLineage createStationTrigger={(e) => modalFlip(e)} setExpended={(e) => setExpend(e)} expend={lineageExpend} />
                                         <Throughput />
                                     </div>
-                                    <div className={state?.monitor_data?.billing_details?.is_free_plan ? 'right-side free-cloud' : 'right-side cloud'}>
+                                    <div className={state?.isFreePlan ? 'right-side free-cloud' : 'right-side cloud'}>
                                         <Stations createStationTrigger={(e) => modalFlip(e)} />
                                         <Tags />
-                                        {state?.monitor_data?.billing_details?.is_free_plan ? <Usage /> : <Integrations />}
+                                        {state?.isFreePlan ? <Usage /> : <Integrations />}
                                     </div>
                                 </div>
                             ) : (

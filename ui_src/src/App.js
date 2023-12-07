@@ -56,6 +56,7 @@ import Functions from './domain/functions';
 import { Context } from './hooks/store';
 import pathDomains from './router';
 import Users from './domain/users';
+import {planType} from "./const/globalConst";
 
 let SysLogs = undefined;
 let Login = undefined;
@@ -200,6 +201,7 @@ const App = withRouter(() => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.REFRESH_BILLING_PLAN);
             dispatch({ type: 'SET_ENTITLEMENTS', payload: data?.entitelments });
+            dispatch({ type: 'SET_PLAN_TYPE', payload: data.plan === planType.FREE });
             setRefreshPlan(false);
             showMessages('success', 'Your plan has been successfully updated.');
         } catch (error) {
