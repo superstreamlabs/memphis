@@ -164,6 +164,11 @@ func CreateRootUserOnFirstSystemLoad() (bool, error) {
 	}
 	hashedPwdString := string(hashedPwd)
 
+	//for test
+	exist, user, _ := db.GetUserByUsername("root", "$memphis")
+	fmt.Println("user test", exist, user)
+	//
+
 	created, err := db.UpsertUserUpdatePassword(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, serv.MemphisGlobalAccountString())
 	if err != nil {
 		return false, err
