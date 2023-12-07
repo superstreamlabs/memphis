@@ -174,7 +174,11 @@ func main() {
 
 	// create user from env variable or config file
 	var lenUsers int
-	lenUsers, errCreateUsers := server.CreateUserFromConfigFile(rootUserCreated)
+	var errCreateUsers error
+	// check if this is first upload of memphis broker and not every restart
+	if rootUserCreated {
+		lenUsers, errCreateUsers = server.CreateUsersFromConfigOnFirstSystemLoad()
+	}
 
 	// Configure the options from the flags/config file
 	opts, err := server.ConfigureOptions(fs, os.Args[1:],
@@ -194,10 +198,10 @@ func main() {
 		server.PrintAndDie(fmt.Sprintf("%s: %s", exe, err))
 	}
 
+	// we do this check here and not below the function creating the users because we need the s *Server for logs
 	if errCreateUsers != nil {
 		s.Warnf("[tenant: %v]Failed create users from config file", s.MemphisGlobalAccountString(), errCreateUsers.Error())
 	}
-
 	if lenUsers > 0 {
 		s.Noticef("[tenant: %v]loaded %d users from config file", s.MemphisGlobalAccountString(), lenUsers)
 	}

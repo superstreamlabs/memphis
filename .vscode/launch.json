@@ -24,7 +24,7 @@
                 "USER_PASS_BASED_AUTH": "true",
                 "CONNECTION_TOKEN": "memphis",
                 "ENV": "dev",
-                "INITIAL_CONFIG_FILE": "{\"users\":{\"mgmt\":[{\"user\":\"admin\",\"password\":\"Sadmin123456!\"},{\"user\":\"test_mgmt\",\"password\":\"Stest123456!\"},{\"user\":\"test\",\"password\":\"Stest123456!\"}],\"client\":[{\"user\":\"test_app\",\"password\":\"Stest123456!\"},{\"user\":\"test_app2\",\"password\":\"Stest123456!\"}]}}"
+                "INITIAL_CONFIG_FILE": ""
             }
         },
         {
@@ -50,7 +50,7 @@
                 "USER_PASS_BASED_AUTH": "true",
                 "CONNECTION_TOKEN": "memphis",
                 "ENV": "dev",
-                "INITIAL_CONFIG_FILE": "{\"users\":{\"mgmt\":[{\"user\":\"admin\",\"password\":\"Sadmin123456!\"},{\"user\":\"test_mgmt\",\"password\":\"Stest123456!\"},{\"user\":\"test\",\"password\":\"Stest123456!\"}],\"client\":[{\"user\":\"test_app\",\"password\":\"Stest123456!\"},{\"user\":\"test_app2\",\"password\":\"Stest123456!\"}]}}"
+                "INITIAL_CONFIG_FILE": ""
             }
         },
         {
@@ -76,7 +76,7 @@
                 "USER_PASS_BASED_AUTH": "true",
                 "CONNECTION_TOKEN": "memphis",
                 "ENV": "dev",
-                "INITIAL_CONFIG_FILE": "{\"users\":{\"mgmt\":[{\"user\":\"admin\",\"password\":\"Sadmin123456!\"},{\"user\":\"test_mgmt\",\"password\":\"Stest123456!\"},{\"user\":\"test\",\"password\":\"Stest123456!\"}],\"client\":[{\"user\":\"test_app\",\"password\":\"Stest123456!\"},{\"user\":\"test_app2\",\"password\":\"Stest123456!\"}]}}"
+                "INITIAL_CONFIG_FILE": ""
             }
         },
         {
@@ -102,7 +102,7 @@
                 "USER_PASS_BASED_AUTH": "true",
                 "CONNECTION_TOKEN": "memphis",
                 "ENV": "dev",
-                "INITIAL_CONFIG_FILE": "{\"users\":{\"mgmt\":[{\"user\":\"admin\",\"password\":\"Sadmin123456!\"},{\"user\":\"test_mgmt\",\"password\":\"Stest123456!\"},{\"user\":\"test\",\"password\":\"Stest123456!\"}],\"client\":[{\"user\":\"test_app\",\"password\":\"Stest123456!\"},{\"user\":\"test_app2\",\"password\":\"Stest123456!\"}]}}"
+                "INITIAL_CONFIG_FILE": ""
             }
         }
     ]

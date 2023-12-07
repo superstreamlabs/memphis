@@ -2523,64 +2523,61 @@ func parseYamlFile(initialConfigFile string) (configUsers, error) {
 	return confUsers, nil
 }
 
-func CreateUserFromConfigFile(rootUserCreated bool) (int, error) {
-	// check if this is first upload of memphis broker and not every restart
+func CreateUsersFromConfigOnFirstSystemLoad() (int, error) {
 	var confUsers configUsers
 	lenUsers := 0
-	if rootUserCreated {
-		var initialConfigFile string
-		k8sEnv := true
-		if configuration.DOCKER_ENV == "true" || configuration.LOCAL_CLUSTER_ENV {
-			k8sEnv = false
-		}
-
-		if configuration.DEV_ENV == "true" && !k8sEnv || configuration.DOCKER_ENV == "true" {
-			initialConfigFile = os.Getenv("INITIAL_CONFIG_FILE")
-			if initialConfigFile == "" {
-				return 0, fmt.Errorf("INITIAL_CONFIG_FILE environment variable is not set.")
-			}
-		}
-
-		if configuration.DEV_ENV == "true" && !k8sEnv {
-			// for local env with launch json
-			err := json.Unmarshal([]byte(initialConfigFile), &confUsers)
-			if err != nil {
-				return 0, err
-			}
-		} else if configuration.DOCKER_ENV == "true" {
-			var err error
-			confUsers, err = parseYamlFile(initialConfigFile)
-			if err != nil {
-				return 0, err
-			}
-		} else {
-			yamlFilePath := "/etc/nats-config/initial.conf"
-			yamlData, err := ioutil.ReadFile(yamlFilePath)
-			if err != nil {
-				return 0, err
-			}
-
-			confUsers, err = parseYamlFile(string(yamlData))
-			if err != nil {
-				return 0, err
-			}
-		}
-
-		for _, mgmtUser := range confUsers.Users.Mgmt {
-			err := createUser(mgmtUser.User, "management", mgmtUser.Password)
-			if err != nil {
-				return 0, err
-			}
-		}
-
-		for _, user := range confUsers.Users.Client {
-			err := createUser(user.User, "application", user.Password)
-			if err != nil {
-				return 0, err
-			}
-		}
-		lenUsers = len(confUsers.Users.Mgmt) + len(confUsers.Users.Client)
+	var initialConfigFile string
+	k8sEnv := true
+	if configuration.DOCKER_ENV == "true" || configuration.LOCAL_CLUSTER_ENV {
+		k8sEnv = false
 	}
+
+	if configuration.DEV_ENV == "true" && !k8sEnv || configuration.DOCKER_ENV == "true" {
+		initialConfigFile = os.Getenv("INITIAL_CONFIG_FILE")
+		if initialConfigFile == "" {
+			return 0, fmt.Errorf("INITIAL_CONFIG_FILE environment variable is not set.")
+		}
+	}
+
+	if configuration.DEV_ENV == "true" && !k8sEnv {
+		// for local env with launch json
+		err := json.Unmarshal([]byte(initialConfigFile), &confUsers)
+		if err != nil {
+			return 0, err
+		}
+	} else if configuration.DOCKER_ENV == "true" {
+		var err error
+		confUsers, err = parseYamlFile(initialConfigFile)
+		if err != nil {
+			return 0, err
+		}
+	} else {
+		yamlFilePath := "/etc/nats-config/initial.conf"
+		yamlData, err := ioutil.ReadFile(yamlFilePath)
+		if err != nil {
+			return 0, err
+		}
+
+		confUsers, err = parseYamlFile(string(yamlData))
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	for _, mgmtUser := range confUsers.Users.Mgmt {
+		err := createUser(mgmtUser.User, "management", mgmtUser.Password)
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	for _, user := range confUsers.Users.Client {
+		err := createUser(user.User, "application", user.Password)
+		if err != nil {
+			return 0, err
+		}
+	}
+	lenUsers = len(confUsers.Users.Mgmt) + len(confUsers.Users.Client)
 
 	return lenUsers, nil
 }
