@@ -38,7 +38,7 @@ import { handleRefreshTokenRequest, httpRequest } from './services/http';
 import { ReactComponent as RedirectIcon } from './assets/images/redirectIcon.svg';
 import { ReactComponent as SuccessIcon } from './assets/images/successIcon.svg';
 import { ReactComponent as CloseIcon } from './assets/images/closeNotification.svg';
-import { showMessages } from './services/genericServices';
+import { showMessages, useGetAllowedActions } from './services/genericServices';
 import StationOverview from './domain/stationOverview';
 import { ReactComponent as ErrorIcon } from './assets/images/errorIcon.svg';
 import MessageJourney from './domain/messageJourney';
@@ -85,6 +85,7 @@ const App = withRouter(() => {
     const [displayedNotifications, setDisplayedNotifications] = useState([]);
     const [systemMessage, setSystemMessage] = useState([]);
     const { stigg } = isCloud() && useStiggContext();
+    const getAllowedActions = useGetAllowedActions();
 
     const stateRef = useRef([]);
     stateRef.current = [cloudLogedIn, persistedNotifications];
@@ -203,6 +204,7 @@ const App = withRouter(() => {
             dispatch({ type: 'SET_ENTITLEMENTS', payload: data?.entitelments });
             dispatch({ type: 'SET_PLAN_TYPE', payload: data.plan === planType.FREE });
             setRefreshPlan(false);
+            await getAllowedActions();
             showMessages('success', 'Your plan has been successfully updated.');
         } catch (error) {
             setRefreshPlan(false);
