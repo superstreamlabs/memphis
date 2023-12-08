@@ -541,13 +541,11 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// create function tasks consumer
 	if shouldCreateSystemTasksStream() && !FUNCTIONS_TASKS_CONSUMER_CREATED {
-		replicas := GetStationReplicas(1)
 		cc := ConsumerConfig{
 			Durable:       FUNCTION_TASKS_CONSUMER,
 			DeliverPolicy: DeliverAll,
 			AckPolicy:     AckExplicit,
 			MaxAckPending: 1,
-			Replicas:      replicas,
 			FilterSubject: systemTasksStreamName + ".functions",
 			AckWait:       time.Duration(90) * time.Second,
 			MaxDeliver:    5,
