@@ -20,9 +20,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
 	"math/rand"
 	"net/http"
+	"os"
 	"runtime"
 	"sort"
 	"strconv"
@@ -35,6 +37,7 @@ import (
 	"github.com/memphisdev/memphis/memphis_cache"
 	"github.com/memphisdev/memphis/models"
 	"github.com/memphisdev/memphis/utils"
+	"gopkg.in/yaml.v2"
 
 	dockerClient "github.com/docker/docker/client"
 	"github.com/gin-contrib/cors"
@@ -153,17 +156,17 @@ func GetStationMaxAge(retentionType, tenantName string, retentionValue int) time
 	return time.Duration(0)
 }
 
-func CreateRootUserOnFirstSystemLoad() error {
+func CreateRootUserOnFirstSystemLoad() (bool, error) {
 	password := configuration.ROOT_PASSWORD
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 	if err != nil {
-		return err
+		return false, err
 	}
 	hashedPwdString := string(hashedPwd)
 
 	created, err := db.UpsertUserUpdatePassword(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, serv.MemphisGlobalAccountString())
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -198,8 +201,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 			}
 		})
 	}
-
-	return nil
+	return created, nil
 }
 
 func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bool, error) {
@@ -2377,6 +2379,207 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetails(messageId int, dlsType str
 
 func getUsageLimitProduersLimitPerStation(tenantName, stationName string) (float64, error) {
 	return -1, nil
+}
+
+func createUser(userName, userType, password string) error {
+	username := strings.ToLower(userName)
+	usernameError := validateUsername(username)
+	if usernameError != nil {
+		return usernameError
+	}
+
+	userTypeToLower := strings.ToLower(userType)
+	userTypeError := validateUserType(userTypeToLower)
+	if userTypeError != nil {
+		return userTypeError
+	}
+
+	avatarId := 1
+	if password == "" {
+		return fmt.Errorf("Password was not provided for user %s", username)
+	}
+	passwordErr := validatePassword(password)
+	if passwordErr != nil {
+		return passwordErr
+	}
+
+	if userType == "management" {
+		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+		if err != nil {
+			return err
+		}
+		password = string(hashedPwd)
+	}
+
+	fullName := ""
+	subscription := false
+	pending := false
+	team := ""
+	position := ""
+	owner := ""
+	description := ""
+	var err error
+	if userType == "application" {
+		if configuration.USER_PASS_BASED_AUTH {
+			if password == "" {
+				return fmt.Errorf("Password was not provided for user for user %v", username)
+			}
+			password, err = EncryptAES([]byte(password))
+			if err != nil {
+				return err
+			}
+		}
+	}
+	_, err = db.CreateUser(username, userType, password, fullName, subscription, avatarId, serv.MemphisGlobalAccountString(), pending, team, position, owner, description)
+	if err != nil {
+		return err
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analyticsParams := map[string]interface{}{
+			"username": username,
+		}
+		analytics.SendEvent(serv.MemphisGlobalAccountString(), username, analyticsParams, "user-add-user")
+	}
+	return nil
+}
+
+func convertToUsers(usersData []interface{}) []userDetails {
+	var users []userDetails
+	for _, userData := range usersData {
+		userMap, ok := userData.(map[interface{}]interface{})
+		if ok {
+			userVal := ""
+			passwordVal := ""
+			_, okUser := userMap["user"].(string)
+			if okUser {
+				userVal = userMap["user"].(string)
+			}
+
+			_, okPass := userMap["password"].(string)
+			if okPass {
+				passwordVal = userMap["password"].(string)
+			}
+
+			if ok && okPass {
+				users = append(users, userDetails{
+					User:     userVal,
+					Password: passwordVal,
+				})
+			}
+		}
+	}
+	return users
+}
+
+type userDetails struct {
+	User     string `json:"user" yaml:"user"`
+	Password string `json:"password" yaml:"password"`
+}
+
+type configUsers struct {
+	Users struct {
+		Mgmt   []userDetails `json:"mgmt" yaml:"mgmt"`
+		Client []userDetails `json:"client" yaml:"client"`
+	} `json:"users" yaml:"users"`
+}
+
+func parseYamlFile(initialConfigFile string) (configUsers, error) {
+	var data map[string]interface{}
+	err := yaml.Unmarshal([]byte(initialConfigFile), &data)
+	if err != nil {
+		return configUsers{}, err
+	}
+
+	usersMapData := map[interface{}]interface{}{}
+	usersMapDataMgmt := []interface{}{}
+	usersMapDataClient := []interface{}{}
+
+	usersMap, usersOk := data["users"].(map[interface{}]interface{})
+	if usersOk {
+		usersMapData = usersMap
+		usersMgmtMap, usersMgmtOk := usersMapData["mgmt"].([]interface{})
+		if usersMgmtOk {
+			usersMapDataMgmt = usersMgmtMap
+		}
+
+		usersClientMap, usersClientOk := usersMapData["client"].([]interface{})
+		if usersClientOk {
+			usersMapDataClient = usersClientMap
+		}
+	}
+
+	confUsers := configUsers{
+		Users: struct {
+			Mgmt   []userDetails `json:"mgmt" yaml:"mgmt"`
+			Client []userDetails `json:"client" yaml:"client"`
+		}{
+			Mgmt:   convertToUsers(usersMapDataMgmt),
+			Client: convertToUsers(usersMapDataClient),
+		},
+	}
+
+	return confUsers, nil
+}
+
+func CreateUsersFromConfigOnFirstSystemLoad() (int, error) {
+	var confUsers configUsers
+	lenUsers := 0
+	var initialConfigFile string
+	k8sEnv := true
+	if configuration.DOCKER_ENV == "true" || configuration.LOCAL_CLUSTER_ENV {
+		k8sEnv = false
+	}
+
+	if configuration.DEV_ENV == "true" && !k8sEnv || configuration.DOCKER_ENV == "true" {
+		initialConfigFile = os.Getenv("INITIAL_CONFIG_FILE")
+		if initialConfigFile == "" {
+			return 0, fmt.Errorf("INITIAL_CONFIG_FILE environment variable is not set.")
+		}
+	}
+
+	if configuration.DEV_ENV == "true" && !k8sEnv {
+		// for local env with launch json
+		err := json.Unmarshal([]byte(initialConfigFile), &confUsers)
+		if err != nil {
+			return 0, err
+		}
+	} else if configuration.DOCKER_ENV == "true" {
+		var err error
+		confUsers, err = parseYamlFile(initialConfigFile)
+		if err != nil {
+			return 0, err
+		}
+	} else {
+		yamlFilePath := "/etc/nats-config/initial.conf"
+		yamlData, err := ioutil.ReadFile(yamlFilePath)
+		if err != nil {
+			return 0, err
+		}
+
+		confUsers, err = parseYamlFile(string(yamlData))
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	for _, mgmtUser := range confUsers.Users.Mgmt {
+		err := createUser(mgmtUser.User, "management", mgmtUser.Password)
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	for _, user := range confUsers.Users.Client {
+		err := createUser(user.User, "application", user.Password)
+		if err != nil {
+			return 0, err
+		}
+	}
+	lenUsers = len(confUsers.Users.Mgmt) + len(confUsers.Users.Client)
+
+	return lenUsers, nil
 }
 
 func (s *Server) GetConnectorsByStationAndPartition(stationID, partitionNumber, numOfPartitions int) ([]map[string]string, error) {

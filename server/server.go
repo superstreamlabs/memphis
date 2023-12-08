@@ -329,28 +329,28 @@ func New(opts *Options) *Server {
 }
 
 // ** added by Memphis
-func InitializeMetadataStorage() (db.MetadataStorage, error) {
+func InitializeMetadataStorage() (db.MetadataStorage, bool, error) {
 	metadataDb, err := db.InitalizeMetadataDbConnection()
 	if err != nil {
-		return db.MetadataStorage{}, err
+		return db.MetadataStorage{}, false, err
 	}
 
 	err = CreateGlobalTenantOnFirstSystemLoad()
 	if err != nil {
-		return db.MetadataStorage{}, err
+		return db.MetadataStorage{}, false, err
 	}
 
-	err = CreateRootUserOnFirstSystemLoad()
+	rootUserCreated, err := CreateRootUserOnFirstSystemLoad()
 	if err != nil {
-		return db.MetadataStorage{}, err
+		return db.MetadataStorage{}, false, err
 	}
 
 	err = EncryptOldUnencryptedValues()
 	if err != nil {
 		err = fmt.Errorf("failed encrypt old unencrypted values: %v", err.Error())
-		return db.MetadataStorage{}, err
+		return db.MetadataStorage{}, false, err
 	}
-	return metadataDb, nil
+	return metadataDb, rootUserCreated, nil
 }
 
 // added by Memphis ***
