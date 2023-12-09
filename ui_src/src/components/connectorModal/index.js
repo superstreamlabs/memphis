@@ -36,7 +36,7 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);
     const [formFields, setFormFields] = useState({
-        connector_type: source ? 'source' : 'sink'
+        connector_type: source ? 'Source' : 'Sink'
     });
     const [connectorInputFields, setConnectorInputFields] = useState([]);
     const [resError, setError] = useState(null);
@@ -46,7 +46,7 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
         if (open) {
             setStep(1);
             setFormFields({
-                connector_type: source ? 'source' : 'sink'
+                connector_type: source ? 'Source' : 'Sink'
             });
             setIsEditing(false);
             setLoading(false);
@@ -90,7 +90,11 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
     const connectorModalTitle =
         step === 1 ? (
             <>
-                <p>Add a new connector</p>
+                <div className="connector-modal-title">
+                    <div className="modal-title">
+                        Add a new connector <span className="coming-soon-select">Alpha</span>
+                    </div>
+                </div>
                 <label>Choose a ready-to-use sink for the ingested messages</label>
             </>
         ) : loading ? (
@@ -138,8 +142,8 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
             let data = await httpRequest('POST', ApiEndpoints.CREATE_CONNECTOR, {
                 name: formFields?.name,
                 station_id: stationState?.stationMetaData?.id,
-                type: formFields?.type,
-                connector_type: formFields?.connector_type,
+                type: formFields?.type?.toLocaleLowerCase(),
+                connector_type: formFields?.connector_type?.toLocaleLowerCase(),
                 settings: modifiedSettings,
                 partitions: [stationState?.stationPartition]
             });
@@ -164,7 +168,7 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
                         }
                     ]}
                 >
-                    <TitleComponent headerTitle={input?.display} typeTitle="sub-header" headerDescription={input?.description} />
+                    <TitleComponent headerTitle={input?.display} typeTitle="sub-header" headerDescription={input?.description} required={input?.required} />
                     {input?.type === 'string' && (
                         <Input
                             value={formFields[input?.name]}
@@ -254,7 +258,7 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
     return (
         <Modal
             header={
-                <div className="modal-header">
+                <div className="modal-header connector-modal-header">
                     <div className="header-img-container">
                         <ConnectorIcon className="headerImage" alt="stationImg" />
                     </div>
@@ -287,7 +291,7 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
                                 radiusType="semi-round"
                                 height="40px"
                                 popupClassName="select-options"
-                                options={['source', 'sink']}
+                                options={['Source', 'Sink']}
                                 value={formFields?.connector_type}
                                 onChange={(e) => updateFormState('connector_type', e)}
                                 onBlur={(e) => updateFormState('connector_type', e)}

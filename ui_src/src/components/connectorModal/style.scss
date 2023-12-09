@@ -12,11 +12,12 @@
         margin-bottom: 10px;
     }
     .header-wrapper {
-        p {
+        .modal-title {
             font-family: 'InterSemiBold';
             font-size: 16px;
             margin: 0;
         }
+
         span {
             font-family: 'Inter';
             font-size: 12px;
@@ -53,5 +54,17 @@
         padding: 20px;
         white-space: pre-wrap;
         overflow-y: auto;
+    }
+    .connector-modal-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+}
+.connector-modal-header {
+    .modal-title {
+        font-family: 'InterMedium';
+        font-size: 20px;
+        margin: 0;
     }
 }

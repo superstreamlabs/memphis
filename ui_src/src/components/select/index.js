@@ -85,6 +85,7 @@ const SelectComponent = ({
                                 <img src={option?.icon} alt={option?.name} /> <label>{option?.name || option}</label>
                             </span>
                             {option?.comment && <span className="comment">{option?.comment}</span>}
+                            {option?.soon && <span className="coming-soon-select">Coming soon</span>}
                         </span>
                     </Option>
                 ))}

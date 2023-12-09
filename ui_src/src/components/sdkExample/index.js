@@ -29,7 +29,6 @@ import {
 } from '../../const/localStorageConsts';
 import GenerateTokenModal from '../../domain/stationOverview/components/generateTokenModal';
 import { ReactComponent as NoCodeExampleIcon } from '../../assets/images/noCodeExample.svg';
-import { ReactComponent as AddUserIcon } from '../../assets/images/addUserIcon.svg';
 import { ReactComponent as RefreshIcon } from '../../assets/images/refresh.svg';
 import { ReactComponent as CodeIcon } from '../../assets/images/codeIcon.svg';
 import CreateUserDetails from '../../domain/users/createUserDetails';
@@ -44,6 +43,7 @@ import Switcher from '../switcher';
 import Modal from '../modal';
 import Input from '../Input';
 import Copy from '../copy';
+import { Drawer } from 'antd';
 
 loader.init();
 loader.config({ monaco });
@@ -472,7 +472,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         <div className="header-img-container">
                             <CodeIcon className="headerImage" alt="codeIcon" />
                         </div>
-                        <p>Code generator</p>
+                        <p className="modal-title-sdk">Client generator</p>
                         <label>We'll provide you with snippets that you can easily connect your application with Memphis</label>
                     </div>
                 )}
@@ -861,33 +861,16 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         returnToken={(e) => updateFormFields('jwt', e.jwt)}
                     />
                 </Modal>
-                <Modal
-                    header={
-                        <div className="modal-header">
-                            <div className="header-img-container">
-                                <AddUserIcon className="headerImage" alt="stationImg" />
-                            </div>
-                            <p>Add a new user</p>
-                            <label>Enter user details to get started</label>
-                        </div>
-                    }
-                    height="470px"
-                    width="450px"
-                    rBtnText="Create"
-                    lBtnText="Cancel"
-                    lBtnClick={() => {
-                        addUserModalFlip(false);
-                        setCreateUserLoader(false);
-                    }}
-                    clickOutside={() => {
+
+                <Drawer
+                    placement="right"
+                    title="Add a new user"
+                    onClose={() => {
                         setCreateUserLoader(false);
                         addUserModalFlip(false);
                     }}
-                    rBtnClick={() => {
-                        setCreateUserLoader(true);
-                        createUserRef.current();
-                    }}
-                    isLoading={createUserLoader}
+                    destroyOnClose={true}
+                    width="650px"
                     open={addUserModalIsOpen}
                 >
                     <CreateUserDetails
@@ -895,8 +878,9 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         createUserRef={createUserRef}
                         closeModal={(userData) => handleAddUser(userData)}
                         handleLoader={(e) => setCreateUserLoader(e)}
+                        isLoading={createUserLoader}
                     />
-                </Modal>
+                </Drawer>
             </div>
             <Divider type="vertical" />
             <div>

@@ -1,37 +1,87 @@
 .create-user-form {
-    p{
+    height: 100%;
+    .user-form {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
+        .coming-soon-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 5px;
+            margin-top: 10px;
+            p {
+                margin: 0;
+            }
+            .coming-soon {
+                color: #f4f4f4;
+                background-color: var(--purple);
+                padding: 2px 8px;
+                border-radius: 32px;
+                font-size: 8px;
+                font-family: 'InterSemiBold';
+            }
+        }
+        .button-container {
+            margin-top: 10px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+    }
+    .user-row {
+        display: flex;
+        gap: 10px;
+        div {
+            width: 100%;
+        }
+    }
+    p {
         margin-bottom: 5px;
     }
     .ant-form-item {
         margin-bottom: 0px;
     }
-    .fields-title{
+    .fields-title {
         font-family: 'InterMedium';
         font-size: 16px;
     }
-    .field-title{
-        font-size:12px;
+    .field-title {
+        font-size: 12px;
         font-family: 'Inter';
         font-weight: 400;
+        margin-top: 5px;
     }
-    .user-details{
-        margin-bottom: 12px;
-    }
-    .field{
+    .field {
         margin-bottom: 10px;
     }
-    .user-type{
+    .user-type {
         margin-bottom: 0 !important;
     }
     .password {
-        .generate-password-button{
+        .password-title {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            .generate-btn {
+                display: flex;
+                align-items: center;
+                cursor: pointer;
+                gap: 5px;
+                p {
+                    margin: 0;
+                }
+            }
+        }
+        .generate-password-button {
             color: var(--purple);
             cursor: pointer;
             font-family: 'InterSemiBold';
             font-size: 12px;
         }
     }
-    .flex-row{
+    .flex-row {
         display: flex;
         justify-content: space-between;
     }
@@ -44,7 +94,7 @@
                     text-align: center;
                     margin-right: 5px;
                     color: #808191;
-                    border-color: rgba(243,243,243,1);
+                    border-color: rgba(243, 243, 243, 1);
                     content: normal;
                     border-left-width: 1px;
                 }
@@ -68,7 +118,7 @@
             }
         }
     }
-    .show-violation-form{
-            margin-top: 0;
+    .show-violation-form {
+        margin-top: 0;
     }
 }

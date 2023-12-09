@@ -38,7 +38,7 @@ import { handleRefreshTokenRequest, httpRequest } from './services/http';
 import { ReactComponent as RedirectIcon } from './assets/images/redirectIcon.svg';
 import { ReactComponent as SuccessIcon } from './assets/images/successIcon.svg';
 import { ReactComponent as CloseIcon } from './assets/images/closeNotification.svg';
-import { showMessages, useGetAllowedActions } from './services/genericServices';
+import {showMessages, useGetAllowedActions} from './services/genericServices';
 import StationOverview from './domain/stationOverview';
 import { ReactComponent as ErrorIcon } from './assets/images/errorIcon.svg';
 import MessageJourney from './domain/messageJourney';

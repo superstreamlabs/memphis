@@ -149,3 +149,11 @@
 .ant-select-multiple .ant-select-selector {
     overflow-y: auto !important;
 }
+.coming-soon-select {
+    color: #f4f4f4;
+    background-color: var(--purple);
+    padding: 2px 8px;
+    border-radius: 32px;
+    font-size: 10px;
+    font-family: 'InterSemiBold';
+}
