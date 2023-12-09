@@ -12,6 +12,8 @@
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
+                align-items: center;
+                text-align: center;
                 gap: 3px;
                 border-right: 1px solid #f3f3f3;
                 flex: 1;
@@ -267,52 +269,6 @@
         }
         to {
             opacity: 0;
-        }
-    }
-}
-.metrics {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-
-    &-divider {
-        height: 130px;
-        background: #e3e3e3;
-        width: 1px;
-    }
-
-    &-wrapper {
-        display: flex;
-        justify-content: center;
-        gap: 40px;
-        margin: 8px 0;
-    }
-    &-body {
-        &-title {
-            color: #b5b5b5;
-            font-family: Inter;
-            font-size: 12px;
-            font-style: normal;
-            font-weight: 400;
-            line-height: 24px; /* 200% */
-        }
-
-        &-subtitle {
-            color: #1d1d1d;
-            font-family: Inter;
-            font-size: 20.211px;
-            font-style: normal;
-            font-weight: 700;
-            line-height: normal;
-
-            span {
-                color: #b0b0b0;
-                font-family: Inter;
-                font-size: 12.632px;
-                font-style: normal;
-                font-weight: 600;
-                line-height: normal;
-            }
         }
     }
 }

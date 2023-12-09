@@ -18,7 +18,7 @@ import ExitToAppOutlined from '@material-ui/icons/ExitToAppOutlined';
 import PersonOutlinedIcon from '@material-ui/icons/PersonOutlined';
 import { BsFillChatSquareTextFill } from 'react-icons/bs';
 import { useHistory } from 'react-router-dom';
-import { Divider, Popover } from 'antd';
+import { Divider, Popover, Drawer } from 'antd';
 import CloudMoadl from '../cloudModal';
 import {
     LOCAL_STORAGE_ACCOUNT_NAME,
@@ -48,8 +48,6 @@ import { ReactComponent as NewUserIcon } from '../../assets/images/newUserIcon.s
 import { ReactComponent as NewIntegrationIcon } from '../../assets/images/newIntegrationIcon.svg';
 import { BsHouseHeartFill } from 'react-icons/bs';
 import { ReactComponent as EditIcon } from '../../assets/images/editIcon.svg';
-import { ReactComponent as QuickActionBtn } from '../../assets/images/quickActionBtn.svg';
-import { ReactComponent as AddUserIcon } from '../../assets/images/addUserIcon.svg';
 import { GithubRequest } from '../../services/githubRequests';
 import { ReactComponent as LogsActiveIcon } from '../../assets/images/logsActive.svg';
 import { ReactComponent as SchemaIcon } from '../../assets/images/schemaIcon.svg';
@@ -333,6 +331,14 @@ function SideBar() {
                     setPopoverOpenSetting(false);
                 }}
             />
+            <PopoverActionItem
+                icon={<HiUsers className="icons-sidebar" />}
+                name="Users"
+                onClick={() => {
+                    history.replace(pathDomains.users);
+                    setPopoverOpenSetting(false);
+                }}
+            />
             {isCloud() && (
                 <PopoverActionItem
                     icon={<ExceptionOutlined className="icons-sidebar" />}
@@ -532,15 +538,6 @@ function SideBar() {
                         route="logs"
                     />
                 )}
-                <MenuItem
-                    icon={<HiUsers alt="LogsIcon" className="sidebar-title" size={'20px'} />}
-                    activeIcon={<HiUsers alt="LogsActiveIcon" className="sidebar-title ms-active" size={'20px'} />}
-                    name="Users"
-                    onClick={() => history.replace(pathDomains.users)}
-                    onMouseEnter={() => setHoveredItem('users')}
-                    onMouseLeave={() => setHoveredItem('')}
-                    route="users"
-                />
                 <Popover
                     overlayInnerStyle={supportContextMenuStyles}
                     placement="right"
@@ -661,36 +658,26 @@ function SideBar() {
                     finishUpdate={(e) => createStationModalFlip(false)}
                 />
             </Modal>
-            <Modal
-                header={
-                    <div className="modal-header">
-                        <div className="header-img-container">
-                            <AddUserIcon className="headerImage" alt="stationImg" />
-                        </div>
-                        <p>Add a new user</p>
-                        <label>Enter user details to get started</label>
-                    </div>
-                }
-                width="450px"
-                rBtnText="Create"
-                lBtnText="Cancel"
-                lBtnClick={() => {
-                    addUserModalFlip(false);
-                    setCreateUserLoader(false);
-                }}
-                clickOutside={() => {
+            <Drawer
+                placement="right"
+                title="Add a new user"
+                onClose={() => {
                     setCreateUserLoader(false);
                     addUserModalFlip(false);
                 }}
-                rBtnClick={() => {
-                    setCreateUserLoader(true);
-                    createUserRef.current();
-                }}
-                isLoading={createUserLoader}
+                destroyOnClose={true}
+                width="650px"
                 open={addUserModalIsOpen}
             >
-                <CreateUserDetails createUserRef={createUserRef} closeModal={(userData) => handleAddUser(userData)} handleLoader={(e) => setCreateUserLoader(e)} />
-            </Modal>
+                <CreateUserDetails
+                    createUserRef={createUserRef}
+                    closeModal={(userData) => {
+                        handleAddUser(userData);
+                    }}
+                    handleLoader={(e) => setCreateUserLoader(e)}
+                    isLoading={createUserLoader}
+                />
+            </Drawer>
         </div>
     );
 }

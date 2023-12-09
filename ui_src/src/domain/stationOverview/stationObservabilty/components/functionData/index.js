@@ -20,9 +20,11 @@ import * as monaco from 'monaco-editor';
 import { StationStoreContext } from '../../../';
 import CustomTabs from '../../../../../components/Tabs';
 import FunctionLogs from '../functionLogs';
+import FunctionInformation from '../functionInformation';
 import { ReactComponent as MetricsIcon } from '../../../../../assets/images/metricsIcon.svg';
 import { ReactComponent as MetricsClockIcon } from '../../../../../assets/images/metricsClockIcon.svg';
 import { ReactComponent as MetricsErrorIcon } from '../../../../../assets/images/metricsErrorIcon.svg';
+import { ReactComponent as OrderingIcon } from '../../../../../assets/images/orderingIcon.svg';
 import { ReactComponent as GitIcon } from '../../../../../assets/images/gitIcon.svg';
 import { ReactComponent as CodeGrayIcon } from '../../../../../assets/images/codeGrayIcon.svg';
 import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
@@ -32,7 +34,7 @@ import { Drawer } from 'antd';
 import { IoClose } from 'react-icons/io5';
 import OverflowTip from '../../../../../components/tooltip/overflowtip';
 
-const tabValuesList = ['Information', 'Logs', 'Dead-letter'];
+const tabValuesList = ['Information', 'Logs', 'Dead-letter', 'Monitoring'];
 loader.init();
 loader.config({ monaco });
 
@@ -43,6 +45,12 @@ const FunctionData = ({ open, onClose, setOpenFunctionDetails, functionDetails }
     const [messageDetails, setMessageDetails] = useState({});
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [loadMessageData, setLoadMessageData] = useState(false);
+
+    useEffect(() => {
+        if (open) {
+            setTabValue('Information');
+        }
+    }, [open]);
 
     useEffect(() => {
         tabValue === tabValuesList[2] && getAttachedFunctionDlsMsgs();
@@ -125,42 +133,7 @@ const FunctionData = ({ open, onClose, setOpenFunctionDetails, functionDetails }
         >
             <div className="function-data-container">
                 <CustomTabs tabs={tabValuesList} size={'small'} tabValue={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
-                {tabValue === tabValuesList[0] && (
-                    <div className="metrics-wrapper">
-                        <div className="metrics">
-                            <div className="metrics-img">
-                                <MetricsIcon />
-                            </div>
-                            <div className="metrics-body">
-                                <div className="metrics-body-title">Total invocations</div>
-                                <div className="metrics-body-subtitle">{functionDetails?.metrics?.total_invocations?.toLocaleString() || 0}</div>
-                            </div>
-                        </div>
-                        <div className="metrics-divider"></div>
-                        <div className="metrics">
-                            <div className="metrics-img">
-                                <MetricsClockIcon />
-                            </div>
-                            <div className="metrics-body">
-                                <div className="metrics-body-title">Av. Processing time</div>
-                                <div className="metrics-body-subtitle">
-                                    {functionDetails?.metrics?.average_processing_time}
-                                    <span>/ms</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="metrics-divider"></div>
-                        <div className="metrics">
-                            <div className="metrics-img">
-                                <MetricsErrorIcon />
-                            </div>
-                            <div className="metrics-body">
-                                <div className="metrics-body-title">Error rate</div>
-                                <div className="metrics-body-subtitle">{functionDetails?.metrics?.error_rate}%</div>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                {tabValue === tabValuesList[0] && <FunctionInformation inputs={functionDetails?.function?.inputs || []} />}
                 {tabValue === tabValuesList[1] && <FunctionLogs functionId={functionDetails?.function?.id} />}
                 {tabValue === tabValuesList[2] && (
                     <dls is="x3d">
@@ -221,6 +194,42 @@ const FunctionData = ({ open, onClose, setOpenFunctionDetails, functionDetails }
                             </div>
                         )}
                     </dls>
+                )}
+                {tabValue === tabValuesList[3] && (
+                    <div className="metrics-wrapper">
+                        <div className="metrics">
+                            <MetricsIcon width="25" height="25" />
+                            <div className="metrics-body">
+                                <div className="metrics-body-title">Total invocations</div>
+                                <div className="metrics-body-subtitle">{functionDetails?.metrics?.total_invocations?.toLocaleString() || 0}</div>
+                            </div>
+                        </div>
+
+                        <div className="metrics">
+                            <MetricsClockIcon width="25" height="25" />
+                            <div className="metrics-body">
+                                <div className="metrics-body-title">Av. Processing time</div>
+                                <div className="metrics-body-subtitle">
+                                    {functionDetails?.metrics?.average_processing_time}
+                                    <span className="ms">/ms</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="metrics">
+                            <MetricsErrorIcon width="25" height="25" />
+                            <div className="metrics-body">
+                                <div className="metrics-body-title">Error rate</div>
+                                <div className="metrics-body-subtitle">{functionDetails?.metrics?.error_rate}%</div>
+                            </div>
+                        </div>
+                        <div className="metrics">
+                            <OrderingIcon width="25" height="25" />
+                            <div className="metrics-body">
+                                <div className="metrics-body-title">Ordering</div>
+                                <div className="metrics-body-subtitle">{functionDetails?.ordering_matter ? 'Yes' : 'No'}</div>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
         </Drawer>

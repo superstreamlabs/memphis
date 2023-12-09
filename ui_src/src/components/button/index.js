@@ -49,7 +49,6 @@ const Button = ({
     tooltip,
     tooltip_placement = 'bottom',
     isVisible = true,
-
 }) => {
     const handleClick = (e) => {
         onClick(e);

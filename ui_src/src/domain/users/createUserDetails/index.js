@@ -17,17 +17,21 @@ import { Form } from 'antd';
 import { HiLockClosed } from 'react-icons/hi';
 import Input from '../../../components/Input';
 import RadioButton from '../../../components/radioButton';
+import Button from '../../../components/button';
+import SelectComponent from '../../../components/select';
 import { httpRequest } from '../../../services/http';
 import { useGetAllowedActions } from '../../../services/genericServices';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import SelectCheckBox from '../../../components/selectCheckBox';
 import { generator } from '../../../services/generator';
+import { ReactComponent as RefreshIcon } from '../../../assets/images/refresh.svg';
+
 import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../../const/localStorageConsts';
 import { isCloud, showUpgradePlan } from '../../../services/valueConvertor';
 import { Context } from '../../../hooks/store';
 import UpgradePlans from '../../../components/upgradePlans';
 
-const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, clientType = false }) => {
+const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, isLoading, clientType = false }) => {
     const [state, dispatch] = useContext(Context);
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
@@ -36,7 +40,6 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
     });
     const [userType, setUserType] = useState(clientType ? 'application' : 'management');
     const [userViolation, setUserViolation] = useState(false);
-    const [passwordType, setPasswordType] = useState(0);
     const userTypeOptions = [
         {
             id: 1,
@@ -53,28 +56,11 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
             disabled: false
         }
     ];
-    const passwordOptions = [
-        {
-            id: 1,
-            value: 0,
-            label: 'Auto-Generated'
-        },
-        {
-            id: 2,
-            value: 1,
-            label: 'Custom'
-        }
-    ];
-    const [generatedPassword, setGeneratedPassword] = useState('');
+
     const getAllowedActions = useGetAllowedActions();
     useEffect(() => {
         createUserRef.current = onFinish;
-        generateNewPassword();
     }, []);
-
-    const passwordTypeChange = (e) => {
-        setPasswordType(e.target.value);
-    };
 
     const updateFormState = (field, value) => {
         let updatedValue = { ...formFields };
@@ -103,9 +89,6 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                     handleLoader(false);
                     return;
                 }
-                if (fieldsValue?.passwordType === 0 ?? passwordType === 0) {
-                    fieldsValue['password'] = fieldsValue['generatedPassword'];
-                }
                 try {
                     const bodyRequest = fieldsValue;
                     const data = await httpRequest('POST', ApiEndpoints.ADD_USER, bodyRequest);
@@ -125,8 +108,8 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
 
     const generateNewPassword = () => {
         const newPassword = generator();
-        setGeneratedPassword(newPassword);
-        creationForm.setFieldsValue({ ['generatedPassword']: newPassword });
+        updateFormState('password', newPassword);
+        creationForm.setFieldsValue({ ['password']: newPassword });
     };
 
     const handleUserTypeChanged = (value) => {
@@ -136,273 +119,288 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
 
     return (
         <div className="create-user-form">
-            <Form name="form" form={creationForm} autoComplete="off" onFinish={onFinish}>
-                <div className="field user-type">
-                    <Form.Item name="user_type" initialValue={userType}>
-                        <SelectCheckBox
-                            selectOptions={clientType ? userTypeOptions?.filter((type) => type.value === 'application') : userTypeOptions}
-                            handleOnClick={(e) => handleUserTypeChanged(e.value)}
-                            selectedOption={userType}
-                        />
-                    </Form.Item>
-                </div>
-                <div className="user-details">
-                    <p className="fields-title">User details</p>
-                    <Form.Item
-                        name="username"
-                        rules={[
-                            {
-                                required: true,
-                                message: userType === 'management' && isCloud() ? 'Please input email!' : 'Please input username!'
-                            },
-                            {
-                                message:
-                                    userType === 'management' && isCloud() ? 'Please enter a valid email address!' : 'Username has to include only letters/numbers and .',
-                                pattern: userType === 'management' && isCloud() ? /^[a-zA-Z0-9._%]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/ : /^[a-zA-Z0-9_.]*$/
-                            }
-                        ]}
-                    >
-                        <div className="field username">
-                            <p className="field-title">{userType === 'management' && isCloud() ? 'Email*' : 'Username*'}</p>
-                            <Input
-                                placeholder={userType === 'management' && isCloud() ? 'Type email' : 'Type username'}
-                                type="text"
-                                radiusType="semi-round"
-                                maxLength={60}
-                                colorType="black"
-                                backgroundColorType="none"
-                                borderColorType="gray"
-                                height="40px"
-                                fontSize="12px"
-                                onBlur={(e) => updateFormState('username', e.target.value)}
-                                onChange={(e) => updateFormState('username', e.target.value)}
-                                value={formFields.name}
-                            />
-                        </div>
-                    </Form.Item>
-                    {userType === 'management' && (
-                        <>
-                            <Form.Item
-                                name="full_name"
-                                rules={[
-                                    {
-                                        required: isCloud() ? true : false,
-                                        message: 'Please input full name!'
-                                    },
-                                    {
-                                        message: 'Please enter a valid full name!',
-                                        pattern: /^[A-Za-z\s]+$/i
-                                    }
-                                ]}
-                            >
-                                <div className="field fullname">
-                                    <p className="field-title">{isCloud() ? 'Full name*' : 'Full name'}</p>
-                                    <Input
-                                        placeholder="Type full name"
-                                        type="text"
-                                        maxLength={30}
-                                        radiusType="semi-round"
-                                        colorType="black"
-                                        backgroundColorType="none"
-                                        borderColorType="gray"
-                                        height="40px"
-                                        fontSize="12px"
-                                        onBlur={(e) => updateFormState('full_name', e.target.value)}
-                                        onChange={(e) => updateFormState('full_name', e.target.value)}
-                                        value={formFields.full_name}
-                                    />
-                                </div>
-                            </Form.Item>
-                            <div className="flex-row">
-                                <Form.Item name="team">
-                                    <div className="field team">
-                                        <p className="field-title">Team</p>
-                                        <Input
-                                            placeholder="Type your team"
-                                            type="text"
-                                            maxLength={20}
-                                            radiusType="semi-round"
-                                            colorType="black"
-                                            backgroundColorType="none"
-                                            borderColorType="gray"
-                                            height="40px"
-                                            fontSize="12px"
-                                            onBlur={(e) => updateFormState('team', e.target.value)}
-                                            onChange={(e) => updateFormState('team', e.target.value)}
-                                            value={formFields.team}
-                                        />
-                                    </div>
-                                </Form.Item>
-                                <Form.Item name="position">
-                                    <div className="field position">
-                                        <p className="field-title">Position</p>
-                                        <Input
-                                            placeholder="Type your position"
-                                            type="text"
-                                            maxLength={30}
-                                            radiusType="semi-round"
-                                            colorType="black"
-                                            backgroundColorType="none"
-                                            borderColorType="gray"
-                                            height="40px"
-                                            fontSize="12px"
-                                            onBlur={(e) => updateFormState('position', e.target.value)}
-                                            onChange={(e) => updateFormState('position', e.target.value)}
-                                            value={formFields.position}
-                                        />
-                                    </div>
-                                </Form.Item>
-                            </div>
-                        </>
-                    )}
-                    {userType === 'application' && (
-                        <>
-                            <Form.Item name="description">
-                                <div className="field description">
-                                    <p className="field-title">Description</p>
-                                    <Input
-                                        placeholder="Type your description"
-                                        type="text"
-                                        maxLength={100}
-                                        radiusType="semi-round"
-                                        colorType="black"
-                                        backgroundColorType="none"
-                                        borderColorType="gray"
-                                        height="40px"
-                                        fontSize="12px"
-                                        onBlur={(e) => updateFormState('description', e.target.value)}
-                                        onChange={(e) => updateFormState('description', e.target.value)}
-                                        value={formFields.description}
-                                    />
-                                </div>
-                            </Form.Item>
-                        </>
-                    )}
-                </div>
-
-                {((userType === 'management' && !isCloud()) || (userType === 'application' && localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true')) && (
-                    <div className="password-section">
-                        <p className="fields-title">Set password</p>
-                        <Form.Item name="passwordType" initialValue={passwordType}>
-                            <RadioButton
-                                className="radio-button"
-                                options={passwordOptions}
-                                radioValue={passwordType}
-                                optionType="button"
-                                fontFamily="InterSemiBold"
-                                style={{ marginRight: '20px', content: '' }}
-                                onChange={(e) => passwordTypeChange(e)}
+            <Form name="form" className="user-form" form={creationForm} autoComplete="off">
+                <div>
+                    <div className="field user-type">
+                        <Form.Item name="user_type" initialValue={userType}>
+                            <SelectCheckBox
+                                vertical
+                                selectOptions={clientType ? userTypeOptions?.filter((type) => type.value === 'application') : userTypeOptions}
+                                handleOnClick={(e) => handleUserTypeChanged(e.value)}
+                                selectedOption={userType}
                             />
                         </Form.Item>
-                        {passwordType === 0 && (
-                            <Form.Item name="generatedPassword" initialValue={generatedPassword}>
-                                <div className="field password">
-                                    <p className="field-title">New password</p>
-                                    <Input
-                                        type="text"
-                                        disabled
-                                        radiusType="semi-round"
-                                        colorType="black"
-                                        backgroundColorType="none"
-                                        borderColorType="gray"
-                                        height="40px"
-                                        fontSize="12px"
-                                        value={generatedPassword}
-                                    />
-                                    <p className="generate-password-button" onClick={() => generateNewPassword()}>
-                                        Generate again
-                                    </p>
-                                </div>
-                            </Form.Item>
-                        )}
-                        {passwordType === 1 && (
-                            <div>
-                                <div className="field password">
-                                    <p className="field-title">Type password*</p>
+                    </div>
+                    <div className="user-details">
+                        <p className="fields-title">User details</p>
+                        <Form.Item
+                            name="username"
+                            rules={[
+                                {
+                                    required: true,
+                                    message: userType === 'management' && isCloud() ? 'Please input email!' : 'Please input username!'
+                                },
+                                {
+                                    message:
+                                        userType === 'management' && isCloud()
+                                            ? 'Please enter a valid email address!'
+                                            : 'Username has to include only letters/numbers and .',
+                                    pattern: userType === 'management' && isCloud() ? /^[a-zA-Z0-9._%]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/ : /^[a-zA-Z0-9_.]*$/
+                                }
+                            ]}
+                        >
+                            <div className="field username">
+                                <p className="field-title">{userType === 'management' && isCloud() ? 'Email*' : 'Username*'}</p>
+                                <Input
+                                    placeholder={userType === 'management' && isCloud() ? 'Type email' : 'Type username'}
+                                    type="text"
+                                    radiusType="semi-round"
+                                    maxLength={60}
+                                    colorType="black"
+                                    backgroundColorType="none"
+                                    borderColorType="gray"
+                                    height="40px"
+                                    fontSize="12px"
+                                    onBlur={(e) => updateFormState('username', e.target.value)}
+                                    onChange={(e) => updateFormState('username', e.target.value)}
+                                    value={formFields.name}
+                                />
+                            </div>
+                        </Form.Item>
+                        {userType === 'management' && (
+                            <>
+                                {userType === 'management' && (
                                     <Form.Item
-                                        name="password"
+                                        name="full_name"
                                         rules={[
                                             {
-                                                required: true,
-                                                message: 'Password can not be empty'
+                                                required: isCloud() ? true : false,
+                                                message: 'Please input full name!'
                                             },
                                             {
-                                                pattern: /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!?\-@#$%])[A-Za-z\d!?\-@#$%]{8,}$/,
-                                                message:
-                                                    'Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character(!?-@#$%)'
+                                                message: 'Please enter a valid full name!',
+                                                pattern: /^[A-Za-z\s]+$/i
                                             }
                                         ]}
                                     >
-                                        <Input
-                                            placeholder="Type Password"
-                                            type="password"
-                                            maxLength={20}
-                                            radiusType="semi-round"
-                                            colorType="black"
-                                            backgroundColorType="none"
-                                            borderColorType="gray"
-                                            height="40px"
-                                            fontSize="12px"
-                                        />
+                                        <div className="field fullname">
+                                            <p className="field-title">{isCloud() ? 'Full name*' : 'Full name'}</p>
+                                            <Input
+                                                placeholder="Type full name"
+                                                type="text"
+                                                maxLength={30}
+                                                radiusType="semi-round"
+                                                colorType="black"
+                                                backgroundColorType="none"
+                                                borderColorType="gray"
+                                                height="40px"
+                                                fontSize="12px"
+                                                onBlur={(e) => updateFormState('full_name', e.target.value)}
+                                                onChange={(e) => updateFormState('full_name', e.target.value)}
+                                                value={formFields.full_name}
+                                            />
+                                        </div>
+                                    </Form.Item>
+                                )}
+                                <div className="user-row">
+                                    <Form.Item name="team">
+                                        <div className="field team">
+                                            <p className="field-title">Team</p>
+                                            <Input
+                                                placeholder="Type your team"
+                                                type="text"
+                                                maxLength={20}
+                                                radiusType="semi-round"
+                                                colorType="black"
+                                                backgroundColorType="none"
+                                                borderColorType="gray"
+                                                height="40px"
+                                                fontSize="12px"
+                                                onBlur={(e) => updateFormState('team', e.target.value)}
+                                                onChange={(e) => updateFormState('team', e.target.value)}
+                                                value={formFields.team}
+                                            />
+                                        </div>
+                                    </Form.Item>
+                                    <Form.Item name="position">
+                                        <div className="field position">
+                                            <p className="field-title">Position</p>
+                                            <Input
+                                                placeholder="Type your position"
+                                                type="text"
+                                                maxLength={30}
+                                                radiusType="semi-round"
+                                                colorType="black"
+                                                backgroundColorType="none"
+                                                borderColorType="gray"
+                                                height="40px"
+                                                fontSize="12px"
+                                                onBlur={(e) => updateFormState('position', e.target.value)}
+                                                onChange={(e) => updateFormState('position', e.target.value)}
+                                                value={formFields.position}
+                                            />
+                                        </div>
                                     </Form.Item>
                                 </div>
-                                <div className="field confirm">
-                                    <p className="field-title">Confirm Password*</p>
-                                    <Form.Item
-                                        name="confirm"
-                                        validateTrigger="onChange"
-                                        dependencies={['password']}
-                                        rules={[
-                                            {
-                                                required: true,
-                                                message: 'Confirm password can not be empty'
-                                            },
-                                            ({ getFieldValue }) => ({
-                                                validator(rule, value) {
-                                                    if (!value || getFieldValue('password') === value) {
-                                                        updateFormState('password', value);
-                                                        return Promise.resolve();
-                                                    }
-                                                    return Promise.reject('Passwords do not match');
-                                                }
-                                            })
-                                        ]}
-                                    >
-                                        <Input
-                                            placeholder="Type Password"
-                                            type="password"
-                                            maxLength={20}
-                                            radiusType="semi-round"
-                                            colorType="black"
-                                            backgroundColorType="none"
-                                            borderColorType="gray"
-                                            height="40px"
-                                            fontSize="12px"
-                                        />
-                                    </Form.Item>
-                                </div>
-                            </div>
+                            </>
                         )}
-                    </div>
-                )}
-                {userViolation && (
-                    <div className="show-violation-form">
-                        <div className="flex-line">
-                            <HiLockClosed className="lock-feature-icon" />
-                            <p>Your current plan allows {state?.userData?.entitlements['feature-management-users']?.limits} management users</p>
-                        </div>
-                        {showUpgradePlan() && (
-                            <UpgradePlans
-                                content={
-                                    <div className="upgrade-button-wrapper">
-                                        <p className="upgrade-plan">Upgrade now</p>
+                        {userType === 'application' && (
+                            <>
+                                <Form.Item name="description">
+                                    <div className="field description">
+                                        <p className="field-title">Description</p>
+                                        <Input
+                                            placeholder="Type your description"
+                                            type="text"
+                                            maxLength={100}
+                                            radiusType="semi-round"
+                                            colorType="black"
+                                            backgroundColorType="none"
+                                            borderColorType="gray"
+                                            height="40px"
+                                            fontSize="12px"
+                                            onBlur={(e) => updateFormState('description', e.target.value)}
+                                            onChange={(e) => updateFormState('description', e.target.value)}
+                                            value={formFields.description}
+                                        />
                                     </div>
-                                }
-                                isExternal={false}
-                            />
+                                </Form.Item>
+                            </>
                         )}
                     </div>
-                )}
+
+                    {((userType === 'management' && !isCloud()) ||
+                        (userType === 'application' && localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true')) && (
+                        <div className="password-section">
+                            <p className="fields-title">Set password</p>
+                            <Form.Item
+                                name="password"
+                                rules={[
+                                    {
+                                        required: true,
+                                        message: 'Password can not be empty'
+                                    },
+                                    {
+                                        pattern: /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!?\-@#$%])[A-Za-z\d!?\-@#$%]{8,}$/,
+                                        message:
+                                            'Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character(!?-@#$%)'
+                                    }
+                                ]}
+                            >
+                                <div className="field password">
+                                    <div className="password-title">
+                                        <p className="field-title">Set password or generate one</p>
+                                        <span className="generate-btn" onClick={generateNewPassword}>
+                                            <RefreshIcon width={14} />
+                                            <p className="generate-password-button">Generate password</p>
+                                        </span>
+                                    </div>
+                                    <Input
+                                        type="text"
+                                        radiusType="semi-round"
+                                        colorType="black"
+                                        backgroundColorType="none"
+                                        borderColorType="gray"
+                                        height="40px"
+                                        fontSize="12px"
+                                        value={formFields?.password}
+                                        onChange={(e) => {
+                                            updateFormState('password', e.target.value);
+                                            // setGeneratedPassword(e.target.value);
+                                            // creationForm.setFieldsValue({ ['generatedPassword']: e.target.value });
+                                        }}
+                                        onBlur={(e) => {
+                                            updateFormState('password', e.target.value);
+                                        }}
+                                    />
+                                </div>
+                            </Form.Item>
+                        </div>
+                    )}
+                    <>
+                        <div className="user-details">
+                            <span className="coming-soon-container">
+                                <p className="fields-title">Roles</p>
+                                <label className="coming-soon">Coming soon</label>
+                            </span>
+                            <SelectComponent
+                                colorType="black"
+                                backgroundColorType="light-gray"
+                                fontFamily="Inter"
+                                borderColorType="gray"
+                                radiusType="semi-round"
+                                height="40px"
+                                fontSize="12px"
+                                popupClassName="select-options"
+                                placeholder="Select role"
+                                disabled
+                            />
+                            <span className="coming-soon-container">
+                                <p className="fields-title">Permissions</p>
+                                <label className="coming-soon">Coming soon</label>
+                            </span>
+                            <SelectComponent
+                                colorType="black"
+                                backgroundColorType="light-gray"
+                                fontFamily="Inter"
+                                borderColorType="gray"
+                                radiusType="semi-round"
+                                height="40px"
+                                fontSize="12px"
+                                popupClassName="select-options"
+                                placeholder="Select permissions"
+                                disabled
+                            />
+                            <span className="coming-soon-container">
+                                <p className="fields-title">Tenants</p>
+                                <label className="coming-soon">Coming soon</label>
+                            </span>
+                            <SelectComponent
+                                colorType="black"
+                                backgroundColorType="light-gray"
+                                fontFamily="Inter"
+                                borderColorType="gray"
+                                radiusType="semi-round"
+                                height="40px"
+                                fontSize="12px"
+                                popupClassName="select-options"
+                                placeholder="Select tenants"
+                                disabled
+                            />
+                        </div>
+                    </>
+                    {userViolation && (
+                        <div className="show-violation-form">
+                            <div className="flex-line">
+                                <HiLockClosed className="lock-feature-icon" />
+                                <p>Your current plan allows {state?.userData?.entitlements['feature-management-users']?.limits} management users</p>
+                            </div>
+                            {showUpgradePlan() && (
+                                <UpgradePlans
+                                    content={
+                                        <div className="upgrade-button-wrapper">
+                                            <p className="upgrade-plan">Upgrade now</p>
+                                        </div>
+                                    }
+                                    isExternal={false}
+                                />
+                            )}
+                        </div>
+                    )}
+                </div>
+                <Button
+                    placeholder={'Add'}
+                    colorType={'white'}
+                    onClick={onFinish}
+                    fontSize={'14px'}
+                    fontWeight={500}
+                    border="none"
+                    backgroundColorType={'purple'}
+                    height="40px"
+                    width="50%"
+                    radiusType="circle"
+                    isLoading={isLoading}
+                />
             </Form>
         </div>
     );

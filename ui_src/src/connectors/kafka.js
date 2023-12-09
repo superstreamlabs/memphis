@@ -1,14 +1,14 @@
 export const kafka = {
-    source: [
+    Source: [
         {
             name: 'name',
-            display: 'name',
+            display: 'Name',
             type: 'string',
             required: true
         },
         {
             name: 'bootstrap.servers',
-            display: 'bootstrap.servers',
+            display: 'Bootstrap servers',
             type: 'multi',
             options: [],
             required: true,
@@ -17,7 +17,7 @@ export const kafka = {
         },
         {
             name: 'security.protocol',
-            display: 'security.protocol',
+            display: 'Security protocol',
             type: 'select',
             options: ['SSL', 'SASL_SSL', 'No authentication'],
             required: true,
@@ -26,19 +26,19 @@ export const kafka = {
             SSL: [
                 {
                     name: 'ssl.mechanism',
-                    display: 'ssl.mechanism',
+                    display: 'SSL mechanism',
                     type: 'string',
                     required: true
                 },
                 {
                     name: 'ssl.certificate.pem',
-                    display: 'ssl.certificate.pem',
+                    display: 'SSL certificate pem',
                     type: 'string',
                     required: true
                 },
                 {
                     name: 'ssl.key.password',
-                    display: 'ssl.key.password',
+                    display: 'SSL key password',
                     type: 'string',
                     required: true
                 }
@@ -46,20 +46,20 @@ export const kafka = {
             SASL_SSL: [
                 {
                     name: 'sasl.mechanism',
-                    display: 'sasl.mechanism',
+                    display: 'SASL mechanism',
                     type: 'select',
                     options: ['PLAIN', 'SCRAM-SHA-256'],
                     required: true
                 },
                 {
                     name: 'sasl.username',
-                    display: 'sasl.username',
+                    display: 'SASL username',
                     type: 'string',
                     required: true
                 },
                 {
                     name: 'sasl.password',
-                    display: 'sasl.password',
+                    display: 'SASL password',
                     type: 'string',
                     required: true
                 }
@@ -68,43 +68,73 @@ export const kafka = {
         },
         {
             name: 'group.id',
-            display: 'group.id',
+            display: 'Group id',
             type: 'string',
             required: true,
             description: 'consumer group id'
         },
         {
-            name: 'offset',
-            display: 'offset',
-            type: 'string',
+            name: 'offset_strategy',
+            display: 'Offset strategy',
+            type: 'select',
+            options: ['Earliest', 'End', 'Specific offset (int)'],
             required: false,
-            description: 'earliest / end / specific offset (int)'
+            description: 'choose offset strategy',
+            children: true,
+            Earliest: [],
+            End: [],
+            'Specific offset (int)': [
+                {
+                    name: 'offset_value',
+                    display: 'Value',
+                    type: 'string',
+                    required: true
+                }
+            ]
         },
         {
             name: 'topic',
-            display: 'topic',
+            display: 'Topic',
             type: 'string',
             required: true,
             description: 'topic name'
         },
         {
-            name: 'partition',
-            display: 'partition',
+            name: 'partition_strategy',
+            display: 'Partition strategy',
+            type: 'select',
+            options: ['Partition Number', 'Any Partition'],
+            required: true,
+            description: 'Partition Number / Any Partition',
+            children: true,
+            'Partition Number': [
+                {
+                    name: 'partition_value',
+                    display: 'Value',
+                    type: 'string',
+                    required: true
+                }
+            ],
+            'Any Partition': []
+        },
+        {
+            name: 'timeout_duration_seconds',
+            display: 'kafka consumer timeout duration',
             type: 'string',
             required: false,
-            description: 'partition number'
+            description: 'kafka consumer timeout duration'
         }
     ],
-    sink: [
+    Sink: [
         {
             name: 'name',
-            display: 'name',
+            display: 'Name',
             type: 'string',
             required: true
         },
         {
             name: 'bootstrap.servers',
-            display: 'bootstrap.servers',
+            display: 'Bootstrap servers',
             type: 'multi',
             options: [],
             required: true,
@@ -113,7 +143,7 @@ export const kafka = {
         },
         {
             name: 'security.protocol',
-            display: 'security.protocol',
+            display: 'Security protocol',
             type: 'select',
             options: ['SSL', 'SASL_SSL', 'No authentication'],
             required: true,
@@ -122,19 +152,19 @@ export const kafka = {
             SSL: [
                 {
                     name: 'ssl.mechanism',
-                    display: 'ssl.mechanism',
+                    display: 'SSL mechanism',
                     type: 'string',
                     required: true
                 },
                 {
                     name: 'ssl.certificate.pem',
-                    display: 'ssl.certificate.pem',
+                    display: 'SSL certificate pem',
                     type: 'string',
                     required: true
                 },
                 {
                     name: 'ssl.key.password',
-                    display: 'ssl.key.password',
+                    display: 'SSL key password',
                     type: 'string',
                     required: true
                 }
@@ -142,20 +172,20 @@ export const kafka = {
             SASL_SSL: [
                 {
                     name: 'sasl.mechanism',
-                    display: 'sasl.mechanism',
+                    display: 'SASL mechanism',
                     type: 'select',
-                    options: ['PLAIN', 'SCRAM-SHA-256'],
+                    options: ['PLAIN', 'SCRAM-SHA-256', 'SCRAM-SHA-512'],
                     required: true
                 },
                 {
                     name: 'sasl.username',
-                    display: 'sasl.username',
+                    display: 'SASL username',
                     type: 'string',
                     required: true
                 },
                 {
                     name: 'sasl.password',
-                    display: 'sasl.password',
+                    display: 'SASL password',
                     type: 'string',
                     required: true
                 }
@@ -163,25 +193,51 @@ export const kafka = {
             'No authentication': []
         },
         {
-            name: 'offset',
-            display: 'offset',
-            type: 'string',
-            required: false,
-            description: 'earliest / end / specific offset (int)'
-        },
-        {
             name: 'topic',
-            display: 'topic',
+            display: 'Topic',
             type: 'string',
             required: true,
             description: 'topic name'
         },
         {
-            name: 'partition',
-            display: 'partition',
+            name: 'partition_strategy',
+            display: 'Partition strategy',
+            type: 'select',
+            options: ['Partition Key', 'Partition Number', 'Any Partition'],
+            required: true,
+            description: 'Partition Key / Partition Number / Any Partition',
+            children: true,
+            'Partition Key': [
+                {
+                    name: 'partition_value',
+                    display: 'Value',
+                    type: 'string',
+                    required: true
+                }
+            ],
+            'Partition Number': [
+                {
+                    name: 'partition_value',
+                    display: 'Value',
+                    type: 'string',
+                    required: true
+                }
+            ],
+            'Any Partition': []
+        },
+        {
+            name: 'memphis_batch_size',
+            display: 'Memphis batch size',
             type: 'string',
             required: false,
-            description: 'partition number'
+            description: 'memphis consuemr batch size'
+        },
+        {
+            name: 'memphis_max_time_wait',
+            display: 'Max time to wait for a batch of messages',
+            type: 'string',
+            required: false,
+            description: 'the time to wait for a batch of messages'
         }
     ]
 };

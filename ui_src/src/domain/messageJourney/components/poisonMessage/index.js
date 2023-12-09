@@ -33,7 +33,7 @@ const PoisonMessage = ({ stationName, messageId, details, message, headers, proc
                 returnBack();
                 messageAnt.success({
                     key: 'memphisSuccessMessage',
-                    content: 'The message was drop successfully',
+                    content: 'The message was dropped successfully',
                     duration: 5,
                     style: { cursor: 'pointer' },
                     onClick: () => message.destroy('memphisSuccessMessage')
