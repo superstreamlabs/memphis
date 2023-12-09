@@ -2,7 +2,8 @@
     display: flex;
     position: relative;
     height: 100%;
-    width: calc(100% - 90px);
+    width: calc(100% - var(--main-container-sidebar-width));
+    transition: .3s ease-in-out;
     .menu-container {
         width: 350px;
         padding-left: 30px;

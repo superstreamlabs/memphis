@@ -22,12 +22,12 @@ import './style.scss';
 
 import React, { useEffect, useContext, useState, useRef } from 'react';
 import { Virtuoso } from 'react-virtuoso';
-
+import { useGetAllowedActions } from '../../services/genericServices';
 import { ReactComponent as DeleteWrapperIcon } from '../../assets/images/deleteWrapperIcon.svg';
 import StationsInstructions from '../../components/stationsInstructions';
 import { ReactComponent as StationIcon } from '../../assets/images/stationIcon.svg';
 import CreateStationForm from '../../components/createStationForm';
-import { stationFilterArray } from '../../services/valueConvertor';
+import { stationFilterArray, isCloud } from '../../services/valueConvertor';
 import DeleteItemsModal from '../../components/deleteItemsModal';
 import stationsIcon from '../../assets/images/stationIcon.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
@@ -39,6 +39,8 @@ import Loader from '../../components/loader';
 import LearnMore from '../../components/learnMore';
 import { Context } from '../../hooks/store';
 import Modal from '../../components/modal';
+import CloudModal from '../../components/cloudModal';
+import { FaArrowCircleUp } from 'react-icons/fa';
 
 const StationsList = () => {
     const [state, dispatch] = useContext(Context);
@@ -49,7 +51,9 @@ const StationsList = () => {
     const [creatingProsessd, setCreatingProsessd] = useState(false);
     const [isCheck, setIsCheck] = useState([]);
     const [isCheckAll, setIsCheckAll] = useState(false);
+    const [openCloudModal, setOpenCloudModal] = useState(false);
     const createStationRef = useRef(null);
+    const getAllowedActions = useGetAllowedActions();
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'stations' });
@@ -95,15 +99,24 @@ const StationsList = () => {
                         <div className="stations-placeholder add-more">
                             <Button
                                 className="modal-btn"
-                                width="220px"
+                                width="230px"
                                 height="42px"
-                                placeholder="Add anothet station"
+                                placeholder={
+                                    isCloud() && !state?.allowedActions?.can_create_stations ? (
+                                        <span className="create-new">
+                                            <label>Add another station</label>
+                                            <FaArrowCircleUp className="lock-feature-icon" />
+                                        </span>
+                                    ) : (
+                                        <span className="create-new">Add another station</span>
+                                    )
+                                }
                                 colorType="white"
                                 radiusType="circle"
                                 backgroundColorType="purple"
                                 fontSize="16px"
                                 fontWeight="bold"
-                                onClick={() => modalFlip(true)}
+                                onClick={() => (!isCloud() || state?.allowedActions?.can_create_stations ? modalFlip(true) : setOpenCloudModal(true))}
                             />
                         </div>
                     </div>
@@ -124,7 +137,15 @@ const StationsList = () => {
                 />
             );
         }
-        return <StationsInstructions header="You don’t have any station yet" button="Create New Station" image={stationsIcon} newStation={() => modalFlip(true)} />;
+        return (
+            <StationsInstructions
+                upgrade={!state?.allowedActions?.can_create_stations}
+                header="You don’t have any station yet"
+                button="Create a new station"
+                image={stationsIcon}
+                newStation={() => modalFlip(true)}
+            />
+        );
     };
 
     const onCheckedAll = (e) => {
@@ -161,6 +182,8 @@ const StationsList = () => {
             }
         } catch (error) {
             setDeleteLoader(false);
+        } finally {
+            getAllowedActions();
         }
     };
 
@@ -209,9 +232,18 @@ const StationsList = () => {
                         />
                         <Filter filterComponent="stations" height="34px" />
                         <Button
-                            width="160px"
+                            width="170px"
                             height="34px"
-                            placeholder={'Create a new station'}
+                            placeholder={
+                                isCloud() && !state?.allowedActions?.can_create_stations ? (
+                                    <span className="create-new">
+                                        <label>Create a new station</label>
+                                        <FaArrowCircleUp className="lock-feature-icon" />
+                                    </span>
+                                ) : (
+                                    <span className="create-new">Create a new station</span>
+                                )
+                            }
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"
@@ -219,7 +251,7 @@ const StationsList = () => {
                             boxShadowStyle="float"
                             fontWeight="600"
                             aria-haspopup="true"
-                            onClick={() => modalFlip(true)}
+                            onClick={() => (!isCloud() || state?.allowedActions?.can_create_stations ? modalFlip(true) : setOpenCloudModal(true))}
                         />
                     </div>
                 </div>
@@ -277,6 +309,7 @@ const StationsList = () => {
                     loader={deleteLoader}
                 />
             </Modal>
+            <CloudModal type="upgrade" open={openCloudModal} handleClose={() => setOpenCloudModal(false)} />
         </div>
     );
 };

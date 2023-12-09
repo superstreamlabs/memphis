@@ -4,23 +4,24 @@
         display: flex;
         align-items: center;
     }
+
     .ant-select:not(.ant-select-customize-input) .ant-select-selector {
-        border: unset;
+        border: none;
         background-color: unset;
         text-align: initial;
         align-items: center;
     }
-    // .ant-select-selector {
-    //     border: unset;
-    //     color: #5e5e68;
-    //     font-family: 'InterMedium';
 
-    // }
     .ant-select-arrow {
         background-color: transparent;
     }
     .ant-select-selection-item span {
         display: none;
+    }
+    label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
     }
 }
 
@@ -40,6 +41,7 @@
     box-shadow: 0px 10px 10px rgb(16 10 85 / 10%);
     border-radius: 8px;
     padding: 3px;
+
     .ant-select-item {
         color: rgba(74, 73, 92, 0.8) !important;
     }
@@ -56,6 +58,7 @@
     .ant-select-item-option {
         margin: 2px 8px;
         border-radius: 8px;
+        height: 100%;
     }
     .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
         background: rgba(101, 87, 255, 0.1);
@@ -64,6 +67,10 @@
         font-weight: unset !important;
         color: var(--purple) !important;
         font-family: 'InterBold' !important;
+        .comment {
+            color: #5e5e68 !important;
+            font-family: 'Inter' !important;
+        }
     }
 }
 
@@ -83,7 +90,17 @@
         background-color: #edebeb;
     }
 }
-
+.ant-select-selection-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.ant-select-selection-item {
+    border: unset !important;
+}
+.ant-select-selection-search-input {
+    border: none !important;
+}
 .rc-virtual-list-scrollbar {
     width: 3px !important;
     background: white !important;
@@ -94,4 +111,49 @@
 
 .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
     background-color: transparent;
+}
+.anticon-check {
+    color: var(--purple) !important;
+}
+
+.ant-select:not(.ant-select-disabled):hover .ant-select-selector {
+    border-color: #cbcbcb !important;
+
+    box-shadow: none !important;
+}
+.ant-select.ant-select-in-form-item::selection {
+    background: transparent;
+    border-color: #cbcbcb !important;
+}
+.ant-select-selector {
+    border: unset;
+    border-radius: 5px !important;
+    height: 40px;
+    color: #5e5e68;
+    font-family: 'InterMedium';
+}
+.ant-select-focused .ant-select-selector,
+.ant-select-selector:focus,
+.ant-select-selector:active,
+.connector-modal-wrapper {
+    .ant-select-open .ant-select-selector {
+        border-color: #d9d9d9 !important;
+        box-shadow: none !important;
+    }
+    .ant-select-status-error.ant-select:not(.ant-select-disabled):not(.ant-select-customize-input):not(.ant-pagination-size-changer) .ant-select-selector {
+        border-color: #d9d9d9 !important;
+        border-color: none !important;
+        box-shadow: none !important;
+    }
+}
+.ant-select-multiple .ant-select-selector {
+    overflow-y: auto !important;
+}
+.coming-soon-select {
+    color: #f4f4f4;
+    background-color: var(--purple);
+    padding: 2px 8px;
+    border-radius: 32px;
+    font-size: 10px;
+    font-family: 'InterSemiBold';
 }

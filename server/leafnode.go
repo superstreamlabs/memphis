@@ -2317,7 +2317,7 @@ func (c *client) processInboundLeafMsg(msg []byte) {
 	// 	IncrementEventCounter(accName, "produced_event", 0, 1, subj, msgBytes, hdrBytes)
 	// }
 	// added by Memphis ***
-	
+
 	// Match the subscriptions. We will use our own L1 map if
 	// it's still valid, avoiding contention on the shared sublist.
 	var r *SublistResult

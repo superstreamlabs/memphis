@@ -28,7 +28,7 @@ import CustomCollapse from '../customCollapse';
 import MultiCollapse from '../multiCollapse';
 import StatusIndication from '../../../../../components/indication';
 
-const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
+const MessageDetails = ({ isDls, isFailedSchemaMessage = false, isFailedFunctionMessage = false }) => {
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -57,7 +57,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
             const data = await httpRequest(
                 'GET',
                 `${ApiEndpoints.GET_MESSAGE_DETAILS}?dls_type=${
-                    isFailedSchemaMessage ? 'schema' : 'poison'
+                    isFailedFunctionMessage ? 'functions' : isFailedSchemaMessage ? 'schema' : 'poison'
                 }&station_name=${stationName}&is_dls=${isDls}&partition_number=${selectedRowPartition}&message_id=${isDls ? parseInt(selectedRow) : -1}&message_seq=${
                     isDls ? -1 : selectedRow
                 }`
@@ -136,7 +136,8 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                 message: data.message?.data,
                 headers: data.message?.headers || {},
                 poisonedCGs: poisonedCGs,
-                validationError: data.validation_error || ''
+                validationError: data.validation_error || '',
+                function_name: data.function_name || ''
             };
             setMessageDetails(messageDetails);
         }
@@ -152,15 +153,26 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
 
     return (
         <>
-            <div className={`message-wrapper ${isDls && !isFailedSchemaMessage && 'message-wrapper-dls'}`}>
+            <div className={`message-wrapper ${isDls && !isFailedSchemaMessage && !isFailedFunctionMessage && 'message-wrapper-dls'}`}>
                 {loadMessageData ? (
                     loader()
                 ) : stationState?.selectedRowId && Object.keys(messageDetails).length > 0 ? (
                     <>
                         <div className="row-data">
                             <Space direction="vertical">
-                                {messageDetails?.validationError !== '' && (
+                                {!isFailedFunctionMessage && messageDetails?.validationError !== '' && (
                                     <CustomCollapse status={false} header="Validation error" data={messageDetails?.validationError} message={true} />
+                                )}
+                                {isFailedFunctionMessage && messageDetails?.function_name !== '' && (
+                                    <div className="info-box">
+                                        <div>
+                                            <span className="title">Function</span>
+                                            <span className="content">{messageDetails?.function_name}</span>
+                                        </div>
+                                    </div>
+                                )}
+                                {isFailedFunctionMessage && messageDetails?.validationError !== '' && (
+                                    <CustomCollapse status={false} header="Error" data={messageDetails?.validationError} message={true} />
                                 )}
                                 <div className="info-box">
                                     <div>
@@ -170,7 +182,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                                     <StatusIndication is_active={messageDetails?.producer.is_active} />
                                 </div>
 
-                                {!isFailedSchemaMessage && (
+                                {!isFailedSchemaMessage && !isFailedFunctionMessage && (
                                     <MultiCollapse
                                         header="Failed CGs"
                                         tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
@@ -191,7 +203,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                                 />
                             </Space>
                         </div>
-                        {isDls && !isFailedSchemaMessage && (
+                        {isDls && !isFailedSchemaMessage && !isFailedFunctionMessage && (
                             <Button
                                 width="96%"
                                 height="40px"

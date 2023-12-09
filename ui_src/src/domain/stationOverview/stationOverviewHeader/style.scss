@@ -8,6 +8,7 @@
         align-items: flex-start;
         height: 35px;
         .station-details {
+            width: 100%;
             .station-name {
                 margin-bottom: 5px;
                 margin-right: 5px;
@@ -34,6 +35,28 @@
                 color: #979797;
                 font-size: 12px;
                 font-family: 'Inter';
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .hostname {
+                border-radius: 32px;
+                border: 0.8px solid #e2dfff;
+                background: #f1f0ff;
+                display: flex;
+                width: fit-content;
+                padding: 0px 10px;
+                gap: 2px;
+                font-family: 'InterMedium';
+                p {
+                    font-size: 12px;
+                    margin: 0;
+                }
+                span {
+                    color: var(--purple);
+                    font-size: 12px;
+                    margin-right: 5px;
+                }
             }
         }
         .station-buttons {
@@ -64,13 +87,13 @@
     }
     .details {
         margin-top: 30px;
-        display: flex;
         justify-content: space-between;
         height: 85px;
         align-items: center;
         width: 100%;
         display: grid;
         grid-template-columns: 20% 55% 20%;
+        min-height: 114px;
         .main-details {
             font-size: 12px;
             padding: 0 15px;
@@ -171,6 +194,10 @@
                         .redirect {
                             cursor: pointer;
                         }
+                        .dls-redirect {
+                            position: absolute;
+                            right: 0px;
+                        }
                     }
                     .midRow {
                         display: flex;
@@ -191,7 +218,7 @@
                                 color: #1d1d1d;
                                 font-family: 'InterMedium';
                                 font-size: 12px;
-                                max-width: 85%;
+                                max-width: 155px;
                                 overflow: hidden;
                                 text-overflow: ellipsis;
                             }
@@ -427,4 +454,8 @@
     position: relative;
     max-width: 100px;
     display: inline-flex;
+}
+
+.disable-consumption-modal .dls-name {
+    display: initial !important;
 }

@@ -30,6 +30,7 @@ export const ApiEndpoints = {
     SKIP_GET_STARTED: '/usermgmt/skipGetStarted',
     GET_FILTER_DETAILS: '/usermgmt/getFilterDetails',
     SEND_TRACE: '/usermgmt/sendTrace',
+    GET_SYSTEM_GENERAL_INFO: '/monitoring/getSystemGeneralInfo',
 
     //Station
     CREATE_STATION: '/stations/createStation',
@@ -51,6 +52,13 @@ export const ApiEndpoints = {
     PRODUCE: '/stations/produce',
     ATTACH_DLS: '/stations/attachDlsStation',
     DETACH_DLS: '/stations/detachDlsStation',
+    CLEAN_DISCONNECTED_PRODUCERS: '/stations/cleanDisconnectedClients',
+    CREATE_CONNECTOR: '/stations/createConnector',
+    REMOVE_CONNECTOR: '/stations/removeConnector',
+    START_CONNECTOR: '/stations/startConnector',
+    STOP_CONNECTOR: '/stations/stopConnector',
+    GET_CONNECTOR_ERRORS: '/stations/getConnectorErrors',
+    PURGE_CONNECTOR_ERRORS: '/stations/purgeConnectorErrors',
 
     //Async Tasks
     GET_ASYNC_TASKS: '/asyncTasks/getAsyncTasks',
@@ -87,6 +95,23 @@ export const ApiEndpoints = {
     DELETE_TEST_EVENT: '/functions/events/deleteEvent',
     GET_TEST_EVENT: '/functions/events/getEvent',
     UPDATE_TEST_EVENT: '/functions/events/editEvent',
+    GET_FUNCTIONS_OVERVIEW: '/monitoring/stations/getFunctionsOverview',
+    GET_FUNCTION_DETAILS: '/monitoring/stations/getAttachedFunctionDetails',
+    ADD_FUNCTION: '/stations/addFunction',
+    ADD_FUNCTIONS: '/stations/addFunctions',
+    ACTIVATE_FUNCTION: '/stations/activateFunction',
+    ACTIVATE_FUNCTIONS: '/stations/activateFunctions',
+    DEACTIVATE_FUNCTION: '/stations/deactivateFunction',
+    DEACTIVATE_FUNCTIONS: '/stations/deactivateFunctions',
+    DETACH_FUNCTION: '/stations/detachFunction',
+    DETACH_FUNCTIONS: '/stations/detachFunctions',
+    INSTALL_FUNCTION: '/functions/install',
+    UNINSTALL_FUNCTION: '/functions/uninstall',
+    GET_FUNCTION_DETAIL: '/functions/getFunctionDetails',
+    GET_FUNCTION_FILE_CODE: '/functions/getFunctionFileCode',
+    TEST_FUNCTION: '/functions/testFunction',
+    GET_ATTACHED_FUNCTION_LOGS: '/monitoring/stations/getAttachedFunctionLogs',
+    GET_ATTACHED_FUNCTION_DLS_MSG: `/monitoring/stations/getAttachedFunctionDlsMsgs`,
 
     //Integrations
     CREATE_INTEGRATION: '/integrations/createIntegration',
@@ -115,5 +140,6 @@ export const ApiEndpoints = {
     RESEND_INVITATION: '/usermgmt/resendInvitation',
     REVOKED_INVITATION: '/usermgmt/revokeInvitation',
     SIGN_OUT: '/usermgmt/signOut',
-    SEND_SUPPORT: '/usermgmt/sendSupportRequest'
+    SEND_SUPPORT: '/usermgmt/sendSupportRequest',
+    GET_ALLOWED_FUNCTIONS: '/usermgmt/getAllowedActions'
 };

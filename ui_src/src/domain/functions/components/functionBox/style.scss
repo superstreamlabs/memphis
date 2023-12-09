@@ -6,9 +6,19 @@
     border: 1px solid #e9e9e9;
     border-radius: 8px;
     width: 100%;
-    min-width: 1370px;
+    min-width: 1050px;
     box-shadow: 0px 6px 18px 0px #0000000f;
-    height: 140px;
+    min-height: 106px;
+    max-height: 140px;
+    .attach-btn {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        cursor: pointer;
+        label {
+            cursor: pointer;
+        }
+    }
     .header-flex {
         display: flex;
     }
@@ -80,6 +90,9 @@
                 }
             }
         }
+        .station {
+            padding-bottom: 16px;
+        }
         .button-container {
             display: flex;
             justify-content: flex-end;
@@ -89,6 +102,22 @@
             justify-content: flex-end;
             gap: 10px;
             height: 40px;
+
+            .warning {
+                display: flex;
+                height: 34px;
+                padding: 0px 9px;
+                justify-content: center;
+                align-items: center;
+                border-radius: 32px;
+                background: rgba(252, 52, 0, 0.1);
+                gap: 5px;
+                .warning-message {
+                    color: #fc3400;
+                    font-family: 'InterSemiBold';
+                    font-size: 12px;
+                }
+            }
         }
     }
     description {
@@ -99,9 +128,16 @@
         display: flex;
         margin-top: 5px;
         padding: 10px 16px;
-
         border-top: 1px solid #f5f5f5;
         overflow-x: auto;
+        .ant-skeleton-button {
+            width: 45px;
+            min-width: 45px;
+            margin-right: 5px;
+            height: 22px;
+            border-radius: 4px;
+            background: #e8e8e8;
+        }
     }
     date {
         display: flex;
@@ -120,6 +156,11 @@
             margin-right: 5px;
         }
     }
+    .ant-skeleton-element {
+        display: flex;
+        align-items: center;
+        height: 22px;
+    }
 }
 .func-selected {
     border: 1px solid var(--purple);
@@ -128,7 +169,7 @@
 
 .function-drawer {
     .ant-drawer-content-wrapper {
-        width: 60vw !important;
+        width: 55vw !important;
 
         box-shadow: none !important;
     }
@@ -326,5 +367,16 @@
     }
     .ant-tabs-tab {
         padding: 6px 0;
+    }
+}
+
+.code-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    label,
+    span {
+        cursor: pointer;
     }
 }

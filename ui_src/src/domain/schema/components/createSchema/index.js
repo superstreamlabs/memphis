@@ -422,7 +422,7 @@ function CreateSchema({ createNew }) {
                     <div className="header">
                         <div className="flex-title">
                             <BackIcon onClick={() => goBack()} alt="backIcon" />
-                            <p>Create schema</p>
+                            <p>Create a new schema</p>
                             <PurpleQuestionMark
                                 className="info-icon"
                                 alt="Integration info"
@@ -571,9 +571,9 @@ function CreateSchema({ createNew }) {
                             onClick={() => goBack()}
                         />
                         <Button
-                            width="125px"
+                            width="145px"
                             height="34px"
-                            placeholder="Create schema"
+                            placeholder="Create a new schema"
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"

@@ -1,23 +1,37 @@
 .pubSub-list-container {
     background: white;
     position: relative;
-    width: 20vw;
-    height: 68vh;
+    flex: 0 0 20%;
+    height: 100%;
     min-height: 450px;
     min-width: 330px;
     box-shadow: 0px 0px 4px 3px rgba(204, 204, 204, 0.19);
     border-radius: 8px;
     padding: 15px 0px 15px 0px;
+    .connector-name {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
     .header {
         display: flex;
         justify-content: space-between;
         border-bottom: 1px solid #e9e9e9;
         line-height: 35px;
         padding: 0 15px 5px 15px;
-        .title {
-            font-family: 'InterSemiBold';
-            font-size: 14px;
-            margin: 0;
+        .poduce-consume-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            .title {
+                font-family: 'InterSemiBold';
+                font-size: 14px;
+                margin: 0;
+            }
+            .add {
+                cursor: pointer;
+            }
         }
         .add-connector-button {
             cursor: pointer;
@@ -50,7 +64,7 @@
     .rows-wrapper {
         position: relative;
         width: calc(100%);
-        height: calc(100% - 90px);
+        height: calc(100% - 70px);
         overflow: auto;
         padding-left: 10px;
         display: flex;
@@ -70,10 +84,35 @@
                 padding: 5px;
                 margin-right: 10px;
                 margin-top: 5px;
+                .connector-options-selected {
+                    background-color: #e3e0ff;
+                    height: 20px;
+                    width: 20px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    border-radius: 3px;
+                    cursor: pointer;
+                    color: var(--purple);
+                }
+                .connector-options {
+                    background-color: transparent;
+                    height: 20px;
+                    width: 20px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    border-radius: 3px;
+                    cursor: pointer;
+                    color: rgba(154, 154, 160, 0.8);
+                }
                 .status-icon {
                     position: relative;
                     display: flex;
                     justify-content: center;
+                    align-items: center;
+                    gap: 4px;
+                    width: 38px;
                     .circle-status {
                         border-radius: 32px;
                         width: 18px;
@@ -213,4 +252,33 @@
     to {
         opacity: 0;
     }
+}
+.item-wrapper-connectors {
+    padding-left: 5px;
+    padding-right: 5px;
+    margin: 0 5px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 5px;
+    cursor: pointer;
+    .item-name {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    label {
+        cursor: pointer;
+    }
+}
+.item-wrapper-connectors:hover {
+    background: #e3e0ff;
+    border-radius: 4px;
+    color: var(--purple);
+}
+
+.rest-title {
+    font-family: 'InterMedium';
+    font-size: 20px;
 }

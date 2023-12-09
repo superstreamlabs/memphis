@@ -1,14 +1,12 @@
 .get-started-modal {
     display: grid;
-    grid-template-rows: auto auto 1fr auto; /* Header, Title, Content, Footer */
+    grid-template-rows: auto auto 1fr auto;
     grid-template-columns: 1fr;
     height: 100%;
     max-height: 100vh;
     overflow: hidden;
     top: 2.5vh;
-    .ant-divider-horizontal.ant-divider-with-text {
-        margin: 5px 0;
-    }
+
     .title-wrapper {
         flex-shrink: 0;
         width: 100%;
@@ -157,7 +155,9 @@
         margin-bottom: 0px;
         margin-top: 5px;
     }
-
+    .modal-titles {
+        margin: 10px 0px;
+    }
     use-cases {
         .header {
             display: flex;
@@ -168,7 +168,7 @@
             justify-content: space-between;
             flex-wrap: wrap;
             gap: 10px;
-            margin: 10px 0px;
+            margin-bottom: 10px;
             span {
                 cursor: pointer;
                 display: flex;

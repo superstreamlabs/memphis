@@ -44,8 +44,14 @@ import { ReactComponent as DisconnectIcon } from '../../../../assets/images/disc
 import UseSchemaModal from '../../components/useSchemaModal';
 import DeleteItemsModal from '../../../../components/deleteItemsModal';
 import { ReactComponent as DisableIcon } from '../../../../assets/images/disableIcon.svg';
+import { Divider } from 'antd';
+import FunctionsOverview from '../components/functionsOverview';
+import CloudModal from '../../../../components/cloudModal';
+import { ReactComponent as CleanDisconnectedProducersIcon } from '../../../../assets/images/clean_disconnected_producers.svg';
+import {json} from "generate-schema";
+import pathDomains from "../../../../router";
 
-const Messages = () => {
+const Messages = ({ referredFunction }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [selectedRowIndex, setSelectedRowIndex] = useState(null);
     const [selectedRowPartition, setSelectedRowPartition] = useState(null);
@@ -59,15 +65,33 @@ const Messages = () => {
     const [useDlsModal, setUseDlsModal] = useState(false);
     const [disableModal, setDisableModal] = useState(false);
     const [disableLoader, setDisableLoader] = useState(false);
-
+    const [activeTab, setActiveTab] = useState('general');
+    const [cloudModalOpen, setCloudModalOpen] = useState(false);
+    const [choseReferredFunction, setChoseReferredFunction] = useState(false);
     const dls = stationState?.stationMetaData?.dls_station === '' ? null : stationState?.stationMetaData?.dls_station;
     const tabs = ['Messages', 'Dead-letter', 'Configuration'];
-    const subTabs = [
-        { name: 'Unacknowledged', disabled: false },
-        { name: 'Schema violation', disabled: !stationState?.stationMetaData?.is_native }
-    ];
+    const [disableLoaderCleanDisconnectedProducers, setDisableLoaderCleanDisconnectedProducers] = useState(false);
+    const subTabs = isCloud()
+        ? [
+              { name: 'Unacknowledged', disabled: false },
+              { name: 'Schema violation', disabled: !stationState?.stationMetaData?.is_native },
+              { name: 'Functions', disabled: !stationState?.stationSocketData?.functions_enabled }
+          ]
+        : [
+              { name: 'Unacknowledged', disabled: false },
+              { name: 'Schema violation', disabled: !stationState?.stationMetaData?.is_native }
+          ];
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
+
+    useEffect(() => {
+        activeTab === 'general' && setTabValue('Messages');
+    }, [activeTab]);
+
+    useEffect(() => {
+        referredFunction && setActiveTab('functions');
+        setChoseReferredFunction(referredFunction);
+    }, [referredFunction]);
 
     const onSelectedRow = (id, partition) => {
         setUserScrolled(false);
@@ -88,6 +112,28 @@ const Messages = () => {
             setUseDlsModal(false);
         } catch (error) {
             setUseDlsModal(false);
+        }
+    };
+
+    const getStationDetails = async () => {
+        try {
+            const data = await httpRequest(
+                'GET',
+                `${ApiEndpoints.GET_STATION_DATA}?station_name=${stationName}&partition_number=${stationState?.stationPartition || -1}`
+            );
+            stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
+            stationDispatch({ type: 'SET_SCHEMA_TYPE', payload: data.schema.schema_type });
+        } catch (error) {}
+    };
+
+    const cleanDisconnectedProducers = async (station_id) => {
+        setDisableLoaderCleanDisconnectedProducers(true);
+        try {
+            await httpRequest('POST', ApiEndpoints.CLEAN_DISCONNECTED_PRODUCERS, { station_id: station_id, client_type: "producers" });
+            await getStationDetails();
+            setDisableLoaderCleanDisconnectedProducers(false);
+        } catch (error) {
+            setDisableLoaderCleanDisconnectedProducers(false);
         }
     };
 
@@ -160,11 +206,11 @@ const Messages = () => {
                 });
             } else {
                 await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, {
-                    dls_type: subTabValue === subTabs[0].name ? 'poison' : 'schema',
+                    dls_type: subTabValue === subTabs[0]?.name ? 'poison' : 'schema',
                     dls_message_ids: isCheck,
                     station_name: stationName
                 });
-                messages = subTabValue === subTabs[0].name ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
+                messages = subTabValue === subTabs[0]?.name ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
                 isCheck.map((messageId, index) => {
                     messages = messages?.filter((item) => {
                         return item.id !== messageId;
@@ -175,7 +221,7 @@ const Messages = () => {
                 setIgnoreProcced(false);
                 tabValue === tabs[0]
                     ? stationDispatch({ type: 'SET_MESSAGES', payload: messages })
-                    : subTabValue === subTabs[0].name
+                    : subTabValue === subTabs[0]?.name
                     ? stationDispatch({ type: 'SET_POISON_MESSAGES', payload: messages })
                     : stationDispatch({ type: 'SET_FAILED_MESSAGES', payload: messages });
                 stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
@@ -262,6 +308,8 @@ const Messages = () => {
                                     ? stationState?.stationSocketData?.messages
                                     : subTabValue === 'Unacknowledged'
                                     ? stationState?.stationSocketData?.poison_messages
+                                    : subTabValue === 'Functions'
+                                    ? stationState?.stationSocketData?.functions_failed_messages
                                     : stationState?.stationSocketData?.schema_failed_messages
                             }
                             onScroll={() => handleScroll()}
@@ -269,7 +317,7 @@ const Messages = () => {
                             itemContent={(index, message) => listGenerator(index, message)}
                         />
                     </div>
-                    <MessageDetails isDls={isDls} isFailedSchemaMessage={subTabValue === 'Schema violation'} />
+                    <MessageDetails isDls={isDls} isFailedSchemaMessage={subTabValue === 'Schema violation'} isFailedFunctionMessage={subTabValue === 'Functions'} />
                 </div>
             </div>
         );
@@ -278,10 +326,12 @@ const Messages = () => {
     const showLastMsg = () => {
         let amount = 0;
         if (tabValue === tabs[0] && stationState?.stationSocketData?.messages?.length > 0) amount = stationState?.stationSocketData?.messages?.length;
-        else if (tabValue === tabs[1] && subTabValue === subTabs[0].name && stationState?.stationSocketData?.poison_messages?.length > 0)
+        else if (tabValue === tabs[1] && subTabValue === subTabs[0]?.name && stationState?.stationSocketData?.poison_messages?.length > 0)
             amount = stationState?.stationSocketData?.poison_messages?.length;
-        else if (tabValue === tabs[1] && subTabValue === subTabs[1].name && stationState?.stationSocketData?.schema_failed_messages?.length > 0)
+        else if (tabValue === tabs[1] && subTabValue === subTabs[1]?.name && stationState?.stationSocketData?.schema_failed_messages?.length > 0)
             amount = stationState?.stationSocketData?.schema_failed_messages?.length;
+        else if (tabValue === tabs[1] && subTabValue === subTabs[2]?.name && stationState?.stationSocketData?.functions_failed_messages?.length > 0)
+            amount = stationState?.stationSocketData?.functions_failed_messages?.length;
         return (
             amount > 0 && (
                 <div className="messages-amount">
@@ -310,188 +360,290 @@ const Messages = () => {
                 return 'Start / Continue producing data';
             }
         } else {
-            return 'Create a producer to start producing messages';
+            return 'Create your 1st producer and start producing data.';
         }
     };
 
     return (
         <div className="messages-container">
-            <div className="header">
-                <div className="left-side">
-                    <p className="title">Station</p>
-                    {showLastMsg()}
-                </div>
-                <div className="right-side">
-                    {((tabValue === tabs[0] && stationState?.stationSocketData?.messages?.length > 0) ||
-                        (tabValue === tabs[1] &&
-                            ((subTabValue === subTabs[0].name && stationState?.stationSocketData?.poison_messages?.length > 0) ||
-                                (subTabValue === subTabs[1].name && stationState?.stationSocketData?.schema_failed_messages?.length > 0)))) && (
-                        <Button
-                            width="80px"
-                            height="32px"
-                            placeholder={isCheck.length === 0 ? 'Purge' : `Drop (${isCheck.length})`}
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType="purple"
-                            fontSize="12px"
-                            fontWeight="600"
-                            isLoading={ignoreProcced}
-                            onClick={() => (isCheck.length === 0 ? modalPurgeFlip(true) : handleDrop())}
-                        />
-                    )}
-                    {tabValue === 'Dead-letter' && subTabValue === 'Unacknowledged' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
-                        <Button
-                            width="95px"
-                            height="32px"
-                            placeholder={isCheck.length === 0 ? 'Resend all' : `Resend (${isCheck.length})`}
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType="purple"
-                            fontSize="12px"
-                            fontWeight="600"
-                            disabled={resendProcced || stationState?.stationSocketData?.resend_disabled || !stationState?.stationMetaData?.is_native}
-                            isLoading={resendProcced && isCheck.length > 0}
-                            tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
-                            onClick={() => handleResend()}
-                        />
-                    )}
-                </div>
-            </div>
-            <div className="tabs">
-                <CustomTabs
-                    value={tabValue}
-                    onChange={handleChangeMenuItem}
-                    tabs={tabs}
-                    length={[
-                        null,
-                        stationState?.stationSocketData?.poison_messages?.length || stationState?.stationSocketData?.schema_failed_messages?.length || null,
-                        null
-                    ]}
-                    icon
-                />
-            </div>
-            {tabValue === tabs[1] && (
-                <div className="tabs">
-                    <CustomTabs
-                        defaultValue
-                        value={subTabValue}
-                        onChange={handleChangeSubMenuItem}
-                        tabs={subTabs}
-                        length={[
-                            stationState?.stationSocketData?.poison_messages?.length || null,
-                            stationState?.stationSocketData?.schema_failed_messages?.length || null
-                        ]}
-                        tooltip={[null, !stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs']}
-                    />
-                </div>
-            )}
-            {tabValue === tabs[0] && stationState?.stationSocketData?.messages?.length > 0 && listGeneratorWrapper()}
-            {tabValue === tabs[1] && subTabValue === subTabs[0].name && stationState?.stationSocketData?.poison_messages?.length > 0 && listGeneratorWrapper()}
-            {tabValue === tabs[1] && subTabValue === subTabs[1].name && stationState?.stationSocketData?.schema_failed_messages?.length > 0 && listGeneratorWrapper()}
-
-            {tabValue === tabs[0] && (stationState?.stationSocketData?.messages === null || stationState?.stationSocketData?.messages?.length === 0) && (
-                <div className="waiting-placeholder msg-plc">
-                    <WaitingMessagesIcon width={100} alt="waitingMessages" />
-                    <p>Waiting for messages</p>
-                    <span className="des">{getDescriptin()}</span>
-                </div>
-            )}
-            {tabValue === tabs[1] &&
-                ((subTabValue === 'Unacknowledged' && stationState?.stationSocketData?.poison_messages?.length === 0) ||
-                    (subTabValue === 'Schema violation' && stationState?.stationSocketData?.schema_failed_messages?.length === 0)) && (
-                    <div className="waiting-placeholder msg-plc">
-                        <DeadLetterPlaceholderIcon width={80} alt="waitingMessages" />
-                        <p>Hooray! No messages</p>
+            <div className="top">
+                <div className="top-header">
+                    <div className="left">
+                        <div className="top-switcher">
+                            <div className={`top-switcher-btn ${activeTab === 'general' ? 'ms-active' : ''}`} onClick={() => setActiveTab('general')}>
+                                General
+                            </div>
+                            <div
+                                className={`top-switcher-btn ${activeTab === 'functions' ? 'ms-active' : ''} ${
+                                    !isCloud() || !stationState?.stationSocketData?.functions_enabled ? 'ms-disabled' : undefined
+                                }`}
+                                onClick={() => (isCloud() ? stationState?.stationSocketData?.functions_enabled && setActiveTab('functions') : setCloudModalOpen(true))}
+                            >
+                                {stationState?.stationSocketData?.functions_enabled ? (
+                                    <>
+                                        <label>Functions</label>
+                                        <label className="badge">Alpha</label>
+                                    </>
+                                ) : (
+                                    <TooltipComponent text="Supported for new stations" minWidth="35px">
+                                        Functions
+                                    </TooltipComponent>
+                                )}
+                            </div>
+                        </div>
                     </div>
-                )}
-            {tabValue === tabs[2] && (
-                <div className="details">
-                    <DetailBox
-                        icon={<DlsEnableIcon width={24} alt="dlsEnableIcon" />}
-                        title={
-                            <>
-                                <span>Dead-letter</span>
-                                <Button
-                                    width="130px"
-                                    height="25px"
-                                    placeholder={
-                                        <div className="use-dls-button">
-                                            {dls ? <DisconnectIcon /> : <UpRightArrow />}
-                                            <p>{dls ? 'Disable' : 'Enable'} Consumption</p>
-                                        </div>
-                                    }
-                                    colorType={dls ? 'white' : 'black'}
-                                    radiusType="circle"
-                                    backgroundColorType={dls ? 'red' : 'orange'}
-                                    fontSize="10px"
-                                    fontFamily="InterSemiBold"
-                                    fontWeight={600}
-                                    disabled={!stationState?.stationMetaData?.is_native}
-                                    onClick={() => (dls ? setDisableModal(true) : setUseDlsModal(true))}
-                                />
-                            </>
-                        }
-                        desc="What events should flag messages as dead-lettered?"
-                        rightSection={false}
-                    >
-                        <DlsConfig />
-                    </DetailBox>
-                    <DetailBox
-                        icon={<PurgeIcon width={24} alt="purgeIcon" />}
-                        title={'Purge all messages'}
-                        data={[
-                            <Button
-                                width="80px"
-                                height="25px"
-                                placeholder="Purge"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                fontSize="12px"
-                                fontWeight="600"
-                                disabled={stationState?.stationSocketData?.total_dls_messages === 0 && stationState?.stationSocketData?.total_messages === 0}
-                                onClick={() => modalPurgeFlip(true)}
-                            />
-                        ]}
-                    ></DetailBox>
-                    {!isCloud() && stationState?.stationPartition !== -1 && (
-                        <DetailBox
-                            icon={<LeaderIcon width={24} alt="leaderIcon" />}
-                            title={'Leader'}
-                            desc={
-                                <span>
-                                    The current leader of this station.{' '}
-                                    <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
-                                        Learn more
-                                    </a>
-                                </span>
-                            }
-                            data={[stationState?.stationSocketData?.leader]}
-                        />
-                    )}
-                    {stationState?.stationSocketData?.followers?.length > 0 && !isCloud() && stationState?.stationPartition !== -1 && (
-                        <DetailBox
-                            icon={<FollowersIcon width={24} alt="followersImg" />}
-                            title={'Followers'}
-                            desc={
-                                <span>
-                                    The brokers that contain a replica of this station and in case of failure will replace the leader.{' '}
-                                    <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
-                                        Learn more
-                                    </a>
-                                </span>
-                            }
-                            data={stationState?.stationSocketData?.followers}
-                        />
-                    )}
+                </div>
+            </div>
 
-                    <DetailBox
-                        icon={<IdempotencyIcon width={24} alt="idempotencyIcon" />}
-                        title={'Deduplication (Idempotency)'}
-                        data={[msToUnits(stationState?.stationSocketData?.idempotency_window_in_ms)]}
-                    />
+            {activeTab === 'general' && (
+                <div className="tab-general">
+                    <Divider style={{ marginTop: 0, marginBottom: '10px' }} />
+                    <div className="header">
+                        <div className="left-side">
+                            <p className="title">Station</p>
+                            {showLastMsg()}
+                        </div>
+                        <div className="right-side">
+                            {((tabValue === tabs[0] && stationState?.stationSocketData?.messages?.length > 0) ||
+                                (tabValue === tabs[1] &&
+                                    ((subTabValue === subTabs[0]?.name && stationState?.stationSocketData?.poison_messages?.length > 0) ||
+                                        (subTabValue === subTabs[1]?.name && stationState?.stationSocketData?.schema_failed_messages?.length > 0) ||
+                                        (subTabValue === subTabs[2]?.name && stationState?.stationSocketData?.functions_failed_messages?.length > 0)))) && (
+                                <Button
+                                    width="80px"
+                                    height="32px"
+                                    placeholder={isCheck.length === 0 ? 'Purge' : `Drop (${isCheck.length})`}
+                                    colorType="white"
+                                    radiusType="circle"
+                                    backgroundColorType="purple"
+                                    fontSize="12px"
+                                    fontWeight="600"
+                                    isLoading={ignoreProcced}
+                                    onClick={() => (isCheck.length === 0 ? modalPurgeFlip(true) : handleDrop())}
+                                />
+                            )}
+                            {tabValue === 'Dead-letter' && subTabValue === 'Unacked' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
+                                <Button
+                                    width="95px"
+                                    height="32px"
+                                    placeholder={isCheck.length === 0 ? 'Resend all' : `Resend (${isCheck.length})`}
+                                    colorType="white"
+                                    radiusType="circle"
+                                    backgroundColorType="purple"
+                                    fontSize="12px"
+                                    fontWeight="600"
+                                    disabled={resendProcced || stationState?.stationSocketData?.resend_disabled || !stationState?.stationMetaData?.is_native}
+                                    isLoading={resendProcced && isCheck.length > 0}
+                                    tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
+                                    onClick={() => handleResend()}
+                                />
+                            )}
+                        </div>
+                    </div>
+                    <div className="tabs">
+                        <CustomTabs
+                            value={tabValue}
+                            onChange={handleChangeMenuItem}
+                            tabs={tabs}
+                            length={[
+                                null,
+                                stationState?.stationSocketData?.poison_messages?.length ||
+                                    stationState?.stationSocketData?.schema_failed_messages?.length ||
+                                    stationState?.stationSocketData?.functions_failed_messages?.length ||
+                                    null,
+                                null
+                            ]}
+                            icon
+                        />
+                    </div>
+                    {tabValue === tabs[1] && (
+                        <div className="tabs">
+                            <CustomTabs
+                                defaultValue
+                                value={subTabValue}
+                                onChange={handleChangeSubMenuItem}
+                                tabs={subTabs}
+                                length={[
+                                    stationState?.stationSocketData?.poison_messages?.length || null,
+                                    stationState?.stationSocketData?.schema_failed_messages?.length || null,
+                                    stationState?.stationSocketData?.functions_failed_messages?.length || null
+                                ]}
+                                tooltip={[null, !stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs']}
+                            />
+                        </div>
+                    )}
+                    {tabValue === tabs[0] && stationState?.stationSocketData?.messages?.length > 0 && listGeneratorWrapper()}
+                    {tabValue === tabs[1] && subTabValue === subTabs[0]?.name && stationState?.stationSocketData?.poison_messages?.length > 0 && listGeneratorWrapper()}
+                    {tabValue === tabs[1] &&
+                        subTabValue === subTabs[1]?.name &&
+                        stationState?.stationSocketData?.schema_failed_messages?.length > 0 &&
+                        listGeneratorWrapper()}
+                    {tabValue === tabs[1] &&
+                        subTabValue === subTabs[2]?.name &&
+                        stationState?.stationSocketData?.functions_failed_messages?.length > 0 &&
+                        listGeneratorWrapper()}
+
+                    {tabValue === tabs[0] && (stationState?.stationSocketData?.messages === null || stationState?.stationSocketData?.messages?.length === 0) && (
+                        <div className="waiting-placeholder msg-plc">
+                            <WaitingMessagesIcon width={100} alt="waitingMessages" />
+                            <p>No messages</p>
+                            <span className="des">{getDescriptin()}</span>
+                        </div>
+                    )}
+                    {tabValue === tabs[1] &&
+                        ((subTabValue === 'Unacknowledged' && stationState?.stationSocketData?.poison_messages?.length === 0) ||
+                            (subTabValue === 'Schema violation' && stationState?.stationSocketData?.schema_failed_messages?.length === 0) ||
+                            (subTabValue === 'Functions' && stationState?.stationSocketData?.functions_failed_messages?.length === 0)) && (
+                            <div className="waiting-placeholder msg-plc">
+                                <DeadLetterPlaceholderIcon width={80} alt="waitingMessages" />
+                                <p>Hooray! No messages</p>
+                            </div>
+                        )}
+                    {tabValue === tabs[2] && (
+                        <div className="details">
+                            <DetailBox
+                                icon={<DlsEnableIcon width={24} alt="dlsEnableIcon" />}
+                                title={<span>Dead-letter station configuration</span>}
+                                desc="Triggers for storing messages in the dead-letter station."
+                                data={[
+                                    <Button
+                                        width="130px"
+                                        height="25px"
+                                        placeholder={
+                                            <div className="use-dls-button">
+                                                {dls ? <DisconnectIcon /> : <UpRightArrow />}
+                                                <p>{dls ? 'Disable' : 'Enable'} Consumption</p>
+                                            </div>
+                                        }
+                                        colorType={dls ? 'white' : 'black'}
+                                        radiusType="circle"
+                                        backgroundColorType={dls ? 'red' : 'orange'}
+                                        fontSize="10px"
+                                        fontFamily="InterSemiBold"
+                                        fontWeight={600}
+                                        disabled={!stationState?.stationMetaData?.is_native}
+                                        onClick={() => (dls ? setDisableModal(true) : setUseDlsModal(true))}
+                                    />
+                                ]}
+                            >
+                                <DlsConfig />
+                            </DetailBox>
+                            <Divider />
+                            <DetailBox
+                                icon={<PurgeIcon width={24} alt="purgeIcon" />}
+                                title={'Purge'}
+                                desc="Clean station from messages."
+                                data={[
+                                    <Button
+                                        width="80px"
+                                        height="25px"
+                                        placeholder="Purge"
+                                        colorType="white"
+                                        radiusType="circle"
+                                        backgroundColorType="purple"
+                                        fontSize="12px"
+                                        fontWeight="600"
+                                        disabled={stationState?.stationSocketData?.total_dls_messages === 0 && stationState?.stationSocketData?.total_messages === 0}
+                                        onClick={() => modalPurgeFlip(true)}
+                                    />
+                                ]}
+                                showDivider
+                            ></DetailBox>
+                            <Divider />
+                            {!isCloud() && stationState?.stationPartition !== -1 && (
+                                <>
+                                    <DetailBox
+                                        icon={<LeaderIcon width={24} alt="leaderIcon" />}
+                                        title={'Leader'}
+                                        desc={
+                                            <span>
+                                                The current leader of this station.{' '}
+                                                <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
+                                                    Learn more
+                                                </a>
+                                            </span>
+                                        }
+                                        data={[stationState?.stationSocketData?.leader]}
+                                        showDivider
+                                    />
+                                    <Divider />
+                                </>
+                            )}
+                            {stationState?.stationSocketData?.followers?.length > 0 && !isCloud() && stationState?.stationPartition !== -1 && (
+                                <>
+                                    <DetailBox
+                                        icon={<FollowersIcon width={24} alt="followersImg" />}
+                                        title={'Followers'}
+                                        desc={
+                                            <span>
+                                                The brokers that contain a replica of this station and in case of failure will replace the leader.{' '}
+                                                <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
+                                                    Learn more
+                                                </a>
+                                            </span>
+                                        }
+                                        data={stationState?.stationSocketData?.followers}
+                                        showDivider
+                                    />
+                                    <Divider />
+                                </>
+                            )}
+
+                            <DetailBox
+                                icon={<IdempotencyIcon width={24} alt="idempotencyIcon" />}
+                                title={'Idempotency'}
+                                desc={
+                                    <span>
+                                        Ensures messages with the same "msg-id" value will be produced only once for the configured time.{' '}
+                                        <a href="https://docs.memphis.dev/memphis/memphis/concepts/idempotency" target="_blank">
+                                            Learn more
+                                        </a>
+                                    </span>
+                                }
+                                data={[msToUnits(stationState?.stationSocketData?.idempotency_window_in_ms)]}
+                                showDivider
+                            />
+
+                            {isCloud() && (<>
+                                <Divider />
+                                <DetailBox
+                                    icon={<CleanDisconnectedProducersIcon width={24} alt="clean disconnected producers" />}
+                                    title="Clean disconnected producers"
+                                    data={[
+                                        <Button
+                                            width="80px"
+                                            height="25px"
+                                            placeholder="Clean"
+                                            colorType="white"
+                                            radiusType="circle"
+                                            backgroundColorType="red"
+                                            fontSize="12px"
+                                            fontWeight="600"
+                                            disabled={disableLoaderCleanDisconnectedProducers ||
+                                                stationState?.stationSocketData?.disconnected_producers?.reduce((accumulator, item) => accumulator + item.disconnected_producers_count, 0) === 0 &&
+                                                stationState?.stationSocketData?.connected_producers?.reduce((accumulator, item) => accumulator + item.disconnected_producers_count, 0) === 0
+                                            }
+                                            onClick={() => cleanDisconnectedProducers(stationState?.stationMetaData?.id)}
+                                            isLoading={disableLoaderCleanDisconnectedProducers}
+                                            tooltip={stationState?.stationSocketData?.disconnected_producers?.reduce((accumulator, item) => accumulator + item.disconnected_producers_count, 0) === 0 && "Nothing to clean"}
+                                            tooltip_placement={"right"}
+                                        />
+                                    ]}
+                                    showDivider
+                                ></DetailBox>
+                            </>)}
+                        </div>
+                    )}
                 </div>
             )}
+            {activeTab === 'functions' && (
+                <FunctionsOverview
+                    referredFunction={choseReferredFunction}
+                    dismissFunction={() => setChoseReferredFunction(null)}
+                    moveToGenralView={() => setActiveTab('general')}
+                />
+            )}
+
             <Modal
                 header={<PurgeWrapperIcon alt="deleteWrapperIcon" />}
                 width="460px"
@@ -547,6 +699,7 @@ const Messages = () => {
                     loader={disableLoader}
                 />
             </Modal>
+            <CloudModal open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} type="cloud" />
         </div>
     );
 };

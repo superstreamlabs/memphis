@@ -1307,6 +1307,12 @@ func (a *Account) EnableJetStream(limits map[string]JetStreamAccountLimits) erro
 			INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED = true
 		case notificationsStreamName:
 			NOTIFICATIONS_BUFFER_STREAM_CREATED = true
+		case systemTasksStreamName:
+			SYSTEM_TASKS_STREAM_CREATED = true
+		case dlsFunctionsStream:
+			DLS_FUNCTIONS_STREAM_CREATED = true
+		case connectorsLogsStream:
+			CONNECTORS_LOGS_STREAM_CREATED = true
 		}
 		// added by Memphis ***
 
@@ -1339,6 +1345,10 @@ func (a *Account) EnableJetStream(limits map[string]JetStreamAccountLimits) erro
 			DLS_SCHEMAVERSE_CONSUMER_CREATED = true
 		case notificationsStreamName:
 			NOTIFICATIONS_BUFFER_CONSUMER_CREATED = true
+		case systemTasksStreamName:
+			FUNCTIONS_TASKS_CONSUMER_CREATED = true
+		case dlsFunctionsStream:
+			DLS_FUNCTIONS_CONSUMER_CREATED = true
 		}
 		// added by Memphis ***
 

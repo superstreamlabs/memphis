@@ -70,13 +70,12 @@ const IntegrationItem = ({ value, lockFeature, isOpen }) => {
                 return (
                     <GitHubIntegration
                         close={(data) => {
-                            modalFlip(false);
                             setIntegrateValue(data);
-                            // data !== ref.current &&
-                            //     history.push({
-                            //         pathname: '/functions',
-                            //         integrated: true
-                            //     });
+                            data !== ref.current &&
+                                history.push({
+                                    pathname: '/functions',
+                                    integrated: true
+                                });
                         }}
                         value={ref.current}
                     />
@@ -173,14 +172,24 @@ const IntegrationItem = ({ value, lockFeature, isOpen }) => {
             </integ-item>
             <Drawer
                 placement="right"
-                onClose={() => modalFlip(false)}
+                onClose={() => {
+                    if (value?.name === 'Github') {
+                        if (state.integrationsList?.findIndex((integration) => capitalizeFirst(integration.name) === 'Github') !== -1) {
+                            history.push({
+                                pathname: '/functions',
+                                integrated: true
+                            });
+                        }
+                    }
+                    modalFlip(false);
+                }}
                 destroyOnClose={true}
                 className="integration-modal"
                 width="720px"
-                clickOutside={() => modalFlip(false)}
                 open={modalIsOpen}
                 closeIcon={false}
                 headerStyle={{ display: 'none' }}
+                bodyStyle={{ padding: '0px' }}
             >
                 {modalContent()}
             </Drawer>

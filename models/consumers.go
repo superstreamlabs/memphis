@@ -118,6 +118,7 @@ type LightCG struct {
 
 type ConsumerForGraph struct {
 	Name      string `json:"name"`
+	CGName    string `json:"cg_name"`
 	StationId int    `json:"station_id"`
 	AppId     string `json:"app_id"`
 }

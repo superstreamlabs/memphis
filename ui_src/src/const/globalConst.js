@@ -69,15 +69,23 @@ export const labelType = {
 };
 
 export const planType = {
+    ENTERPRISE: 'plan-cloud-enterprise',
     BUSINESS: 'plan-cloud-business',
-    STARTER: 'plan-cloud-starter',
+    GROWTH: 'plan-cloud-growth-buckets',
     FREE: 'plan-cloud-free'
 };
 
 export const githubUrls = {
-    DOWNLOAD_URL: 'https://github.com/memphisdev/onboarding-app/archive/refs/heads/master.zip',
-    MEMPHIS_GIT_HTTPS: 'https://github.com/memphisdev/onboarding-app.git',
-    MEMPHIS_GIT_SSH: 'git@github.com:memphisdev/onboarding-app.git'
+    onboard: {
+        DOWNLOAD_URL: 'https://github.com/memphisdev/onboarding-app/archive/refs/heads/master.zip',
+        MEMPHIS_GIT_HTTPS: 'https://github.com/memphisdev/onboarding-app.git',
+        MEMPHIS_GIT_SSH: 'git@github.com:memphisdev/onboarding-app.git'
+    },
+    functions: {
+        DOWNLOAD_URL: 'https://github.com/memphisdev/functions-templates/archive/refs/heads/master.zip',
+        MEMPHIS_GIT_HTTPS: 'https://github.com/memphisdev/functions-templates.git',
+        MEMPHIS_GIT_SSH: 'git@github.com:memphisdev/functions-templates.git'
+    }
 };
 
 export const OWNER = 'memphisdev';

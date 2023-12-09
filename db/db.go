@@ -514,6 +514,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
 			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS producer_name VARCHAR NOT NULL DEFAULT '';
 			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS partition_number INTEGER NOT NULL DEFAULT -1;
+			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS attached_function_id INT NOT NULL DEFAULT -1;
 			DROP INDEX IF EXISTS dls_producer_id;
 			IF EXISTS (
 				SELECT 1 FROM information_schema.columns WHERE table_name = 'dls_messages' AND column_name = 'producer_id'
@@ -546,6 +547,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 		producer_name VARCHAR NOT NULL,
 		partition_number INTEGER NOT NULL DEFAULT -1,
+		attached_function_id INT NOT NULL DEFAULT -1,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
@@ -570,6 +572,20 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			created_by VARCHAR NOT NULL,
 			PRIMARY KEY (id)
         );`
+
+	sharedLocksTable := `
+		CREATE TABLE IF NOT EXISTS shared_locks(
+			id SERIAL NOT NULL,
+			name VARCHAR NOT NULL,
+			tenant_name VARCHAR NOT NULL,
+			lock_held BOOL NOT NULL DEFAULT false,
+			locked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+			PRIMARY KEY (id),
+			UNIQUE(name, tenant_name),
+		CONSTRAINT fk_tenant_name_shared_locks
+			FOREIGN KEY(tenant_name)
+			REFERENCES tenants(name)
+		);`
 
 	alterAsyncTasks := `DO $$
 	BEGIN
@@ -597,7 +613,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
 
-	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterDlsMsgsTable, dlsMessagesTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterConnectionsTable, asyncTasksTable, alterAsyncTasks, testEventsTable, functionsTable, attachedFunctionsTable}
+	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterDlsMsgsTable, dlsMessagesTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterConnectionsTable, asyncTasksTable, alterAsyncTasks, testEventsTable, functionsTable, attachedFunctionsTable, sharedLocksTable, functionsEngineWorkersTable, scheduledFunctionWorkersTable, connectorsEngineWorkersTable, connectorsConnectionsTable, connectorsTable}
 
 	for _, table := range tables {
 		_, err := db.Exec(ctx, table)
@@ -1174,6 +1190,37 @@ func GetStationByName(name string, tenantName string) (bool, models.Station, err
 	return true, stations[0], nil
 }
 
+func GetStationsByDlsStationName(name string, tenantName string) ([]models.Station, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.Station{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM stations WHERE dls_station = $1 AND (is_deleted = false) AND tenant_name = $2`
+	stmt, err := conn.Conn().Prepare(ctx, "get_stations_act_as_dls_station_by_name", query)
+	if err != nil {
+		return []models.Station{}, err
+	}
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, tenantName)
+	if err != nil {
+		return []models.Station{}, err
+	}
+	defer rows.Close()
+	stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Station])
+	if err != nil {
+		return []models.Station{}, err
+	}
+	if len(stations) == 0 {
+		return []models.Station{}, nil
+	}
+	return stations, nil
+}
+
 func GetStationById(stationId int, tenantName string) (bool, models.Station, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -1706,6 +1753,27 @@ func GetAllStations() ([]models.Station, error) {
 		return []models.Station{}, err
 	}
 	return stations, nil
+}
+
+func CountStationsByTenant(tenantName string) (int, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) FROM stations where tenant_name = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_count_stations_by_tenant", query)
+	if err != nil {
+		return 0, err
+	}
+	var count int
+	err = conn.Conn().QueryRow(ctx, stmt.Name, tenantName).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 func GetAllStationsDetails() ([]models.ExtendedStation, error) {
@@ -2642,19 +2710,21 @@ func GetAllProducersByStationID(stationId int) ([]models.ExtendedProducer, error
 	}
 	defer conn.Release()
 	query := `SELECT
-			p.id,
-			p.name,
-			p.type,
-			p.connection_id,
-			p.updated_at,
-			s.name,
-			p.is_active,
-			COUNT(CASE WHEN p.is_active THEN 1 END) OVER (PARTITION BY p.name) AS count_producers
-			FROM producers AS p
-			LEFT JOIN stations AS s ON s.id = p.station_id
-			WHERE p.station_id = $1
-			ORDER BY p.name, p.is_active DESC, p.updated_at DESC
-			LIMIT 5000;`
+    p.id,
+    p.name,
+    p.type,
+    p.connection_id,
+    p.updated_at,
+    s.name,
+    p.is_active,
+	COUNT(CASE WHEN p.is_active THEN 1 END) OVER (PARTITION BY p.name) AS connected_producers_count,
+	COUNT(CASE WHEN NOT p.is_active THEN 1 END) OVER (PARTITION BY p.name) AS disconnected_producers_count
+FROM producers AS p
+LEFT JOIN stations AS s ON s.id = p.station_id
+WHERE p.station_id = $1
+ORDER BY p.name, p.is_active DESC, p.updated_at DESC
+LIMIT 5000;
+`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producers_by_station_id", query)
 	if err != nil {
 		return []models.ExtendedProducer{}, err
@@ -2703,7 +2773,6 @@ func DeleteProducerByNameStationIDAndConnID(name string, stationId int, connId s
 		return false, err
 	}
 	defer conn.Release()
-	// query := `DELETE FROM producers WHERE name = $1 AND station_id = $2 AND connection_id = $3 LIMIT 1`
 	query := `DELETE FROM producers WHERE name = $1 AND station_id = $2 AND connection_id = $3
 	AND EXISTS (
 		SELECT 1 FROM producers
@@ -3992,6 +4061,28 @@ func InsertNewSchemaVersion(schemaVersionNumber int, userId int, username string
 	return newSchemaVersion, rowsAffected, nil
 }
 
+func CountAllSchemasByTenant(tenantName string) (int64, error) {
+	var count int64
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) FROM schemas WHERE tenant_name = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_total_schemas_by_tenant", query)
+	if err != nil {
+		return 0, err
+	}
+	err = conn.Conn().QueryRow(ctx, stmt.Name, tenantName).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
 // Integration Functions
 func GetIntegration(name string, tenantName string) (bool, models.Integration, error) {
 	if tenantName != conf.GlobalAccount {
@@ -4125,8 +4216,9 @@ func InsertNewIntegration(tenantName string, name string, keys map[string]interf
 		name, 
 		keys,
 		properties,
-		tenant_name) 
-    VALUES($1, $2, $3, $4) RETURNING id`
+		tenant_name,
+		is_valid) 
+    VALUES($1, $2, $3, $4, $5) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_new_integration", query)
 	if err != nil {
@@ -4134,7 +4226,7 @@ func InsertNewIntegration(tenantName string, name string, keys map[string]interf
 	}
 
 	var integrationId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, keys, properties, tenantName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, keys, properties, tenantName, true)
 	if err != nil {
 		return models.Integration{}, err
 	}
@@ -4168,6 +4260,7 @@ func InsertNewIntegration(tenantName string, name string, keys map[string]interf
 		Keys:       keys,
 		Properties: properties,
 		TenantName: tenantName,
+		IsValid:    true,
 	}
 	return newIntegration, nil
 }
@@ -4188,7 +4281,7 @@ func UpdateIntegration(tenantName string, name string, keys map[string]interface
 	VALUES($1, $2, $3, $4)
 	ON CONFLICT(name, tenant_name) DO UPDATE
 	SET keys = excluded.keys, properties = excluded.properties
-	RETURNING id, name, keys, properties, tenant_name
+	RETURNING id, name, keys, properties, tenant_name, is_valid
 `
 	stmt, err := conn.Conn().Prepare(ctx, "update_integration", query)
 	if err != nil {
@@ -4639,6 +4732,28 @@ func CountAllUsers() (int64, error) {
 		return 0, err
 	}
 	err = conn.Conn().QueryRow(ctx, stmt.Name).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func CountAllUsersByTenant(tenantName string) (int64, error) {
+	var count int64
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) FROM users WHERE tenant_name = $1 AND username NOT LIKE '$%'` // filter memphis internal users`
+	stmt, err := conn.Conn().Prepare(ctx, "get_total_users_by_tenant", query)
+	if err != nil {
+		return 0, err
+	}
+	err = conn.Conn().QueryRow(ctx, stmt.Name, tenantName).Scan(&count)
 	if err != nil {
 		return 0, err
 	}
@@ -5665,7 +5780,7 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName strin
 			var pgErr *pgconn.PgError
 			if errors.As(err, &pgErr) {
 				if pgErr.Detail != "" {
-					if !strings.Contains(pgErr.Detail, "already exists") {
+					if strings.Contains(pgErr.Detail, "already exists") {
 						return 0, updated, errors.New("dls_messages row already exists")
 					} else {
 						return 0, updated, errors.New(pgErr.Detail)
@@ -5850,64 +5965,6 @@ func RemoveCgFromDlsMsg(msgId int, cgName string, tenantName string) error {
 	return nil
 }
 
-func GetDlsMsgsByStationId(stationId int) ([]models.DlsMessage, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	defer conn.Release()
-	query := `SELECT * from dls_messages where station_id=$1 ORDER BY updated_at DESC limit 1000`
-	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msg_by_station", query)
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId)
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	defer rows.Close()
-	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	if len(dlsMsgs) == 0 {
-		return []models.DlsMessage{}, nil
-	}
-
-	return dlsMsgs, nil
-}
-
-func GetDlsMsgsByStationAndPartition(stationId, partitionNumber int) ([]models.DlsMessage, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	defer conn.Release()
-	query := `SELECT * from dls_messages where station_id=$1 AND partition_number = $2 ORDER BY updated_at DESC limit 2000`
-	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msg_by_station_and_partition", query)
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId, partitionNumber)
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	defer rows.Close()
-	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	if len(dlsMsgs) == 0 {
-		return []models.DlsMessage{}, nil
-	}
-
-	return dlsMsgs, nil
-}
-
 func CountDlsMsgsByStationAndPartition(stationId, partitionNumber int) (int, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -5917,11 +5974,13 @@ func CountDlsMsgsByStationAndPartition(stationId, partitionNumber int) (int, err
 	}
 	defer conn.Release()
 	query := `SELECT COUNT(*) from dls_messages where station_id=$1`
+	stmtName := "count_dls_msgs_by_station_and_partition"
 	if partitionNumber > -1 {
 		query = `SELECT COUNT(*) from dls_messages where station_id=$1 AND partition_number = $2`
+		stmtName = "count_all_dls_msgs_by_station"
 	}
 
-	stmt, err := conn.Conn().Prepare(ctx, "count_dls_msgs_by_station_and_partition_1", query)
+	stmt, err := conn.Conn().Prepare(ctx, stmtName, query)
 	if err != nil {
 		return 0, err
 	}
@@ -6126,6 +6185,73 @@ func GetDlsMsgsBatch(tenantName string, min, max, stationId int) (bool, []models
 		return false, []models.DlsMessage{}, nil
 	}
 	return true, dlsMsgs, nil
+}
+
+func GetDlsMsgsByStationId(stationId int) ([]models.DlsMessage, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	defer conn.Release()
+	query := `SELECT *
+			FROM dls_messages AS dlsm
+			WHERE
+			dlsm.station_id = $1
+			ORDER BY dlsm.updated_at DESC limit 1000
+			`
+	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msg_by_station_id", query)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	defer rows.Close()
+	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	if len(dlsMsgs) == 0 {
+		return []models.DlsMessage{}, nil
+	}
+
+	return dlsMsgs, nil
+}
+
+func GetDlsMsgsByStationAndPartition(stationId, partitionNumber int) ([]models.DlsMessage, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	defer conn.Release()
+	query := `SELECT *
+			FROM dls_messages AS dlsm
+			WHERE dlsm.station_id = $1 AND dlsm.partition_number = $2
+			ORDER BY updated_at DESC limit 1000;
+			`
+	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msg_by_station_and_partition", query)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId, partitionNumber)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	defer rows.Close()
+	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	if len(dlsMsgs) == 0 {
+		return []models.DlsMessage{}, nil
+	}
+
+	return dlsMsgs, nil
 }
 
 // Tenants functions
@@ -6573,14 +6699,10 @@ func DeleteOldProducersAndConsumers(timeInterval time.Time) ([]models.LightCG, e
 	queries = append(queries, "DELETE FROM producers WHERE is_active = false AND updated_at < $1")
 	queries = append(queries, "WITH deleted AS (DELETE FROM consumers WHERE is_active = false AND updated_at < $1 RETURNING *) SELECT deleted.consumers_group, s.name as station_name, deleted.station_id , deleted.tenant_name, deleted.partitions FROM deleted INNER JOIN stations s ON deleted.station_id = s.id GROUP BY deleted.consumers_group, s.name, deleted.station_id, deleted.tenant_name, deleted.partitions")
 
-	timeIntervalTemp := time.Now().Add(time.Duration(time.Hour * -time.Duration(2))) // TODO to be deleted once we fix the producer limitation
-
 	batch := &pgx.Batch{}
-	batch.Queue(queries[0], timeIntervalTemp) // TODO to be deleted once we fix the producer limitation
-	batch.Queue(queries[1], timeInterval)     // TODO to be deleted once we fix the producer limitation
-	// for _, q := range queries { // TODO to be returned once we fix the producer limitation
-	// 	batch.Queue(q, timeInterval)
-	// }
+	for _, q := range queries {
+		batch.Queue(q, timeInterval)
+	}
 
 	br := conn.SendBatch(ctx, batch)
 
@@ -6653,10 +6775,11 @@ func RemovePoisonedCg(stationId int, cgName string) error {
 		return err
 	}
 
-	_, err = tx.Query(ctx, stmt.Name, cgName, stationId)
+	rows, err := tx.Query(ctx, stmt.Name, cgName, stationId)
 	if err != nil {
 		return err
 	}
+	rows.Close()
 
 	query = `DELETE FROM dls_messages WHERE message_type = 'poison' AND poisoned_cgs = '{}' OR poisoned_cgs IS NULL;`
 	stmt, err = tx.Prepare(ctx, "delete_dls_message", query)
@@ -6664,10 +6787,11 @@ func RemovePoisonedCg(stationId int, cgName string) error {
 		return err
 	}
 
-	_, err = tx.Query(ctx, stmt.Name)
+	rows, err = tx.Query(ctx, stmt.Name)
 	if err != nil {
 		return err
 	}
+	rows.Close()
 
 	err = tx.Commit(ctx)
 	if err != nil {
@@ -6872,7 +6996,7 @@ func GetAllAsyncTasks(tenantName string) ([]models.AsyncTaskRes, error) {
 		return []models.AsyncTaskRes{}, err
 	}
 	defer conn.Release()
-	query := `SELECT a.id, a.name, a.created_at, a.created_by, s.name
+	query := `SELECT a.id, a.name, a.created_at, a.created_by, s.name, a.meta_data
 	FROM async_tasks AS a
 	LEFT JOIN stations AS s ON a.station_id = s.id
 	WHERE a.tenant_name = $1
@@ -6899,6 +7023,7 @@ func GetAllAsyncTasks(tenantName string) ([]models.AsyncTaskRes, error) {
 			&task.CreatedAt,
 			&task.CreatedBy,
 			&sName,
+			&task.Data,
 		)
 		if err != nil {
 			return []models.AsyncTaskRes{}, err
@@ -6976,7 +7101,7 @@ func RemoveAllAsyncTasks(duration time.Duration) ([]int, error) {
 	defer conn.Release()
 	query := `WITH deleted_rows AS (
 		DELETE FROM async_tasks
-		WHERE updated_at <= $1 AND name='resend_all_dls_msgs'
+		WHERE updated_at <= $1
 		RETURNING station_id
 	  )
 	  SELECT ARRAY_AGG(station_id) AS deleted_station_ids
@@ -7115,4 +7240,221 @@ func CountProudcersForStation(stationId int) (int64, error) {
 	}
 
 	return count, nil
+}
+
+// Shared Locks Functions
+func GetAndLockSharedLock(name string, tenantName string) (bool, bool, models.SharedLock, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, false, models.SharedLock{}, err
+	}
+	defer conn.Release()
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return false, false, models.SharedLock{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
+
+	selectQuery := `SELECT * FROM shared_locks WHERE name = $1 AND tenant_name = $2 FOR UPDATE LIMIT 1`
+	stmt, err := tx.Prepare(ctx, "get_and_lock_shared_lock", selectQuery)
+	if err != nil {
+		return false, false, models.SharedLock{}, err
+	}
+	rows, err := tx.Query(ctx, stmt.Name, name, tenantName)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return false, false, models.SharedLock{}, nil
+		} else {
+			return false, false, models.SharedLock{}, err
+		}
+	}
+	defer rows.Close()
+	sharedLocks, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SharedLock])
+	if err != nil && err != pgx.ErrNoRows {
+		return false, false, models.SharedLock{}, err
+	}
+	var sharedLock models.SharedLock
+	lockTime := time.Now()
+	newLock := false
+	if len(sharedLocks) == 0 || err == pgx.ErrNoRows {
+		insterQuery := `INSERT INTO shared_locks(name, tenant_name, lock_held, locked_at) VALUES($1, $2, $3, $4) RETURNING *`
+
+		stmt, err := conn.Conn().Prepare(ctx, "insert_new_shared_lock_and_lock", insterQuery)
+		if err != nil {
+			return false, false, models.SharedLock{}, err
+		}
+
+		newSharedLock := models.SharedLock{}
+		if tenantName != conf.GlobalAccount {
+			tenantName = strings.ToLower(tenantName)
+		}
+		rows, err := conn.Conn().Query(ctx, stmt.Name, name, tenantName, true, lockTime)
+		if err != nil {
+			return false, false, models.SharedLock{}, err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			err := rows.Scan(&newSharedLock.ID, &newSharedLock.Name, &newSharedLock.TenantName, &newSharedLock.LockHeld, &newSharedLock.LockedAt)
+			if err != nil {
+				return false, false, models.SharedLock{}, err
+			}
+		}
+		sharedLock = newSharedLock
+		newLock = true
+	} else {
+		sharedLock = sharedLocks[0]
+	}
+
+	if !sharedLock.LockHeld {
+		updateQuery := "UPDATE shared_locks SET lock_held = TRUE, locked_at = $1 WHERE id = $2"
+		lockStmt, err := tx.Prepare(ctx, "lock_shared_lock", updateQuery)
+		if err != nil {
+			return false, false, models.SharedLock{}, err
+		}
+		_, err = tx.Exec(ctx, lockStmt.Name, lockTime, sharedLock.ID)
+		if err != nil {
+			return false, false, models.SharedLock{}, err
+		}
+		sharedLock.LockHeld = true
+		sharedLock.LockedAt = lockTime
+	} else if !newLock {
+		return true, false, sharedLock, nil
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return false, false, models.SharedLock{}, err
+	}
+	return true, true, sharedLock, nil
+}
+
+func SharedLockUnlock(name, tenantName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	query := `UPDATE shared_locks SET lock_held = FALSE WHERE name = $1 AND tenant_name=$2`
+	stmt, err := conn.Conn().Prepare(ctx, "unlock_shared_lock", query)
+	if err != nil {
+		return err
+	}
+	tenantName = strings.ToLower(tenantName)
+	_, err = conn.Conn().Query(ctx, stmt.Name, name, tenantName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteAllSharedLocks(tenantName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	query := `DELETE FROM shared_locks WHERE tenant_name=$1`
+	stmt, err := conn.Conn().Prepare(ctx, "delete_all_shared_locks", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func releaseStuckedSharedLocks(lockedAt time.Time) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	query := `UPDATE shared_locks SET lock_held = false WHERE locked_at < $1 AND lock_held = true`
+	stmt, err := conn.Conn().Prepare(ctx, "set_lock_held_by_name_and_by_locked_at_shared_lock", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, lockedAt)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func releaseStuckedStationLocks(lockedAt time.Time) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	query := `UPDATE stations SET functions_lock_held = false WHERE functions_locked_at < $1 AND functions_lock_held = true`
+	stmt, err := conn.Conn().Prepare(ctx, "set_functions_lock_held_at_station", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, lockedAt)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func UnlockStuckLocks(lockedAt time.Time) error {
+	err := releaseStuckedStationLocks(lockedAt)
+	if err != nil {
+		return fmt.Errorf("releaseStuckedStationLocks: %v", err)
+	}
+	err = releaseStuckedSharedLocks(lockedAt)
+	if err != nil {
+		return fmt.Errorf("releaseStuckedSharedLocks: %v", err)
+	}
+	return nil
+}
+
+func GetMemphisFunctionsByMemphis() ([]models.Function, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.Function{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM functions WHERE by_memphis = true`
+	stmt, err := conn.Conn().Prepare(ctx, "get_memphis_functions_by_memphis", query)
+	if err != nil {
+		return []models.Function{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return []models.Function{}, err
+	}
+
+	defer rows.Close()
+	functions, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Function])
+	if err != nil {
+		return []models.Function{}, err
+	}
+	if len(functions) == 0 {
+		return []models.Function{}, err
+	}
+	return functions, nil
 }

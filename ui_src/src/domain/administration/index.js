@@ -23,6 +23,7 @@ import Requests from './billing/requests';
 import Profile from '../profile';
 
 import ClusterConfiguration from './clusterConfiguration';
+import SoftwareUpates from './softwareUpdates';
 import { useHistory } from 'react-router-dom';
 import pathDomains from '../../router';
 import VersionUpgrade from './versionUpgrade';
@@ -58,11 +59,8 @@ function Administration({ step }) {
                 return <Integrations />;
             case 'cluster_configuration':
                 return <ClusterConfiguration />;
-            case 'version_upgrade':
-                if (!isCloud()) {
-                    return <VersionUpgrade />;
-                }
-                break;
+            case 'system_information':
+                return <SoftwareUpates />;
             case 'usage':
                 return <Requests />;
             case 'payments':
@@ -78,7 +76,7 @@ function Administration({ step }) {
                 <AccountMenu selectedMenuItem={selectedMenuItem} setMenuItem={handleMenuItemChange} />
                 {isCloud() && <BillingMenu selectedMenuItem={selectedMenuItem} setMenuItem={handleMenuItemChange} />}
             </div>
-            <div className="setting-items">{renderSelectedComponent()}</div>
+            {selectedMenuItem === 'system_information' ? <>{renderSelectedComponent()}</> : <div className="setting-items">{renderSelectedComponent()}</div>}
         </div>
     );
 }

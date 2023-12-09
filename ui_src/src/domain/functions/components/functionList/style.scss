@@ -1,9 +1,14 @@
 .function-container {
-    width: calc(100% - 90px);
+    width: calc(100% - var(--main-container-sidebar-width));
+    transition: .3s ease-in-out;
     position: absolute;
     padding: 1vw;
     min-width: 700px;
     height: 100%;
+    .ant-btn > .ant-btn-loading-icon .anticon {
+        padding-right: 0px !important;
+        color: var(--purple);
+    }
     .code-btn {
         display: flex;
         align-items: center;
@@ -12,7 +17,7 @@
     }
     connectedRepos {
         display: flex;
-        width: 260px;
+        width: 245px;
         height: 34px;
         padding: 5px 10px;
         justify-content: center;
@@ -46,12 +51,6 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        .ant-btn > .ant-btn-loading-icon {
-            padding-right: 0px;
-        }
-        .ant-btn > .ant-btn-loading-icon .anticon {
-            padding-right: 0px;
-        }
         .integrated-wrapper {
             display: flex;
             padding: 3px 10px;
@@ -80,6 +79,27 @@
         display: flex;
         gap: 10px;
         justify-content: flex-end;
+        .update-refresh {
+            display: flex;
+            position: relative;
+            .ant-badge {
+                position: absolute;
+                right: 5px;
+                top: 5px;
+                z-index: 5;
+            }
+            .refresh-btn {
+                background-color: #ffffff;
+                border-radius: 50%;
+                box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+                width: 34px;
+                height: 34px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+            }
+        }
     }
     .function-list-collapse {
         width: 100%;
@@ -156,7 +176,7 @@
 }
 .repos-popover {
     margin-top: 10px;
-    width: 260px;
+    width: 270px;
 }
 .repo-data {
     display: flex;
@@ -193,6 +213,23 @@
             display: flex;
             align-items: center;
             gap: 10px;
+
+            .refresh {
+                cursor: pointer;
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                border: 1px solid #e6e6e6;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                .ant-spin {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+            }
             .repo-item-icon {
                 height: 25px;
                 width: 25px;
@@ -225,5 +262,6 @@
 .clone-popover {
     .ant-popover-inner-content {
         padding: 20px !important;
+        width: 540px;
     }
 }

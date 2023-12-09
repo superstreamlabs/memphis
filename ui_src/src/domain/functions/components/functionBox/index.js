@@ -12,42 +12,59 @@
 
 import './style.scss';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import Skeleton from 'antd/lib/skeleton';
+import { IoIosInformationCircle } from 'react-icons/io';
 import { isCloud, parsingDate } from '../../../../services/valueConvertor';
 import { FiGitCommit } from 'react-icons/fi';
 import { BiDownload } from 'react-icons/bi';
-import { MdOutlineFileDownloadOff } from 'react-icons/md';
 import { IoClose } from 'react-icons/io5';
 import { GoRepo } from 'react-icons/go';
 import { ReactComponent as GithubBranchIcon } from '../../../../assets/images/githubBranchIcon.svg';
 import { ReactComponent as MemphisFunctionIcon } from '../../../../assets/images/memphisFunctionIcon.svg';
 import { ReactComponent as FunctionIcon } from '../../../../assets/images/functionIcon.svg';
+import { ReactComponent as DeleteIcon } from '../../../../assets/images/deleteIcon.svg';
+import { FaArrowCircleUp } from 'react-icons/fa';
 import { Divider, Drawer, Rate } from 'antd';
 import FunctionDetails from '../functionDetails';
 import { showMessages } from '../../../../services/genericServices';
 import TagsList from '../../../../components/tagList';
-import CloudOnly from '../../../../components/cloudOnly';
 import Button from '../../../../components/button';
+import Modal from '../../../../components/modal';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { OWNER } from '../../../../const/globalConst';
-import AttachTooltip from '../AttachTooltip';
+import { ApiEndpoints } from '../../../../const/apiEndpoints';
+import { httpRequest } from '../../../../services/http';
+import AttachFunctionModal from '../attachFunctionModal';
+import CloudModal from '../../../../components/cloudModal';
+import TestMockEvent from '../../components/testFunctionModal/components/testMockEvent';
+import { Context } from '../../../../hooks/store';
+import TooltipComponent from '../../../../components/tooltip/tooltip';
 
-function FunctionBox({ funcDetails, integrated, installed }) {
+function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null, onApply, doneUninstall, startInstallation, funcIndex, referredFunction }) {
+    const [state, dispatch] = useContext(Context);
     const [functionDetails, setFunctionDetils] = useState(funcDetails);
     const [open, setOpen] = useState(false);
-    const [selectedFunction, setSelectedFunction] = useState('');
+    const [selectedFunction, setSelectedFunction] = useState(null);
+    const [isValid, setIsValid] = useState(false);
+    const [chooseStationModal, setChooseStationModal] = useState(false);
+    const [cloudModal, setCloudModal] = useState(false);
+    const [loader, setLoader] = useState(false);
+    const [openUpgradeModal, setOpenUpgradeModal] = useState(false);
+    const [isTestFunctionModalOpen, setIsTestFunctionModalOpen] = useState(false);
 
     useEffect(() => {
         const url = window.location.href;
         const functionName = url.split('functions/')[1];
         if (functionName === functionDetails?.function_name) {
-            setOpen(true);
+            !onClick && setOpen(true);
             setSelectedFunction(functionName);
         }
     }, []);
 
     useEffect(() => {
         setFunctionDetils(funcDetails);
+        setIsValid(funcDetails?.is_valid);
     }, [funcDetails]);
 
     const handleDrawer = (flag) => {
@@ -55,19 +72,123 @@ function FunctionBox({ funcDetails, integrated, installed }) {
         if (flag) {
             setSelectedFunction(functionDetails);
         } else {
-            setSelectedFunction('');
+            setSelectedFunction(null);
         }
     };
+
+    const handleInstall = async () => {
+        const bodyRequest = {
+            function_name: functionDetails?.function_name,
+            repo: functionDetails?.repo,
+            owner: functionDetails?.owner,
+            branch: functionDetails?.branch,
+            scm_type: functionDetails?.scm,
+            by_memphis: funcDetails?.by_memphis
+        };
+        try {
+            await httpRequest('POST', ApiEndpoints.INSTALL_FUNCTION, bodyRequest);
+            showMessages('success', `We are ${functionDetails?.updates_available ? 'updating' : 'installing'} the function for you. We will let you know once its done`);
+            startInstallation(funcIndex, functionDetails?.updates_available);
+        } catch (e) {
+            return;
+        }
+    };
+
+    const handleUnInstall = async () => {
+        setLoader(true);
+        const bodyRequest = {
+            function_name: functionDetails?.function_name,
+            repo: functionDetails?.repo,
+            owner: functionDetails?.owner,
+            branch: functionDetails?.branch,
+            scm_type: functionDetails?.scm,
+            compute_engine: functionDetails?.compute_engine
+        };
+        try {
+            await httpRequest('DELETE', ApiEndpoints.UNINSTALL_FUNCTION, bodyRequest);
+            doneUninstall(funcIndex);
+        } catch (e) {
+        } finally {
+            setLoader(false);
+        }
+    };
+
+    const customFunctionDetails = (
+        <>
+            <repo is="x3d">
+                <GoRepo />
+                <label>{functionDetails?.repo}</label>
+            </repo>
+            <Divider type="vertical" />
+            <branch is="x3d">
+                <GithubBranchIcon />
+                <label>{functionDetails?.branch}</label>
+            </branch>
+            <Divider type="vertical" />
+        </>
+    );
+
+    const memphisFunctionDetails = (
+        <>
+            <downloads is="x3d">
+                <BiDownload className="download-icon" />
+                <label>{Number(funcDetails?.forks).toLocaleString()}</label>
+            </downloads>
+            <Divider type="vertical" />
+            <rate is="x3d">
+                <Rate disabled defaultValue={functionDetails?.stars} className="stars-rate" />
+                <label>{`(${funcDetails?.rates})`}</label>
+            </rate>
+            <Divider type="vertical" />
+        </>
+    );
+
+    const isTestAvailable = isCloud() && (functionDetails?.installed || functionDetails?.installed_in_progress);
+    const isAttachAvailable = !isCloud() || functionDetails?.installed || functionDetails?.installed_in_progress;
+    const shouldOpenUpgradeBanner = isCloud() && !state?.allowedActions?.can_apply_functions;
+    const attachUpgradeBtnPlaceholder = (
+        <span className="attach-btn">
+            <label>Attach</label>
+            <FaArrowCircleUp className="lock-feature-icon" />
+        </span>
+    );
+
+    const handleAttach = () => {
+        if (!isCloud()) setCloudModal(true);
+        else if (isTagsOn) setChooseStationModal(true);
+        else {
+            state?.allowedActions?.can_apply_functions ? onApply() : setOpenUpgradeModal(true);
+        }
+    };
+
+    const installShortBtn = functionDetails?.installed_in_progress || (functionDetails?.installed && !functionDetails?.updates_available);
+    const installBtnPlaceholder = functionDetails?.installed_in_progress ? ( //loader
+        ''
+    ) : functionDetails?.installed ? (
+        <div className="code-btn">
+            {functionDetails?.updates_available ? <BiDownload className="Install" /> : <DeleteIcon className="Uninstall" />}
+            {functionDetails?.updates_available ? <label>Update</label> : null}
+        </div>
+    ) : (
+        <div className="code-btn">
+            <BiDownload className="Install" />
+            <label>Install</label>
+        </div>
+    );
 
     return (
         <>
             <div
                 key={functionDetails?.function_name}
-                className={selectedFunction?.function_name === functionDetails.function_name ? 'function-box-wrapper func-selected' : 'function-box-wrapper'}
-                onClick={() => handleDrawer(true)}
+                className={
+                    selectedFunction?.function_name === functionDetails.function_name || referredFunction?.function_name === functionDetails.function_name
+                        ? 'function-box-wrapper func-selected'
+                        : 'function-box-wrapper'
+                }
+                onClick={() => (onClick ? onClick() : isCloud() ? handleDrawer(true) : setCloudModal(true))}
             >
                 <header is="x3d">
-                    <div className="function-box-header">
+                    <div className={`function-box-header ${!isTagsOn ? 'station' : undefined}`}>
                         <div className="details-section">
                             {funcDetails?.image ? <img src={funcDetails?.image} alt="Function icon" height="40px" /> : <FunctionIcon alt="Function icon" height="40px" />}
                             <div>
@@ -82,90 +203,104 @@ function FunctionBox({ funcDetails, integrated, installed }) {
                                         <owner is="x3d">{functionDetails?.owner === OWNER ? 'Memphis.dev' : functionDetails?.owner}</owner>
                                     </div>
                                     <Divider type="vertical" />
-                                    {funcDetails.owner !== OWNER && (
-                                        <>
-                                            <repo is="x3d">
-                                                <GoRepo />
-                                                <label>{functionDetails?.repository}</label>
-                                            </repo>
-                                            <Divider type="vertical" />
-                                            <branch is="x3d">
-                                                <GithubBranchIcon />
-                                                <label>{functionDetails?.branch}</label>
-                                            </branch>
-                                            <Divider type="vertical" />
-                                        </>
-                                    )}
-                                    <downloads is="x3d">
-                                        <BiDownload className="download-icon" />
-                                        <label>{Number(180).toLocaleString()}</label>
-                                    </downloads>
-                                    <Divider type="vertical" />
-                                    <rate is="x3d">
-                                        <Rate disabled defaultValue={5} className="stars-rate" />
-                                        <label>(50)</label>
-                                    </rate>
-                                    <Divider type="vertical" />
+                                    {funcDetails.owner !== OWNER ? customFunctionDetails : memphisFunctionDetails}
                                     <commits is="x3d">
                                         <FiGitCommit />
-                                        <label>Last commit on {parsingDate(functionDetails?.last_commit, false, false)}</label>
+                                        <label>Last modified on {parsingDate(functionDetails?.installed_updated_at, true, true)}</label>
                                     </commits>
                                 </deatils>
-                                <description is="x3d">{functionDetails?.description}</description>
+                                <description is="x3d">
+                                    {isValid || (!isValid && functionDetails?.installed) ? (
+                                        functionDetails?.description
+                                    ) : (
+                                        <Skeleton.Button
+                                            active={false}
+                                            style={{ width: '200px', height: '7px', borderRadius: '2px', background: '#e8e8e8', minWidth: '40px' }}
+                                        />
+                                    )}
+                                </description>
                             </div>
                         </div>
-                        <div
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                // installFunction() - not implemented yet
-                            }}
-                            className="install-button"
-                        >
-                            <div className="header-flex">
-                                <AttachTooltip disabled={!isCloud() || functionDetails?.install_in_progress || !installed} />
-                                {!isCloud() && <CloudOnly />}
-                            </div>
-                            <div className="header-flex">
+                        <div onClick={(e) => e.stopPropagation()} className="install-button">
+                            {!isValid && !functionDetails?.installed && (
+                                <div className="warning">
+                                    <IoIosInformationCircle style={{ fontSize: '20px', color: '#fc3400' }} />
+                                    <OverflowTip text={functionDetails?.invalid_reason} maxWidth={'260px'} textColor="#fc3400">
+                                        <label className="warning-message">{functionDetails?.invalid_reason}</label>
+                                    </OverflowTip>
+                                </div>
+                            )}
+                            {isTestAvailable && (
+                                <Button
+                                    placeholder="Test"
+                                    width={'100px'}
+                                    backgroundColorType={'orange'}
+                                    colorType={'black'}
+                                    radiusType={'circle'}
+                                    fontSize="12px"
+                                    fontFamily="InterSemiBold"
+                                    onClick={() => setIsTestFunctionModalOpen(true)}
+                                    disabled={!functionDetails?.installed || functionDetails?.installed_in_progress}
+                                />
+                            )}
+                            {isAttachAvailable && (
                                 <Button
                                     width="100px"
                                     height="34px"
-                                    placeholder={
-                                        functionDetails?.install_in_progress ? (
-                                            ''
-                                        ) : installed ? (
-                                            <div className="code-btn">
-                                                <MdOutlineFileDownloadOff className="Uninstall" />
-                                                <label>Uninstall</label>
-                                            </div>
-                                        ) : (
-                                            <div className="code-btn">
-                                                <BiDownload className="Install" />
-                                                <label>Install</label>
-                                            </div>
-                                        )
-                                    }
+                                    placeholder={shouldOpenUpgradeBanner ? attachUpgradeBtnPlaceholder : 'Attach'}
                                     purple-light
                                     colorType="white"
                                     radiusType="circle"
-                                    backgroundColorType={installed ? 'purple-light' : 'purple'}
+                                    backgroundColorType={'purple'}
                                     fontSize="12px"
                                     fontFamily="InterSemiBold"
-                                    disabled={!isCloud() || functionDetails?.install_in_progress}
-                                    isLoading={functionDetails?.install_in_progress} //Get indication after install function
-                                    onClick={() => {
-                                        showMessages('success', 'Install function');
-                                        return;
-                                    }}
+                                    disabled={isCloud() && functionDetails?.installed_in_progress}
+                                    onClick={handleAttach}
                                 />
-                                {!isCloud() && <CloudOnly />}
-                            </div>
+                            )}
+                            {isCloud() && (
+                                <TooltipComponent text={functionDetails?.installed ? functionDetails?.invalid_reason : ''}>
+                                    <span>
+                                        <Button
+                                            width={installShortBtn ? '34px' : '100px'}
+                                            height="34px"
+                                            placeholder={installBtnPlaceholder}
+                                            colorType={installShortBtn ? 'purple' : 'white'}
+                                            radiusType="circle"
+                                            backgroundColorType={installShortBtn ? 'white' : 'purple'}
+                                            border={installShortBtn ? 'gray-light' : null}
+                                            fontSize="12px"
+                                            fontFamily="InterSemiBold"
+                                            disabled={!isValid || functionDetails?.installed_in_progress}
+                                            isLoading={loader || functionDetails?.installed_in_progress}
+                                            onClick={() => (!functionDetails?.installed || functionDetails?.updates_available ? handleInstall() : handleUnInstall())}
+                                        />
+                                    </span>
+                                </TooltipComponent>
+                            )}
                         </div>
                     </div>
                 </header>
-                <footer is="x3d">
-                    <TagsList tagsToShow={3} tags={functionDetails?.tags} entityType="function" entityName={functionDetails?.function_name} />
-                </footer>
+                {isTagsOn && (isValid || (!isValid && functionDetails?.installed)) && (
+                    <footer is="x3d" style={{ borderTop: !functionDetails?.tags || functionDetails?.tags?.length === 0 ? 'none' : '' }}>
+                        <TagsList
+                            tagsToShow={functionDetails?.tags?.length > 5 ? 5 : functionDetails?.tags?.length}
+                            tags={functionDetails?.tags}
+                            entityType="function"
+                            entityName={functionDetails?.function_name}
+                        />
+                    </footer>
+                )}
+                {isTagsOn && !isValid && !functionDetails?.installed && (
+                    <footer is="x3d">
+                        <Skeleton.Button active={false} />
+                        <Skeleton.Button active={false} />
+                        <Skeleton.Button active={false} />
+                    </footer>
+                )}
             </div>
+            <AttachFunctionModal selectedFunction={functionDetails} open={chooseStationModal} clickOutside={() => setChooseStationModal(false)} />
+            <CloudModal open={cloudModal} handleClose={() => setCloudModal(false)} type={'cloud'} />
             <Drawer
                 placement="right"
                 size={'large'}
@@ -176,8 +311,18 @@ function FunctionBox({ funcDetails, integrated, installed }) {
                 maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
                 closeIcon={<IoClose style={{ color: '#D1D1D1', width: '25px', height: '25px' }} />}
             >
-                <FunctionDetails selectedFunction={selectedFunction} integrated={integrated} installed={installed} />
+                {selectedFunction && (
+                    <FunctionDetails
+                        selectedFunction={selectedFunction}
+                        integrated={integrated}
+                        handleUnInstall={handleUnInstall}
+                        handleInstall={handleInstall}
+                        clickApply={() => setChooseStationModal(true)}
+                    />
+                )}
             </Drawer>
+            <CloudModal type="upgrade" open={openUpgradeModal} handleClose={() => setOpenUpgradeModal(false)} />
+            <TestMockEvent functionDetails={funcDetails} open={isTestFunctionModalOpen} clickOutside={() => setIsTestFunctionModalOpen(false)} selectedVersion="latest" />
         </>
     );
 }

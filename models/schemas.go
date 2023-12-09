@@ -96,7 +96,7 @@ type SchemaUpdate struct {
 type SchemaUpdateInit struct {
 	SchemaName    string              `json:"schema_name"`
 	ActiveVersion SchemaUpdateVersion `json:"active_version"`
-	SchemaType    string               `json:"type"`
+	SchemaType    string              `json:"type"`
 }
 
 type SchemaUpdateVersion struct {

@@ -268,7 +268,6 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 			serv.Warnf("[tenant: %v][user: %v]RemoveTag: Tag %v at %v %v - create audit logs error: %v", user.TenantName, user.Username, body.Name, entity, body.EntityName, err.Error())
 		}
 	}
-
 	c.IndentedJSON(200, []string{})
 }
 

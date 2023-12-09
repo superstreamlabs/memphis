@@ -80,6 +80,19 @@ const Reducer = (stationState, action) => {
                 ...stationState,
                 schemaType: action.payload
             };
+        case 'SET_STATION_FUNCTIONS':
+            return {
+                ...stationState,
+                stationFunctions: action.payload
+            };
+        case 'UPDATE_FUNCTION_LIST':
+            return {
+                ...stationState,
+                stationFunctions: {
+                    ...stationState.stationFunctions,
+                    functions: action.payload
+                }
+            };
 
         default:
             return stationState;

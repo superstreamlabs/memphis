@@ -21,7 +21,7 @@ import { isCloud } from './valueConvertor';
 import EmailLink from '../components/emailLink';
 import { showMessages } from './genericServices';
 
-export async function httpRequest(method, endPointUrl, data = {}, headers = {}, queryParams = {}, authNeeded = true, timeout = 0, serverUrl = null) {
+export async function httpRequest(method, endPointUrl, data = {}, headers = {}, queryParams = {}, authNeeded = true, timeout = 0, serverUrl = null, displayMsg = true) {
     let isSkipGetStarted;
     if (authNeeded) {
         const token = localStorage.getItem(LOCAL_STORAGE_TOKEN);
@@ -59,7 +59,7 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
             AuthService.clearLocalStorage();
             isCloud() ? window.location.replace(CLOUD_URL) : window.location.assign(pathDomains.login);
         }
-        if (err?.response?.data?.message !== undefined && err?.response?.status === SHOWABLE_ERROR_STATUS_CODE) {
+        if (err?.response?.data?.message !== undefined && err?.response?.status === SHOWABLE_ERROR_STATUS_CODE && displayMsg) {
             showMessages('warning', err?.response?.data?.message);
         }
         if (err?.response?.data?.message !== undefined && err?.response?.status === 500) {

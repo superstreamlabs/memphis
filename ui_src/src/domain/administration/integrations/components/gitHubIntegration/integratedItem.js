@@ -20,28 +20,27 @@ import SelectComponent from '../../../../../components/select';
 import Button from '../../../../../components/button';
 import { FiPlus } from 'react-icons/fi';
 
-const IntegrationItem = ({ index, repo, reposList, updateIntegrationList, removeRepo, type, updateIntegration, addIsLoading }) => {
+const IntegrationItem = ({ isNew, index, disabled, repo, reposList, updateIntegrationList, removeRepo, updateIntegration, addIsLoading, isEdittingIntegration }) => {
     const [isEditting, setIsEditting] = useState(false);
-    const [isRemoveLoading, setIsRemoveLoading] = useState(false);
     const [formFields, setFormFields] = useState({
         type: 'functions',
-        repo_name: '',
-        repo_owner: '',
-        branch: ''
+        repo_name: null,
+        repo_owner: null,
+        branch: null
     });
     const [branches, setBranches] = useState([]);
 
     useEffect(() => {
         repo.repo_name && repo.repo_owner && getSourceCodeBranches(repo.repo_name, repo.repo_owner);
         setFormFields({ repo_name: repo.repo_name, repo_owner: repo.repo_owner, branch: repo.branch, type: 'functions' });
-    }, []);
+    }, [repo]);
 
     useEffect(() => {
         branches?.length > 0 && isEditting && updateBranch(branches[0]);
     }, [branches]);
 
     useEffect(() => {
-        updateIntegrationList(formFields, index);
+        formFields.branch && updateIntegrationList(formFields, index);
     }, [formFields.branch]);
 
     useEffect(() => {
@@ -66,17 +65,6 @@ const IntegrationItem = ({ index, repo, reposList, updateIntegrationList, remove
         } catch (error) {}
     };
 
-    const handleRemoveRepo = async () => {
-        setIsRemoveLoading(true);
-        try {
-            removeRepo(index);
-            updateIntegration();
-        } catch (error) {
-        } finally {
-            setIsRemoveLoading(false);
-        }
-    };
-
     return (
         <div>
             <div className="repos-item" repo={repo}>
@@ -91,7 +79,7 @@ const IntegrationItem = ({ index, repo, reposList, updateIntegrationList, remove
                         width={'90%'}
                         popupClassName="select-options"
                         value={formFields?.repo_name}
-                        disabled={!type}
+                        disabled={disabled}
                         onChange={(e) => {
                             updateRepo(e);
                         }}
@@ -110,14 +98,14 @@ const IntegrationItem = ({ index, repo, reposList, updateIntegrationList, remove
                         value={formFields?.branch}
                         options={branches || []}
                         popupClassName="select-options"
-                        disabled={!type}
+                        disabled={!isNew}
                         onChange={(e) => {
                             updateBranch(e);
                         }}
                     />
                 </Form.Item>
 
-                {!type ? (
+                {!isNew ? (
                     <Button
                         height={'30px'}
                         width={'95px'}
@@ -131,9 +119,8 @@ const IntegrationItem = ({ index, repo, reposList, updateIntegrationList, remove
                         backgroundColorType={'white'}
                         radiusType={'circle'}
                         fontFamily="InterSemiBold"
-                        onClick={handleRemoveRepo}
-                        isLoading={isRemoveLoading}
-                        disabled={!isRemoveLoading && addIsLoading}
+                        onClick={() => removeRepo(index)}
+                        disabled={isEdittingIntegration}
                         fontSize={'14px'}
                         border={'red'}
                     />
@@ -142,9 +129,11 @@ const IntegrationItem = ({ index, repo, reposList, updateIntegrationList, remove
                         height={'30px'}
                         width={'90px'}
                         placeholder={
-                            <div className="repo-button">
-                                <FiPlus style={{ marginRight: '5px' }} /> <span>Add</span>
-                            </div>
+                            !addIsLoading && (
+                                <div className="repo-button">
+                                    <FiPlus style={{ marginRight: '5px' }} /> <span>Add</span>
+                                </div>
+                            )
                         }
                         colorType={'white'}
                         radiusType={'circle'}

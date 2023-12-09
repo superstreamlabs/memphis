@@ -2,32 +2,38 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    border: 1px solid #dadada;
-    border-radius: 8px;
     position: relative;
     width: 100%;
-    padding: 16px;
+    padding: 16px 0px;
     .detail-box-wrapper {
         display: flex;
         position: relative;
         width: 100%;
+        &-center {
+            align-items: center;
+            svg {
+                display: flex;
+            }
+            .detail-title-wrapper .detail-title {
+                padding-bottom: 0!important;
+            }
+        }
         .detail-img {
             margin-right: 10px;
         }
         .separator {
-            opacity: 0.1;
-            background: #979797;
+            opacity: 0.3;
+            background: radial-gradient(163199.99% 35.29% at 50% 50%, #979797 0%, rgba(151, 151, 151, 0) 100%);
             width: 2px;
             display: flex;
-            height: 80%;
+            height: 100%;
             align-self: center;
             margin: 0 5px;
         }
         .detail-data {
             min-width: 130px;
             display: flex;
-            flex-direction: column;
-            justify-content: center;
+            padding-left: 10px;
             align-items: center;
             text-align: center;
             .detail-data-row {

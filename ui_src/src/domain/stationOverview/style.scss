@@ -1,18 +1,22 @@
 .station-overview-container {
-    width: calc(100% - 90px);
+    width: calc(100% - var(--main-container-sidebar-width));
+    transition: .3s ease-in-out;
     position: absolute;
     padding: 1vw;
-    height: calc(100%);
     overflow: auto;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: 15px;
-    .overview-header{
+    gap: 30px;
+    .overview-header {
         min-width: 1370px;
     }
-    .station-observability{
+    .station-observability {
         min-width: 1280px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
     .overview-top {
         display: flex;
@@ -20,10 +24,10 @@
         justify-content: space-between;
         min-width: 1000px;
         .station-observability {
-           min-height: 220px;
-           width: 100%;
+            min-height: 220px;
+            width: 100%;
         }
-        .connection-details{
+        .connection-details {
             align-self: center;
         }
     }
@@ -33,7 +37,7 @@
         display: flex;
         position: relative;
     }
-    .coming-soon-wrapper{
+    .coming-soon-wrapper {
         position: absolute;
         top: 0;
         right: 0;
@@ -44,9 +48,9 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        flex-direction:column;
+        flex-direction: column;
         border-radius: 8px;
-        p{
+        p {
             font-family: 'InterBold';
             font-size: 15px;
             color: #979797;
@@ -54,59 +58,59 @@
             margin-bottom: 0;
         }
     }
-    .function{
+    .function {
         height: calc(100% - 40px);
         top: 40px;
     }
-    .icons-coming-soon{
+    .icons-coming-soon {
         height: 85%;
-        p{
+        p {
             margin-top: 0;
             font-size: 11px;
         }
     }
-    .waiting-placeholder{
+    .waiting-placeholder {
         height: calc(100% - 25px);
         width: 100%;
         align-items: center;
         justify-content: center;
         display: flex;
         flex-direction: column;
-        p{
+        p {
             margin-top: 21px;
             font-family: 'InterSemiBold';
             font-size: 14px;
         }
-        .des{
+        .des {
             font-size: 12px;
-            color: #B4B4B4;
+            color: #b4b4b4;
             width: 80%;
-            text-align:-webkit-center;
+            text-align: -webkit-center;
             text-align: -moz-center;
             margin-bottom: 1em;
         }
-        .button-container{
-            span{
+        .button-container {
+            span {
                 font-family: 'InterSemiBold';
             }
         }
-    .explore-button{
-        width: 110px;
-        height: 37px;
-        color: white;
-        background: var(--purple);
-        border-radius: 50px;
-        font-size: 12px;
-        font-family: 'InterSemiBold';
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        .explore-button {
+            width: 110px;
+            height: 37px;
+            color: white;
+            background: var(--purple);
+            border-radius: 50px;
+            font-size: 12px;
+            font-family: 'InterSemiBold';
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .explore-button:hover{
+        .explore-button:hover {
             opacity: 0.8;
         }
     }
-    .msg-plc{
-        height: calc(100% - 145px) ;
+    .msg-plc {
+        height: calc(100% - 185px);
     }
 }

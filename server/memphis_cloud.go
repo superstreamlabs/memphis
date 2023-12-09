@@ -20,9 +20,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
 	"math/rand"
 	"net/http"
+	"os"
 	"runtime"
 	"sort"
 	"strconv"
@@ -35,6 +37,7 @@ import (
 	"github.com/memphisdev/memphis/memphis_cache"
 	"github.com/memphisdev/memphis/models"
 	"github.com/memphisdev/memphis/utils"
+	"gopkg.in/yaml.v2"
 
 	dockerClient "github.com/docker/docker/client"
 	"github.com/gin-contrib/cors"
@@ -55,6 +58,46 @@ type TenantHandler struct{ S *Server }
 type LoginSchema struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
+}
+
+type FunctionMetricsSchema struct {
+	AverageProcessingTime float64 `json:"average_processing_time"`
+	ErrorRate             float64 `json:"error_rate"`
+	TotalInvocations      float64 `json:"total_invocations"`
+}
+
+type FunctionOverviewSchema struct {
+	ID                int                   `json:"id"`
+	Name              string                `json:"name"`
+	StationId         int                   `json:"station_id"`
+	Version           int                   `json:"version"`
+	NextActiveStepId  int                   `json:"next_active_step_id"`
+	PrevActiveStepId  int                   `json:"prev_active_step_id"`
+	VisibleStep       int                   `json:"visible_step"`
+	PartitionNumber   int                   `json:"partition_number"`
+	Repo              string                `json:"repo"`
+	Branch            string                `json:"branch"`
+	Owner             string                `json:"owner"`
+	Runtime           string                `json:"runtime"`
+	OrderingMatter    bool                  `json:"ordering_matter"`
+	ComputeEngine     string                `json:"compute_engine"`
+	Activated         bool                  `json:"activated"`
+	AddedBy           string                `json:"added_by"`
+	SCM               string                `json:"scm"`
+	InstalledId       int                   `json:"installed_id"`
+	Metrics           FunctionMetricsSchema `json:"metrics"`
+	PendingMessages   int                   `json:"pending_messages"`
+	InProcessMessages int                   `json:"in_process_messages"`
+	TenantName        string                `json:"tenant_name"`
+}
+
+type FunctionsOverviewResponse struct {
+	Functions              []FunctionOverviewSchema `json:"functions"`
+	TotalAwaitingMessages  int                      `json:"total_awaiting_messages"`
+	TotalProcessedMessages int                      `json:"total_processed_messages"`
+	TotalInvocations       int                      `json:"total_invocations"`
+	AverageErrorRate       float64                  `json:"average_error_rate"`
+	FunctionsExists        bool                     `json:"functions_exists"`
 }
 
 var ErrUpgradePlan = errors.New("to continue using Memphis, please upgrade your plan to a paid plan")
@@ -113,17 +156,17 @@ func GetStationMaxAge(retentionType, tenantName string, retentionValue int) time
 	return time.Duration(0)
 }
 
-func CreateRootUserOnFirstSystemLoad() error {
+func CreateRootUserOnFirstSystemLoad() (bool, error) {
 	password := configuration.ROOT_PASSWORD
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 	if err != nil {
-		return err
+		return false, err
 	}
 	hashedPwdString := string(hashedPwd)
 
 	created, err := db.UpsertUserUpdatePassword(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, serv.MemphisGlobalAccountString())
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -158,8 +201,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 			}
 		})
 	}
-
-	return nil
+	return created, nil
 }
 
 func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bool, error) {
@@ -1088,7 +1130,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	}
 
 	// send signal to reload config
-	err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+	err = serv.SendReloadSignal()
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]EditConfigurations at sendInternalAccountMsgWithReply: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1411,7 +1453,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 
 	if userType == "application" && configuration.USER_PASS_BASED_AUTH {
 		// send signal to reload config
-		err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+		err = serv.SendReloadSignal()
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]AddUser at sendInternalAccountMsgWithReply: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1492,7 +1534,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 
 	if userToRemove.UserType == "application" && configuration.USER_PASS_BASED_AUTH {
 		// send signal to reload config
-		err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+		err = serv.SendReloadSignal()
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]RemoveUser at sendInternalAccountMsgWithReply: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1553,6 +1595,10 @@ func (s *Server) RefreshFirebaseFunctionsKey() {
 
 func shouldPersistSysLogs() bool {
 	return true
+}
+
+func shouldCreateSystemTasksStream() bool {
+	return false
 }
 
 func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
@@ -1981,7 +2027,7 @@ func (s *Server) Force3ReplicationsForExistingStations() error {
 	return nil
 }
 
-func getStationReplicas(replicas int) int {
+func GetStationReplicas(replicas int) int {
 	if replicas <= 0 {
 		return 1
 	} else if replicas == 2 || replicas == 4 {
@@ -2153,7 +2199,6 @@ func (s *Server) CreateDefaultEntitiesOnMemphisAccount() error {
 }
 
 func ScheduledCloudCacheRefresh() {
-	return
 }
 
 func ValidataAccessToFeature(tenantName, featureName string) bool {
@@ -2173,6 +2218,10 @@ func InitializeCloudComponents() error {
 }
 
 func (s *Server) ListenForCloudCacheUpdates() error {
+	return nil
+}
+
+func (s *Server) ListenToFunctionsCounterUpdates() error {
 	return nil
 }
 
@@ -2214,4 +2263,333 @@ func GetStationAttachedFunctionsByPartitions(stationID int, partitionsList []int
 
 func getInternalUserPassword() string {
 	return configuration.ROOT_PASSWORD
+}
+
+func sendDeleteAllFunctionsReqToMS(user models.User, tenantName, scmType, repo, branch, computeEngine, owner string, uninstall bool) error {
+	return nil
+}
+
+func sendCloneFunctionReqToMS(connectedRepo interface{}, user models.User, scm string, bodyToUpdate models.CreateIntegrationSchema, index int) {
+}
+
+func GetAllFirstActiveFunctionsIDByStationID(stationId int, tenantName string) (map[int]int, error) {
+	return map[int]int{}, nil
+}
+
+func (s *Server) CreateStream(tenantName string, sn StationName, retentionType string, retentionValue int, storageType string, idempotencyW int64, replicas int, tieredStorageEnabled bool, partition_number int, functionsEnabled bool) error {
+	var maxMsgs int
+	if retentionType == "messages" && retentionValue > 0 {
+		maxMsgs = retentionValue
+	} else {
+		maxMsgs = -1
+	}
+
+	var maxBytes int
+	if retentionType == "bytes" && retentionValue > 0 {
+		maxBytes = retentionValue
+	} else {
+		maxBytes = -1
+	}
+
+	maxAge := GetStationMaxAge(retentionType, tenantName, retentionValue)
+	retentionPolicy := getRetentionPolicy(retentionType)
+
+	var storage StorageType
+	if storageType == "memory" {
+		storage = MemoryStorage
+	} else {
+		storage = FileStorage
+	}
+
+	var idempotencyWindow time.Duration
+	if idempotencyW <= 0 {
+		idempotencyWindow = 2 * time.Minute // default
+	} else if idempotencyW < 100 {
+		idempotencyWindow = time.Duration(100) * time.Millisecond // minimum is 100 millis
+	} else {
+		idempotencyWindow = time.Duration(idempotencyW) * time.Millisecond
+	}
+
+	var internName string
+	if partition_number > 0 {
+		internName = fmt.Sprintf("%v$%v", sn.Intern(), partition_number)
+	} else {
+		internName = sn.Intern()
+	}
+
+	return s.
+		memphisAddStream(tenantName, &StreamConfig{
+			Name:                 internName,
+			Subjects:             []string{internName + ".>"},
+			Retention:            retentionPolicy,
+			MaxConsumers:         -1,
+			MaxMsgs:              int64(maxMsgs),
+			MaxBytes:             int64(maxBytes),
+			Discard:              DiscardOld,
+			MaxAge:               maxAge,
+			MaxMsgsPer:           -1,
+			Storage:              storage,
+			Replicas:             replicas,
+			NoAck:                false,
+			Duplicates:           idempotencyWindow,
+			TieredStorageEnabled: tieredStorageEnabled,
+		})
+}
+
+func (s *Server) ConsumeFunctionTasks() {
+}
+
+func (s *Server) ScaleFunctionWorkers() {
+	return
+}
+
+func (s *Server) ConsumeFunctionsDlsMessages() {
+
+}
+
+func shouldCreateFunctionDlsStream() bool {
+	return false
+}
+
+func shouldCreateConnectorsStream() bool {
+	return false
+}
+
+func (pmh PoisonMessagesHandler) GetDlsMessageDetails(messageId int, dlsType string, tenantName string) (models.DlsMessageResponseWithFunc, error) {
+	dlsMsg, err := pmh.GetDlsMessageDetailsById(messageId, dlsType, tenantName)
+	if err != nil {
+		return models.DlsMessageResponseWithFunc{}, err
+	}
+
+	dlsMsgResponse := models.DlsMessageResponseWithFunc{
+		ID:              dlsMsg.ID,
+		StationName:     dlsMsg.StationName,
+		SchemaType:      dlsMsg.SchemaType,
+		MessageSeq:      dlsMsg.MessageSeq,
+		Producer:        dlsMsg.Producer,
+		PoisonedCgs:     dlsMsg.PoisonedCgs,
+		Message:         dlsMsg.Message,
+		UpdatedAt:       dlsMsg.UpdatedAt,
+		ValidationError: dlsMsg.ValidationError,
+		FunctionName:    "",
+	}
+
+	return dlsMsgResponse, nil
+}
+
+func getUsageLimitProduersLimitPerStation(tenantName, stationName string) (float64, error) {
+	return -1, nil
+}
+
+func createUser(userName, userType, password string) error {
+	username := strings.ToLower(userName)
+	usernameError := validateUsername(username)
+	if usernameError != nil {
+		return usernameError
+	}
+
+	userTypeToLower := strings.ToLower(userType)
+	userTypeError := validateUserType(userTypeToLower)
+	if userTypeError != nil {
+		return userTypeError
+	}
+
+	avatarId := 1
+	if password == "" {
+		return fmt.Errorf("Password was not provided for user %s", username)
+	}
+	passwordErr := validatePassword(password)
+	if passwordErr != nil {
+		return passwordErr
+	}
+
+	if userType == "management" {
+		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+		if err != nil {
+			return err
+		}
+		password = string(hashedPwd)
+	}
+
+	fullName := ""
+	subscription := false
+	pending := false
+	team := ""
+	position := ""
+	owner := ""
+	description := ""
+	var err error
+	if userType == "application" {
+		if configuration.USER_PASS_BASED_AUTH {
+			if password == "" {
+				return fmt.Errorf("Password was not provided for user for user %v", username)
+			}
+			password, err = EncryptAES([]byte(password))
+			if err != nil {
+				return err
+			}
+		}
+	}
+	_, err = db.CreateUser(username, userType, password, fullName, subscription, avatarId, serv.MemphisGlobalAccountString(), pending, team, position, owner, description)
+	if err != nil {
+		return err
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analyticsParams := map[string]interface{}{
+			"username": username,
+		}
+		analytics.SendEvent(serv.MemphisGlobalAccountString(), username, analyticsParams, "user-add-user")
+	}
+	return nil
+}
+
+func convertToUsers(usersData []interface{}) []userDetails {
+	var users []userDetails
+	for _, userData := range usersData {
+		userMap, ok := userData.(map[interface{}]interface{})
+		if ok {
+			userVal := ""
+			passwordVal := ""
+			_, okUser := userMap["user"].(string)
+			if okUser {
+				userVal = userMap["user"].(string)
+			}
+
+			_, okPass := userMap["password"].(string)
+			if okPass {
+				passwordVal = userMap["password"].(string)
+			}
+
+			if ok && okPass {
+				users = append(users, userDetails{
+					User:     userVal,
+					Password: passwordVal,
+				})
+			}
+		}
+	}
+	return users
+}
+
+type userDetails struct {
+	User     string `json:"user" yaml:"user"`
+	Password string `json:"password" yaml:"password"`
+}
+
+type configUsers struct {
+	Users struct {
+		Mgmt   []userDetails `json:"mgmt" yaml:"mgmt"`
+		Client []userDetails `json:"client" yaml:"client"`
+	} `json:"users" yaml:"users"`
+}
+
+func parseYamlFile(initialConfigFile string) (configUsers, error) {
+	var data map[string]interface{}
+	err := yaml.Unmarshal([]byte(initialConfigFile), &data)
+	if err != nil {
+		return configUsers{}, err
+	}
+
+	usersMapData := map[interface{}]interface{}{}
+	usersMapDataMgmt := []interface{}{}
+	usersMapDataClient := []interface{}{}
+
+	usersMap, usersOk := data["users"].(map[interface{}]interface{})
+	if usersOk {
+		usersMapData = usersMap
+		usersMgmtMap, usersMgmtOk := usersMapData["mgmt"].([]interface{})
+		if usersMgmtOk {
+			usersMapDataMgmt = usersMgmtMap
+		}
+
+		usersClientMap, usersClientOk := usersMapData["client"].([]interface{})
+		if usersClientOk {
+			usersMapDataClient = usersClientMap
+		}
+	}
+
+	confUsers := configUsers{
+		Users: struct {
+			Mgmt   []userDetails `json:"mgmt" yaml:"mgmt"`
+			Client []userDetails `json:"client" yaml:"client"`
+		}{
+			Mgmt:   convertToUsers(usersMapDataMgmt),
+			Client: convertToUsers(usersMapDataClient),
+		},
+	}
+
+	return confUsers, nil
+}
+
+func CreateUsersFromConfigOnFirstSystemLoad() (int, error) {
+	var confUsers configUsers
+	lenUsers := 0
+	var initialConfigFile string
+	k8sEnv := true
+	if configuration.DOCKER_ENV == "true" || configuration.LOCAL_CLUSTER_ENV {
+		k8sEnv = false
+	}
+
+	if configuration.DEV_ENV == "true" && !k8sEnv || configuration.DOCKER_ENV == "true" {
+		initialConfigFile = os.Getenv("INITIAL_CONFIG_FILE")
+		if initialConfigFile == "" {
+			return 0, fmt.Errorf("INITIAL_CONFIG_FILE environment variable is not set.")
+		}
+	}
+
+	if configuration.DEV_ENV == "true" && !k8sEnv {
+		// for local env with launch json
+		err := json.Unmarshal([]byte(initialConfigFile), &confUsers)
+		if err != nil {
+			return 0, err
+		}
+	} else if configuration.DOCKER_ENV == "true" {
+		var err error
+		confUsers, err = parseYamlFile(initialConfigFile)
+		if err != nil {
+			return 0, err
+		}
+	} else {
+		yamlFilePath := "/etc/nats-config/initial.conf"
+		yamlData, err := ioutil.ReadFile(yamlFilePath)
+		if err != nil {
+			return 0, err
+		}
+
+		confUsers, err = parseYamlFile(string(yamlData))
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	for _, mgmtUser := range confUsers.Users.Mgmt {
+		err := createUser(mgmtUser.User, "management", mgmtUser.Password)
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	for _, user := range confUsers.Users.Client {
+		err := createUser(user.User, "application", user.Password)
+		if err != nil {
+			return 0, err
+		}
+	}
+	lenUsers = len(confUsers.Users.Mgmt) + len(confUsers.Users.Client)
+
+	return lenUsers, nil
+}
+
+func (s *Server) GetConnectorsByStationAndPartition(stationID, partitionNumber, numOfPartitions int) ([]map[string]string, error) {
+	return []map[string]string{}, nil
+}
+
+func deleteConnectorsStationResources(tenantName string, stationID int) error {
+	return nil
+}
+
+func deleteConnectorsTenantResources(tenantName string) error {
+	return nil
 }

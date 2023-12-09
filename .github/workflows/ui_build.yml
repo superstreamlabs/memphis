@@ -1,0 +1,81 @@
+name: UI Build and Commit
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'ui_src/**'
+
+jobs:
+  build-and-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Fetch Latest Master
+        run: |
+          git fetch origin master
+          git checkout master
+          git reset --hard origin/master
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: |
+          cd ui_src
+          npm ci
+
+      - name: Print Current Working Directory Path
+        run: pwd
+
+      - name: Print Current Working Directory List
+        run: ls -la
+
+      - name: Create New Branch
+        run: |
+          git checkout -b ui-build-files-${{ github.run_id }}
+
+      - name: Clear Previous Build
+        run: |
+          ls -la ./ui_static_files/build/
+          rm -rf ./ui_static_files/build/*
+          ls -la ./ui_static_files/build/
+
+      - name: Build
+        run: |
+          cd ui_src
+          npm run ci-build
+
+      - name: List Root Directory Contents
+        run: |
+          ls -la ./ui_static_files/build/
+
+      - name: Commit Changes
+        run: |
+          git config --global user.name 'teammemphis'
+          git config --global user.email 'team@memphis.dev'
+          git add ./ui_static_files/build/*
+          git commit -m "Build UI Static Files" -a || echo "No changes to commit"
+
+      - name: Push Changes
+        run: |
+          git push origin ui-build-files-${{ github.run_id }}
+
+      - name: Create Pull Request
+        uses: repo-sync/pull-request@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          pr_title: "Build UI Static Files"
+          pr_body: "Automated UI build for commit ${{ github.sha }}"
+          destination_branch: "master"
+          source_branch: "ui-build-files-${{ github.run_id }}"
+          pr_assignee: "idanasulinmemphis"
+
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

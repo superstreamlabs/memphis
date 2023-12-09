@@ -13,8 +13,7 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState, createContext, useReducer } from 'react';
-import { useHistory } from 'react-router-dom';
-
+import { useHistory, useLocation } from 'react-router-dom';
 import { extractValueFromURL, parsingDate } from '../../services/valueConvertor';
 import StationOverviewHeader from './stationOverviewHeader';
 import StationObservabilty from './stationObservabilty';
@@ -29,10 +28,10 @@ import { StringCodec, JSONCodec } from 'nats.ws';
 const initializeState = {
     stationMetaData: { is_native: true },
     stationSocketData: {},
-    stationPartition: -1
+    stationPartition: -1,
+    stationFunctions: {}
 };
 let sub;
-
 const StationOverview = () => {
     const [stationState, stationDispatch] = useReducer(Reducer);
     const url = window.location.href;
@@ -41,6 +40,7 @@ const StationOverview = () => {
     const [state, dispatch] = useContext(Context);
     const [isLoading, setisLoading] = useState(false);
     const [socketOn, setSocketOn] = useState(false);
+    const location = useLocation();
 
     const sortData = (data) => {
         data.audit_logs?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -57,6 +57,7 @@ const StationOverview = () => {
     const getStaionMetaData = async () => {
         try {
             let data = await httpRequest('GET', `${ApiEndpoints.GET_STATION}?station_name=${stationName}`);
+
             data.created_at = await parsingDate(data.created_at);
             stationDispatch({ type: 'SET_STATION_META_DATA', payload: data });
         } catch (error) {
@@ -173,7 +174,7 @@ const StationOverview = () => {
                             <StationOverviewHeader />
                         </div>
                         <div className="station-observability">
-                            <StationObservabilty />
+                            <StationObservabilty referredFunction={location?.selectedFunction} />
                         </div>
                     </div>
                 )}

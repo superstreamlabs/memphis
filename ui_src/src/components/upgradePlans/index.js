@@ -20,7 +20,7 @@ import { BsCheckLg } from 'react-icons/bs';
 import { Link } from 'react-router-dom';
 
 import { ReactComponent as RedirectIcon } from '../../assets/images/redirectIcon.svg';
-import { showMessages } from '../../services/genericServices';
+import { showMessages, useGetAllowedActions } from '../../services/genericServices';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import pathDomains from '../../router';
@@ -30,6 +30,7 @@ import Input from '../Input';
 import CheckboxComponent from '../checkBox';
 import { Context } from '../../hooks/store';
 import { LOCAL_STORAGE_PLAN } from '../../const/localStorageConsts';
+import { planType } from '../../const/globalConst';
 
 const reasons = ['Price is too high', 'Missing feature', 'Bad support', 'Performance', 'Limitations', 'Not using anymore', 'I switched to a competitor', 'Other'];
 
@@ -45,12 +46,12 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
     const [downgradeReaon, setReasonDowngrade] = useState('');
     const [planSelected, setPlanSelected] = useState({});
     const [textInput, setTextInput] = useState('');
-
+    const getAllowedActions = useGetAllowedActions();
     const success_url = window.location.href;
     const cancel_url = window.location.href;
 
     const handlePlanSelected = async (plan) => {
-        const isDowngrade = plan.intentionType === 'DOWNGRADE_PLAN';
+        let isDowngrade = plan.intentionType === 'DOWNGRADE_PLAN';
         setPlanSelected(plan);
         if (isDowngrade) {
             try {
@@ -80,21 +81,32 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
             }
         }
         try {
-            const data = await httpRequest('POST', ApiEndpoints.UPGRADE_PLAN, { plan: plan.plan.id, success_url, cancel_url, reason: reason });
+            let quantity = 0;
+            if (plan.billableFeatures.length > 0) {
+                quantity = plan.billableFeatures[0].quantity;
+            }
+            const data = await httpRequest('POST', ApiEndpoints.UPGRADE_PLAN, { plan: plan.plan.id, success_url, cancel_url, reason: reason, unit_quantity: quantity });
             if (data.resp_type === 'payment') window.open(data.stripe_url, '_self');
             else {
                 dispatch({ type: 'SET_ENTITLEMENTS', payload: data.entitlements });
+                dispatch({ type: 'SET_PLAN_TYPE', payload: data.plan === planType.FREE });
                 await refreshData();
-                showMessages('success', 'Your plan has been successfully updatead.');
+                setTimeout(() => {
+                    showMessages('success', 'Your plan has been successfully updated.');
+                }, 1000);
+                await getAllowedActions();
                 isExternal ? onClose() : setUpgradeModalOpen(false);
                 localStorage.setItem(LOCAL_STORAGE_PLAN, data.plan);
             }
-        } catch (error) {}
-        if (withReason) {
-            setDowngradeModalOpen(false);
-            setDowngradeLoader(false);
-            setReasonDowngrade('');
-            setIsCheck([]);
+        } catch (error) {
+            isExternal ? onClose() : setUpgradeModalOpen(false);
+        } finally {
+            if (withReason) {
+                setDowngradeModalOpen(false);
+                setDowngradeLoader(false);
+                setReasonDowngrade('');
+                setIsCheck([]);
+            }
         }
     };
 
@@ -147,7 +159,7 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
                             <FiArrowUpRight />
                         </div>
                     </div>
-                    <Paywall onPlanSelected={(plan) => handlePlanSelected(plan)} highlightedPlanId="plan-cloud-starter-new" />
+                    <Paywall onPlanSelected={(plan) => handlePlanSelected(plan)} highlightedPlanId="plan-cloud-growth-buckets" />
                     <div className="paywall-footer">
                         <label>*Coming soon</label>
                         <div className="question-info">
@@ -181,6 +193,17 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
             >
                 <Fragment>
                     <div className="instructions-redirect">
+                        {downgradeInstructions['feature-integration-slack'] && (
+                            <div className="redirect-section">
+                                <div className="violations-list">
+                                    <p className="violation-title"> Using Slack integration is violating the new plan</p>
+                                    <div className="hint-line">
+                                        <HiOutlineExclamationCircle />
+                                        <span>Please fix the following issues before performing a downgrade</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         {downgradeInstructions['feature-management-users'] && (
                             <div className="redirect-section">
                                 <p className="violation-title">Too many management users ({downgradeInstructions['feature-management-users']['usage']})</p>
@@ -206,7 +229,8 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
                         )}
                         {(downgradeInstructions['feature-partitions-per-station'] ||
                             downgradeInstructions['feature-storage-retention'] ||
-                            downgradeInstructions['feature-storage-tiering']) && (
+                            downgradeInstructions['feature-storage-tiering'] ||
+                            downgradeInstructions['feature-stations-limitation']) && (
                             <div className="redirect-section">
                                 <p className="violation-title">Some stations are violating the new plan </p>
                                 <div className="hint-line">
@@ -258,8 +282,37 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
                                         </div>
                                     </div>
                                 )}
-                            </div>
-                        )}
+                                {downgradeInstructions['feature-stations-limitation'] && (
+                                    <div className="violations-list">
+                                        <p className="violation-title">You have more stations than the allowed amount of stations in the new plan</p>
+                                        <div className="hint-line">
+                                            <HiOutlineExclamationCircle />
+                                            <span>
+                                                The plan you are about to downgrade to allows {downgradeInstructions['feature-stations-limitation']?.limits} stations
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+                                {downgradeInstructions['feature-apply-functions'] && (
+                                    <div className="violations-list">
+                                        <p className="violation-title">Some stations have attached functions</p>
+                                        <div className="hint-line">
+                                            <HiOutlineExclamationCircle />
+                                            <span>The plan you are about to downgrade does not allow to use attached functions feature</span>
+                                        </div>
+                                    </div>
+                                )}
+                                {downgradeInstructions['feature-dls-consumption-linkage'] && (
+                                    <div className="violations-list">
+                                        <p className="violation-title">Some stations are utilizing the DLS linkage feature</p>
+                                        <div className="hint-line">
+                                            <HiOutlineExclamationCircle />
+                                            <span>The plan you are about to downgrade to does not allow to use DLS linkage feature</span>
+                                        </div>
+                                    </div>
+                                )}
+                                </div>
+                            )}
                     </div>
                     <div className="instructions-button">
                         <Button

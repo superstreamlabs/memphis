@@ -22,6 +22,7 @@ import { ReactComponent as DeleteWrapperIcon } from '../../assets/images/deleteW
 import { ReactComponent as MailIcon } from '../../assets/images/mailIcon.svg';
 import { ReactComponent as DeleteIcon } from '../../assets/images/deleteIcon.svg';
 import { ReactComponent as SearchIcon } from '../../assets/images/searchIcon.svg';
+import { FaArrowCircleUp } from 'react-icons/fa';
 import SegmentButton from '../../components/segmentButton';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import SearchInput from '../../components/searchInput';
@@ -34,6 +35,9 @@ import { Context } from '../../hooks/store';
 import Modal from '../../components/modal';
 import Table from '../../components/table';
 import DeleteItemsModal from '../../components/deleteItemsModal';
+import CloudModal from '../../components/cloudModal';
+import { isCurrentUser } from '../../utils/user';
+import { Drawer } from 'antd';
 
 function Users() {
     const [state, dispatch] = useContext(Context);
@@ -51,6 +55,7 @@ function Users() {
     const [resendEmailLoader, setResendEmailLoader] = useState(false);
     const [createUserLoader, setCreateUserLoader] = useState(false);
     const [userToResend, setuserToResend] = useState('');
+    const [openCloudModal, setOpenCloudModal] = useState(false);
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'users' });
@@ -260,25 +265,27 @@ function Users() {
             key: 'action',
             render: (_, record) => (
                 <div className="user-action">
-                    <Button
-                        width="115px"
-                        height="30px"
-                        placeholder={
-                            <div className="action-button">
-                                <DeleteIcon className="delete-icon" alt="deleteIcon" />
-                                Delete user
-                            </div>
-                        }
-                        colorType="red"
-                        radiusType="circle"
-                        border="gray-light"
-                        backgroundColorType={'white'}
-                        fontSize="12px"
-                        fontFamily="InterMedium"
-                        onClick={() => {
-                            deleteUser(record.username, record.user_type);
-                        }}
-                    />
+                    {!isCurrentUser(record.id) && (
+                        <Button
+                            width="115px"
+                            height="30px"
+                            placeholder={
+                                <div className="action-button">
+                                    <DeleteIcon className="delete-icon" alt="deleteIcon" />
+                                    Delete user
+                                </div>
+                            }
+                            colorType="red"
+                            radiusType="circle"
+                            border="gray-light"
+                            backgroundColorType={'white'}
+                            fontSize="12px"
+                            fontFamily="InterMedium"
+                            onClick={() => {
+                                deleteUser(record.username, record.user_type);
+                            }}
+                        />
+                    )}
                 </div>
             )
         }
@@ -409,26 +416,28 @@ function Users() {
                                 />
                             </>
                         ) : (
-                            <Button
-                                width="115px"
-                                height="30px"
-                                placeholder={
-                                    <div className="action-button">
-                                        <DeleteIcon className="action-img-btn" alt="deleteIcon" />
-                                        Delete user
-                                    </div>
-                                }
-                                colorType="red"
-                                radiusType="circle"
-                                border="gray-light"
-                                backgroundColorType={'white'}
-                                fontSize="12px"
-                                fontFamily="InterMedium"
-                                isLoading={record.username === userToRemove.username && userDeletedLoader}
-                                onClick={() => {
-                                    deleteUser(record.username, record.user_type);
-                                }}
-                            />
+                            !isCurrentUser(record.id) && (
+                                <Button
+                                    width="115px"
+                                    height="30px"
+                                    placeholder={
+                                        <div className="action-button">
+                                            <DeleteIcon className="action-img-btn" alt="deleteIcon" />
+                                            Delete user
+                                        </div>
+                                    }
+                                    colorType="red"
+                                    radiusType="circle"
+                                    border="gray-light"
+                                    backgroundColorType={'white'}
+                                    fontSize="12px"
+                                    fontFamily="InterMedium"
+                                    isLoading={record.username === userToRemove.username && userDeletedLoader}
+                                    onClick={() => {
+                                        deleteUser(record.username, record.user_type);
+                                    }}
+                                />
+                            )
                         )}
                     </div>
                 )
@@ -477,7 +486,16 @@ function Users() {
                         className="modal-btn"
                         width="160px"
                         height="34px"
-                        placeholder={'Add new user'}
+                        placeholder={
+                            isCloud() && !state?.allowedActions?.can_create_users ? (
+                                <span className="create-new">
+                                    <label>Add a new user</label>
+                                    <FaArrowCircleUp className="lock-feature-icon" />
+                                </span>
+                            ) : (
+                                <span className="create-new">Add a new user</span>
+                            )
+                        }
                         colorType="white"
                         radiusType="circle"
                         backgroundColorType="purple"
@@ -485,7 +503,7 @@ function Users() {
                         fontWeight="600"
                         boxShadowStyle="float"
                         aria-haspopup="true"
-                        onClick={() => addUserModalFlip(true)}
+                        onClick={() => (!isCloud() || state?.allowedActions?.can_create_users ? addUserModalFlip(true) : setOpenCloudModal(true))}
                     />
                 </div>
             </div>
@@ -505,41 +523,27 @@ function Users() {
                     />
                 )}
             </div>
-            <Modal
-                header={
-                    <div className="modal-header">
-                        <div className="header-img-container">
-                            <AddUserIcon className="headerImage" alt="addUserIcon" />
-                        </div>
-                        <p>Add a new user</p>
-                        <label>Enter user details to get started</label>
-                    </div>
-                }
-                width="450px"
-                rBtnText="Create"
-                lBtnText="Cancel"
-                lBtnClick={() => {
-                    addUserModalFlip(false);
-                    setCreateUserLoader(false);
-                }}
-                clickOutside={() => {
+            <Drawer
+                placement="right"
+                title="Add a new user"
+                onClose={() => {
                     setCreateUserLoader(false);
                     addUserModalFlip(false);
                 }}
-                rBtnClick={() => {
-                    setCreateUserLoader(true);
-                    createUserRef.current();
-                }}
-                isLoading={createUserLoader}
+                destroyOnClose={true}
+                width="650px"
                 open={addUserModalIsOpen}
             >
                 <CreateUserDetails
                     createUserRef={createUserRef}
                     userList={userList}
-                    closeModal={(userData) => handleAddUser(userData)}
                     handleLoader={(e) => setCreateUserLoader(e)}
+                    closeModal={(userData) => {
+                        handleAddUser(userData);
+                    }}
+                    isLoading={createUserLoader}
                 />
-            </Modal>
+            </Drawer>
             <Modal
                 header="User connection details"
                 height="220px"
@@ -582,6 +586,7 @@ function Users() {
                 />
                 <br />
             </Modal>
+            <CloudModal type="upgrade" open={openCloudModal} handleClose={() => setOpenCloudModal(false)} />
         </div>
     );
 }

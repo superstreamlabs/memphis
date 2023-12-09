@@ -134,7 +134,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		return err
 	}
 	if !updated {
-		err = s.sendToDlsStation(station, data, headersJson, "unacked")
+		err = s.sendToDlsStation(station, data, headersJson, "unacked", "")
 		if err != nil {
 			serv.Errorf("[tenant: %v]handleNewUnackedMsg at sendToDlsStation: station: %v, Error while getting notified about a poison message: %v", station.TenantName, station.DlsStation, err.Error())
 			return err
@@ -189,28 +189,29 @@ func (s *Server) handleSchemaverseDlsMsg(msg []byte) {
 		serv.Errorf("[tenant: %v]handleSchemaverseDlsMsg at DecodeString: %v", tenantName, err.Error())
 		return
 	}
-	err = s.sendToDlsStation(station, data, message.Message.Headers, "failed_schema")
+	err = s.sendToDlsStation(station, data, message.Message.Headers, "failed_schema", "")
 	if err != nil {
 		serv.Errorf("[tenant: %v]handleSchemaverseDlsMsg at sendToDlsStation: station: %v, Error while getting notified about a poison message: %v", tenantName, station.DlsStation, err.Error())
 		return
 	}
 }
 
-func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station, partitionNumber int) ([]models.LightDlsMessageResponse, []models.LightDlsMessageResponse, int, error) {
+func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station, partitionNumber int) ([]models.LightDlsMessageResponse, []models.LightDlsMessageResponse, []models.LightDlsMessageResponse, int, error) {
 	poisonMessages := make([]models.LightDlsMessageResponse, 0)
 	schemaMessages := make([]models.LightDlsMessageResponse, 0)
+	functionsMessages := make([]models.LightDlsMessageResponse, 0)
 
 	var dlsMsgs []models.DlsMessage
 	var err error
 	if partitionNumber == -1 {
 		dlsMsgs, err = db.GetDlsMsgsByStationId(station.ID)
 		if err != nil {
-			return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+			return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
 		}
 	} else {
 		dlsMsgs, err = db.GetDlsMsgsByStationAndPartition(station.ID, partitionNumber)
 		if err != nil {
-			return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+			return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
 		}
 	}
 
@@ -230,16 +231,18 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 			poisonMessages = append(poisonMessages, models.LightDlsMessageResponse{MessageSeq: v.MessageSeq, ID: v.ID, Message: messageDetails})
 		case "schema":
 			messageDetails.Size = len(v.MessageDetails.Data) + len(v.MessageDetails.Headers)
-			schemaMessages = append(schemaMessages, models.LightDlsMessageResponse{MessageSeq: v.MessageSeq, ID: v.ID, Message: v.MessageDetails})
+			schemaMessages = append(schemaMessages, models.LightDlsMessageResponse{MessageSeq: v.MessageSeq, ID: v.ID, Message: messageDetails})
+		case "functions":
+			functionsMessages = append(functionsMessages, models.LightDlsMessageResponse{MessageSeq: v.MessageSeq, ID: v.ID, Message: messageDetails})
 		}
 	}
 
-	lenPoison, lenSchema := len(poisonMessages), len(schemaMessages)
+	lenPoison, lenSchema, lenFunctions := len(poisonMessages), len(schemaMessages), len(functionsMessages)
 	totalDlsAmount := 0
 	if len(dlsMsgs) >= 0 {
 		totalDlsAmount, err = db.CountDlsMsgsByStationAndPartition(station.ID, partitionNumber)
 		if err != nil {
-			return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+			return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
 		}
 	}
 
@@ -251,6 +254,10 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 		return schemaMessages[i].Message.TimeSent.After(schemaMessages[j].Message.TimeSent)
 	})
 
+	sort.Slice(functionsMessages, func(i, j int) bool {
+		return functionsMessages[i].Message.TimeSent.After(functionsMessages[j].Message.TimeSent)
+	})
+
 	if lenPoison > 1000 {
 		poisonMessages = poisonMessages[:1000]
 	}
@@ -258,7 +265,11 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 	if lenSchema > 1000 {
 		schemaMessages = schemaMessages[:1000]
 	}
-	return poisonMessages, schemaMessages, totalDlsAmount, nil
+
+	if lenFunctions > 1000 {
+		functionsMessages = functionsMessages[:1000]
+	}
+	return poisonMessages, schemaMessages, functionsMessages, totalDlsAmount, nil
 }
 
 func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType string, tenantName string) (models.DlsMessageResponse, error) {
@@ -431,7 +442,7 @@ func GetPoisonedCgsByMessage(station models.Station, messageSeq, partitionNumber
 	return poisonedCgs, nil
 }
 
-func (s *Server) sendToDlsStation(station models.Station, messagePayload []byte, headers map[string]string, dlsType string) error {
+func (s *Server) sendToDlsStation(station models.Station, messagePayload []byte, headers map[string]string, dlsType, functionName string) error {
 	if station.DlsStation != "" {
 		exist, dlsStation, err := db.GetStationByName(station.DlsStation, station.TenantName)
 		if err != nil {
@@ -462,6 +473,9 @@ func (s *Server) sendToDlsStation(station models.Station, messagePayload []byte,
 			}
 			headers["station"] = station.Name
 			headers["type"] = dlsType
+			if dlsType == "functions" {
+				headers["function_name"] = functionName
+			}
 			s.sendInternalAccountMsgWithHeadersWithEcho(acc, subject, messagePayload, headers)
 		}
 	}

@@ -40,6 +40,13 @@ type MessagePayload struct {
 	Headers  map[string]string `json:"headers"`
 }
 
+type MessagePayloadFunctionDls struct {
+	TimeSent time.Time         `json:"time_sent"`
+	Size     int               `json:"size"`
+	Data     []byte            `json:"data"`
+	Headers  map[string]string `json:"headers"`
+}
+
 type PoisonedCg struct {
 	CgName              string     `json:"cg_name"`
 	UnprocessedMessages int        `json:"unprocessed_messages"`
@@ -64,6 +71,16 @@ type SchemaVerseDlsMessageSdk struct {
 	PartitionNumber int             `json:"partition_number"`
 }
 
+type FunctionsDlsMessage struct {
+	StationID       int                       `json:"station_id"`
+	TenantName      string                    `json:"tenant_name"`
+	Message         MessagePayloadFunctionDls `json:"message"`
+	Err             string                    `json:"err"`
+	PartitionNumber int                       `json:"partition_number"`
+	FunctionID      int                       `json:"function_id"`
+	FunctionName    string                    `json:"function_name"`
+}
+
 type DlsMessage struct {
 	ID              int            `json:"id"`
 	StationId       int            `json:"station_id"`
@@ -76,6 +93,7 @@ type DlsMessage struct {
 	TenantName      string         `json:"tenant_name"`
 	ProducerName    string         `json:"producer_name"`
 	PartitionNumber int            `json:"partition_number"`
+	FunctionId      int            `json:"function_id"`
 }
 
 type DlsMsgResendAll struct {
@@ -114,4 +132,17 @@ type LightDlsMessageResponse struct {
 
 type RetentionIntervalData struct {
 	Updated_at time.Time `json:"updated_at"`
+}
+
+type DlsMessageResponseWithFunc struct {
+	ID              int                 `json:"id"`
+	StationName     string              `json:"station_name"`
+	SchemaType      string              `json:"schema_type"`
+	MessageSeq      int                 `json:"message_seq"`
+	Producer        ProducerDetailsResp `json:"producer"`
+	PoisonedCgs     []PoisonedCg        `json:"poisoned_cgs"`
+	Message         MessagePayload      `json:"message"`
+	UpdatedAt       time.Time           `json:"updated_at"`
+	ValidationError string              `json:"validation_error"`
+	FunctionName    string              `json:"function_name"`
 }

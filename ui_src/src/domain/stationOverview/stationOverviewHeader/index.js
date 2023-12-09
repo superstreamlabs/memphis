@@ -17,7 +17,7 @@ import { Add, FiberManualRecord } from '@material-ui/icons';
 import { HiOutlineExclamationCircle } from 'react-icons/hi';
 import { MinusOutlined } from '@ant-design/icons';
 import { useHistory } from 'react-router-dom';
-
+import { useGetAllowedActions } from '../../../services/genericServices';
 import { convertBytes, convertSecondsToDate, isCloud, replicasConvertor } from '../../../services/valueConvertor';
 import { ReactComponent as DeleteWrapperIcon } from '../../../assets/images/deleteWrapperIcon.svg';
 import { ReactComponent as StopUsingIcon } from '../../../assets/images/stopUsingIcon.svg';
@@ -34,6 +34,7 @@ import TooltipComponent from '../../../components/tooltip/tooltip';
 import OverflowTip from '../../../components/tooltip/overflowtip';
 import UpdateSchemaModal from '../components/updateSchemaModal';
 import ActiveBadge from '../../../components/activeBadge';
+import Copy from '../../../components/copy';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import { ReactComponent as BackIcon } from '../../../assets/images/backIcon.svg';
 import UseSchemaModal from '../components/useSchemaModal';
@@ -46,7 +47,7 @@ import Auditing from '../components/auditing';
 import AsyncTasks from '../../../components/asyncTasks';
 import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
-import { TIERED_STORAGE_UPLOAD_INTERVAL } from '../../../const/localStorageConsts';
+import { TIERED_STORAGE_UPLOAD_INTERVAL, LOCAL_STORAGE_ACCOUNT_ID, LOCAL_STORAGE_ENV, LOCAL_STORAGE_BROKER_HOST } from '../../../const/localStorageConsts';
 import { Context } from '../../../hooks/store';
 
 const StationOverviewHeader = () => {
@@ -64,8 +65,15 @@ const StationOverviewHeader = () => {
     const [useDlsModal, setUseDlsModal] = useState(false);
     const [disableModal, setDisableModal] = useState(false);
     const [disableLoader, setDisableLoader] = useState(false);
-
+    const getAllowedActions = useGetAllowedActions();
     const history = useHistory();
+
+    let host =
+        localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
+            ? 'localhost'
+            : localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
+            ? localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
+            : 'memphis.memphis.svc.cluster.local';
 
     const showRetentinViolation = isCloud() && stationState?.stationMetaData?.retention_type !== 'message_age_sec';
     const dls = stationState?.stationMetaData?.dls_station === '' ? null : stationState?.stationMetaData?.dls_station;
@@ -147,6 +155,8 @@ const StationOverviewHeader = () => {
         } catch (error) {
             setDeleteLoader(false);
             modalDeleteFlip(false);
+        } finally {
+            getAllowedActions();
         }
     };
 
@@ -162,6 +172,8 @@ const StationOverviewHeader = () => {
         } catch (error) {
             setDetachLoader(false);
             setDeleteModal(false);
+        } finally {
+            getAllowedActions();
         }
     };
 
@@ -188,10 +200,22 @@ const StationOverviewHeader = () => {
                             }}
                         />
                     </div>
-                    <span className="created-by">
+                    <div className="created-by">
                         Created by <b>{stationState?.stationMetaData?.created_by_username}</b> at {stationState?.stationMetaData?.created_at}{' '}
                         {!stationState?.stationMetaData?.is_native && '(NATS-Compatible)'}
-                    </span>
+                        {isCloud() && (
+                            <span className="hostname">
+                                <p>Account ID : </p>
+                                <span>{localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)}</span>
+                                <Copy width="12" data={localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)} />
+                            </span>
+                        )}
+                        <span className="hostname">
+                            <p>Broker hostname : </p>
+                            <span>{host}</span>
+                            <Copy width="12" data={localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)} />
+                        </span>
+                    </div>
                 </div>
                 <div className="station-buttons">
                     {stationState?.stationMetaData?.partitions_number > 1 && (
@@ -240,6 +264,19 @@ const StationOverviewHeader = () => {
                                 <b>Partitions: </b>
                                 {stationState?.stationMetaData?.partitions_number === 0 ? 1 : stationState?.stationMetaData?.partitions_number}
                             </p>
+                            <div className="flex-details-wrapper">
+                                <p style={{ display: 'flex' }}>
+                                    <b style={{ marginRight: '5px' }}>Dead-letter for: </b>
+                                    {stationState?.stationSocketData?.act_as_dls_station_in_stations &&
+                                    stationState?.stationSocketData?.act_as_dls_station_in_stations.length ? (
+                                        <OverflowTip text={stationState?.stationSocketData?.act_as_dls_station_in_stations.join(', ')} maxWidth={'70px'}>
+                                            {stationState?.stationSocketData?.act_as_dls_station_in_stations.join(', ')}
+                                        </OverflowTip>
+                                    ) : (
+                                        <MinusOutlined style={{ color: '#2E2C34' }} />
+                                    )}
+                                </p>
+                            </div>
                         </div>
                         <div className="storage-section">
                             <p>
@@ -267,52 +304,56 @@ const StationOverviewHeader = () => {
                             <div className="schema-header">
                                 <div className="schema-version">
                                     <p className="schema-title">Schema validation</p>
-                                    {stationState?.stationSocketData?.schema !== undefined && Object.keys(stationState?.stationSocketData?.schema).length !== 0 && (
-                                        <div className="schema-details sd-flex">
-                                            {stationState?.stationSocketData?.schema?.updates_available && <ActiveBadge content="Updates available" active={false} />}
-                                        </div>
-                                    )}
+                                    {(!stationState?.stationSocketData?.schema?.name && !stationState?.stationSocketData?.schema?.schema_type) ||
+                                        (stationState?.stationSocketData?.schema !== undefined && Object.keys(stationState?.stationSocketData?.schema).length !== 0 && (
+                                            <div className="schema-details sd-flex">
+                                                {stationState?.stationSocketData?.schema?.updates_available && <ActiveBadge content="Updates available" active={false} />}
+                                            </div>
+                                        ))}
                                 </div>
-                                {stationState?.stationSocketData?.schema !== undefined && Object.keys(stationState?.stationSocketData?.schema).length !== 0 && (
-                                    <RedirectIcon
-                                        width={15}
-                                        height={15}
-                                        alt="redirectIcon"
-                                        onClick={() => history.push(`${pathDomains.schemaverse}/list/${stationState?.stationSocketData?.schema?.name}`)}
-                                    />
-                                )}
+                                {(!stationState?.stationSocketData?.schema?.name && !stationState?.stationSocketData?.schema?.schema_type) ||
+                                    (stationState?.stationSocketData?.schema !== undefined && Object.keys(stationState?.stationSocketData?.schema).length !== 0 && (
+                                        <RedirectIcon
+                                            width={15}
+                                            height={15}
+                                            alt="redirectIcon"
+                                            onClick={() => history.push(`${pathDomains.schemaverse}/list/${stationState?.stationSocketData?.schema?.name}`)}
+                                        />
+                                    ))}
                             </div>
-                            {stationState?.stationSocketData?.schema !== undefined && Object.keys(stationState?.stationSocketData?.schema).length !== 0 && (
-                                <div className="name-and-version">
-                                    <p>{stationState?.stationSocketData?.schema?.name}</p>
-                                    <FiberManualRecord />
-                                    <p>v{stationState?.stationSocketData?.schema?.version_number}</p>
-                                </div>
-                            )}
-                            {stationState?.stationSocketData?.schema === undefined ||
-                                (Object.keys(stationState?.stationSocketData?.schema).length === 0 ? (
-                                    <>
-                                        <div className="add-new">
-                                            <Button
-                                                width="120px"
-                                                height="25px"
-                                                placeholder={
-                                                    <div className="use-schema-button">
-                                                        <Add />
-                                                        <p>Enforce schema</p>
-                                                    </div>
-                                                }
-                                                tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
-                                                colorType="white"
-                                                radiusType="circle"
-                                                backgroundColorType="purple"
-                                                fontSize="12px"
-                                                fontFamily="InterSemiBold"
-                                                disabled={!stationState?.stationMetaData?.is_native}
-                                                onClick={() => setUseSchemaModal(true)}
-                                            />
-                                        </div>
-                                    </>
+                            {(!stationState?.stationSocketData?.schema?.name && !stationState?.stationSocketData?.schema?.schema_type) ||
+                                (stationState?.stationSocketData?.schema !== undefined && Object.keys(stationState?.stationSocketData?.schema).length !== 0 && (
+                                    <div className="name-and-version">
+                                        <OverflowTip className="station-name" text={stationState?.stationSocketData?.schema?.name} maxWidth="190px">
+                                            {stationState?.stationSocketData?.schema?.name}
+                                        </OverflowTip>
+                                        <FiberManualRecord />
+                                        <p>v{stationState?.stationSocketData?.schema?.version_number}</p>
+                                    </div>
+                                ))}
+                            {stationState?.stationSocketData?.schema &&
+                                ((!stationState?.stationSocketData?.schema?.name && !stationState?.stationSocketData?.schema?.schema_type) ||
+                                Object.keys(stationState?.stationSocketData?.schema).length === 0 ? (
+                                    <div className="add-new">
+                                        <Button
+                                            width="90px"
+                                            height="25px"
+                                            placeholder={
+                                                <div className="use-schema-button">
+                                                    <Add />
+                                                    <p>Enforce</p>
+                                                </div>
+                                            }
+                                            tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
+                                            colorType="white"
+                                            radiusType="circle"
+                                            backgroundColorType="purple"
+                                            fontSize="12px"
+                                            fontFamily="InterSemiBold"
+                                            disabled={!stationState?.stationMetaData?.is_native}
+                                            onClick={() => setUseSchemaModal(true)}
+                                        />
+                                    </div>
                                 ) : (
                                     <div className="buttons">
                                         <Button
@@ -376,7 +417,7 @@ const StationOverviewHeader = () => {
                                     <RedirectIcon
                                         width={15}
                                         height={15}
-                                        className="redirect"
+                                        className="redirect dls-redirect"
                                         onClick={() => {
                                             history.push(`${pathDomains.stations}/${dls}`);
                                         }}
@@ -388,7 +429,9 @@ const StationOverviewHeader = () => {
                                 {dls && (
                                     <div className="flex-section">
                                         <UpRightArrow />
-                                        <p className="tag">{dls}</p>
+                                        <OverflowTip className="tag" text={dls} maxWidth="190px">
+                                            {dls}
+                                        </OverflowTip>
                                     </div>
                                 )}
                             </div>
@@ -417,7 +460,7 @@ const StationOverviewHeader = () => {
                 </div>
                 <div className="info-buttons">
                     <div className="sdk">
-                        <p>Code generator</p>
+                        <p>Client generator</p>
                         <span
                             onClick={() => {
                                 setSdkModal(true);
@@ -559,7 +602,7 @@ const StationOverviewHeader = () => {
                     <DeleteItemsModal
                         title="Disabling dead-letter consumption will stop pushing new dead-letter messages"
                         desc={
-                            <span>
+                            <span className="disable-consumption-modal">
                                 Station <strong>{stationState?.stationMetaData?.name}</strong> will be disconnected from <strong className="dls-name">{dls} </strong>.
                             </span>
                         }

@@ -40,9 +40,12 @@ const DLS_UNACKED_CONSUMER = "$memphis_dls_unacked_consumer"
 const SCHEMAVERSE_DLS_SUBJ = "$memphis_schemaverse_dls"
 const SCHEMAVERSE_DLS_INNER_SUBJ = "$memphis_schemaverse_inner_dls"
 const SCHEMAVERSE_DLS_CONSUMER = "$memphis_schemaverse_dls_consumer"
+const FUNCTIONS_DLS_INNER_SUBJ = "$memphis_functions_inner_dls"
+const FUNCTIONS_DLS_CONSUMER = "$memphis_functions_dls_consumer"
 const CACHE_UDATES_SUBJ = "$memphis_cache_updates"
 const INTEGRATIONS_AUDIT_LOGS_CONSUMER = "$memphis_integrations_audit_logs_consumer"
 const NOTIFICATIONS_BUFFER_CONSUMER = "$memphis_notifications_buffer_consumer"
+const FUNCTION_TASKS_CONSUMER = "$memphis_function_tasks_consumer"
 
 var LastReadThroughputMap map[string]models.Throughput
 var LastWriteThroughputMap map[string]models.Throughput
@@ -328,8 +331,14 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed to subscribing for cloud cache updates" + err.Error())
 	}
 
+	err = s.ListenToFunctionsCounterUpdates()
+	if err != nil {
+		return errors.New("Failed to subscribing for functions counter updates" + err.Error())
+	}
+
 	go s.ConsumeSchemaverseDlsMessages()
 	go s.ConsumeUnackedMsgs()
+	go s.ConsumeFunctionsDlsMessages()
 	go s.ConsumeTieredStorageMsgs()
 	go s.RemoveOldDlsMsgs()
 	go s.uploadMsgsToTier2Storage()
@@ -341,6 +350,9 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.SendBillingAlertWhenNeeded()
 	go s.CheckBrokenConnectedIntegrations()
 	go s.ConsumeNotificationsBufferMessages()
+	go s.ReleaseStuckLocks()
+	go s.ConsumeFunctionTasks()
+	go s.ScaleFunctionWorkers()
 
 	return nil
 }
@@ -667,15 +679,15 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 				}
 				err := testGithubIntegration(integration.Keys["installation_id"].(string))
 				if err != nil {
-					serv.Errorf("CheckBrokenConnectedIntegrations at testGithubIntegration: %v", err.Error())
+					serv.Warnf("[tenant: %s]CheckBrokenConnectedIntegrations at testGithubIntegration: %v", integration.TenantName, err.Error())
 					err = db.UpdateIsValidIntegration(integration.TenantName, integration.Name, false)
 					if err != nil {
-						serv.Errorf("CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", err.Error())
+						serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", integration.TenantName, err.Error())
 					}
 				} else {
 					err = db.UpdateIsValidIntegration(integration.TenantName, integration.Name, true)
 					if err != nil {
-						serv.Errorf("CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", err.Error())
+						serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", integration.TenantName, err.Error())
 					}
 				}
 			case "slack":
@@ -688,19 +700,19 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 				}
 				authToken, err := DecryptAES(key, integration.Keys["auth_token"].(string))
 				if err != nil {
-					serv.Errorf("CheckBrokenConnectedIntegrations at DecryptAES: %v", err.Error())
+					serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at DecryptAES: %v", integration.TenantName, err.Error())
 				}
 				err = testSlackIntegration(authToken)
 				if err != nil {
-					serv.Errorf("CheckBrokenConnectedIntegrations at testSlackIntegration: %v", err.Error())
+					serv.Warnf("[tenant: %s]CheckBrokenConnectedIntegrations at testSlackIntegration: %v", integration.TenantName, err.Error())
 					err = db.UpdateIsValidIntegration(integration.TenantName, integration.Name, false)
 					if err != nil {
-						serv.Errorf("CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", err.Error())
+						serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", integration.TenantName, err.Error())
 					}
 				} else {
 					err = db.UpdateIsValidIntegration(integration.TenantName, integration.Name, true)
 					if err != nil {
-						serv.Errorf("CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", err.Error())
+						serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", integration.TenantName, err.Error())
 					}
 				}
 			case "s3":
@@ -726,16 +738,16 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 				accessKey := integration.Keys["access_key"].(string)
 				secretKey, err := DecryptAES(key, integration.Keys["secret_key"].(string))
 				if err != nil {
-					serv.Errorf("CheckBrokenConnectedIntegrations at DecryptAES: %v", err.Error())
+					serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at DecryptAES: %v", integration.TenantName, err.Error())
 				}
 
 				provider := credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")
 				_, err = provider.Retrieve(context.Background())
 				if err != nil {
 					if strings.Contains(err.Error(), "static credentials are empty") {
-						serv.Errorf("CheckBrokenConnectedIntegrations at provider.Retrieve: credentials are empty %v", err.Error())
+						serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at provider.Retrieve: credentials are empty %v", integration.TenantName, err.Error())
 					} else {
-						serv.Errorf("CheckBrokenConnectedIntegrations at provider.Retrieve: %v", err.Error())
+						serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at provider.Retrieve: %v", integration.TenantName, err.Error())
 					}
 				}
 				cfg, err := awsconfig.LoadDefaultConfig(context.Background(),
@@ -744,7 +756,7 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 					awsconfig.WithEndpointResolverWithOptions(getS3EndpointResolver(integration.Keys["region"].(string), integration.Keys["url"].(string))),
 				)
 				if err != nil {
-					serv.Errorf("CheckBrokenConnectedIntegrations at awsconfig.LoadDefaultConfig: %v", err.Error())
+					serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at awsconfig.LoadDefaultConfig: %v", integration.TenantName, err.Error())
 				}
 				var usePathStyle bool
 				svc := s3.NewFromConfig(cfg, func(o *s3.Options) {
@@ -758,15 +770,15 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 				})
 				_, err = testS3Integration(svc, integration.Keys["bucket_name"].(string), integration.Keys["url"].(string))
 				if err != nil {
-					serv.Errorf("CheckBrokenConnectedIntegrations at testS3Integration: %v", err.Error())
+					serv.Warnf("[tenant: %s]CheckBrokenConnectedIntegrations at testS3Integration: %v", integration.TenantName, err.Error())
 					err = db.UpdateIsValidIntegration(integration.TenantName, integration.Name, false)
 					if err != nil {
-						serv.Errorf("CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", err.Error())
+						serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", integration.TenantName, err.Error())
 					}
 				} else {
 					err = db.UpdateIsValidIntegration(integration.TenantName, integration.Name, true)
 					if err != nil {
-						serv.Errorf("CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", err.Error())
+						serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", integration.TenantName, err.Error())
 					}
 				}
 			}
@@ -853,4 +865,16 @@ func fetchMessages[T any](s *Server,
 	}
 
 	return msgs, nil
+}
+
+func (s *Server) ReleaseStuckLocks() {
+	ticker := time.NewTicker(30 * time.Second)
+	for range ticker.C {
+		time := time.Now().Add(-10 * time.Minute)
+		err := db.UnlockStuckLocks(time)
+		if err != nil {
+			serv.Errorf("ReleaseStuckLocks at UnlockStuckLocks: %v", err.Error())
+		}
+
+	}
 }

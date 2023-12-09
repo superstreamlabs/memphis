@@ -49,6 +49,7 @@ const GitHubIntegration = ({ close, value }) => {
     const [repos, setRepos] = useState([]);
     const [addNew, setAddNew] = useState(false);
     const [isChanged, setIsChanged] = useState(false);
+    const [inProgressFlag, setInProgressFlag] = useState(false);
     const [isIntegrated, setIsIntagrated] = useState(false);
     const [tabValue, setTabValue] = useState('Configuration');
     const [cloudModalOpen, setCloudModalOpen] = useState(false);
@@ -75,7 +76,7 @@ const GitHubIntegration = ({ close, value }) => {
             setImagesLoaded(true);
         });
         getIntegration();
-    }, [value]);
+    }, []);
 
     function areEqual(arr1, arr2) {
         if (arr1?.length !== arr2?.length) {
@@ -117,8 +118,9 @@ const GitHubIntegration = ({ close, value }) => {
 
     const removeRepoItem = (index) => {
         let updatedValue = { ...formFields.keys };
-        updatedValue.connected_repos.splice(index, 1);
+        updatedValue?.connected_repos.splice(index, 1);
         setFormFields((formFields) => ({ ...formFields, keys: updatedValue }));
+        updateIntegration(updatedValue);
     };
 
     const updateKeysState = (field, value) => {
@@ -137,8 +139,7 @@ const GitHubIntegration = ({ close, value }) => {
         showMessages('success', disconnect ? 'The integration was successfully disconnected' : 'The integration connected successfully');
     };
 
-    const updateIntegration = async () => {
-        setLoadingSubmit(true);
+    const updateIntegration = async (updatedValue) => {
         const updatedFields = cleanEmptyFields();
         try {
             const data = await httpRequest('POST', ApiEndpoints.UPDATE_INTEGRATION, updatedFields);
@@ -160,7 +161,7 @@ const GitHubIntegration = ({ close, value }) => {
                 } else {
                     setIsIntagrated(false);
                 }
-
+                setInProgressFlag(data?.integration?.keys?.connected_repos?.some((repo) => repo?.in_progress));
                 updateKeysState('connected_repos', data?.integration?.keys?.connected_repos || []);
                 setRepos(data?.repos);
                 setApplicationName(data?.application_name);
@@ -258,15 +259,15 @@ const GitHubIntegration = ({ close, value }) => {
                                             fontSize="12px"
                                             fontFamily="InterSemiBold"
                                             onClick={() => {
-                                                // isCloud() &&
-                                                //     applicationName() &&
-                                                //     window.location.assign(`https://github.com/apps/${applicationName}/installations/select_target`);
-                                                setCloudModalOpen(true);
+                                                isCloud() &&
+                                                    applicationName &&
+                                                    window.location.assign(`https://github.com/apps/${applicationName}/installations/select_target`);
+                                                !isCloud() && setCloudModalOpen(true);
                                             }}
                                         />
                                     </div>
                                 )}
-                                <div className="api-details">
+                                <div className="api-details api-details-github">
                                     {isIntegrated && (
                                         <div className="input-field">
                                             <p className="title">Repos</p>
@@ -285,7 +286,7 @@ const GitHubIntegration = ({ close, value }) => {
                                                     {formFields?.keys?.connected_repos?.map((repo, index) => {
                                                         return (
                                                             <IntegrationItem
-                                                                key={index}
+                                                                key={`${repo.repo_name}_${repo.branch}_${repo.repo_owner}`}
                                                                 index={index}
                                                                 repo={repo}
                                                                 reposList={repos || []}
@@ -293,13 +294,23 @@ const GitHubIntegration = ({ close, value }) => {
                                                                 removeRepo={(i) => {
                                                                     removeRepoItem(i);
                                                                 }}
-                                                                type={index === formFields?.keys?.connected_repos?.length - 1 && addNew}
                                                                 updateIntegration={updateIntegration}
-                                                                addIsLoading={loadingSubmit}
+                                                                addIsLoading={loadingSubmit || repo?.in_progress}
+                                                                inProgressFlag={inProgressFlag}
+                                                                disabled={
+                                                                    (addNew && index !== formFields?.keys?.connected_repos?.length - 1) || !addNew || repo?.in_progress
+                                                                }
+                                                                isEdittingIntegration={addNew}
+                                                                isNew={index === formFields?.keys?.connected_repos?.length - 1 && addNew}
                                                             />
                                                         );
                                                     })}
-                                                    {!addNew && (
+                                                    {inProgressFlag && (
+                                                        <div className="add-more-repos" onClick={getIntegration}>
+                                                            <label>We're scanning. It might take a few minutes to complete</label>
+                                                        </div>
+                                                    )}
+                                                    {!addNew && !inProgressFlag && (
                                                         <div
                                                             className="add-more-repos"
                                                             onClick={() => {

@@ -47,12 +47,13 @@ import LearnMore from '../../components/learnMore';
 import { Context } from '../../hooks/store';
 import Modal from '../../components/modal';
 import AsyncTasks from '../../components/asyncTasks';
-import CloudMoadl from '../../components/cloudModal';
+import CloudModal from '../../components/cloudModal';
 import Throughput from './throughput';
 import Copy from '../../components/copy';
 import StreamLineage from '../streamLineage';
 import pathDomains from '../../router';
 import { useHistory } from 'react-router-dom';
+import { FaArrowCircleUp } from 'react-icons/fa';
 
 const dataSentences = [
     `“Data is the new oil” — Clive Humby`,
@@ -72,7 +73,7 @@ function OverView() {
     const [creatingProsessd, setCreatingProsessd] = useState(false);
     const [lineageExpend, setExpend] = useState(false);
     const [cloudModalOpen, setCloudModalOpen] = useState(false);
-
+    const [openCloudModal, setOpenCloudModal] = useState(false);
     const [dataSentence, setDataSentence] = useState(dataSentences[0]);
     const history = useHistory();
 
@@ -127,6 +128,7 @@ function OverView() {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
             arrangeData(data);
+            dispatch({ type: 'SET_PLAN_TYPE', payload: data?.billing_details?.is_free_plan });
             setisLoading(false);
         } catch (error) {
             setisLoading(false);
@@ -262,13 +264,21 @@ function OverView() {
                             )}
                             <Button
                                 className="modal-btn"
-                                width="170px"
+                                width="180px"
                                 height="34px"
                                 placeholder={
-                                    <span className="create-new">
-                                        <PlusElement alt="add" />
-                                        <label>Create a new station</label>
-                                    </span>
+                                    isCloud() && !state?.allowedActions?.can_create_stations ? (
+                                        <span className="create-new">
+                                            <PlusElement alt="add" />
+                                            <label>Create a new station</label>
+                                            <FaArrowCircleUp className="lock-feature-icon" />
+                                        </span>
+                                    ) : (
+                                        <span className="create-new">
+                                            <PlusElement alt="add" />
+                                            <label>Create a new station</label>
+                                        </span>
+                                    )
                                 }
                                 border="none"
                                 colorType="white"
@@ -280,7 +290,7 @@ function OverView() {
                                 boxShadowStyle="float"
                                 onClick={() => {
                                     sendTrace('overview-create-station-click', {});
-                                    modalFlip(true);
+                                    !isCloud() || state?.allowedActions?.can_create_stations ? modalFlip(true) : setOpenCloudModal(true);
                                 }}
                             />
                         </div>
@@ -296,10 +306,10 @@ function OverView() {
                                         <StreamLineage createStationTrigger={(e) => modalFlip(e)} setExpended={(e) => setExpend(e)} expend={lineageExpend} />
                                         <Throughput />
                                     </div>
-                                    <div className={state?.monitor_data?.billing_details?.is_free_plan ? 'right-side free-cloud' : 'right-side cloud'}>
+                                    <div className={state?.isFreePlan ? 'right-side free-cloud' : 'right-side cloud'}>
                                         <Stations createStationTrigger={(e) => modalFlip(e)} />
                                         <Tags />
-                                        {state?.monitor_data?.billing_details?.is_free_plan ? <Usage /> : <Integrations />}
+                                        {state?.isFreePlan ? <Usage /> : <Integrations />}
                                     </div>
                                 </div>
                             ) : (
@@ -366,7 +376,8 @@ function OverView() {
             >
                 <CreateStationForm createStationFormRef={createStationRef} setLoading={(e) => setCreatingProsessd(e)} />
             </Modal>
-            <CloudMoadl type="cloud" open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
+            <CloudModal type="cloud" open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
+            <CloudModal type="upgrade" open={openCloudModal} handleClose={() => setOpenCloudModal(false)} />
         </div>
     );
 }

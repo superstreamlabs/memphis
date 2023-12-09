@@ -2941,7 +2941,7 @@ func (c *client) processInboundGatewayMsg(msg []byte) {
 	// 	IncrementEventCounter(accName, "produced_event", 0, 1, subj, msgBytes, hdrBytes)
 	// }
 	// added by Memphis ***
-	
+
 	// Mostly under testing scenarios.
 	if c.srv == nil {
 		return

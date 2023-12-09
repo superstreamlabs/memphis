@@ -223,6 +223,13 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
+	firstFunctions, err := GetAllFirstActiveFunctionsIDByStationID(station.ID, tenantName)
+	if err != nil {
+		s.Errorf("[tenant: %v][user: %v]createProducerDirect at GetAllFirstActiveFunctionsIDByStationID: Producer %v at station %v: %v", cpr.TenantName, cpr.Username, cpr.Name, cpr.StationName, err.Error())
+		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, fmt.Errorf("got an error while getting the functions data"), &resp)
+	}
+	resp.StationPartitionsFirstFunctions = firstFunctions
+	resp.StationVersion = station.Version
 	partitions := models.PartitionsUpdate{PartitionsList: station.PartitionsList}
 	resp.PartitionsUpdate = partitions
 	resp.SchemaVerseToDls = schemaVerseToDls
@@ -245,7 +252,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]models.ExtendedProducer, []models.ExtendedProducer, []models.ExtendedProducer, error) { // for socket io endpoint
 	producers, err := db.GetAllProducersByStationID(station.ID)
 	if err != nil {
-		return producers, producers, producers, err
+		return []models.ExtendedProducer{}, []models.ExtendedProducer{}, []models.ExtendedProducer{}, err
 	}
 
 	var connectedProducers []models.ExtendedProducer
@@ -258,20 +265,21 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 			continue
 		}
 
-		producerRes := models.ExtendedProducer{
-			ID:          producer.ID,
-			Name:        producer.Name,
-			StationName: producer.StationName,
-			UpdatedAt:   producer.UpdatedAt,
-			IsActive:    producer.IsActive,
-			Count:       producer.Count,
+		producerExtendedRes := models.ExtendedProducer{
+			ID:                         producer.ID,
+			Name:                       producer.Name,
+			StationName:                producer.StationName,
+			UpdatedAt:                  producer.UpdatedAt,
+			IsActive:                   producer.IsActive,
+			DisconnedtedProducersCount: producer.DisconnedtedProducersCount,
+			ConnectedProducersCount:    producer.ConnectedProducersCount,
 		}
 
 		producersNames = append(producersNames, producer.Name)
 		if producer.IsActive {
-			connectedProducers = append(connectedProducers, producerRes)
+			connectedProducers = append(connectedProducers, producerExtendedRes)
 		} else {
-			disconnectedProducers = append(disconnectedProducers, producerRes)
+			disconnectedProducers = append(disconnectedProducers, producerExtendedRes)
 		}
 	}
 

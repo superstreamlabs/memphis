@@ -151,13 +151,37 @@ func removeTenantResources(tenantName string, user models.User) error {
 		return err
 	}
 
+	err = db.DeleteAllTestEvents(tenantName)
+	if err != nil {
+		return err
+	}
+
 	_, err = db.DeleteAndGetAttachedFunctionsByTenant(tenantName)
 	if err != nil {
 		return err
 	}
-	// TODO: send response of DeleteAndGetAttachedFunctionsByStation to microservice to delete
+
+	err = deleteConnectorsTenantResources(tenantName)
+	if err != nil {
+		return err
+	}
 
 	err = db.RemoveStationsByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = sendDeleteAllFunctionsReqToMS(user, tenantName, "github", "", "", "aws_lambda", "", true)
+	if err != nil {
+		return err
+	}
+
+	err = deleteInstallationForAuthenticatedGithubApp(user.TenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.DeleteIntegrationsByTenantName(tenantName)
 	if err != nil {
 		return err
 	}
@@ -174,7 +198,7 @@ func removeTenantResources(tenantName string, user models.User) error {
 		return err
 	}
 
-	err = db.DeleteIntegrationsByTenantName(tenantName)
+	err = db.DeleteAllSharedLocks(tenantName)
 	if err != nil {
 		return err
 	}
@@ -196,7 +220,7 @@ func removeTenantResources(tenantName string, user models.User) error {
 
 	if configuration.USER_PASS_BASED_AUTH {
 		// send signal to reload config
-		err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+		err = serv.SendReloadSignal()
 		if err != nil {
 			return err
 		}

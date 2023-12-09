@@ -49,12 +49,6 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
         produceMessagesRef.current = onFinish;
     }, [messageExample]);
 
-    const updateFormState = (field, value) => {
-        let updatedValue = { ...formFields };
-        updatedValue[field] = value;
-        setFormFields((formFields) => ({ ...formFields, ...updatedValue }));
-    };
-
     const generateMessage = () => {
         setMessageExample(generateJSONWithMaxLength(isCloud() ? 120 : 55));
     };
@@ -97,6 +91,7 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
         if (formFields.message_headers) formFields.message_headers = convertArrayToObject(formFields.message_headers);
         if (formFields.partition_number === 'all') formFields.partition_number = -1;
         const bodyRequest = { ...formFields, message_payload: messageExample, station_name: stationName };
+
         try {
             setLoading(true);
             await httpRequest('POST', ApiEndpoints.PRODUCE, bodyRequest);
@@ -184,8 +179,8 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                                                     backgroundColorType="none"
                                                     borderColorType="gray"
                                                     height="40px"
-                                                    onBlur={(e) => updateFormState(e.target.value)}
-                                                    onChange={(e) => updateFormState(e.target.value)}
+                                                    onBlur={(e) => creationForm.setFieldsValue({[name]: e.target.value})}
+                                                    onChange={(e) => creationForm.setFieldsValue({[name]: e.target.value})}
                                                     value={formFields.key}
                                                 />
                                             </Form.Item>
@@ -207,8 +202,8 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                                                     backgroundColorType="none"
                                                     borderColorType="gray"
                                                     height="40px"
-                                                    onBlur={(e) => updateFormState(e.target.value)}
-                                                    onChange={(e) => updateFormState(e.target.value)}
+                                                    onBlur={(e) => creationForm.setFieldsValue({[name]: e.target.value})}
+                                                    onChange={(e) => creationForm.setFieldsValue({[name]: e.target.value})}
                                                     value={formFields.header}
                                                 />
                                             </Form.Item>
@@ -234,42 +229,47 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                             headerDescription="Check this box to avoid schema validation"
                         />
                         <Form.Item className="form-input" name="bypass_schema" initialValue={isCloud() ? false : true}>
-                            <Switcher disabled={!isCloud()} onChange={(e) => updateFormState('bypass_schema', e)} checked={isCloud() ? formFields.bypass_schema : true} />
+                            <Switcher disabled={!isCloud()} onChange={(e) => creationForm.setFieldsValue({'bypass_schema': e})} checked={isCloud() ? formFields.bypass_schema : true} />
                         </Form.Item>
                     </div>
                     <Divider className="seperator" />
-                    <Form.Item className="form-input" name="partition_number" initialValue={partitons[0]}>
-                        <div className="header-flex">
-                            <p className="field-title">Partition</p>
-                            {!isCloud() && <CloudOnly />}
-                        </div>
-                        <SelectComponent
-                            value={formFields.partition_number || partitons[0]}
-                            colorType="navy"
-                            backgroundColorType={isCloud() ? 'none' : 'disabled'}
-                            borderColorType="gray"
-                            radiusType="semi-round"
-                            height="45px"
-                            options={partitons}
-                            onChange={(e) => updateFormState('partition_number', e.target.value)}
-                            popupClassName="select-options"
-                            disabled={!isCloud()}
-                        />
-                    </Form.Item>
-                    <div className="header-flex">
-                        <p className="field-title">Number of records</p>
-                        {!isCloud() && <CloudOnly />}
+                    <div className="partition-records-section">
+                        <Form.Item className="form-input" name="partition_number" initialValue={partitons[0]}>
+                            <div className="header-flex">
+                                <p className="field-title">Partition</p>
+                                {!isCloud() && <CloudOnly />}
+                            </div>
+                            <SelectComponent
+                                value={formFields.partition_number || partitons[0]}
+                                colorType="navy"
+                                backgroundColorType={isCloud() ? 'none' : 'disabled'}
+                                borderColorType="gray"
+                                radiusType="semi-round"
+                                height="45px"
+                                width="100%"
+                                options={partitons}
+                                onChange={(e) => creationForm.setFieldsValue({'partition_number': e.target.value})}
+                                popupClassName="select-options"
+                                disabled={!isCloud()}
+                            />
+                        </Form.Item>
+
+                        <Form.Item className="form-input" name="amount" initialValue={1}>
+                            <div className="header-flex">
+                                <p className="field-title">Number of records</p>
+                                {!isCloud() && <CloudOnly />}
+                            </div>
+                            <InputNumberComponent
+                                min={1}
+                                max={isCloud() ? 1000 : 1}
+                                onChange={(e) => creationForm.setFieldsValue({'amount': e})}
+                                value={formFields.amount}
+                                placeholder={formFields.amount || 1}
+                                disabled={!isCloud()}
+                                width="100%"
+                            />
+                        </Form.Item>
                     </div>
-                    <Form.Item className="form-input" name="amount" initialValue={1}>
-                        <InputNumberComponent
-                            min={1}
-                            max={isCloud() ? 1000 : 1}
-                            onChange={(e) => updateFormState('amount', e)}
-                            value={formFields.amount}
-                            placeholder={formFields.amount || 1}
-                            disabled={!isCloud()}
-                        />
-                    </Form.Item>
                 </div>
             </Form>
         </div>

@@ -80,7 +80,13 @@ const SelectComponent = ({
             >
                 {options.map((option) => (
                     <Option key={option?.id || option?.name || option} disabled={option?.disabled || false}>
-                        {option?.name || option}
+                        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                <img src={option?.icon} alt={option?.name} /> <label>{option?.name || option}</label>
+                            </span>
+                            {option?.comment && <span className="comment">{option?.comment}</span>}
+                            {option?.soon && <span className="coming-soon-select">Coming soon</span>}
+                        </span>
                     </Option>
                 ))}
             </Select>

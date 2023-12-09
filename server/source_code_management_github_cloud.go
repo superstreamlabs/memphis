@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/memphisdev/memphis/models"
@@ -25,33 +26,20 @@ var memphisFunctions = map[string]interface{}{
 	"repo_owner": memphisDevFunctionsOwnerName,
 }
 
-type githubRepoDetails struct {
-	RepoName  string `json:"repo_name"`
-	Branch    string `json:"branch"`
-	Type      string `json:"type"`
-	RepoOwner string `json:"repo_owner"`
-}
-
 func (it IntegrationsHandler) handleCreateGithubIntegration(tenantName string, keys map[string]interface{}) (models.Integration, int, error) {
 	return models.Integration{}, 0, nil
 }
 
 func (it IntegrationsHandler) handleUpdateGithubIntegration(user models.User, body models.CreateIntegrationSchema) (models.Integration, int, error) {
 	return models.Integration{}, 0, nil
-
 }
+
 func cacheDetailsGithub(keys map[string]interface{}, properties map[string]bool, tenantName string) {
-	return
 }
 
 func getGithubClientWithoutAccessToken() *github.Client {
 	client := github.NewClient(nil)
 	return client
-}
-
-func getGithubClient(tenantName string) (string, string, *github.Client, error) {
-	client := getGithubClientWithoutAccessToken()
-	return "", "", client, nil
 }
 
 func testGithubIntegration(installationId string) error {
@@ -64,15 +52,6 @@ func (s *Server) getGithubRepositories(integration models.Integration, body inte
 
 func (s *Server) getGithubBranches(integration models.Integration, body interface{}) (models.Integration, interface{}, error) {
 	return models.Integration{}, nil, nil
-}
-
-func containsElement(arr []string, val string) bool {
-	for _, item := range arr {
-		if item == val {
-			return true
-		}
-	}
-	return false
 }
 
 func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, functionsDetails map[string][]functionDetails, tenantName string) (map[string][]functionDetails, error) {
@@ -125,15 +104,30 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 					}
 
 					if _, ok := contentMap["memory"]; !ok || contentMap["memory"] == "" {
-						contentMap["memory"] = int64(128) * 1024 * 1024
+						contentMap["memory"] = 128 * 1024 * 1024
 					}
 
 					if _, ok := contentMap["storage"]; !ok || contentMap["storage"] == "" {
-						contentMap["storage"] = int64(512) * 1024 * 1024
+						contentMap["storage"] = 512 * 1024 * 1024
 					}
 
-					if contentMap["dependencies"].(string) == "" {
-						switch contentMap["language"] {
+					dependenciesMissing := false
+					if dependencies, ok := contentMap["dependencies"]; !ok || dependencies == nil || dependencies.(string) == "" {
+						dependenciesMissing = true
+					}
+					runtime := ""
+					if runtimeInterface, ok := contentMap["runtime"]; !ok || runtimeInterface == nil || runtimeInterface.(string) == "" {
+						continue
+					} else {
+						runtime = runtimeInterface.(string)
+					}
+					re := regexp.MustCompile("^[^0-9.]+")
+					lang := re.FindString(runtime)
+					if lang != "go" && lang != "python" && lang != "nodejs" {
+						continue
+					}
+					if dependenciesMissing {
+						switch lang {
 						case "go":
 							contentMap["dependencies"] = "go.mod"
 						case "nodejs":
@@ -180,8 +174,15 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 						TenantName:   tenantName,
 					}
 
-					if path != contentMap["function_name"].(string) {
-						message := fmt.Sprintf("In the repository %s, function name %s in git doesn't match the function_name field %s in YAML file.", repo, splitPath[0], contentMap["function_name"].(string))
+					functionName := ""
+					if functionNameInterface, ok := contentMap["function_name"]; !ok || functionNameInterface == nil || functionNameInterface.(string) == "" {
+						continue
+					} else {
+						functionName = functionNameInterface.(string)
+					}
+
+					if path != functionName {
+						message := fmt.Sprintf("In the repository %s, function name %s in git doesn't match the function_name field %s in YAML file.", repo, splitPath[0], functionName)
 						serv.Warnf("[tenant: %s]GetGithubContentFromConnectedRepo: %s", tenantName, message)
 						fileDetails.IsValid = false
 						fileDetails.InvalidReason = message
@@ -189,7 +190,7 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 						continue
 					}
 					if strings.Contains(path, " ") {
-						message := fmt.Sprintf("In the repository %s, the function name %s in the YAML file cannot contain spaces", repo, contentMap["function_name"].(string))
+						message := fmt.Sprintf("In the repository %s, the function name %s in the YAML file cannot contain spaces", repo, functionName)
 						serv.Warnf("[tenant: %s]GetGithubContentFromConnectedRepo: %s", tenantName, message)
 						fileDetails.IsValid = false
 						fileDetails.InvalidReason = message
@@ -217,6 +218,7 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 func deleteInstallationForAuthenticatedGithubApp(tenantName string) error {
 	return nil
 }
+
 func getGithubKeys(githubIntegrationDetails map[string]interface{}, repoOwner, repo, branch, repoType string) map[string]interface{} {
 	return map[string]interface{}{}
 }
