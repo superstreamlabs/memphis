@@ -10,6 +10,31 @@
     justify-content: space-between;
     z-index: 1;
 
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+        30% {
+            transform: scale(1.2);
+        }
+        50% {
+            transform: scale(1);
+        }
+        70% {
+            transform: scale(1.2);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    &:hover {
+        .upper-icons-toggle {
+            animation: pulse 1.2s infinite;
+            animation-iteration-count: 1;
+        }
+    }
+
     .sidebar-user-info {
         cursor: pointer;
         &-img {
@@ -342,8 +367,9 @@
             cursor: pointer;
             padding: 5px;
             z-index: 2;
-            transition: 0.2s linear;
+            transition: transform 0.2s ease-in-out;
             &.open {
+                animation: initial;
                 transform: scale(-1, -1);
             }
             svg {
