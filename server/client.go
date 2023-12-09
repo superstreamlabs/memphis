@@ -1939,7 +1939,6 @@ func (c *client) sendErrAndWarn(funcName, err string) {
 	c.sendErr(err)
 	// c.Warnf("[tenant: %s]%s: %s", c.acc.GetName(), funcName, err)
 }
-
 // added by Memphis ***
 
 func (c *client) authTimeout() {

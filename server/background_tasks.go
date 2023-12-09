@@ -42,7 +42,7 @@ const SCHEMAVERSE_DLS_INNER_SUBJ = "$memphis_schemaverse_inner_dls"
 const SCHEMAVERSE_DLS_CONSUMER = "$memphis_schemaverse_dls_consumer"
 const CACHE_UDATES_SUBJ = "$memphis_cache_updates"
 const INTEGRATIONS_AUDIT_LOGS_CONSUMER = "$memphis_integrations_audit_logs_consumer"
-const SLACK_CONSUMER = "$memphis_notifications_slack_consumer"
+const NOTIFICATIONS_BUFFER_CONSUMER = "$memphis_notifications_buffer_consumer"
 
 var LastReadThroughputMap map[string]models.Throughput
 var LastWriteThroughputMap map[string]models.Throughput
@@ -53,11 +53,11 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 	_, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			opts := &ConnzOptions{
-				Limit: s.opts.MaxConn,
-				Username: false,
-				Subscriptions: false,
+				Limit:               s.opts.MaxConn,
+				Username:            false,
+				Subscriptions:       false,
 				SubscriptionsDetail: false,
-				State: ConnOpen,
+				State:               ConnOpen,
 			}
 			conns, _ := s.Connz(opts)
 			connectionIds := make(map[string]string)
@@ -340,7 +340,7 @@ func (s *Server) StartBackgroundTasks() error {
 	go ScheduledCloudCacheRefresh()
 	go s.SendBillingAlertWhenNeeded()
 	go s.CheckBrokenConnectedIntegrations()
-	go s.ConsumeSlackMessages()
+	go s.ConsumeNotificationsBufferMessages()
 
 	return nil
 }
@@ -775,24 +775,24 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 	return nil
 }
 
-func (s *Server) ConsumeSlackMessages() error {
+func (s *Server) ConsumeNotificationsBufferMessages() error {
 	const mAmount = 1000
 	for {
-		if !SLACK_STREAM_CREATED || !SLACK_CONSUMER_CREATED {
-			s.Warnf("ConsumeSlackMessages: waiting for slack stream and consumer to be created")
+		if !NOTIFICATIONS_BUFFER_STREAM_CREATED || !NOTIFICATIONS_BUFFER_CONSUMER_CREATED {
+			s.Warnf("ConsumeNotificationsBufferMessages: waiting for notifications stream and consumer to be created")
 			time.Sleep(2 * time.Second)
 			continue
 		}
 
 		msgs, err := fetchMessages[slackMsg](s,
-			SLACK_CONSUMER,
-			slackStreamName,
+			NOTIFICATIONS_BUFFER_CONSUMER,
+			notificationsStreamName,
 			mAmount,
 			3*time.Second,
 			createSlackMsg)
 
 		if err != nil {
-			s.Errorf("Failed to fetch slack messages: %v", err.Error())
+			s.Errorf("Failed to fetch notifications: %v", err.Error())
 			continue
 		}
 

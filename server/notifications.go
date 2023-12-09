@@ -44,7 +44,7 @@ func (s *Server) SendNotification(tenantName string, title string, message strin
 				if slackIntegration, ok := tenantInetgrations[slackIntegrationName].(models.SlackIntegration); ok {
 					if slackIntegration.Properties[msgType] {
 						// TODO: if the stream doesn't exist save the messages in buffer
-						if !SLACK_STREAM_CREATED {
+						if !NOTIFICATIONS_BUFFER_STREAM_CREATED {
 							return nil
 						}
 
@@ -60,7 +60,7 @@ func (s *Server) SendNotification(tenantName string, title string, message strin
 							Time:       time.Now(),
 						}
 
-						err := saveSlackNotificationToQueue(s, slackStreamName, tenantName, &notificationMsg)
+						err := saveSlackNotificationToQueue(s, notificationsStreamName, tenantName, &notificationMsg)
 						if err != nil {
 							return err
 						}
@@ -74,13 +74,12 @@ func (s *Server) SendNotification(tenantName string, title string, message strin
 	return nil
 }
 
-func saveSlackNotificationToQueue(s *Server, stream, tenantName string, notificationMsg *NotificationMsg) error {
-	subject := fmt.Sprintf("%s.%s", stream, tenantName)
+func saveSlackNotificationToQueue(s *Server, subject, tenantName string, notificationMsg *NotificationMsg) error {
 	msg, err := json.Marshal(notificationMsg)
 	if err != nil {
 		return err
 	}
-	err = s.sendInternalAccountMsg(s.MemphisGlobalAccount(), subject, msg)
+	err = s.sendInternalAccountMsgWithEcho(s.MemphisGlobalAccount(), subject, msg)
 	if err != nil {
 		return fmt.Errorf("SendNotification (tenant %s): %w", tenantName, err)
 	}
