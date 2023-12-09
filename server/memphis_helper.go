@@ -540,15 +540,15 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			tryCreateInternalJetStreamResources(s, retentionDur, successCh, isCluster)
 			return
 		}
-    if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
 			successCh <- err
 			return
 		}
-    
-    NOTIFICATIONS_BUFFER_STREAM_CREATED = true
+
+		NOTIFICATIONS_BUFFER_STREAM_CREATED = true
 	}
-  
-  if !NOTIFICATIONS_BUFFER_CONSUMER_CREATED {
+
+	if !NOTIFICATIONS_BUFFER_CONSUMER_CREATED {
 		cc := ConsumerConfig{
 			DeliverPolicy: DeliverAll,
 			AckPolicy:     AckExplicit,
@@ -559,14 +559,14 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			MaxDeliver:    10,
 		}
 		err = serv.memphisAddConsumer(s.MemphisGlobalAccountString(), notificationsStreamName, &cc)
-    if err != nil {
+		if err != nil {
 			successCh <- err
 			return
 		}
-    
-    NOTIFICATIONS_BUFFER_CONSUMER_CREATED = true
-  }
-  
+
+		NOTIFICATIONS_BUFFER_CONSUMER_CREATED = true
+	}
+
 	// create system tasks stream
 	if shouldCreateSystemTasksStream() && !SYSTEM_TASKS_STREAM_CREATED {
 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
@@ -580,7 +580,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			Storage:      FileStorage,
 			Replicas:     replicas,
 		})
-    if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
 			successCh <- err
 			return
 		}
