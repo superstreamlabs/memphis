@@ -30,6 +30,7 @@ import Input from '../Input';
 import CheckboxComponent from '../checkBox';
 import { Context } from '../../hooks/store';
 import { LOCAL_STORAGE_PLAN } from '../../const/localStorageConsts';
+import { planType } from '../../const/globalConst';
 
 const reasons = ['Price is too high', 'Missing feature', 'Bad support', 'Performance', 'Limitations', 'Not using anymore', 'I switched to a competitor', 'Other'];
 
@@ -88,6 +89,7 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
             if (data.resp_type === 'payment') window.open(data.stripe_url, '_self');
             else {
                 dispatch({ type: 'SET_ENTITLEMENTS', payload: data.entitlements });
+                dispatch({ type: 'SET_PLAN_TYPE', payload: data.plan === planType.FREE });
                 await refreshData();
                 setTimeout(() => {
                     showMessages('success', 'Your plan has been successfully updated.');

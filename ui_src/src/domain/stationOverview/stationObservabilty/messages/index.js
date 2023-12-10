@@ -47,6 +47,10 @@ import { ReactComponent as DisableIcon } from '../../../../assets/images/disable
 import { Divider } from 'antd';
 import FunctionsOverview from '../components/functionsOverview';
 import CloudModal from '../../../../components/cloudModal';
+import { ReactComponent as CleanDisconnectedProducersIcon } from '../../../../assets/images/clean_disconnected_producers.svg';
+import {json} from "generate-schema";
+import pathDomains from "../../../../router";
+
 const Messages = ({ referredFunction }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [selectedRowIndex, setSelectedRowIndex] = useState(null);
@@ -66,6 +70,7 @@ const Messages = ({ referredFunction }) => {
     const [choseReferredFunction, setChoseReferredFunction] = useState(false);
     const dls = stationState?.stationMetaData?.dls_station === '' ? null : stationState?.stationMetaData?.dls_station;
     const tabs = ['Messages', 'Dead-letter', 'Configuration'];
+    const [disableLoaderCleanDisconnectedProducers, setDisableLoaderCleanDisconnectedProducers] = useState(false);
     const subTabs = isCloud()
         ? [
               { name: 'Unacknowledged', disabled: false },
@@ -107,6 +112,28 @@ const Messages = ({ referredFunction }) => {
             setUseDlsModal(false);
         } catch (error) {
             setUseDlsModal(false);
+        }
+    };
+
+    const getStationDetails = async () => {
+        try {
+            const data = await httpRequest(
+                'GET',
+                `${ApiEndpoints.GET_STATION_DATA}?station_name=${stationName}&partition_number=${stationState?.stationPartition || -1}`
+            );
+            stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
+            stationDispatch({ type: 'SET_SCHEMA_TYPE', payload: data.schema.schema_type });
+        } catch (error) {}
+    };
+
+    const cleanDisconnectedProducers = async (station_id) => {
+        setDisableLoaderCleanDisconnectedProducers(true);
+        try {
+            await httpRequest('POST', ApiEndpoints.CLEAN_DISCONNECTED_PRODUCERS, { station_id: station_id, client_type: "producers" });
+            await getStationDetails();
+            setDisableLoaderCleanDisconnectedProducers(false);
+        } catch (error) {
+            setDisableLoaderCleanDisconnectedProducers(false);
         }
     };
 
@@ -576,6 +603,35 @@ const Messages = ({ referredFunction }) => {
                                 data={[msToUnits(stationState?.stationSocketData?.idempotency_window_in_ms)]}
                                 showDivider
                             />
+
+                            {isCloud() && (<>
+                                <Divider />
+                                <DetailBox
+                                    icon={<CleanDisconnectedProducersIcon width={24} alt="clean disconnected producers" />}
+                                    title="Clean disconnected producers"
+                                    data={[
+                                        <Button
+                                            width="80px"
+                                            height="25px"
+                                            placeholder="Clean"
+                                            colorType="white"
+                                            radiusType="circle"
+                                            backgroundColorType="red"
+                                            fontSize="12px"
+                                            fontWeight="600"
+                                            disabled={disableLoaderCleanDisconnectedProducers ||
+                                                stationState?.stationSocketData?.disconnected_producers?.reduce((accumulator, item) => accumulator + item.disconnected_producers_count, 0) === 0 &&
+                                                stationState?.stationSocketData?.connected_producers?.reduce((accumulator, item) => accumulator + item.disconnected_producers_count, 0) === 0
+                                            }
+                                            onClick={() => cleanDisconnectedProducers(stationState?.stationMetaData?.id)}
+                                            isLoading={disableLoaderCleanDisconnectedProducers}
+                                            tooltip={stationState?.stationSocketData?.disconnected_producers?.reduce((accumulator, item) => accumulator + item.disconnected_producers_count, 0) === 0 && "Nothing to clean"}
+                                            tooltip_placement={"right"}
+                                        />
+                                    ]}
+                                    showDivider
+                                ></DetailBox>
+                            </>)}
                         </div>
                     )}
                 </div>

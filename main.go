@@ -166,7 +166,7 @@ func main() {
 	fs := flag.NewFlagSet(exe, flag.ExitOnError)
 	fs.Usage = usage
 
-	metadataDb, err := server.InitializeMetadataStorage()
+	metadataDb, rootUserCreated, err := server.InitializeMetadataStorage()
 	if err != nil {
 		server.PrintAndDie(fmt.Sprintf("%s: %s", exe, err))
 	}
@@ -174,6 +174,14 @@ func main() {
 	err = server.InitializeCloudComponents()
 	if err != nil {
 		server.PrintAndDie(fmt.Sprintf("Failed initializing InitializeCloudComponents: %s: %s", exe, err))
+	}
+
+	// create users from env or config file
+	var lenUsers int
+	var errCreateUsers error
+	// create only on the first system load
+	if rootUserCreated {
+		lenUsers, errCreateUsers = server.CreateUsersFromConfigOnFirstSystemLoad()
 	}
 
 	// Configure the options from the flags/config file
@@ -194,6 +202,13 @@ func main() {
 		server.PrintAndDie(fmt.Sprintf("%s: %s", exe, err))
 	}
 
+	// we do this check here and not below the function creating the users - CreateUsersFromConfigOnFirstSystemLoad because we need the s *Server for logs
+	if errCreateUsers != nil {
+		s.Warnf("[tenant: %v]Failed create users from config file", s.MemphisGlobalAccountString(), errCreateUsers.Error())
+	}
+	if lenUsers > 0 {
+		s.Noticef("[tenant: %v]loaded %d users from config file", s.MemphisGlobalAccountString(), lenUsers)
+	}
 	// Configure the logger based on the flags
 	s.ConfigureLogger()
 

@@ -44,7 +44,8 @@ const initialState = {
     integrationsList: [],
     isLatest: true,
     currentVersion: '',
-    allowedActions: null
+    allowedActions: null,
+    isFreePlan: null,
 };
 
 const Store = ({ children }) => {

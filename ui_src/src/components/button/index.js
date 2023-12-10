@@ -47,7 +47,8 @@ const Button = ({
     type = 'primary',
     fontFamily = 'Inter',
     tooltip,
-    isVisible = true
+    tooltip_placement = 'bottom',
+    isVisible = true,
 }) => {
     const handleClick = (e) => {
         onClick(e);
@@ -98,7 +99,7 @@ const Button = ({
     return (
         (isVisible &&
         <div className="button-container" style={styleButtonContainer}>
-            <TooltipComponent text={tooltip}>
+            <TooltipComponent text={tooltip} placement={tooltip_placement}>
                 <ButtonDesign {...fieldProps} className={disabled && 'noHover'}>
                     <span style={{ fontFamily: fontFamily }}>{placeholder}</span>
                 </ButtonDesign>

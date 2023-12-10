@@ -52,10 +52,13 @@ export const ApiEndpoints = {
     PRODUCE: '/stations/produce',
     ATTACH_DLS: '/stations/attachDlsStation',
     DETACH_DLS: '/stations/detachDlsStation',
+    CLEAN_DISCONNECTED_PRODUCERS: '/stations/cleanDisconnectedClients',
     CREATE_CONNECTOR: '/stations/createConnector',
     REMOVE_CONNECTOR: '/stations/removeConnector',
     START_CONNECTOR: '/stations/startConnector',
     STOP_CONNECTOR: '/stations/stopConnector',
+    GET_CONNECTOR_ERRORS: '/stations/getConnectorErrors',
+    PURGE_CONNECTOR_ERRORS: '/stations/purgeConnectorErrors',
 
     //Async Tasks
     GET_ASYNC_TASKS: '/asyncTasks/getAsyncTasks',

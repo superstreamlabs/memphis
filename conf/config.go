@@ -52,6 +52,7 @@ type Configuration struct {
 	K8S_NAMESPACE                string
 	FUNCTIONS_ADMIN_SERVICE_HOST string
 	FUNCTIONS_ADMIN_SERVICE_PORT string
+	INITIAL_CONFIG_FILE          string
 }
 
 func GetConfig() Configuration {

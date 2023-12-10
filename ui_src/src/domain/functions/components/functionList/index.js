@@ -192,13 +192,15 @@ function FunctionList({ tabPrivate }) {
     };
 
     const doneUninstall = (index) => {
-        setFilteredOtherData((prev) => {
-            const data = [...prev];
-            let func = filteredInstalledData[index];
-            func.installed = false;
-            data.push(func);
-            return data;
-        });
+        if (integrated) {
+            setFilteredOtherData((prev) => {
+                const data = [...prev];
+                let func = filteredInstalledData[index];
+                func.installed = false;
+                data.push(func);
+                return data;
+            });
+        }
         setFilteredInstalledData((prev) => {
             const data = [...prev];
             data.splice(index, 1);
@@ -347,6 +349,17 @@ function FunctionList({ tabPrivate }) {
                     <div className="header-flex-wrapper">
                         <label className="main-header-h1">Functions</label>
                         <PurpleQuestionMark className="info-icon" alt="Integration info" onClick={() => setIsFunctionsGuideOpen(true)} />
+                        <Button
+                            height={'26px'}
+                            placeholder={'Alpha feedback '}
+                            colorType="purple"
+                            radiusType="semi-round"
+                            backgroundColorType={'transparent'}
+                            border={'gray'}
+                            fontSize="12px"
+                            fontWeight="bold"
+                            onClick={() => window.open('https://share.hsforms.com/1pnaVjMUcRT61Q5lQmxMLRQcqtej', '_blank')}
+                        />
                     </div>
                     <span className="memphis-label">Serverless functions to process ingested events "on the fly"</span>
                 </div>

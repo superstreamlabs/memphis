@@ -6,7 +6,7 @@ import { kafka } from './kafka';
 import { kinesis } from './kinesis';
 
 export const connectorTypes = [
-    { name: 'kafka', icon: KafkaIcon, comment: 'Supported version: v1.0.3', inputs: kafka },
+    { name: 'Kafka', icon: KafkaIcon, comment: 'Supported version: v1.0.3', inputs: kafka },
     // { name: 'kinesis', icon: KinesisIcon, inputs: kinesis },
-    { name: 's3', icon: S3LogoIcon, disabled: true }
+    { name: 'S3', icon: S3LogoIcon, disabled: true, soon: true }
 ];

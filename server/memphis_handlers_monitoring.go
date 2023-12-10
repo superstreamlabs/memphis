@@ -722,6 +722,9 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				return
 			}
 			updatesAvailable := !schemaVersion.Active
+			if schema.Name == "" && schema.Type == "" && station.SchemaVersionNumber == 0 {
+				updatesAvailable = false
+			}
 			schemaDetails = models.StationOverviewSchemaDetails{
 				SchemaName:       schema.Name,
 				VersionNumber:    station.SchemaVersionNumber,

@@ -15,9 +15,9 @@ import './style.scss';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import React from 'react';
 
-const SelectCheckBox = ({ selectOptions, selectedOption, allowEdit = true, handleOnClick, button, hideCircle }) => {
+const SelectCheckBox = ({ selectOptions, selectedOption, allowEdit = true, handleOnClick, button, hideCircle, vertical }) => {
     return (
-        <div className="selecte-check-box-wrapper">
+        <div className="selecte-check-box-wrapper" style={vertical && { display: 'flex', gap: '20px' }}>
             {selectOptions.map((value) => {
                 return (
                     <div
@@ -30,6 +30,7 @@ const SelectCheckBox = ({ selectOptions, selectedOption, allowEdit = true, handl
                                 : 'option-wrapper not-allowed'
                         }
                         onClick={() => handleOnClick(value)}
+                        style={{ width: vertical && '100%' }}
                     >
                         <div className="check-and-content">
                             <div className="option-content">

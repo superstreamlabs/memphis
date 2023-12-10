@@ -15,7 +15,7 @@ import React from 'react';
 const DetailBox = ({ icon, title, desc, data, children, showDivider, rightSection = true }) => {
     return (
         <div className="detail-box-container">
-            <div className="detail-box-wrapper">
+            <div className={"detail-box-wrapper " + (!desc && "detail-box-wrapper-center")}>
                 <div className="detail-img">{icon}</div>
                 <div className="detail-title-wrapper">
                     <div className="detail-title">{title}</div>

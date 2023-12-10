@@ -335,6 +335,35 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                                             disabled={metaData?.installed_in_progress || !metaData?.installed}
                                         />
                                     </div>
+                                    {!metaData?.installed ? (
+                                        <Tooltip text="Install the function to enable test">
+                                            <span>
+                                                <Button
+                                                    placeholder="Test"
+                                                    width={'100px'}
+                                                    backgroundColorType={'orange'}
+                                                    colorType={'black'}
+                                                    radiusType={'circle'}
+                                                    fontSize="12px"
+                                                    fontFamily="InterSemiBold"
+                                                    onClick={() => setIsTestFunctionModalOpen(true)}
+                                                    disabled={!metaData?.installed}
+                                                />
+                                            </span>
+                                        </Tooltip>
+                                    ) : (
+                                        <Button
+                                            placeholder="Test"
+                                            width={'100px'}
+                                            backgroundColorType={'orange'}
+                                            colorType={'black'}
+                                            radiusType={'circle'}
+                                            fontSize="12px"
+                                            fontFamily="InterSemiBold"
+                                            onClick={() => setIsTestFunctionModalOpen(true)}
+                                            disabled={!metaData?.installed || metaData?.installed_in_progress}
+                                        />
+                                    )}
                                     <div className="header-flex">
                                         <Tooltip text={metaData?.invalid_reason}>
                                             <span>
