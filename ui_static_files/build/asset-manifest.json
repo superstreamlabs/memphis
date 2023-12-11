@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.e67fdf03.css",
-    "main.js": "/static/js/main.1ee340a5.js",
+    "main.css": "/static/css/main.5935e9ab.css",
+    "main.js": "/static/js/main.54ba7280.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -312,7 +312,7 @@
     "static/media/componentIcon.svg": "/static/media/componentIcon.c7e98367f39a7a5e86d1da122feba8af.svg",
     "static/media/arrowBackIcon.svg": "/static/media/arrowBackIcon.1289affd6cc44720027524db1863a3a8.svg",
     "static/media/cloudTeaser.svg": "/static/media/cloudTeaser.66f36b017135e9a0e865558676883b7f.svg",
-    "static/media/timeFill.svg": "/static/media/timeFill.bec2989f51458fe251e269295380f4ea.svg",
+    "static/media/TimeFill.svg": "/static/media/TimeFill.bec2989f51458fe251e269295380f4ea.svg",
     "static/media/addUserIcon.svg": "/static/media/addUserIcon.db68a5ce64cc9eb38d66fd25774c79c9.svg",
     "static/media/overviewIcon.svg": "/static/media/overviewIcon.5a0fa6784283dc830b1c5cadf668de93.svg",
     "static/media/refresh.svg": "/static/media/refresh.ba93d46f83e615f1174f50004368da8d.svg",
@@ -337,7 +337,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.e67fdf03.css",
-    "static/js/main.1ee340a5.js"
+    "static/css/main.5935e9ab.css",
+    "static/js/main.54ba7280.js"
   ]
 }
