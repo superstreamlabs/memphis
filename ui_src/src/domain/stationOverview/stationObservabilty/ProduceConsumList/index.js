@@ -220,12 +220,12 @@ const ProduceConsumList = ({ producer }) => {
         if (producer) {
             let [result, activeConsumers] = concatFunction('producer', stationState?.stationSocketData);
             setProducersList(result);
-            setConnectorsSourceList(stationState?.stationSocketData?.connectors?.filter((connector) => connector?.connector_type === 'source'));
+            setConnectorsSourceList(stationState?.stationSocketData?.source_connectors);
             setActiveConsumerList(activeConsumers);
         } else {
             let result = concatFunction('cgs', stationState?.stationSocketData);
             setCgsList(result);
-            setConnectorsSinkList(stationState?.stationSocketData?.connectors?.filter((connector) => connector?.connector_type === 'sink'));
+            setConnectorsSinkList(stationState?.stationSocketData?.sink_connectors);
         }
     }, [stationState?.stationSocketData]);
 

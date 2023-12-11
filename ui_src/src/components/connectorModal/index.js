@@ -83,8 +83,6 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
             conntectorsNewFields[index]?.options?.push({
                 name: value?.trim(),
                 value: value?.trim()
-                name: value?.trim(),
-                value: value?.trim()
             });
         setConnectorInputFields(conntectorsNewFields);
     };
@@ -118,14 +116,18 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
     const onFinish = async () => {
         try {
             if (step === 1) {
-                await connectorForm.validateFields();
-                isCloud() ? createConnector() : setCloudModalOpen(true);
+                try {
+                    await connectorForm.validateFields();
+                    isCloud() ? createConnector() : setCloudModalOpen(true);
+                } catch (err) {
+                    return;
+                }
             } else {
                 resError ? setStep(1) : clickOutside();
                 setError(null);
             }
         } catch (err) {
-            console.log(err);
+            return;
         }
     };
 
@@ -135,7 +137,6 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
         setStep(2);
         try {
             const modifiedSettings = { ...formFields?.settings };
-
             for (const key in modifiedSettings) {
                 if (Array.isArray(modifiedSettings[key])) {
                     modifiedSettings[key] = modifiedSettings[key].join(',');
@@ -157,7 +158,6 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
         }
     };
 
-    const generateFormItem = (input, index, depth, inputName) => {
     const generateFormItem = (input, index, depth, inputName) => {
         return (
             <>
@@ -250,18 +250,11 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
                         />
                     )}
                 </Form.Item>
-                {depth === 0 &&
-                    input?.children &&
+
                 {depth === 0 &&
                     input?.children &&
                     formFields?.settings &&
                     formFields?.settings[input?.name] &&
-                    connectorInputFields[index][formFields?.settings[input?.name]]?.map((child, index) => generateFormItem(child, index, depth + 1, input?.name))}
-
-                {depth === 1 &&
-                    input?.children &&
-                    formFields?.settings[input?.name] &&
-                    input[formFields?.settings[input?.name]]?.map((child, index) => generateFormItem(child, index, depth + 1, input?.name))}
                     connectorInputFields[index][formFields?.settings[input?.name]]?.map((child, index) => generateFormItem(child, index, depth + 1, input?.name))}
 
                 {depth === 1 &&

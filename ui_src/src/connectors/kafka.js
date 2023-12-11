@@ -94,7 +94,6 @@ export const kafka = {
                 {
                     name: 'partition_value',
                     display: 'Partition Value',
-                    display: 'Partition Value',
                     type: 'string',
                     required: true
                 },
@@ -126,17 +125,7 @@ export const kafka = {
                     display: 'Offset strategy',
                     type: 'select',
                     options: ['Earliest', 'End'],
-                    required: false,
-                    description: 'choose offset strategy'
-                }
-            ]
-            'Any Partition': [
-                {
-                    name: 'offset_strategy',
-                    display: 'Offset strategy',
-                    type: 'select',
-                    options: ['Earliest', 'End'],
-                    required: false,
+                    required: true,
                     description: 'choose offset strategy'
                 }
             ]
