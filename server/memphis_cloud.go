@@ -2346,6 +2346,10 @@ func (s *Server) ScaleFunctionWorkers() {
 	return
 }
 
+func (s *Server) ConnectorsDeadPodsRescheduler() {
+	return
+}
+
 func (s *Server) ConsumeFunctionsDlsMessages() {
 
 }
@@ -2595,4 +2599,12 @@ func deleteConnectorsStationResources(tenantName string, stationID int) error {
 
 func deleteConnectorsTenantResources(tenantName string) error {
 	return nil
+}
+
+func (s *Server) GetSourceConnectorsByStationAndPartition(stationID, partitionNumber, numOfPartitions int) (map[string]interface{}, error) {
+	return map[string]interface{}{}, nil
+}
+
+func (ch ConsumersHandler) GetSinkConnectorsByStation(stationName StationName, station models.Station, partition int, partitions []int) ([]string, error) {
+	return []string{}, nil
 }
