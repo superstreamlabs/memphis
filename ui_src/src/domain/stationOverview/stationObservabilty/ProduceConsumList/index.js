@@ -220,12 +220,12 @@ const ProduceConsumList = ({ producer }) => {
         if (producer) {
             let [result, activeConsumers] = concatFunction('producer', stationState?.stationSocketData);
             setProducersList(result);
-            setConnectorsSourceList(stationState?.stationSocketData?.connectors?.filter((connector) => connector?.connector_type === 'source'));
+            setConnectorsSourceList(stationState?.stationSocketData?.source_connectors);
             setActiveConsumerList(activeConsumers);
         } else {
             let result = concatFunction('cgs', stationState?.stationSocketData);
             setCgsList(result);
-            setConnectorsSinkList(stationState?.stationSocketData?.connectors?.filter((connector) => connector?.connector_type === 'sink'));
+            setConnectorsSinkList(stationState?.stationSocketData?.sink_connectors);
         }
     }, [stationState?.stationSocketData]);
 
@@ -458,11 +458,20 @@ const ProduceConsumList = ({ producer }) => {
                                                         />
                                                         <MenuItem
                                                             name={'Disconnect'}
-                                                            onClick={() => removeConnector('source')}
+                                                            onClick={() => {
+                                                                removeConnector('source');
+                                                            }}
                                                             icon={<IoRemoveCircleOutline />}
                                                             loader={loading && openConnectorPopoverItem === index}
                                                         />
-                                                        <MenuItem name={'Erros'} onClick={() => setOpenConnectorError(true)} icon={<IoWarning />} />
+                                                        <MenuItem
+                                                            name={'Erros'}
+                                                            onClick={() => {
+                                                                setOpenConnectorError(true);
+                                                                setOpenConnectorPopover(false);
+                                                            }}
+                                                            icon={<IoWarning />}
+                                                        />
                                                     </>
                                                 }
                                                 trigger="click"
@@ -517,6 +526,7 @@ const ProduceConsumList = ({ producer }) => {
                                                 placement="bottomLeft"
                                                 onOpenChange={() => {
                                                     setOpenConnectorPopoverItem(index);
+                                                    setSelectedConnector(row);
                                                     setOpenConnectorPopover(!openConnectorPopover);
                                                 }}
                                                 open={openConnectorPopover && openConnectorPopoverItem === index}
@@ -528,7 +538,14 @@ const ProduceConsumList = ({ producer }) => {
                                                             icon={row?.is_active ? <IoPause /> : <IoPlayCircleOutline />}
                                                         />
                                                         <MenuItem name={'Disconnect'} onClick={() => removeConnector('sink')} icon={<IoRemoveCircleOutline />} />
-                                                        <MenuItem name={'Erros'} onClick={() => setOpenConnectorError(true)} icon={<IoWarning />} />
+                                                        <MenuItem
+                                                            name={'Erros'}
+                                                            onClick={() => {
+                                                                setOpenConnectorError(true);
+                                                                setOpenConnectorPopover(false);
+                                                            }}
+                                                            icon={<IoWarning />}
+                                                        />
                                                     </>
                                                 }
                                                 trigger="click"

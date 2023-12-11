@@ -48,8 +48,8 @@ import { Divider } from 'antd';
 import FunctionsOverview from '../components/functionsOverview';
 import CloudModal from '../../../../components/cloudModal';
 import { ReactComponent as CleanDisconnectedProducersIcon } from '../../../../assets/images/clean_disconnected_producers.svg';
-import {json} from "generate-schema";
-import pathDomains from "../../../../router";
+import { json } from 'generate-schema';
+import pathDomains from '../../../../router';
 
 const Messages = ({ referredFunction }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -129,7 +129,7 @@ const Messages = ({ referredFunction }) => {
     const cleanDisconnectedProducers = async (station_id) => {
         setDisableLoaderCleanDisconnectedProducers(true);
         try {
-            await httpRequest('POST', ApiEndpoints.CLEAN_DISCONNECTED_PRODUCERS, { station_id: station_id, client_type: "producers" });
+            await httpRequest('POST', ApiEndpoints.CLEAN_DISCONNECTED_PRODUCERS, { station_id: station_id, client_type: 'producers' });
             await getStationDetails();
             setDisableLoaderCleanDisconnectedProducers(false);
         } catch (error) {
@@ -399,10 +399,7 @@ const Messages = ({ referredFunction }) => {
                 <div className="tab-general">
                     <Divider style={{ marginTop: 0, marginBottom: '10px' }} />
                     <div className="header">
-                        <div className="left-side">
-                            <p className="title">Station</p>
-                            {showLastMsg()}
-                        </div>
+                        <div className="left-side">{showLastMsg()}</div>
                         <div className="right-side">
                             {((tabValue === tabs[0] && stationState?.stationSocketData?.messages?.length > 0) ||
                                 (tabValue === tabs[1] &&
@@ -604,34 +601,48 @@ const Messages = ({ referredFunction }) => {
                                 showDivider
                             />
 
-                            {isCloud() && (<>
-                                <Divider />
-                                <DetailBox
-                                    icon={<CleanDisconnectedProducersIcon width={24} alt="clean disconnected producers" />}
-                                    title="Clean disconnected producers"
-                                    data={[
-                                        <Button
-                                            width="80px"
-                                            height="25px"
-                                            placeholder="Clean"
-                                            colorType="white"
-                                            radiusType="circle"
-                                            backgroundColorType="red"
-                                            fontSize="12px"
-                                            fontWeight="600"
-                                            disabled={disableLoaderCleanDisconnectedProducers ||
-                                                stationState?.stationSocketData?.disconnected_producers?.reduce((accumulator, item) => accumulator + item.disconnected_producers_count, 0) === 0 &&
-                                                stationState?.stationSocketData?.connected_producers?.reduce((accumulator, item) => accumulator + item.disconnected_producers_count, 0) === 0
-                                            }
-                                            onClick={() => cleanDisconnectedProducers(stationState?.stationMetaData?.id)}
-                                            isLoading={disableLoaderCleanDisconnectedProducers}
-                                            tooltip={stationState?.stationSocketData?.disconnected_producers?.reduce((accumulator, item) => accumulator + item.disconnected_producers_count, 0) === 0 && "Nothing to clean"}
-                                            tooltip_placement={"right"}
-                                        />
-                                    ]}
-                                    showDivider
-                                ></DetailBox>
-                            </>)}
+                            {isCloud() && (
+                                <>
+                                    <Divider />
+                                    <DetailBox
+                                        icon={<CleanDisconnectedProducersIcon width={24} alt="clean disconnected producers" />}
+                                        title="Clean disconnected producers"
+                                        data={[
+                                            <Button
+                                                width="80px"
+                                                height="25px"
+                                                placeholder="Clean"
+                                                colorType="white"
+                                                radiusType="circle"
+                                                backgroundColorType="red"
+                                                fontSize="12px"
+                                                fontWeight="600"
+                                                disabled={
+                                                    disableLoaderCleanDisconnectedProducers ||
+                                                    (stationState?.stationSocketData?.disconnected_producers?.reduce(
+                                                        (accumulator, item) => accumulator + item.disconnected_producers_count,
+                                                        0
+                                                    ) === 0 &&
+                                                        stationState?.stationSocketData?.connected_producers?.reduce(
+                                                            (accumulator, item) => accumulator + item.disconnected_producers_count,
+                                                            0
+                                                        ) === 0)
+                                                }
+                                                onClick={() => cleanDisconnectedProducers(stationState?.stationMetaData?.id)}
+                                                isLoading={disableLoaderCleanDisconnectedProducers}
+                                                tooltip={
+                                                    stationState?.stationSocketData?.disconnected_producers?.reduce(
+                                                        (accumulator, item) => accumulator + item.disconnected_producers_count,
+                                                        0
+                                                    ) === 0 && 'Nothing to clean'
+                                                }
+                                                tooltip_placement={'right'}
+                                            />
+                                        ]}
+                                        showDivider
+                                    ></DetailBox>
+                                </>
+                            )}
                         </div>
                     )}
                 </div>

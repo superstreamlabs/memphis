@@ -20,11 +20,13 @@ import GitHubIntegration from '../../../administration/integrations/components/g
 import { ReactComponent as PlaceholderFunctionsIcon } from '../../../../assets/images/placeholderFunctions.svg';
 import { ReactComponent as SearchIcon } from '../../../../assets/images/searchIcon.svg';
 import { ReactComponent as CloneModalIcon } from '../../../../assets/images/cloneModalIcon.svg';
-import { ReactComponent as RefreshIcon } from '../../../../assets/images/refresh.svg';
+import { ReactComponent as CliIcon } from '../../../../assets/images/cliIcon.svg';
 import { ReactComponent as RepoIcon } from '../../../../assets/images/repoPurple.svg';
 import { ReactComponent as PurpleQuestionMark } from '../../../../assets/images/purpleQuestionMark.svg';
 import { ReactComponent as MemphisLogo } from '../../../../assets/images/logo.svg';
+import { ReactComponent as RedirectIcon } from '../../../../assets/images/redirectIcon.svg';
 import CollapseArrow from '../../../../assets/images/collapseArrow.svg';
+import CollapseArroWhite from '../../../../assets/images/collapseArrowWhite.svg';
 import { BiCode } from 'react-icons/bi';
 import { MdDone } from 'react-icons/md';
 import { BsGit } from 'react-icons/bs';
@@ -48,8 +50,19 @@ import { OWNER } from '../../../../const/globalConst';
 import { Collapse, Divider, Popover, Badge } from 'antd';
 import { LOCAL_STORAGE_FUNCTION_PAGE_VIEW } from '../../../../const/localStorageConsts';
 import { getFunctionsTabs } from '../../../../services/valueConvertor';
+import RefreshButton from '../../../../components/refreshButton';
 const { Panel } = Collapse;
 const TABS = getFunctionsTabs();
+
+const MenuItem = ({ name, onClick }) => {
+    return (
+        <div className="item-wrapper-functions" onClick={onClick} key={name}>
+            <span className="item-name">
+                <label>{name}</label>
+            </span>
+        </div>
+    );
+};
 
 function FunctionList({ tabPrivate }) {
     const [state, dispatch] = useContext(Context);
@@ -65,6 +78,7 @@ function FunctionList({ tabPrivate }) {
     const [tabValue, setTabValue] = useState(tabPrivate ? 'Private' : 'All');
     const [isFunctionsGuideOpen, setIsFunctionsGuideOpen] = useState(false);
     const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
+    const [isCloneCliModalOpen, setIsCloneCliModalOpen] = useState(false);
     const [connectedRepos, setConnectedRepos] = useState([]);
     const [clickedRefresh, setClickedRefresh] = useState(false);
     const [refreshIndeicator, setRefreshIndicator] = useState(false);
@@ -82,6 +96,23 @@ function FunctionList({ tabPrivate }) {
         const privateCount = installedFunctionList?.filter((func) => func.owner !== OWNER)?.length + otherFunctionList?.filter((func) => func.owner !== OWNER)?.length;
         setTabsCounter([memphisCount + privateCount, memphisCount, privateCount]);
     }, [filteredInstalledData, filteredOtherData]);
+
+    const cloneOptions = [
+        {
+            action: 'Clone a template',
+            onClick: () => {
+                setIsCloneModalOpen(true);
+                cloneTooltipIsOpenFlip(false);
+            }
+        },
+        {
+            action: 'Use the generator',
+            onClick: () => {
+                setIsCloneCliModalOpen(true);
+                cloneTooltipIsOpenFlip(false);
+            }
+        }
+    ];
 
     const findAndUpdateGithubIntegration = () => {
         const integrationData = state?.integrationsList?.find((integration) => integration?.name === 'github');
@@ -351,7 +382,12 @@ function FunctionList({ tabPrivate }) {
                         <PurpleQuestionMark className="info-icon" alt="Integration info" onClick={() => setIsFunctionsGuideOpen(true)} />
                         <Button
                             height={'26px'}
-                            placeholder={'Alpha feedback '}
+                            placeholder={
+                                <span className="alpha-feedback">
+                                    <label>Feedback</label>
+                                    <RedirectIcon alt="redirectIcon" />
+                                </span>
+                            }
                             colorType="purple"
                             radiusType="semi-round"
                             backgroundColorType={'transparent'}
@@ -364,16 +400,7 @@ function FunctionList({ tabPrivate }) {
                     <span className="memphis-label">Serverless functions to process ingested events "on the fly"</span>
                 </div>
                 <div className="action-section">
-                    <span className="update-refresh">
-                        {refreshIndeicator && <Badge dot />}
-                        <div className="refresh-btn" onClick={getAllFunctions}>
-                            {isLoading ? (
-                                <Spin indicator={<SyncOutlined style={{ color: '#6557FF', fontSize: '16px' }} spin />} />
-                            ) : (
-                                <RefreshIcon alt="refreshIcon" style={{ path: { color: '#6557FF' } }} />
-                            )}
-                        </div>
-                    </span>
+                    <RefreshButton refreshIndeicator={refreshIndeicator} onClick={getAllFunctions} isLoading={isLoading} />
                     <Popover
                         placement="top"
                         title={
@@ -411,7 +438,7 @@ function FunctionList({ tabPrivate }) {
                     </Popover>
                     <Popover
                         placement="bottomLeft"
-                        content={<CloneModal type="functions" />}
+                        content={cloneOptions.map((option, index) => MenuItem({ name: option.action, onClick: option.onClick }))}
                         width="540px"
                         trigger="click"
                         overlayClassName="clone-popover"
@@ -419,12 +446,14 @@ function FunctionList({ tabPrivate }) {
                         onOpenChange={(open) => cloneTooltipIsOpenFlip(open)}
                     >
                         <Button
-                            width="100px"
+                            width="120px"
                             height="34px"
                             placeholder={
                                 <span className="code-btn">
                                     <BiCode size={18} />
                                     <label>Code</label>
+                                    <Divider type="vertical" style={{ 'background-color': '#D9D9D9' }} />
+                                    <img src={CollapseArroWhite} alt="arrow" className={`collapse-arrow code-arrow ${cloneTooltipIsOpen ? 'open' : undefined}`} />
                                 </span>
                             }
                             colorType="white"
@@ -497,6 +526,15 @@ function FunctionList({ tabPrivate }) {
                 open={isCloneModalOpen}
             >
                 <CloneModal type="functions" />
+            </Modal>
+            <Modal
+                header={<CliIcon alt="cloModalIcon" />}
+                width="540px"
+                displayButtons={false}
+                clickOutside={() => setIsCloneCliModalOpen(false)}
+                open={isCloneCliModalOpen}
+            >
+                <CloneModal type="cli" />
             </Modal>
             <CloudModal type="cloud" open={isCloudModalOpen} handleClose={() => setIsCloudModalOpen(false)} />
         </div>
