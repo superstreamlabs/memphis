@@ -3305,6 +3305,7 @@ func TestJetStreamClusterStreamUpdateSyncBug(t *testing.T) {
 	}
 
 	// We need to snapshot to force upper layer catchup vs RAFT layer.
+	c.waitOnAllCurrent()
 	mset, err := c.streamLeader("$G", "TEST").GlobalAccount().lookupStream("TEST")
 	if err != nil {
 		t.Fatalf("Expected to find a stream for %q", "TEST")
@@ -3313,6 +3314,7 @@ func TestJetStreamClusterStreamUpdateSyncBug(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
+	c.waitOnAllCurrent()
 	nsl = c.restartServer(nsl)
 	c.waitOnStreamCurrent(nsl, "$G", "TEST")
 
@@ -4322,7 +4324,7 @@ func TestJetStreamClusterStreamReplicaUpdates(t *testing.T) {
 		require_NoError(t, err)
 		c.waitOnStreamLeader("$G", "TEST")
 
-		checkFor(t, 5*time.Second, 100*time.Millisecond, func() error {
+		checkFor(t, 10*time.Second, 100*time.Millisecond, func() error {
 			si, err = js.StreamInfo("TEST")
 			require_NoError(t, err)
 			if len(si.Cluster.Replicas) != r-1 {
@@ -4936,11 +4938,11 @@ func TestJetStreamClusterDuplicateMsgIdsOnCatchupAndLeaderTakeover(t *testing.T)
 	// Now restart
 	sr = c.restartServer(sr)
 	c.waitOnStreamCurrent(sr, "$G", "TEST")
+	c.waitOnStreamLeader("$G", "TEST")
 
 	// Now make them the leader.
 	for sr != c.streamLeader("$G", "TEST") {
-		_, err = nc.Request(fmt.Sprintf(JSApiStreamLeaderStepDownT, "TEST"), nil, time.Second)
-		require_NoError(t, err)
+		nc.Request(fmt.Sprintf(JSApiStreamLeaderStepDownT, "TEST"), nil, time.Second)
 		c.waitOnStreamLeader("$G", "TEST")
 	}
 
@@ -5238,12 +5240,14 @@ func TestJetStreamClusterDeleteAndRestoreAndRestart(t *testing.T) {
 	nc, js = jsClientConnect(t, c.randomServer())
 	defer nc.Close()
 
-	si, err := js.StreamInfo("TEST")
-	require_NoError(t, err)
-
-	if si.State.Msgs != 22 {
-		t.Fatalf("State is not correct after restart")
-	}
+	checkFor(t, 2*time.Second, 100*time.Millisecond, func() error {
+		si, err := js.StreamInfo("TEST")
+		require_NoError(t, err)
+		if si.State.Msgs != 22 {
+			return fmt.Errorf("State is not correct after restart, expected 22 msgs, got %d", si.State.Msgs)
+		}
+		return nil
+	})
 
 	ci, err := js.ConsumerInfo("TEST", "dlc")
 	require_NoError(t, err)
@@ -5781,9 +5785,6 @@ func TestJetStreamClusterConsumerDeliverNewMaxRedeliveriesAndServerRestart(t *te
 	if msg, err := sub.NextMsg(300 * time.Millisecond); err != nats.ErrTimeout {
 		t.Fatalf("Expected timeout, got msg=%+v err=%v", msg, err)
 	}
-
-	// Give a chance to things to be persisted
-	time.Sleep(300 * time.Millisecond)
 
 	// Check server restart
 	nc.Close()

@@ -171,13 +171,14 @@ func (p *Permissions) clone() *Permissions {
 // Lock is assumed held.
 func (s *Server) checkAuthforWarnings() {
 	warn := false
-	if s.opts.Password != _EMPTY_ && !isBcrypt(s.opts.Password) {
+	opts := s.getOpts()
+	if opts.Password != _EMPTY_ && !isBcrypt(opts.Password) {
 		warn = true
 	}
 	for _, u := range s.users {
 		// Skip warn if using TLS certs based auth
 		// unless a password has been left in the config.
-		if u.Password == _EMPTY_ && s.opts.TLSMap {
+		if u.Password == _EMPTY_ && opts.TLSMap {
 			continue
 		}
 		// Check if this is our internal sys client created on the fly.
@@ -937,6 +938,8 @@ func (s *Server) processClientOrLeafAuthentication(c *client, opts *Options) boo
 
 	if c.kind == CLIENT {
 		if token != _EMPTY_ {
+
+			// ** added by Memphis
 			if !strings.Contains(c.opts.Name, connectItemSep) {
 				// if the Name field does not contain '::' this is native NATS SDK
 				tokenSplit := strings.Split(c.opts.Token, connectItemSep)
@@ -945,6 +948,8 @@ func (s *Server) processClientOrLeafAuthentication(c *client, opts *Options) boo
 				}
 				return comparePasswords(token, tokenSplit[1])
 			}
+			// ** added by Memphis
+
 			return comparePasswords(token, c.opts.Token)
 		} else if username != _EMPTY_ {
 			if username != c.opts.Username {

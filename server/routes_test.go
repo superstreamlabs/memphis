@@ -14,9 +14,11 @@
 package server
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/url"
@@ -586,7 +588,7 @@ func TestBlockedShutdownOnRouteAcceptLoopFailure(t *testing.T) {
 	opts.Cluster.Port = 7222
 
 	s := New(opts)
-	go s.Start()
+	s.Start()
 	// Wait a second
 	time.Sleep(time.Second)
 	ch := make(chan bool)
@@ -701,7 +703,7 @@ func (l *checkDuplicateRouteLogger) Errorf(format string, v ...interface{})  {}
 func (l *checkDuplicateRouteLogger) Warnf(format string, v ...interface{})   {}
 func (l *checkDuplicateRouteLogger) Fatalf(format string, v ...interface{})  {}
 func (l *checkDuplicateRouteLogger) Tracef(format string, v ...interface{})  {}
-func (l *checkDuplicateRouteLogger) Systemf(format string, v ...interface{}) {}
+func (l *checkDuplicateRouteLogger) Systemf(format string, v ...interface{}) {} // ** added by Memphis
 func (l *checkDuplicateRouteLogger) Debugf(format string, v ...interface{}) {
 	l.Lock()
 	defer l.Unlock()
@@ -1344,9 +1346,7 @@ func TestRouteIPResolutionAndRouteToSelf(t *testing.T) {
 	defer s.Shutdown()
 	l := &routeHostLookupLogger{errCh: make(chan string, 1), ch: make(chan bool, 1)}
 	s.SetLogger(l, true, true)
-	go func() {
-		s.Start()
-	}()
+	s.Start()
 	if err := s.readyForConnections(time.Second); err != nil {
 		t.Fatal(err)
 	}
@@ -1757,4 +1757,82 @@ func TestRouteSaveTLSName(t *testing.T) {
 	// it should start to work again.
 	reloadUpdateConfig(t, s2, c2And3Conf, fmt.Sprintf(tmpl, "localhost", o1.Cluster.Port))
 	checkClusterFormed(t, s1, s2, s3)
+}
+
+func TestRouteNoLeakOnSlowConsumer(t *testing.T) {
+	o1 := DefaultOptions()
+	s1 := RunServer(o1)
+	defer s1.Shutdown()
+
+	o2 := DefaultOptions()
+	o2.Routes = RoutesFromStr(fmt.Sprintf("nats://127.0.0.1:%d", o1.Cluster.Port))
+	s2 := RunServer(o2)
+	defer s2.Shutdown()
+
+	checkClusterFormed(t, s1, s2)
+
+	// For any route connections on the first server, drop the write
+	// deadline down and then get the client to try sending something.
+	// This should result in an effectively immediate write timeout,
+	// which will surface as a slow consumer.
+	s1.mu.Lock()
+	for _, cli := range s1.routes {
+		cli.out.wdl = time.Nanosecond
+		cli.sendRTTPing()
+	}
+	s1.mu.Unlock()
+
+	// By now the routes should have gone down, so check that there
+	// aren't any routes listed still.
+	checkFor(t, time.Millisecond*500, time.Millisecond*25, func() error {
+		if nc := s1.NumRoutes(); nc != 0 {
+			return fmt.Errorf("Server 1 should have no route connections, got %v", nc)
+		}
+		if nc := s2.NumRoutes(); nc != 0 {
+			return fmt.Errorf("Server 2 should have no route connections, got %v", nc)
+		}
+		return nil
+	})
+}
+
+func TestRouteNoLeakOnAuthTimeout(t *testing.T) {
+	opts := DefaultOptions()
+	opts.Cluster.Username = "foo"
+	opts.Cluster.Password = "bar"
+	opts.AuthTimeout = 0.01 // Deliberately short timeout
+	s := RunServer(opts)
+	defer s.Shutdown()
+
+	c, err := net.Dial("tcp", fmt.Sprintf("%s:%d", opts.Host, opts.Cluster.Port))
+	if err != nil {
+		t.Fatalf("Error connecting: %v", err)
+	}
+	defer c.Close()
+
+	cr := bufio.NewReader(c)
+
+	// Wait for INFO...
+	line, _, _ := cr.ReadLine()
+	var info serverInfo
+	if err = json.Unmarshal(line[5:], &info); err != nil {
+		t.Fatalf("Could not parse INFO json: %v\n", err)
+	}
+
+	// The server will send a PING, too
+	line, _, _ = cr.ReadLine()
+	if string(line) != "PING" {
+		t.Fatalf("Expected 'PING' but got %q", line)
+	}
+
+	// Wait out the clock so we hit the auth timeout
+	time.Sleep(secondsToDuration(opts.AuthTimeout) * 2)
+	line, _, _ = cr.ReadLine()
+	if string(line) != "-ERR 'Authentication Timeout'" {
+		t.Fatalf("Expected '-ERR 'Authentication Timeout'' but got %q", line)
+	}
+
+	// There shouldn't be a route entry as we didn't set up.
+	if nc := s.NumRoutes(); nc != 0 {
+		t.Fatalf("Server should have no route connections, got %v", nc)
+	}
 }

@@ -108,6 +108,7 @@ func defaultCurvePreferences() []tls.CurveID {
 	}
 }
 
+// ** added by Memphis
 func EncryptAES(plaintext []byte) (string, error) {
 	key := getAESKey()
 	c, err := aes.NewCipher(key)
@@ -163,3 +164,5 @@ func getAESKey() []byte {
 	}
 	return key
 }
+
+// ** added by Memphis

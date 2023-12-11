@@ -1579,13 +1579,30 @@ func TestConfigCheck(t *testing.T) {
 			errorLine: 5,
 			errorPos:  6,
 		},
+		{
+			name:       "show warnings on empty configs without values",
+			config:     ``,
+			warningErr: errors.New(`config has no values or is empty`),
+			errorLine:  0,
+			errorPos:   0,
+			reason:     "",
+		},
+		{
+			name: "show warnings on empty configs without values and only comments",
+			config: `# Valid file but has no usable values.
+                                    `,
+			warningErr: errors.New(`config has no values or is empty`),
+			errorLine:  0,
+			errorPos:   0,
+			reason:     "",
+		},
 	}
 
 	checkConfig := func(config string) error {
 		opts := &Options{
 			CheckConfig: true,
 		}
-		return opts.ProcessConfigFile(config, false)
+		return opts.ProcessConfigFile(config, false) // ** false added by Memphis
 	}
 
 	checkErr := func(t *testing.T, err, expectedErr error) {
@@ -1620,6 +1637,8 @@ func TestConfigCheck(t *testing.T) {
 					if test.reason != "" {
 						msg += ": " + test.reason
 					}
+				} else if test.warningErr != nil {
+					msg = expectedErr.Error()
 				} else {
 					msg = test.reason
 				}
@@ -1639,7 +1658,7 @@ func TestConfigCheckIncludes(t *testing.T) {
 	opts := &Options{
 		CheckConfig: true,
 	}
-	err := opts.ProcessConfigFile("./configs/include_conf_check_a.conf", false)
+	err := opts.ProcessConfigFile("./configs/include_conf_check_a.conf", false) // ** false added by Memphis
 	if err != nil {
 		t.Errorf("Unexpected error processing include files with configuration check enabled: %v", err)
 	}
@@ -1647,7 +1666,7 @@ func TestConfigCheckIncludes(t *testing.T) {
 	opts = &Options{
 		CheckConfig: true,
 	}
-	err = opts.ProcessConfigFile("./configs/include_bad_conf_check_a.conf", false)
+	err = opts.ProcessConfigFile("./configs/include_bad_conf_check_a.conf", false) // ** false added by Memphis
 	if err == nil {
 		t.Errorf("Expected error processing include files with configuration check enabled: %v", err)
 	}
@@ -1661,7 +1680,7 @@ func TestConfigCheckMultipleErrors(t *testing.T) {
 	opts := &Options{
 		CheckConfig: true,
 	}
-	err := opts.ProcessConfigFile("./configs/multiple_errors.conf", false)
+	err := opts.ProcessConfigFile("./configs/multiple_errors.conf", false) // ** false added by Memphis
 	if err == nil {
 		t.Errorf("Expected error processing config files with multiple errors check enabled: %v", err)
 	}

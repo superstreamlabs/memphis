@@ -1,4 +1,4 @@
-// Copyright 2019-2022 The NATS Authors
+// Copyright 2019-2023 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -39,29 +39,31 @@ import (
 	"github.com/nats-io/nuid"
 )
 
-// Warning when user configures leafnode TLS insecure
-const leafnodeTLSInsecureWarning = "TLS certificate chain and hostname of solicited leafnodes will not be verified. DO NOT USE IN PRODUCTION!"
+const (
+	// Warning when user configures leafnode TLS insecure
+	leafnodeTLSInsecureWarning = "TLS certificate chain and hostname of solicited leafnodes will not be verified. DO NOT USE IN PRODUCTION!"
 
-// When a loop is detected, delay the reconnect of solicited connection.
-const leafNodeReconnectDelayAfterLoopDetected = 30 * time.Second
+	// When a loop is detected, delay the reconnect of solicited connection.
+	leafNodeReconnectDelayAfterLoopDetected = 30 * time.Second
 
-// When a server receives a message causing a permission violation, the
-// connection is closed and it won't attempt to reconnect for that long.
-const leafNodeReconnectAfterPermViolation = 30 * time.Second
+	// When a server receives a message causing a permission violation, the
+	// connection is closed and it won't attempt to reconnect for that long.
+	leafNodeReconnectAfterPermViolation = 30 * time.Second
 
-// When we have the same cluster name as the hub.
-const leafNodeReconnectDelayAfterClusterNameSame = 30 * time.Second
+	// When we have the same cluster name as the hub.
+	leafNodeReconnectDelayAfterClusterNameSame = 30 * time.Second
 
-// Prefix for loop detection subject
-const leafNodeLoopDetectionSubjectPrefix = "$LDS."
+	// Prefix for loop detection subject
+	leafNodeLoopDetectionSubjectPrefix = "$LDS."
 
-// Path added to URL to indicate to WS server that the connection is a
-// LEAF connection as opposed to a CLIENT.
-const leafNodeWSPath = "/leafnode"
+	// Path added to URL to indicate to WS server that the connection is a
+	// LEAF connection as opposed to a CLIENT.
+	leafNodeWSPath = "/leafnode"
 
-// This is the time the server will wait, when receiving a CONNECT,
-// before closing the connection if the required minimum version is not met.
-const leafNodeWaitBeforeClose = 5 * time.Second
+	// This is the time the server will wait, when receiving a CONNECT,
+	// before closing the connection if the required minimum version is not met.
+	leafNodeWaitBeforeClose = 5 * time.Second
+)
 
 type leaf struct {
 	// We have any auth stuff here for solicited connections.
@@ -695,7 +697,7 @@ func (s *Server) startLeafNodeAcceptLoop() {
 	s.leafNodeInfo = info
 	// Possibly override Host/Port and set IP based on Cluster.Advertise
 	if err := s.setLeafNodeInfoHostPortAndIP(); err != nil {
-		s.Fatalf("Error setting leafnode INFO with LeafNode.Advertise value of %s, err=%v", s.opts.LeafNode.Advertise, err)
+		s.Fatalf("Error setting leafnode INFO with LeafNode.Advertise value of %s, err=%v", opts.LeafNode.Advertise, err)
 		l.Close()
 		s.mu.Unlock()
 		return
@@ -1420,7 +1422,7 @@ func (s *Server) addLeafNodeConnection(c *client, srvName, clusterName string, c
 	}
 	// If we have a specified JetStream domain we will want to add a mapping to
 	// allow access cross domain for each non-system account.
-	if opts.JetStreamDomain != _EMPTY_ && acc != sysAcc && opts.JetStream {
+	if opts.JetStreamDomain != _EMPTY_ && opts.JetStream && acc != nil && acc != sysAcc {
 		for src, dest := range generateJSMappingTable(opts.JetStreamDomain) {
 			if err := acc.AddMapping(src, dest); err != nil {
 				c.Debugf("Error adding JetStream domain mapping: %s", err.Error())
@@ -1579,6 +1581,11 @@ func (c *client) processLeafNodeConnect(s *Server, arg []byte, lang string) erro
 
 	c.mu.Unlock()
 
+	// Register the cluster, even if empty, as long as we are acting as a hub.
+	if !proto.Hub {
+		c.acc.registerLeafNodeCluster(proto.Cluster)
+	}
+
 	// Add in the leafnode here since we passed through auth at this point.
 	s.addLeafNodeConnection(c, proto.Name, proto.Cluster, true)
 
@@ -1632,11 +1639,15 @@ func (s *Server) initLeafNodeSmapAndSendSubs(c *client) {
 		return
 	}
 	// Collect all account subs here.
-	_subs := [32]*subscription{}
+	_subs := [1024]*subscription{}
 	subs := _subs[:0]
 	ims := []string{}
 
-	acc.mu.Lock()
+	// Hold the client lock otherwise there can be a race and miss some subs.
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	acc.mu.RLock()
 	accName := acc.Name
 	accNTag := acc.nameTag
 
@@ -1675,11 +1686,15 @@ func (s *Server) initLeafNodeSmapAndSendSubs(c *client) {
 
 	// Create a unique subject that will be used for loop detection.
 	lds := acc.lds
+	acc.mu.RUnlock()
+
+	// Check if we have to create the LDS.
 	if lds == _EMPTY_ {
 		lds = leafNodeLoopDetectionSubjectPrefix + nuid.Next()
+		acc.mu.Lock()
 		acc.lds = lds
+		acc.mu.Unlock()
 	}
-	acc.mu.Unlock()
 
 	// Now check for gateway interest. Leafnodes will put this into
 	// the proper mode to propagate, but they are not held in the account.
@@ -1707,7 +1722,6 @@ func (s *Server) initLeafNodeSmapAndSendSubs(c *client) {
 	}
 
 	// Now walk the results and add them to our smap
-	c.mu.Lock()
 	rc := c.leaf.remoteCluster
 	c.leaf.smap = make(map[string]int32)
 	for _, sub := range subs {
@@ -1773,7 +1787,6 @@ func (s *Server) initLeafNodeSmapAndSendSubs(c *client) {
 			c.mu.Unlock()
 		})
 	}
-	c.mu.Unlock()
 }
 
 // updateInterestForAccountOnGateway called from gateway code when processing RS+ and RS-.
@@ -1783,53 +1796,76 @@ func (s *Server) updateInterestForAccountOnGateway(accName string, sub *subscrip
 		s.Debugf("No or bad account for %q, failed to update interest from gateway", accName)
 		return
 	}
-	s.updateLeafNodes(acc, sub, delta)
+	acc.updateLeafNodes(sub, delta)
 }
 
-// updateLeafNodes will make sure to update the smap for the subscription. Will
-// also forward to all leaf nodes as needed.
-func (s *Server) updateLeafNodes(acc *Account, sub *subscription, delta int32) {
+// updateLeafNodes will make sure to update the account smap for the subscription.
+// Will also forward to all leaf nodes as needed.
+func (acc *Account) updateLeafNodes(sub *subscription, delta int32) {
 	if acc == nil || sub == nil {
 		return
 	}
 
-	_l := [32]*client{}
-	leafs := _l[:0]
+	// We will do checks for no leafnodes and same cluster here inline and under the
+	// general account read lock.
+	// If we feel we need to update the leafnodes we will do that out of line to avoid
+	// blocking routes or GWs.
 
-	// Grab all leaf nodes. Ignore a leafnode if sub's client is a leafnode and matches.
 	acc.mu.RLock()
-	for _, ln := range acc.lleafs {
-		if ln != sub.client {
-			leafs = append(leafs, ln)
-		}
+	// First check if we even have leafnodes here.
+	if acc.nleafs == 0 {
+		acc.mu.RUnlock()
+		return
 	}
+
+	// Is this a loop detection subject.
+	isLDS := bytes.HasPrefix(sub.subject, []byte(leafNodeLoopDetectionSubjectPrefix))
+
+	// Capture the cluster even if its empty.
+	cluster := _EMPTY_
+	if sub.origin != nil {
+		cluster = string(sub.origin)
+	}
+
+	// If we have an isolated cluster we can return early, as long as it is not a loop detection subject.
+	// Empty clusters will return false for the check.
+	if !isLDS && acc.isLeafNodeClusterIsolated(cluster) {
+		acc.mu.RUnlock()
+		return
+	}
+
+	// We can release the general account lock.
 	acc.mu.RUnlock()
 
-	for _, ln := range leafs {
-		// Check to make sure this sub does not have an origin cluster than matches the leafnode.
-		ln.mu.Lock()
-		skip := (sub.origin != nil && string(sub.origin) == ln.remoteCluster()) || !ln.canSubscribe(string(sub.subject))
-		// If skipped, make sure that we still let go the "$LDS." subscription that allows
-		// the detection of a loop.
-		if skip && bytes.HasPrefix(sub.subject, []byte(leafNodeLoopDetectionSubjectPrefix)) {
-			skip = false
-		}
-		ln.mu.Unlock()
-		if skip {
+	// We can hold the list lock here to avoid having to copy a large slice.
+	acc.lmu.RLock()
+	defer acc.lmu.RUnlock()
+
+	// Do this once.
+	subject := string(sub.subject)
+
+	// Walk the connected leafnodes.
+	for _, ln := range acc.lleafs {
+		if ln == sub.client {
 			continue
 		}
-		ln.updateSmap(sub, delta)
+		// Check to make sure this sub does not have an origin cluster that matches the leafnode.
+		ln.mu.Lock()
+		skip := (cluster != _EMPTY_ && cluster == ln.remoteCluster()) || (delta > 0 && !ln.canSubscribe(subject))
+		// If skipped, make sure that we still let go the "$LDS." subscription that allows
+		// the detection of a loop.
+		if isLDS || !skip {
+			ln.updateSmap(sub, delta)
+		}
+		ln.mu.Unlock()
 	}
 }
 
 // This will make an update to our internal smap and determine if we should send out
 // an interest update to the remote side.
+// Lock should be held.
 func (c *client) updateSmap(sub *subscription, delta int32) {
-	key := keyFromSub(sub)
-
-	c.mu.Lock()
 	if c.leaf.smap == nil {
-		c.mu.Unlock()
 		return
 	}
 
@@ -1837,7 +1873,6 @@ func (c *client) updateSmap(sub *subscription, delta int32) {
 	skind := sub.client.kind
 	updateClient := skind == CLIENT || skind == SYSTEM || skind == JETSTREAM || skind == ACCOUNT
 	if c.isSpokeLeafNode() && !(updateClient || (skind == LEAF && !sub.client.isSpokeLeafNode())) {
-		c.mu.Unlock()
 		return
 	}
 
@@ -1850,12 +1885,16 @@ func (c *client) updateSmap(sub *subscription, delta int32) {
 				c.leaf.tsubt.Stop()
 				c.leaf.tsubt = nil
 			}
-			c.mu.Unlock()
 			return
 		}
 	}
 
-	n := c.leaf.smap[key]
+	key := keyFromSub(sub)
+	n, ok := c.leaf.smap[key]
+	if delta < 0 && !ok {
+		return
+	}
+
 	// We will update if its a queue, if count is zero (or negative), or we were 0 and are N > 0.
 	update := sub.queue != nil || n == 0 || n+delta <= 0
 	n += delta
@@ -1867,7 +1906,6 @@ func (c *client) updateSmap(sub *subscription, delta int32) {
 	if update {
 		c.sendLeafNodeSubUpdate(key, n)
 	}
-	c.mu.Unlock()
 }
 
 // Used to force add subjects to the subject map.
@@ -2065,8 +2103,11 @@ func (c *client) processLeafSub(argo []byte) (err error) {
 	spoke := c.isSpokeLeafNode()
 	c.mu.Unlock()
 
-	if err := c.addShadowSubscriptions(acc, sub); err != nil {
-		c.Errorf(err.Error())
+	// Only add in shadow subs if a new sub or qsub.
+	if osub == nil {
+		if err := c.addShadowSubscriptions(acc, sub); err != nil {
+			c.Errorf(err.Error())
+		}
 	}
 
 	// If we are not solicited, treat leaf node subscriptions similar to a
@@ -2081,7 +2122,7 @@ func (c *client) processLeafSub(argo []byte) (err error) {
 	}
 	// Now check on leafnode updates for other leaf nodes. We understand solicited
 	// and non-solicited state in this call so we will do the right thing.
-	srv.updateLeafNodes(acc, sub, delta)
+	acc.updateLeafNodes(sub, delta)
 
 	return nil
 }
@@ -2138,7 +2179,7 @@ func (c *client) processLeafUnsub(arg []byte) error {
 		}
 	}
 	// Now check on leafnode updates for other leaf nodes.
-	srv.updateLeafNodes(acc, sub, -1)
+	acc.updateLeafNodes(sub, -1)
 	return nil
 }
 

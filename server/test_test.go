@@ -1,4 +1,4 @@
-// Copyright 2019-2021 The NATS Authors
+// Copyright 2019-2023 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -14,7 +14,6 @@
 package server
 
 import (
-	"bytes"
 	"fmt"
 	"math/rand"
 	"net/url"
@@ -50,14 +49,6 @@ func RunRandClientPortServer() *Server {
 	opts := DefaultTestOptions
 	opts.Port = -1
 	return RunServer(&opts)
-}
-
-// Used to setup clusters of clusters for tests.
-type cluster struct {
-	servers []*Server
-	opts    []*Options
-	name    string
-	t       testing.TB
 }
 
 func require_True(t *testing.T, b bool) {
@@ -120,16 +111,16 @@ func require_Error(t *testing.T, err error, expected ...error) {
 	t.Fatalf("Expected one of %v, got '%v'", expected, err)
 }
 
-func require_Equal(t *testing.T, a, b string) {
+func require_Equal[T comparable](t *testing.T, a, b T) {
 	t.Helper()
-	if strings.Compare(a, b) != 0 {
+	if a != b {
 		t.Fatalf("require equal, but got: %v != %v", a, b)
 	}
 }
 
-func require_NotEqual(t *testing.T, a, b [32]byte) {
+func require_NotEqual[T comparable](t *testing.T, a, b T) {
 	t.Helper()
-	if bytes.Equal(a[:], b[:]) {
+	if a == b {
 		t.Fatalf("require not equal, but got: %v != %v", a, b)
 	}
 }
@@ -276,6 +267,11 @@ func (c *cluster) shutdown() {
 	if c == nil {
 		return
 	}
+	// Stop any proxies.
+	for _, np := range c.nproxies {
+		np.stop()
+	}
+	// Shutdown and cleanup servers.
 	for i, s := range c.servers {
 		sd := s.StoreDir()
 		s.Shutdown()

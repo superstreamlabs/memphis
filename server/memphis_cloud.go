@@ -1837,6 +1837,9 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 	if streamInfo.State.FirstSeq > 0 {
 		startSeq = streamInfo.State.FirstSeq
 	}
+	if streamInfo.State.LastSeq > ws_updates_interval_sec {
+		startSeq = streamInfo.State.LastSeq - ws_updates_interval_sec + 1
+	}
 
 	cc := ConsumerConfig{
 		OptStartSeq:   startSeq,

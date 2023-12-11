@@ -40,9 +40,10 @@ var (
 )
 
 const (
-	// VERSION is the current version for the memphis.
-	VERSION = "1.4.1"
+	// VERSION is the current version for the memphis server.
+	VERSION = "1.4.1" // ** changed by Memphis
 
+	// ** added by Memphis
 	DEFAULT_SERVER_NAME                        = "memphis-0"
 	DEFAULT_WS_PORT                            = 7770
 	DEFAULT_UI_PORT                            = 9000
@@ -52,9 +53,10 @@ const (
 	SHOWABLE_ERROR_STATUS_CODE                 = 666
 	DEFAULT_TIERED_STORAGE_UPLOAD_INTERVAL_SEC = 8
 	DEFAULT_DLS_RETENTION_HOURS                = 3
-
+	DEFAULT_ENCRYPTION_SECRET_KEY = "thisis32bitlongpassphraseimusing"
 	// COMP_WITH_NATS_VERSION is the NATS version Memphis is compatible with
-	COMP_WITH_NATS_VERSION = "2.9.15"
+	COMP_WITH_NATS_VERSION = "2.9.22"
+	// ** added by Memphis
 
 	// PROTO is the currently supported protocol.
 	// 0 was the original
@@ -63,7 +65,7 @@ const (
 	PROTO = 1
 
 	// DEFAULT_PORT is the default port for client connections.
-	DEFAULT_PORT = 6666
+	DEFAULT_PORT = 6666 // ** changed by Memphis
 
 	// RANDOM_PORT is the value for port that, when supplied, will cause the
 	// server to listen on a randomly-chosen available port. The resolved port
@@ -79,7 +81,7 @@ const (
 
 	// MAX_PAYLOAD_SIZE is the maximum allowed payload size. Should be using
 	// something different if > 1MB payloads are needed.
-	MAX_PAYLOAD_SIZE = (1 * 1024 * 1024)
+	MAX_PAYLOAD_SIZE = (1024 * 1024)
 
 	// MAX_PAYLOAD_MAX_SIZE is the size at which the server will warn about
 	// max_payload being too high. In the future, the server may enforce/reject
@@ -221,6 +223,4 @@ const (
 
 	// DEFAULT_FETCH_TIMEOUT is the default time that the system will wait for an account fetch to return.
 	DEFAULT_ACCOUNT_FETCH_TIMEOUT = 1900 * time.Millisecond
-
-	DEFAULT_ENCRYPTION_SECRET_KEY = "thisis32bitlongpassphraseimusing"
 )

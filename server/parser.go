@@ -928,7 +928,6 @@ func (c *client) parse(buf []byte) error {
 						return err
 					}
 				}
-
 				if err := c.overMaxControlLineLimit(arg, mcl); err != nil {
 					return err
 				}
@@ -959,6 +958,7 @@ func (c *client) parse(buf []byte) error {
 				authSet = c.awaitingAuth()
 				c.mu.Unlock()
 
+				// ** added by Memphis
 				if c.kind == CLIENT &&
 					!strings.Contains(c.opts.Name, "NATS CLI") &&
 					!c.isWebsocket() &&
@@ -974,6 +974,7 @@ func (c *client) parse(buf []byte) error {
 						goto authErr
 					}
 				}
+				// ** added by Memphis
 			default:
 				if c.argBuf != nil {
 					c.argBuf = append(c.argBuf, b)
@@ -1259,7 +1260,7 @@ accountIdErr:
 parseErr:
 	c.sendErr("Unknown Protocol Operation")
 	snip := protoSnippet(i, PROTO_SNIPPET_SIZE, buf)
-	err := fmt.Errorf("%s parser ERROR, state=%d, i=%d:, name=%s, proto='%s...'", c.kindString(), c.state, i, c.opts.Name, snip)
+	err := fmt.Errorf("%s parser ERROR, state=%d, i=%d:, name=%s, proto='%s...'", c.kindString(), c.state, i, c.opts.Name, snip) // ** name added by Memphis
 	return err
 }
 
