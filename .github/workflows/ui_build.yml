@@ -1,4 +1,4 @@
-name: UI Build and Commit
+name: UI Build and Create PR
 
 on:
   push:
