@@ -1274,6 +1274,7 @@ func (c *captureLeafNodeErrLogger) Errorf(format string, v ...interface{}) {
 	}
 }
 
+// ** added by Memphis
 func (c *captureLeafNodeErrLogger) Systemf(format string, v ...interface{}) {
 	msg := fmt.Sprintf(format, v...)
 	select {
@@ -1281,6 +1282,8 @@ func (c *captureLeafNodeErrLogger) Systemf(format string, v ...interface{}) {
 	default:
 	}
 }
+
+// ** added by Memphis
 
 func TestLeafNodeTLSMixIP(t *testing.T) {
 	content := `

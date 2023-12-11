@@ -146,8 +146,11 @@ func (d *dummyLogger) Debugf(format string, args ...interface{}) {
 func (d *dummyLogger) Tracef(format string, args ...interface{}) {
 }
 
+// ** added by Memphis
 func (d *dummyLogger) Systemf(format string, args ...interface{}) {
 }
+
+// ** added by Memphis
 
 func (d *dummyLogger) Noticef(format string, args ...interface{}) {
 }

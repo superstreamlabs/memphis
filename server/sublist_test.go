@@ -1,4 +1,4 @@
-// Copyright 2016-2020 The NATS Authors
+// Copyright 2016-2023 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -368,6 +368,30 @@ func TestSublistNoCacheRemoveBatch(t *testing.T) {
 	if s.CacheEnabled() {
 		t.Fatalf("Cache should not be enabled")
 	}
+}
+
+func TestSublistRemoveBatchWithError(t *testing.T) {
+	s := NewSublistNoCache()
+	sub1 := newSub("foo")
+	sub2 := newSub("bar")
+	sub3 := newSub("baz")
+	s.Insert(sub1)
+	s.Insert(sub2)
+	s.Insert(sub3)
+	subNotPresent := newSub("not.inserted")
+	// Try to remove all subs, but include the sub that has not been inserted.
+	err := s.RemoveBatch([]*subscription{subNotPresent, sub1, sub3})
+	// We expect an error to be returned, but sub1,2 and 3 to have been removed.
+	require_Error(t, err, ErrNotFound)
+	// Make sure that we have only sub2 present
+	verifyCount(s, 1, t)
+	r := s.Match("bar")
+	verifyLen(r.psubs, 1, t)
+	verifyMember(r.psubs, sub2, t)
+	r = s.Match("foo")
+	verifyLen(r.psubs, 0, t)
+	r = s.Match("baz")
+	verifyLen(r.psubs, 0, t)
 }
 
 func testSublistInvalidSubjectsInsert(t *testing.T, s *Sublist) {
@@ -1476,6 +1500,20 @@ func TestSublistReverseMatch(t *testing.T) {
 	verifyMember(r.psubs, fooBarSub, t)
 	verifyMember(r.psubs, fooBazSub, t)
 	verifyMember(r.psubs, fooBarBazSub, t)
+}
+
+func TestSublistReverseMatchWider(t *testing.T) {
+	s := NewSublistWithCache()
+	sub := newSub("uplink.*.*.>")
+	s.Insert(sub)
+
+	r := s.ReverseMatch("uplink.1.*.*.>")
+	verifyLen(r.psubs, 1, t)
+	verifyMember(r.psubs, sub, t)
+
+	r = s.ReverseMatch("uplink.1.2.3.>")
+	verifyLen(r.psubs, 1, t)
+	verifyMember(r.psubs, sub, t)
 }
 
 func TestSublistMatchWithEmptyTokens(t *testing.T) {

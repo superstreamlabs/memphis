@@ -11,6 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Please note that these tests will stress a system and they need generous
+// amounts of CPU, Memory and network sockets. Make sure the 'open files'
+// setting for your platform is at least 8192. On linux and MacOSX you can
+// do this via 'ulimit -n 8192'
+//
+
 package test
 
 import (

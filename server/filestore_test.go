@@ -1278,7 +1278,10 @@ func TestFileStoreBitRot(t *testing.T) {
 			// Now twiddle some bits.
 			fs.mu.Lock()
 			lmb := fs.lmb
-			contents, _ := os.ReadFile(lmb.mfn)
+			contents, err := os.ReadFile(lmb.mfn)
+			require_NoError(t, err)
+			require_True(t, len(contents) > 0)
+
 			var index int
 			for {
 				index = rand.Intn(len(contents))
@@ -1294,6 +1297,10 @@ func TestFileStoreBitRot(t *testing.T) {
 
 			ld := fs.checkMsgs()
 			if len(ld.Msgs) > 0 {
+				break
+			}
+			// If our bitrot caused us to not be able to recover any messages we can break as well.
+			if state := fs.State(); state.Msgs == 0 {
 				break
 			}
 			// Fail the test if we have tried the 10 times and still did not
@@ -1314,7 +1321,10 @@ func TestFileStoreBitRot(t *testing.T) {
 
 		// checkMsgs will repair the underlying store, so checkMsgs should be clean now.
 		if ld := fs.checkMsgs(); ld != nil {
-			t.Fatalf("Expected no errors restoring checked and fixed filestore, got %+v", ld)
+			// If we have no msgs left this will report the head msgs as lost again.
+			if state := fs.State(); state.Msgs > 0 {
+				t.Fatalf("Expected no errors restoring checked and fixed filestore, got %+v", ld)
+			}
 		}
 	})
 }
@@ -2776,8 +2786,8 @@ func TestFileStoreConsumerDeliveredAndAckUpdates(t *testing.T) {
 			}
 		}
 
-		testAck(1, 100, 1, 100)
-		testAck(3, 130, 1, 100)
+		testAck(1, 100, 1, 109)
+		testAck(3, 130, 1, 109)
 		testAck(2, 110, 3, 149) // We do not track explicit state on previous stream floors, so we take last known -1
 		testAck(5, 165, 3, 149)
 		testAck(4, 150, 5, 165)
@@ -3668,7 +3678,7 @@ func TestFileStoreFetchPerf(t *testing.T) {
 // https://github.com/nats-io/nats-server/issues/2936
 func TestFileStoreCompactReclaimHeadSpace(t *testing.T) {
 	testFileStoreAllPermutations(t, func(t *testing.T, fcfg FileStoreConfig) {
-		fcfg.BlockSize = 1024 * 1024
+		fcfg.BlockSize = 4 * 1024 * 1024
 
 		fs, err := newFileStore(
 			fcfg,
@@ -3678,7 +3688,7 @@ func TestFileStoreCompactReclaimHeadSpace(t *testing.T) {
 		defer fs.Stop()
 
 		// Create random bytes for payload to test for corruption vs repeated.
-		msg := make([]byte, 16*1024)
+		msg := make([]byte, 64*1024)
 		crand.Read(msg)
 
 		// This gives us ~63 msgs in first and ~37 in second.
@@ -4020,6 +4030,7 @@ func TestFileStorePurgeExWithSubject(t *testing.T) {
 		require_True(t, int(p) == total)
 		require_True(t, int(p) == total)
 		require_True(t, fs.State().Msgs == 1)
+		require_True(t, fs.State().FirstSeq == 201)
 	})
 }
 
@@ -4320,6 +4331,55 @@ func TestFileStoreMaxMsgsPerSubject(t *testing.T) {
 	})
 }
 
+// Testing the case in https://github.com/nats-io/nats-server/issues/4247
+func TestFileStoreMaxMsgsAndMaxMsgsPerSubject(t *testing.T) {
+	testFileStoreAllPermutations(t, func(t *testing.T, fcfg FileStoreConfig) {
+		fcfg.BlockSize = 128
+		fcfg.CacheExpire = time.Second
+
+		fs, err := newFileStore(
+			fcfg,
+			StreamConfig{
+				Name:     "zzz",
+				Subjects: []string{"kv.>"},
+				Storage:  FileStorage,
+				Discard:  DiscardNew, MaxMsgs: 100, // Total stream policy
+				DiscardNewPer: true, MaxMsgsPer: 1, // Per-subject policy
+			},
+		)
+		require_NoError(t, err)
+		defer fs.Stop()
+
+		for i := 1; i <= 101; i++ {
+			subj := fmt.Sprintf("kv.%d", i)
+			_, _, err := fs.StoreMsg(subj, nil, []byte("value"))
+			if i == 101 {
+				// The 101th iteration should fail because MaxMsgs is set to
+				// 100 and the policy is DiscardNew.
+				require_Error(t, err)
+			} else {
+				require_NoError(t, err)
+			}
+		}
+
+		for i := 1; i <= 100; i++ {
+			subj := fmt.Sprintf("kv.%d", i)
+			_, _, err := fs.StoreMsg(subj, nil, []byte("value"))
+			// All of these iterations should fail because MaxMsgsPer is set
+			// to 1 and DiscardNewPer is set to true, forcing us to reject
+			// cases where there is already a message on this subject.
+			require_Error(t, err)
+		}
+
+		if state := fs.State(); state.Msgs != 100 || state.FirstSeq != 1 || state.LastSeq != 100 || len(state.Deleted) != 0 {
+			// There should be 100 messages exactly, as the 101st subject
+			// should have been rejected in the first loop, and any duplicates
+			// on the other subjects should have been rejected in the second loop.
+			t.Fatalf("Bad state: %+v", state)
+		}
+	})
+}
+
 func TestFileStoreSubjectStateCacheExpiration(t *testing.T) {
 	testFileStoreAllPermutations(t, func(t *testing.T, fcfg FileStoreConfig) {
 		fcfg.BlockSize = 32
@@ -4608,6 +4668,40 @@ func TestFileStoreFSSCloseAndKeepOnExpireOnRecoverBug(t *testing.T) {
 
 		if state := fs.State(); state.NumSubjects != 0 {
 			t.Fatalf("Expected no subjects with no messages, got %d", state.NumSubjects)
+		}
+	})
+}
+
+func TestFileStoreExpireOnRecoverSubjectAccounting(t *testing.T) {
+	const msgLen = 19
+	msg := bytes.Repeat([]byte("A"), msgLen)
+
+	testFileStoreAllPermutations(t, func(t *testing.T, fcfg FileStoreConfig) {
+		fcfg.BlockSize = 100
+		ttl := 200 * time.Millisecond
+		scfg := StreamConfig{Name: "zzz", Subjects: []string{"*"}, Storage: FileStorage, MaxAge: ttl}
+
+		fs, err := newFileStore(fcfg, scfg)
+		require_NoError(t, err)
+		defer fs.Stop()
+
+		// These are in first block.
+		fs.StoreMsg("A", nil, msg)
+		fs.StoreMsg("B", nil, msg)
+		time.Sleep(ttl / 2)
+		// This one in 2nd block.
+		fs.StoreMsg("C", nil, msg)
+		fs.Stop()
+
+		time.Sleep(ttl/2 + 10*time.Millisecond)
+
+		fs, err = newFileStore(fcfg, scfg)
+		require_NoError(t, err)
+		defer fs.Stop()
+
+		// Make sure we take into account PSIM when throwing a whole block away.
+		if state := fs.State(); state.NumSubjects != 1 {
+			t.Fatalf("Expected 1 subject, got %d", state.NumSubjects)
 		}
 	})
 }
@@ -5373,125 +5467,359 @@ func TestFileStoreSubjectsTotals(t *testing.T) {
 	}
 }
 
-func TestFileStoreNumPending(t *testing.T) {
+func TestFileStoreConsumerStoreEncodeAfterRestart(t *testing.T) {
+	testFileStoreAllPermutations(t, func(t *testing.T, fcfg FileStoreConfig) {
+		fs, err := newFileStore(fcfg, StreamConfig{Name: "zzz", Storage: FileStorage})
+		require_NoError(t, err)
+		defer fs.Stop()
+
+		o, err := fs.ConsumerStore("o22", &ConsumerConfig{AckPolicy: AckExplicit})
+		require_NoError(t, err)
+
+		state := &ConsumerState{}
+		state.Delivered.Consumer = 22
+		state.Delivered.Stream = 22
+		state.AckFloor.Consumer = 11
+		state.AckFloor.Stream = 11
+		err = o.Update(state)
+		require_NoError(t, err)
+
+		fs.Stop()
+
+		fs, err = newFileStore(fcfg, StreamConfig{Name: "zzz", Storage: FileStorage})
+		require_NoError(t, err)
+		defer fs.Stop()
+
+		o, err = fs.ConsumerStore("o22", &ConsumerConfig{AckPolicy: AckExplicit})
+		require_NoError(t, err)
+
+		if o.(*consumerFileStore).state.Delivered != state.Delivered {
+			t.Fatalf("Consumer state is wrong %+v vs %+v", o.(*consumerFileStore).state, state)
+		}
+		if o.(*consumerFileStore).state.AckFloor != state.AckFloor {
+			t.Fatalf("Consumer state is wrong %+v vs %+v", o.(*consumerFileStore).state, state)
+		}
+	})
+}
+
+func TestFileStoreNumPendingLargeNumBlks(t *testing.T) {
 	// No need for all permutations here.
 	storeDir := t.TempDir()
 	fcfg := FileStoreConfig{
 		StoreDir:  storeDir,
-		BlockSize: 2 * 1024, // Create many blocks on purpose.
+		BlockSize: 128, // Small on purpose to create alot of blks.
 	}
-	fs, err := newFileStore(fcfg, StreamConfig{Name: "zzz", Subjects: []string{"*.*.*.*"}, Storage: FileStorage})
+	fs, err := newFileStore(fcfg, StreamConfig{Name: "zzz", Subjects: []string{"zzz"}, Storage: FileStorage})
 	require_NoError(t, err)
 	defer fs.Stop()
 
-	tokens := []string{"foo", "bar", "baz"}
-	genSubj := func() string {
-		return fmt.Sprintf("%s.%s.%s.%s",
-			tokens[rand.Intn(len(tokens))],
-			tokens[rand.Intn(len(tokens))],
-			tokens[rand.Intn(len(tokens))],
-			tokens[rand.Intn(len(tokens))],
-		)
+	subj, msg := "zzz", bytes.Repeat([]byte("X"), 100)
+	numMsgs := 10_000
+
+	for i := 0; i < numMsgs; i++ {
+		fs.StoreMsg(subj, nil, msg)
 	}
 
-	for i := 0; i < 50_000; i++ {
-		subj := genSubj()
-		_, _, err := fs.StoreMsg(subj, nil, []byte("Hello World"))
+	start := time.Now()
+	total, _ := fs.NumPending(4000, "zzz", false)
+	require_True(t, time.Since(start) < 5*time.Millisecond)
+	require_True(t, total == 6001)
+
+	start = time.Now()
+	total, _ = fs.NumPending(6000, "zzz", false)
+	require_True(t, time.Since(start) < 5*time.Millisecond)
+	require_True(t, total == 4001)
+
+	// Now delete a message in first half and second half.
+	fs.RemoveMsg(1000)
+	fs.RemoveMsg(9000)
+
+	start = time.Now()
+	total, _ = fs.NumPending(4000, "zzz", false)
+	require_True(t, time.Since(start) < 50*time.Millisecond)
+	require_True(t, total == 6000)
+
+	start = time.Now()
+	total, _ = fs.NumPending(6000, "zzz", false)
+	require_True(t, time.Since(start) < 50*time.Millisecond)
+	require_True(t, total == 4000)
+}
+
+func TestFileStoreRestoreEncryptedWithNoKeyFuncFails(t *testing.T) {
+	// No need for all permutations here.
+	fcfg := FileStoreConfig{StoreDir: t.TempDir(), Cipher: AES}
+	scfg := StreamConfig{Name: "zzz", Subjects: []string{"zzz"}, Storage: FileStorage}
+
+	// Create at first with encryption (prf)
+	prf := func(context []byte) ([]byte, error) {
+		h := hmac.New(sha256.New, []byte("dlc22"))
+		if _, err := h.Write(context); err != nil {
+			return nil, err
+		}
+		return h.Sum(nil), nil
+	}
+
+	fs, err := newFileStoreWithCreated(
+		fcfg, scfg,
+		time.Now(),
+		prf,
+	)
+	require_NoError(t, err)
+	defer fs.Stop()
+
+	subj, msg := "zzz", bytes.Repeat([]byte("X"), 100)
+	numMsgs := 100
+	for i := 0; i < numMsgs; i++ {
+		fs.StoreMsg(subj, nil, msg)
+	}
+
+	fs.Stop()
+
+	// Make sure if we try to restore with no prf (key) that it fails.
+	_, err = newFileStoreWithCreated(
+		fcfg, scfg,
+		time.Now(),
+		nil,
+	)
+	require_Error(t, err, errNoMainKey)
+}
+
+func TestFileStoreRecalculateFirstForSubjBug(t *testing.T) {
+	fs, err := newFileStore(FileStoreConfig{StoreDir: t.TempDir()}, StreamConfig{Name: "zzz", Subjects: []string{"*"}, Storage: FileStorage})
+	require_NoError(t, err)
+	defer fs.Stop()
+
+	fs.StoreMsg("foo", nil, nil) // 1
+	fs.StoreMsg("bar", nil, nil) // 2
+	fs.StoreMsg("foo", nil, nil) // 3
+
+	// Now remove first 2..
+	fs.RemoveMsg(1)
+	fs.RemoveMsg(2)
+
+	// Now grab first (and only) block.
+	fs.mu.RLock()
+	mb := fs.blks[0]
+	fs.mu.RUnlock()
+
+	// Since we lazy update the first, simulate that we have not updated it as of yet.
+	ss := &SimpleState{Msgs: 1, First: 1, Last: 3, firstNeedsUpdate: true}
+
+	mb.mu.Lock()
+	defer mb.mu.Unlock()
+
+	// Flush the cache.
+	mb.clearCacheAndOffset()
+	// Now call with start sequence of 1, the old one
+	// This will panic without the fix.
+	mb.recalculateFirstForSubj("foo", 1, ss)
+	// Make sure it was update properly.
+	require_True(t, *ss == SimpleState{Msgs: 1, First: 3, Last: 3, firstNeedsUpdate: false})
+}
+
+func TestFileStoreKeepWithDeletedMsgsBug(t *testing.T) {
+	fs, err := newFileStore(FileStoreConfig{StoreDir: t.TempDir()}, StreamConfig{Name: "zzz", Subjects: []string{"*"}, Storage: FileStorage})
+	require_NoError(t, err)
+	defer fs.Stop()
+
+	msg := bytes.Repeat([]byte("A"), 19)
+	for i := 0; i < 5; i++ {
+		fs.StoreMsg("A", nil, msg)
+		fs.StoreMsg("B", nil, msg)
+	}
+
+	n, err := fs.PurgeEx("A", 0, 0)
+	require_NoError(t, err)
+	require_True(t, n == 5)
+
+	// Purge with keep.
+	n, err = fs.PurgeEx(_EMPTY_, 0, 2)
+	require_NoError(t, err)
+	require_True(t, n == 3)
+}
+
+// This is for 2.10 delete tombstones and backward compatibility if a user downgrades to 2.9.x
+// TODO(dlc) - Can remove once merged into 2.10 codebase.
+func TestFileStoreTombstoneBackwardCompatibility(t *testing.T) {
+	sd := t.TempDir()
+	fs, err := newFileStore(FileStoreConfig{StoreDir: sd}, StreamConfig{Name: "zzz", Subjects: []string{"*"}, Storage: FileStorage})
+	require_NoError(t, err)
+	defer fs.Stop()
+
+	// We will test scenarios where tombstones are embedded in a filestore from a 2.10 system.
+	msgA := bytes.Repeat([]byte("A"), 22)
+	msgZ := bytes.Repeat([]byte("Z"), 22)
+
+	fs.StoreMsg("A", nil, msgA)
+	fs.StoreMsg("B", nil, msgZ)
+
+	mb := fs.getFirstBlock()
+	require_True(t, mb != nil)
+
+	// >= 2.10 tombstone
+	mb.writeMsgRecord(emptyRecordLen, 2|tbit, _EMPTY_, nil, nil, time.Now().UnixNano(), true)
+
+	// Put a real message behind it.
+	fs.StoreMsg("C", nil, msgA)
+
+	checkState := func() {
+		state := fs.State()
+		require_True(t, state.Msgs == 3)
+		require_True(t, state.FirstSeq == 1)
+		require_True(t, state.LastSeq == 3)
+		require_True(t, state.NumSubjects == 3)
+
+		sm, err := fs.LoadMsg(2, nil)
 		require_NoError(t, err)
+		require_True(t, bytes.Equal(sm.msg, msgZ))
+		require_True(t, sm.subj == "B")
+
+		sm, err = fs.LoadMsg(3, nil)
+		require_NoError(t, err)
+		require_True(t, bytes.Equal(sm.msg, msgA))
+		require_True(t, sm.subj == "C")
 	}
 
-	state := fs.State()
+	checkState()
+	fs.Stop()
 
-	// Scan one by one for sanity check against other calculations.
-	sanityCheck := func(sseq uint64, filter string) SimpleState {
-		t.Helper()
-		var ss SimpleState
-		var smv StoreMsg
-		// For here we know 0 is invalid, set to 1.
-		if sseq == 0 {
-			sseq = 1
+	// Make sure we are good on recreate.
+	fs, err = newFileStore(FileStoreConfig{StoreDir: sd}, StreamConfig{Name: "zzz", Subjects: []string{"*"}, Storage: FileStorage})
+	require_NoError(t, err)
+	defer fs.Stop()
+
+	checkState()
+
+	// Now we will purge, place tombstone first, then add messages and check.
+	_, err = fs.Purge()
+	require_NoError(t, err)
+
+	// >= 2.10 tombstone
+	mb.writeMsgRecord(emptyRecordLen, 22|tbit, _EMPTY_, nil, nil, time.Now().UnixNano(), true)
+
+	fs.StoreMsg("A", nil, msgA) // seq 4
+	fs.StoreMsg("B", nil, msgZ) // seq 5
+
+	checkPurgeState := func() {
+		state := fs.State()
+		require_True(t, state.Msgs == 2)
+		require_True(t, state.FirstSeq == 4)
+		require_True(t, state.LastSeq == 5)
+		require_True(t, state.NumSubjects == 2)
+
+		sm, err := fs.LoadMsg(4, nil)
+		require_NoError(t, err)
+		require_True(t, bytes.Equal(sm.msg, msgA))
+		require_True(t, sm.subj == "A")
+
+		sm, err = fs.LoadMsg(5, nil)
+		require_NoError(t, err)
+		require_True(t, bytes.Equal(sm.msg, msgZ))
+		require_True(t, sm.subj == "B")
+	}
+
+	checkPurgeState()
+
+	// Make sure we are good on recreate.
+	fs, err = newFileStore(FileStoreConfig{StoreDir: sd}, StreamConfig{Name: "zzz", Subjects: []string{"*"}, Storage: FileStorage})
+	require_NoError(t, err)
+	defer fs.Stop()
+
+	checkPurgeState()
+}
+
+// Test that loads from lmb under lots of writes do not return errPartialCache.
+func TestFileStoreErrPartialLoad(t *testing.T) {
+	fs, err := newFileStore(FileStoreConfig{StoreDir: t.TempDir()}, StreamConfig{Name: "zzz", Subjects: []string{"*"}, Storage: FileStorage})
+	require_NoError(t, err)
+	defer fs.Stop()
+
+	put := func(num int) {
+		for i := 0; i < num; i++ {
+			fs.StoreMsg("Z", nil, []byte("ZZZZZZZZZZZZZ"))
 		}
-		for seq := sseq; seq <= state.LastSeq; seq++ {
-			sm, err := fs.LoadMsg(seq, &smv)
-			if err != nil {
-				t.Logf("Encountered error %v loading sequence: %d", err, seq)
-				continue
-			}
-			if subjectIsSubsetMatch(sm.subj, filter) {
-				ss.Msgs++
-				ss.Last = seq
-				if ss.First == 0 || seq < ss.First {
-					ss.First = seq
+	}
+
+	put(100)
+
+	// Dump cache of lmb.
+	clearCache := func() {
+		fs.mu.RLock()
+		lmb := fs.lmb
+		fs.mu.RUnlock()
+		lmb.mu.Lock()
+		lmb.clearCache()
+		lmb.mu.Unlock()
+	}
+	clearCache()
+
+	qch := make(chan struct{})
+	defer close(qch)
+
+	for i := 0; i < 10; i++ {
+		go func() {
+			for {
+				select {
+				case <-qch:
+					return
+				default:
+					put(5)
 				}
 			}
-		}
-		return ss
+		}()
 	}
 
-	check := func(sseq uint64, filter string) {
-		t.Helper()
-		np, lvs := fs.NumPending(sseq, filter, false)
-		ss := fs.FilteredState(sseq, filter)
-		sss := sanityCheck(sseq, filter)
-		if lvs != state.LastSeq {
-			t.Fatalf("Expected NumPending to return valid through last of %d but got %d", state.LastSeq, lvs)
+	time.Sleep(100 * time.Millisecond)
+
+	var smv StoreMsg
+	for i := 0; i < 10_000; i++ {
+		fs.mu.RLock()
+		lmb := fs.lmb
+		fs.mu.RUnlock()
+		lmb.mu.Lock()
+		first, last := fs.lmb.first.seq, fs.lmb.last.seq
+		if i%100 == 0 {
+			lmb.clearCache()
 		}
-		if ss.Msgs != np {
-			t.Fatalf("NumPending of %d did not match ss.Msgs of %d", np, ss.Msgs)
-		}
-		if ss != sss {
-			t.Fatalf("Failed sanity check, expected %+v got %+v", sss, ss)
+		lmb.mu.Unlock()
+
+		if spread := int(last - first); spread > 0 {
+			seq := first + uint64(rand.Intn(spread))
+			_, err = fs.LoadMsg(seq, &smv)
+			require_NoError(t, err)
 		}
 	}
+}
 
-	sanityCheckLastOnly := func(sseq uint64, filter string) SimpleState {
-		t.Helper()
-		var ss SimpleState
-		var smv StoreMsg
-		// For here we know 0 is invalid, set to 1.
-		if sseq == 0 {
-			sseq = 1
-		}
-		seen := make(map[string]bool)
-		for seq := state.LastSeq; seq >= sseq; seq-- {
-			sm, err := fs.LoadMsg(seq, &smv)
-			if err != nil {
-				t.Logf("Encountered error %v loading sequence: %d", err, seq)
-				continue
-			}
-			if !seen[sm.subj] && subjectIsSubsetMatch(sm.subj, filter) {
-				ss.Msgs++
-				if ss.Last == 0 {
-					ss.Last = seq
-				}
-				if ss.First == 0 || seq < ss.First {
-					ss.First = seq
-				}
-				seen[sm.subj] = true
-			}
-		}
-		return ss
+func TestFileStoreErrPartialLoadOnSyncClose(t *testing.T) {
+	fs, err := newFileStore(
+		FileStoreConfig{StoreDir: t.TempDir(), BlockSize: 500},
+		StreamConfig{Name: "zzz", Subjects: []string{"*"}, Storage: FileStorage},
+	)
+	require_NoError(t, err)
+	defer fs.Stop()
+
+	// This yields an internal record length of 50 bytes. So 10 msgs per blk.
+	msgLen := 19
+	msg := bytes.Repeat([]byte("A"), msgLen)
+
+	// Load up half the block.
+	for _, subj := range []string{"A", "B", "C", "D", "E"} {
+		fs.StoreMsg(subj, nil, msg)
 	}
 
-	checkLastOnly := func(sseq uint64, filter string) {
-		t.Helper()
-		np, lvs := fs.NumPending(sseq, filter, true)
-		ss := sanityCheckLastOnly(sseq, filter)
-		if lvs != state.LastSeq {
-			t.Fatalf("Expected NumPending to return valid through last of %d but got %d", state.LastSeq, lvs)
-		}
-		if ss.Msgs != np {
-			t.Fatalf("NumPending of %d did not match ss.Msgs of %d", np, ss.Msgs)
-		}
-	}
+	// Now simulate the sync timer closing the last block.
+	fs.mu.RLock()
+	lmb := fs.lmb
+	fs.mu.RUnlock()
+	require_True(t, lmb != nil)
 
-	startSeqs := []uint64{0, 1, 2, 200, 444, 555, 2222, 8888, 12_345, 28_222, 33_456, 44_400, 49_999}
-	checkSubs := []string{"foo.>", "*.bar.>", "foo.bar.*.baz", "*.bar.>", "*.foo.bar.*", "foo.foo.bar.baz"}
+	lmb.mu.Lock()
+	lmb.expireCacheLocked()
+	lmb.dirtyCloseWithRemove(false)
+	lmb.mu.Unlock()
 
-	for _, filter := range checkSubs {
-		for _, start := range startSeqs {
-			check(start, filter)
-			checkLastOnly(start, filter)
-		}
-	}
+	fs.StoreMsg("Z", nil, msg)
+	_, err = fs.LoadMsg(1, nil)
+	require_NoError(t, err)
 }

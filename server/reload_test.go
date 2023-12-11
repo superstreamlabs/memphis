@@ -308,6 +308,9 @@ func TestConfigReload(t *testing.T) {
 	if !updated.Logtime {
 		t.Fatal("Expected Logtime to be true")
 	}
+	if !updated.LogtimeUTC {
+		t.Fatal("Expected LogtimeUTC to be true")
+	}
 	if runtime.GOOS != "windows" {
 		if !updated.Syslog {
 			t.Fatal("Expected Syslog to be true")
@@ -2600,6 +2603,25 @@ func TestConfigReloadAccountUsers(t *testing.T) {
 		t.Fatalf("Error on subscribe: %v", err)
 	}
 
+	// confirm subscriptions before and after reload.
+	var expectedSubs uint32 = 4
+	sAcc, err := s.LookupAccount("synadia")
+	require_NoError(t, err)
+	sAcc.mu.RLock()
+	n := sAcc.sl.Count()
+	sAcc.mu.RUnlock()
+	if n != expectedSubs {
+		t.Errorf("Synadia account should have %d sub, got %v", expectedSubs, n)
+	}
+	nAcc, err := s.LookupAccount("nats.io")
+	require_NoError(t, err)
+	nAcc.mu.RLock()
+	n = nAcc.sl.Count()
+	nAcc.mu.RUnlock()
+	if n != expectedSubs {
+		t.Errorf("Nats.io account should have %d sub, got %v", expectedSubs, n)
+	}
+
 	// Remove user from account and whole account
 	reloadUpdateConfig(t, s, conf, `
 	listen: "127.0.0.1:-1"
@@ -2651,14 +2673,18 @@ func TestConfigReloadAccountUsers(t *testing.T) {
 	// being reconnected does not mean that resent of subscriptions
 	// has already been processed.
 	checkFor(t, 2*time.Second, 100*time.Millisecond, func() error {
-		gAcc, _ := s.LookupAccount(globalAccountName)
+		gAcc, err := s.LookupAccount(globalAccountName)
+		require_NoError(t, err)
 		gAcc.mu.RLock()
 		n := gAcc.sl.Count()
 		fooMatch := gAcc.sl.Match("foo")
 		bazMatch := gAcc.sl.Match("baz")
 		gAcc.mu.RUnlock()
-		if n != 2 {
-			return fmt.Errorf("Global account should have 2 subs, got %v", n)
+		// The number of subscriptions should be 3 ($SYS.REQ.ACCOUNT.PING.CONNZ,
+		// $SYS.REQ.ACCOUNT.PING.STATZ, $SYS.REQ.SERVER.PING.CONNZ)
+		// + 2 (foo and baz)
+		if n != 5 {
+			return fmt.Errorf("Global account should have 5 subs, got %v", n)
 		}
 		if len(fooMatch.psubs) != 1 {
 			return fmt.Errorf("Global account should have foo sub")
@@ -2667,31 +2693,113 @@ func TestConfigReloadAccountUsers(t *testing.T) {
 			return fmt.Errorf("Global account should have baz sub")
 		}
 
-		sAcc, _ := s.LookupAccount("synadia")
+		sAcc, err := s.LookupAccount("synadia")
+		require_NoError(t, err)
 		sAcc.mu.RLock()
 		n = sAcc.sl.Count()
 		barMatch := sAcc.sl.Match("bar")
+
 		sAcc.mu.RUnlock()
-		if n != 1 {
-			return fmt.Errorf("Synadia account should have 1 sub, got %v", n)
+		if n != expectedSubs {
+			return fmt.Errorf("Synadia account should have %d sub, got %v", expectedSubs, n)
 		}
 		if len(barMatch.psubs) != 1 {
 			return fmt.Errorf("Synadia account should have bar sub")
 		}
 
-		nAcc, _ := s.LookupAccount("nats.io")
+		nAcc, err := s.LookupAccount("nats.io")
+		require_NoError(t, err)
 		nAcc.mu.RLock()
 		n = nAcc.sl.Count()
 		batMatch := nAcc.sl.Match("bat")
 		nAcc.mu.RUnlock()
-		if n != 1 {
-			return fmt.Errorf("Nats.io account should have 1 sub, got %v", n)
+		if n != expectedSubs {
+			return fmt.Errorf("Nats.io account should have %d sub, got %v", expectedSubs, n)
 		}
 		if len(batMatch.psubs) != 1 {
 			return fmt.Errorf("Synadia account should have bar sub")
 		}
 		return nil
 	})
+}
+
+func TestConfigReloadAccountWithNoChanges(t *testing.T) {
+	conf := createConfFile(t, []byte(`
+	listen: "127.0.0.1:-1"
+        system_account: sys
+	accounts {
+		A {
+			users = [{ user: a }]
+		}
+		B {
+			users = [{ user: b }]
+		}
+		C {
+			users = [{ user: c }]
+		}
+		sys {
+			users = [{ user: sys }]
+		}
+	}
+	`))
+	s, opts := RunServerWithConfig(conf)
+	defer s.Shutdown()
+
+	ncA, err := nats.Connect(fmt.Sprintf("nats://a:@%s:%d", opts.Host, opts.Port))
+	if err != nil {
+		t.Fatalf("Error on connect: %v", err)
+	}
+	defer ncA.Close()
+
+	// Confirm default service imports are ok.
+	checkSubs := func(t *testing.T) {
+		resp, err := ncA.Request("$SYS.REQ.ACCOUNT.PING.CONNZ", nil, time.Second)
+		if err != nil {
+			t.Error(err)
+		}
+		if resp == nil || !strings.Contains(string(resp.Data), `"num_connections":1`) {
+			t.Fatal("unexpected data in connz response")
+		}
+		resp, err = ncA.Request("$SYS.REQ.SERVER.PING.CONNZ", nil, time.Second)
+		if err != nil {
+			t.Error(err)
+		}
+		if resp == nil || !strings.Contains(string(resp.Data), `"num_connections":1`) {
+			t.Fatal("unexpected data in connz response")
+		}
+		resp, err = ncA.Request("$SYS.REQ.ACCOUNT.PING.STATZ", nil, time.Second)
+		if err != nil {
+			t.Error(err)
+		}
+		if resp == nil || !strings.Contains(string(resp.Data), `"conns":1`) {
+			t.Fatal("unexpected data in connz response")
+		}
+	}
+	checkSubs(t)
+	before := s.NumSubscriptions()
+	s.Reload()
+	after := s.NumSubscriptions()
+	if before != after {
+		t.Errorf("Number of subscriptions changed after reload: %d -> %d", before, after)
+	}
+
+	// Confirm this still works after a reload...
+	checkSubs(t)
+	before = s.NumSubscriptions()
+	s.Reload()
+	after = s.NumSubscriptions()
+	if before != after {
+		t.Errorf("Number of subscriptions changed after reload: %d -> %d", before, after)
+	}
+
+	// Do another extra reload just in case.
+	checkSubs(t)
+	before = s.NumSubscriptions()
+	s.Reload()
+	after = s.NumSubscriptions()
+	if before != after {
+		t.Errorf("Number of subscriptions changed after reload: %d -> %d", before, after)
+	}
 }
 
 func TestConfigReloadAccountNKeyUsers(t *testing.T) {
@@ -3897,7 +4005,7 @@ func TestConfigReloadConnectErrReports(t *testing.T) {
 	}
 }
 
-func TestAuthReloadDoesNotBreakRouteInterest(t *testing.T) {
+func TestConfigReloadAuthDoesNotBreakRouteInterest(t *testing.T) {
 	s, opts := RunServerWithConfig("./configs/seed_tls.conf")
 	defer s.Shutdown()
 
@@ -4047,7 +4155,7 @@ func TestConfigReloadAccountResolverTLSConfig(t *testing.T) {
 	}
 }
 
-func TestLoggingReload(t *testing.T) {
+func TestConfigReloadLogging(t *testing.T) {
 	// This test basically starts a server and causes it's configuration to be reloaded 3 times.
 	// Each time, a new log file is created and trace levels are turned, off - on - off.
 
@@ -4174,7 +4282,7 @@ func TestLoggingReload(t *testing.T) {
 	check("off-post.log", tracingAbsent)
 }
 
-func TestReloadValidate(t *testing.T) {
+func TestConfigReloadValidate(t *testing.T) {
 	confFileName := createConfFile(t, []byte(`
 		listen: "127.0.0.1:-1"
 		no_auth_user: a
@@ -4234,12 +4342,14 @@ func TestConfigReloadAccounts(t *testing.T) {
 
 	urlSys := fmt.Sprintf("nats://sys:pwd@%s:%d", o.Host, o.Port)
 	urlUsr := fmt.Sprintf("nats://usr:pwd@%s:%d", o.Host, o.Port)
-	oldAcc, ok := s.accounts.Load("SYS")
+	oldAcci, ok := s.accounts.Load("SYS")
 	if !ok {
 		t.Fatal("No SYS account")
 	}
+	oldAcc := oldAcci.(*Account)
 
-	testSrvState := func(oldAcc interface{}) {
+	testSrvState := func(oldAcc *Account) {
+		t.Helper()
 		sysAcc := s.SystemAccount()
 		s.mu.Lock()
 		defer s.mu.Unlock()
@@ -4252,11 +4362,13 @@ func TestConfigReloadAccounts(t *testing.T) {
 		if s.opts.SystemAccount != "SYS" {
 			t.Fatal("Found wrong sys.account")
 		}
-		// This will fail prior to system account reload
-		if acc, ok := s.accounts.Load(s.opts.SystemAccount); !ok {
-			t.Fatal("Found different sys.account pointer")
-		} else if acc == oldAcc {
-			t.Fatal("System account is unaltered")
+		ai, ok := s.accounts.Load(s.opts.SystemAccount)
+		if !ok {
+			t.Fatalf("System account %q not found in s.accounts map", s.opts.SystemAccount)
+		}
+		acc := ai.(*Account)
+		if acc != oldAcc {
+			t.Fatalf("System account pointer was changed during reload, was %p now %p", oldAcc, acc)
 		}
 		if s.sys.client == nil {
 			t.Fatal("Expected sys.client to be non-nil")
@@ -4324,7 +4436,7 @@ func TestConfigReloadAccounts(t *testing.T) {
 		}
 	}
 
-	testSrvState(nil)
+	testSrvState(oldAcc)
 	c1, s1C, s1D := subscribe("SYS1")
 	defer c1.Close()
 	defer s1C.Unsubscribe()
@@ -4507,4 +4619,74 @@ func TestConfigReloadWithSysAccountOnly(t *testing.T) {
 	case <-time.After(500 * time.Millisecond):
 		// ok
 	}
+}
+
+func TestConfigReloadGlobalAccountWithMappingAndJetStream(t *testing.T) {
+	tmpl := `
+		listen: 127.0.0.1:-1
+		server_name: %s
+		jetstream: {max_mem_store: 256MB, max_file_store: 2GB, store_dir: '%s'}
+
+		mappings {
+			subj.orig: subj.mapped.before.reload
+		}
+
+		leaf {
+			listen: 127.0.0.1:-1
+		}
+
+		cluster {
+			name: %s
+			listen: 127.0.0.1:%d
+			routes = [%s]
+		}
+
+		# For access to system account.
+		accounts { $SYS { users = [ { user: "admin", pass: "s3cr3t!" } ] } }
+	`
+	c := createJetStreamClusterWithTemplate(t, tmpl, "R3S", 3)
+	defer c.shutdown()
+
+	nc, js := jsClientConnect(t, c.randomServer())
+	defer nc.Close()
+
+	// Verify that mapping works
+	checkMapping := func(expectedSubj string) {
+		t.Helper()
+		sub := natsSubSync(t, nc, "subj.>")
+		defer sub.Unsubscribe()
+		natsPub(t, nc, "subj.orig", nil)
+		msg := natsNexMsg(t, sub, time.Second)
+		if msg.Subject != expectedSubj {
+			t.Fatalf("Expected subject to have been mapped to %q, got %q", expectedSubj, msg.Subject)
+		}
+	}
+	checkMapping("subj.mapped.before.reload")
+
+	// Create a stream and check that we can get the INFO
+	_, err := js.AddStream(&nats.StreamConfig{
+		Name:      "TEST",
+		Replicas:  3,
+		Subjects:  []string{"foo"},
+		Retention: nats.InterestPolicy,
+	})
+	require_NoError(t, err)
+	c.waitOnStreamLeader(globalAccountName, "TEST")
+
+	_, err = js.StreamInfo("TEST")
+	require_NoError(t, err)
+
+	// Change mapping on all servers and issue reload
+	for i, s := range c.servers {
+		opts := c.opts[i]
+		content, err := os.ReadFile(opts.ConfigFile)
+		require_NoError(t, err)
+		reloadUpdateConfig(t, s, opts.ConfigFile, strings.Replace(string(content), "subj.mapped.before.reload", "subj.mapped.after.reload", 1))
+	}
+	// Make sure the cluster is still formed
+	checkClusterFormed(t, c.servers...)
+	// Now repeat the test for the subject mapping and stream info
+	checkMapping("subj.mapped.after.reload")
+	_, err = js.StreamInfo("TEST")
+	require_NoError(t, err)
 }

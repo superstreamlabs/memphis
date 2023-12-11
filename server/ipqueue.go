@@ -1,4 +1,4 @@
-// Copyright 2021 The NATS Authors
+// Copyright 2021-2023 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -20,28 +20,28 @@ import (
 
 const (
 	ipQueueDefaultMaxRecycleSize = 4 * 1024
-	ipQueueDefaultLen            = 0
-	ipQueueInitialCapacity       = 32
+	ipQueueDefaultLen            = 0  // ** added by Memphis
+	ipQueueInitialCapacity       = 32 // ** added by Memphis
 )
 
 // This is a generic intra-process queue.
 type ipQueue[T any] struct {
 	inprogress int64
-	sync.RWMutex
+	sync.Mutex
 	ch         chan struct{}
 	elts       []T
 	pos        int
 	pool       *sync.Pool
 	mrs        int
-	mql        int
-	wrapAround bool
+	mql        int  // ** added by Memphis
+	wrapAround bool // ** added by Memphis
 	name       string
 	m          *sync.Map
 }
 
 type ipQueueOpts struct {
 	maxRecycleSize int
-	maxQueueLen    int
+	maxQueueLen    int // ** added by Memphis
 }
 
 type ipQueueOpt func(*ipQueueOpts)
@@ -54,6 +54,7 @@ func ipQueue_MaxRecycleSize(max int) ipQueueOpt {
 	}
 }
 
+// ** added by Memphis
 // This option allows to set the maximum queue length
 // Queues with this option enabled (>0) do not support the popOne() op
 func ipQueue_MaxQueueLen(max int) ipQueueOpt {
@@ -62,10 +63,12 @@ func ipQueue_MaxQueueLen(max int) ipQueueOpt {
 	}
 }
 
+// ** added by Memphis
+
 func newIPQueue[T any](s *Server, name string, opts ...ipQueueOpt) *ipQueue[T] {
 	qo := ipQueueOpts{
 		maxRecycleSize: ipQueueDefaultMaxRecycleSize,
-		maxQueueLen:    ipQueueDefaultLen,
+		maxQueueLen:    ipQueueDefaultLen, // ** added by Memphis
 	}
 
 	for _, o := range opts {
@@ -74,7 +77,7 @@ func newIPQueue[T any](s *Server, name string, opts ...ipQueueOpt) *ipQueue[T] {
 	q := &ipQueue[T]{
 		ch:   make(chan struct{}, 1),
 		mrs:  qo.maxRecycleSize,
-		mql:  qo.maxQueueLen,
+		mql:  qo.maxQueueLen, // ** added by Memphis
 		pool: &sync.Pool{},
 		name: name,
 		m:    &s.ipQueues,
@@ -91,9 +94,11 @@ func (q *ipQueue[T]) push(e T) int {
 	q.Lock()
 	l := len(q.elts) - q.pos
 
+	// ** added by Memphis
 	if q.wrapAround {
 		l = q.mql
 	}
+	// ** added by Memphis
 
 	if l == 0 {
 		signal = true
@@ -104,10 +109,11 @@ func (q *ipQueue[T]) push(e T) int {
 			q.elts = (*(eltsi.(*[]T)))[:0]
 		}
 		if cap(q.elts) == 0 {
-			q.elts = make([]T, 0, ipQueueInitialCapacity)
+			q.elts = make([]T, 0, ipQueueInitialCapacity) // ** changed by Memphis
 		}
 	}
 
+	// ** added/changed by Memphis
 	if q.mql > 0 && q.mql == l {
 		if !q.wrapAround {
 			//first time we reached max elements
@@ -119,6 +125,7 @@ func (q *ipQueue[T]) push(e T) int {
 		q.elts = append(q.elts, e)
 		l++
 	}
+	// ** added by Memphis
 
 	q.Unlock()
 	if signal {
@@ -140,13 +147,17 @@ func (q *ipQueue[T]) push(e T) int {
 // emptied the queue. So the caller should never assume that pop() will
 // return a slice of 1 or more, it could return `nil`.
 func (q *ipQueue[T]) pop() []T {
+	if q == nil {
+		return nil
+	}
 	var elts []T
 	q.Lock()
 	if q.pos == 0 {
 		elts = q.elts
-	} else if q.wrapAround {
+	} else if q.wrapAround { // ** added by Memphis
 		elts = q.elts[q.pos:]
 		elts = append(elts, q.elts[:q.pos]...)
+		// ** added by Memphis
 	} else {
 		elts = q.elts[q.pos:]
 	}
@@ -219,9 +230,9 @@ func (q *ipQueue[T]) recycle(elts *[]T) {
 
 // Returns the current length of the queue.
 func (q *ipQueue[T]) len() int {
-	q.RLock()
+	q.Lock()
 	l := len(q.elts) - q.pos
-	q.RUnlock()
+	q.Unlock()
 	return l
 }
 

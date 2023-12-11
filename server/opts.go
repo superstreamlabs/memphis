@@ -1,4 +1,4 @@
-// Copyright 2012-2022 The NATS Authors
+// Copyright 2012-2023 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -33,10 +33,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/memphisdev/memphis/conf"
+	"github.com/memphisdev/memphis/server/certidp"
+	"github.com/memphisdev/memphis/server/certstore"
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
-
-	"github.com/memphisdev/memphis/conf"
 )
 
 var allowUnknownTopLevelField = int32(0)
@@ -53,7 +54,7 @@ func NoErrOnUnknownFields(noError bool) {
 	atomic.StoreInt32(&allowUnknownTopLevelField, val)
 }
 
-// Set of lower case hex-encoded sha256 of DER encoded SubjectPublicKeyInfo
+// PinnedCertSet is a set of lower case hex-encoded sha256 of DER encoded SubjectPublicKeyInfo
 type PinnedCertSet map[string]struct{}
 
 // ClusterOpts are options for clusters.
@@ -221,6 +222,7 @@ type Options struct {
 	NoHeaderSupport       bool          `json:"-"`
 	DisableShortFirstPing bool          `json:"-"`
 	Logtime               bool          `json:"-"`
+	LogtimeUTC            bool          `json:"-"`
 	MaxConn               int           `json:"max_connections"`
 	MaxSubs               int           `json:"max_subscriptions,omitempty"`
 	MaxSubTokens          uint8         `json:"-"`
@@ -285,7 +287,7 @@ type Options struct {
 	LameDuckDuration      time.Duration     `json:"-"`
 	LameDuckGracePeriod   time.Duration     `json:"-"`
 
-	// memphis options
+	// ** added by Memphis
 	UiPort                             int            `json:"-"`
 	RestGwPort                         int            `json:"-"`
 	K8sNamespace                       string         `json:"-"`
@@ -296,6 +298,7 @@ type Options struct {
 	UiHost                             string         `json:"-"`
 	RestGwHost                         string         `json:"-"`
 	BrokerHost                         string         `json:"-"`
+	// ** added by Memphis
 
 	// MaxTracedMsgLen is the maximum printable length for traced messages.
 	MaxTracedMsgLen int `json:"-"`
@@ -352,6 +355,9 @@ type Options struct {
 	// JetStream
 	maxMemSet   bool
 	maxStoreSet bool
+
+	// OCSP Cache config enables next-gen cache for OCSP features
+	OCSPCacheConfig *OCSPResponseCacheConfig
 }
 
 // WebsocketOpts are options for websocket
@@ -415,6 +421,9 @@ type WebsocketOpts struct {
 	// and write the response back to the client. This include the
 	// time needed for the TLS Handshake.
 	HandshakeTimeout time.Duration
+
+	// Snapshot of configured TLS options.
+	tlsConfigOpts *TLSConfigOpts
 }
 
 // MQTTOpts are options for MQTT
@@ -495,6 +504,9 @@ type MQTTOpts struct {
 	// subscription ending with "#" will use 2 times the MaxAckPending value.
 	// Note that changes to this option is applied only to new subscriptions.
 	MaxAckPending uint16
+
+	// Snapshot of configured TLS options.
+	tlsConfigOpts *TLSConfigOpts
 }
 
 type netResolver interface {
@@ -586,6 +598,10 @@ type TLSConfigOpts struct {
 	Ciphers           []uint16
 	CurvePreferences  []tls.CurveID
 	PinnedCerts       PinnedCertSet
+	CertStore         certstore.StoreType
+	CertMatchBy       certstore.MatchByType
+	CertMatch         string
+	OCSPPeerConfig    *certidp.OCSPPeerConfig
 }
 
 // OCSPConfig represents the options of OCSP stapling options.
@@ -627,7 +643,7 @@ Available cipher suites include:
 // FIXME(dlc): A bit hacky
 func ProcessConfigFile(configFile string) (*Options, error) {
 	opts := &Options{}
-	if err := opts.ProcessConfigFile(configFile, true); err != nil {
+	if err := opts.ProcessConfigFile(configFile, true); err != nil { // ** true added by memphis
 		// If only warnings then continue and return the options.
 		if cerr, ok := err.(*processConfigErr); ok && len(cerr.Errors()) == 0 {
 			return opts, nil
@@ -729,7 +745,7 @@ func configureSystemAccount(o *Options, m map[string]interface{}) (retErr error)
 // achieve that with the non receiver ProcessConfigFile() version,
 // since one would not know after the call if "debug" was not present
 // or was present but set to false.
-func (o *Options) ProcessConfigFile(configFile string, reload bool) error {
+func (o *Options) ProcessConfigFile(configFile string, reload bool) error { // ** reload added by memphis
 	o.ConfigFile = configFile
 	if configFile == _EMPTY_ {
 		return nil
@@ -768,6 +784,9 @@ func (o *Options) ProcessConfigFile(configFile string, reload bool) error {
 	// Collect all errors and warnings and report them all together.
 	errors := make([]error, 0)
 	warnings := make([]error, 0)
+	if len(m) == 0 {
+		warnings = append(warnings, fmt.Errorf("%s: config has no values or is empty", configFile))
+	}
 
 	// First check whether a system account has been defined,
 	// as that is a condition for other features to be enabled.
@@ -825,6 +844,9 @@ func (o *Options) processConfigFileLine(k string, v interface{}, errors *[]error
 	case "logtime":
 		o.Logtime = v.(bool)
 		trackExplicitVal(o, &o.inConfig, "Logtime", o.Logtime)
+	case "logtime_utc":
+		o.LogtimeUTC = v.(bool)
+		trackExplicitVal(o, &o.inConfig, "LogtimeUTC", o.LogtimeUTC)
 	case "mappings", "maps":
 		gacc := NewAccount(globalAccountName)
 		o.Accounts = append(o.Accounts, gacc)
@@ -1169,8 +1191,10 @@ func (o *Options) processConfigFileLine(k string, v interface{}, errors *[]error
 			}
 		case map[string]interface{}:
 			del := false
-			dir := ""
-			dirType := ""
+			hdel := false
+			hdel_set := false
+			dir := _EMPTY_
+			dirType := _EMPTY_
 			limit := int64(0)
 			ttl := time.Duration(0)
 			sync := time.Duration(0)
@@ -1187,6 +1211,11 @@ func (o *Options) processConfigFileLine(k string, v interface{}, errors *[]error
 			if v, ok := v["allow_delete"]; ok {
 				_, v := unwrapValue(v, &lt)
 				del = v.(bool)
+			}
+			if v, ok := v["hard_delete"]; ok {
+				_, v := unwrapValue(v, &lt)
+				hdel_set = true
+				hdel = v.(bool)
 			}
 			if v, ok := v["limit"]; ok {
 				_, v := unwrapValue(v, &lt)
@@ -1211,29 +1240,51 @@ func (o *Options) processConfigFileLine(k string, v interface{}, errors *[]error
 				*errors = append(*errors, &configErr{tk, err.Error()})
 				return
 			}
-			if dir == "" {
-				*errors = append(*errors, &configErr{tk, "dir has no value and needs to point to a directory"})
-				return
+
+			checkDir := func() {
+				if dir == _EMPTY_ {
+					*errors = append(*errors, &configErr{tk, "dir has no value and needs to point to a directory"})
+					return
+				}
+				if info, _ := os.Stat(dir); info != nil && (!info.IsDir() || info.Mode().Perm()&(1<<(uint(7))) == 0) {
+					*errors = append(*errors, &configErr{tk, "dir needs to point to an accessible directory"})
+					return
+				}
 			}
-			if info, _ := os.Stat(dir); info != nil && (!info.IsDir() || info.Mode().Perm()&(1<<(uint(7))) == 0) {
-				*errors = append(*errors, &configErr{tk, "dir needs to point to an accessible directory"})
-				return
-			}
+
 			var res AccountResolver
 			switch strings.ToUpper(dirType) {
 			case "CACHE":
+				checkDir()
 				if sync != 0 {
 					*errors = append(*errors, &configErr{tk, "CACHE does not accept sync"})
 				}
 				if del {
 					*errors = append(*errors, &configErr{tk, "CACHE does not accept allow_delete"})
 				}
+				if hdel_set {
+					*errors = append(*errors, &configErr{tk, "CACHE does not accept hard_delete"})
+				}
 				res, err = NewCacheDirAccResolver(dir, limit, ttl, opts...)
 			case "FULL":
+				checkDir()
 				if ttl != 0 {
 					*errors = append(*errors, &configErr{tk, "FULL does not accept ttl"})
 				}
-				res, err = NewDirAccResolver(dir, limit, sync, del, opts...)
+				if hdel_set && !del {
+					*errors = append(*errors, &configErr{tk, "hard_delete has no effect without delete"})
+				}
+				delete := NoDelete
+				if del {
+					if hdel {
+						delete = HardDelete
+					} else {
+						delete = RenameDeleted
+					}
+				}
+				res, err = NewDirAccResolver(dir, limit, sync, delete, opts...)
+			case "MEM", "MEMORY":
+				res = &MemAccResolver{}
 			}
 			if err != nil {
 				*errors = append(*errors, &configErr{tk, err.Error()})
@@ -1411,6 +1462,36 @@ func (o *Options) processConfigFileLine(k string, v interface{}, errors *[]error
 			m[kk] = v.(string)
 		}
 		o.JsAccDefaultDomain = m
+	case "ocsp_cache":
+		var err error
+		switch vv := v.(type) {
+		case bool:
+			pc := NewOCSPResponseCacheConfig()
+			if vv {
+				// Set enabled
+				pc.Type = LOCAL
+				o.OCSPCacheConfig = pc
+			} else {
+				// Set disabled (none cache)
+				pc.Type = NONE
+				o.OCSPCacheConfig = pc
+			}
+		case map[string]interface{}:
+			pc, err := parseOCSPResponseCache(v)
+			if err != nil {
+				*errors = append(*errors, err)
+				return
+			}
+			o.OCSPCacheConfig = pc
+		default:
+			err = &configErr{tk, fmt.Sprintf("error parsing tags: unsupported type %T", v)}
+		}
+		if err != nil {
+			*errors = append(*errors, err)
+			return
+		}
+
+	// ** added by Memphis
 	case "ui_port":
 		o.UiPort = int(v.(int64))
 	case "rest_gw_port":
@@ -1473,6 +1554,7 @@ func (o *Options) processConfigFileLine(k string, v interface{}, errors *[]error
 			return
 		}
 		o.BrokerHost = value
+	// ** added by Memphis
 	default:
 		if au := atomic.LoadInt32(&allowUnknownTopLevelField); au == 0 && !tk.IsUsedVariable() {
 			err := &unknownConfigFieldErr{
@@ -3927,6 +4009,11 @@ func PrintTLSHelpAndDie() {
 	for k := range curvePreferenceMap {
 		fmt.Printf("    %s\n", k)
 	}
+	if runtime.GOOS == "windows" {
+		fmt.Printf("%s\n", certstore.Usage)
+	}
+	fmt.Printf("%s", certidp.OCSPPeerUsage)
+	fmt.Printf("%s", OCSPResponseCacheUsage)
 	os.Exit(0)
 }
 
@@ -4084,6 +4171,54 @@ func parseTLS(v interface{}, isClientCtx bool) (t *TLSConfigOpts, retErr error) 
 				}
 				tc.PinnedCerts = wl
 			}
+		case "cert_store":
+			certStore, ok := mv.(string)
+			if !ok || certStore == _EMPTY_ {
+				return nil, &configErr{tk, certstore.ErrBadCertStoreField.Error()}
+			}
+			certStoreType, err := certstore.ParseCertStore(certStore)
+			if err != nil {
+				return nil, &configErr{tk, err.Error()}
+			}
+			tc.CertStore = certStoreType
+		case "cert_match_by":
+			certMatchBy, ok := mv.(string)
+			if !ok || certMatchBy == _EMPTY_ {
+				return nil, &configErr{tk, certstore.ErrBadCertMatchByField.Error()}
+			}
+			certMatchByType, err := certstore.ParseCertMatchBy(certMatchBy)
+			if err != nil {
+				return nil, &configErr{tk, err.Error()}
+			}
+			tc.CertMatchBy = certMatchByType
+		case "cert_match":
+			certMatch, ok := mv.(string)
+			if !ok || certMatch == _EMPTY_ {
+				return nil, &configErr{tk, certstore.ErrBadCertMatchField.Error()}
+			}
+			tc.CertMatch = certMatch
+		case "ocsp_peer":
+			switch vv := mv.(type) {
+			case bool:
+				pc := certidp.NewOCSPPeerConfig()
+				if vv {
+					// Set enabled
+					pc.Verify = true
+					tc.OCSPPeerConfig = pc
+				} else {
+					// Set disabled
+					pc.Verify = false
+					tc.OCSPPeerConfig = pc
+				}
+			case map[string]interface{}:
+				pc, err := parseOCSPPeer(mv)
+				if err != nil {
+					return nil, &configErr{tk, err.Error()}
+				}
+				tc.OCSPPeerConfig = pc
+			default:
+				return nil, &configErr{tk, fmt.Sprintf("error parsing ocsp peer config: unsupported type %T", v)}
+			}
 		default:
 			return nil, &configErr{tk, fmt.Sprintf("error parsing tls config, unknown field [%q]", mk)}
 		}
@@ -4214,6 +4349,7 @@ func parseWebsocket(v interface{}, o *Options, errors *[]error, warnings *[]erro
 			}
 			o.Websocket.TLSMap = tc.Map
 			o.Websocket.TLSPinnedCerts = tc.PinnedCerts
+			o.Websocket.tlsConfigOpts = tc
 		case "same_origin":
 			o.Websocket.SameOrigin = mv.(bool)
 		case "allowed_origins", "allowed_origin", "allow_origins", "allow_origin", "origins", "origin":
@@ -4304,6 +4440,7 @@ func parseMQTT(v interface{}, o *Options, errors *[]error, warnings *[]error) er
 			o.MQTT.TLSTimeout = tc.Timeout
 			o.MQTT.TLSMap = tc.Map
 			o.MQTT.TLSPinnedCerts = tc.PinnedCerts
+			o.MQTT.tlsConfigOpts = tc
 		case "authorization", "authentication":
 			auth := parseSimpleAuth(tk, errors, warnings)
 			o.MQTT.Username = auth.user
@@ -4370,11 +4507,13 @@ func GenTLSConfig(tc *TLSConfigOpts) (*tls.Config, error) {
 	}
 
 	switch {
-	case tc.CertFile != "" && tc.KeyFile == "":
+	case tc.CertFile != _EMPTY_ && tc.CertStore != certstore.STOREEMPTY:
+		return nil, certstore.ErrConflictCertFileAndStore
+	case tc.CertFile != _EMPTY_ && tc.KeyFile == _EMPTY_:
 		return nil, fmt.Errorf("missing 'key_file' in TLS configuration")
-	case tc.CertFile == "" && tc.KeyFile != "":
+	case tc.CertFile == _EMPTY_ && tc.KeyFile != _EMPTY_:
 		return nil, fmt.Errorf("missing 'cert_file' in TLS configuration")
-	case tc.CertFile != "" && tc.KeyFile != "":
+	case tc.CertFile != _EMPTY_ && tc.KeyFile != _EMPTY_:
 		// Now load in cert and private key
 		cert, err := tls.LoadX509KeyPair(tc.CertFile, tc.KeyFile)
 		if err != nil {
@@ -4385,6 +4524,11 @@ func GenTLSConfig(tc *TLSConfigOpts) (*tls.Config, error) {
 			return nil, fmt.Errorf("error parsing certificate: %v", err)
 		}
 		config.Certificates = []tls.Certificate{cert}
+	case tc.CertStore != certstore.STOREEMPTY:
+		err := certstore.TLSConfig(tc.CertStore, tc.CertMatchBy, tc.CertMatch, &config)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Require client certificates as needed
@@ -4721,7 +4865,7 @@ func setBaselineOptions(opts *Options) {
 		opts.JetStreamMaxStore = -1
 	}
 
-	// Memphis
+	// ** added by Memphis
 	if !opts.JetStream { // enable JS by default
 		opts.JetStream = true
 	}
@@ -4786,6 +4930,7 @@ func setBaselineOptions(opts *Options) {
 			opts.RestGwHost = fmt.Sprintf("http://memphis-rest-gateway.%s.svc.cluster.local:%v", opts.K8sNamespace, opts.RestGwPort)
 		}
 	}
+	// ** added by Memphis
 }
 
 func getDefaultAuthTimeout(tls *tls.Config, tlsTimeout float64) float64 {
@@ -4836,9 +4981,10 @@ func ConfigureOptions(fs *flag.FlagSet, args []string, printVersion, printHelp, 
 	fs.BoolVar(&dbgAndTrcAndVerboseTrc, "DVV", false, "Enable Debug and Verbose Trace logging. (Traces system account as well)")
 	fs.BoolVar(&opts.Logtime, "T", true, "Timestamp log entries.")
 	fs.BoolVar(&opts.Logtime, "logtime", true, "Timestamp log entries.")
-	fs.StringVar(&opts.Username, "user", "", "Username required for connection.")
-	fs.StringVar(&opts.Password, "pass", "", "Password required for connection.")
-	fs.StringVar(&opts.Authorization, "auth", "", "Authorization token required for connection.")
+	fs.BoolVar(&opts.LogtimeUTC, "logtime_utc", false, "Timestamps in UTC instead of local timezone.")
+	fs.StringVar(&opts.Username, "user", _EMPTY_, "Username required for connection.")
+	fs.StringVar(&opts.Password, "pass", _EMPTY_, "Password required for connection.")
+	fs.StringVar(&opts.Authorization, "auth", _EMPTY_, "Authorization token required for connection.")
 	fs.IntVar(&opts.HTTPPort, "m", 0, "HTTP Port for /varz, /connz endpoints.")
 	fs.IntVar(&opts.HTTPPort, "http_port", 0, "HTTP Port for /varz, /connz endpoints.")
 	fs.IntVar(&opts.HTTPSPort, "ms", 0, "HTTPS Port for /varz, /connz endpoints.")
@@ -4975,7 +5121,7 @@ func ConfigureOptions(fs *flag.FlagSet, args []string, printVersion, printHelp, 
 	// Parse config if given
 	if configFile != _EMPTY_ {
 		// This will update the options with values from the config file.
-		err := opts.ProcessConfigFile(configFile, false)
+		err := opts.ProcessConfigFile(configFile, false) // ** false added by Memphis
 		if err != nil {
 			if opts.CheckConfig {
 				return nil, err
