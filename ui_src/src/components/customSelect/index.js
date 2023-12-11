@@ -96,7 +96,7 @@ const CustomSelect = ({ options, onChange, value, placeholder, type = 'schema', 
                 )}
                 {options?.map((schema) => {
                     return (
-                        <Option key={schema?.id} value={schema?.name}>
+                        <Option key={schema?.id || schema} value={schema?.name || schema}>
                             <>
                                 <div className="schema-details">
                                     <img
@@ -105,7 +105,7 @@ const CustomSelect = ({ options, onChange, value, placeholder, type = 'schema', 
                                         height={20}
                                         width={20}
                                     />
-                                    <p className="schema-name">{schema?.name}</p>
+                                    <p className="schema-name">{schema?.name || schema}</p>
                                 </div>
                                 <p className="created-by">
                                     {type === 'schema' ? <>{schema?.type} &#8226; </> : null}

@@ -126,18 +126,6 @@ const GenerateTokenModal = ({ host, close, returnToken, restProducer, stationNam
                             <div className="user-password-section">
                                 <div className="app-username">
                                     <p className="field-title">Client-type user</p>
-                                    {/* <SelectComponent
-                                        placeholder="choose your app user"
-                                        colorType="black"
-                                        backgroundColorType="none"
-                                        borderColorType="gray"
-                                        radiusType="semi-round"
-                                        height="40px"
-                                        popupClassName="select-options"
-                                        options={appUsers}
-                                        value={formFields?.username || appUsers[0]}
-                                        onChange={(e) => updateState('username', e)}
-                                    /> */}
                                     <CustomSelect
                                         placeholder="choose your app user"
                                         value={formFields?.username || appUsers[0]}
