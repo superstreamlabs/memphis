@@ -20,19 +20,15 @@ import TooltipComponent from '../../../../../components/tooltip/tooltip';
 import { ReactComponent as CheckShieldIcon } from '../../../../../assets/images/checkShieldIcon.svg';
 import { ReactComponent as LockIcon } from '../../../../../assets/images/lockIcon.svg';
 
-const FunctionInputsModal = ({ open, clickOutside, rBtnClick, rBtnText, clickedFunction }) => {
+const FunctionInputsModal = ({ open, clickOutside, rBtnClick, rBtnText, clickedFunction, handleInputsChange }) => {
     const [inputs, setInputs] = useState([]);
     const [inputsForm] = Form.useForm();
 
     const handleChange = async (e, index) => {
-        try {
-            await inputsForm.validateFields();
-            const newInputs = [...inputs];
-            newInputs[index].value = e.target.value;
-            setInputs(newInputs);
-        } catch (e) {
-            return;
-        }
+        const newInputs = [...inputs];
+        newInputs[index].value = e.target.value;
+        setInputs(newInputs);
+        handleInputsChange(newInputs);
     };
 
     useEffect(() => {
@@ -70,7 +66,6 @@ const FunctionInputsModal = ({ open, clickOutside, rBtnClick, rBtnText, clickedF
             }
             open={open}
             clickOutside={() => clickOutside()}
-            // rBtnClick={() => rBtnClick()}
             rBtnClick={onFinish}
             rBtnText={rBtnText}
         >

@@ -171,7 +171,7 @@ const StationOverview = () => {
                 {!isLoading && (
                     <div className="station-overview-container">
                         <div className="overview-header">
-                            <StationOverviewHeader />
+                            <StationOverviewHeader refresh={() => getStationDetails()} />
                         </div>
                         <div className="station-observability">
                             <StationObservabilty referredFunction={location?.selectedFunction} />

@@ -85,6 +85,16 @@ export const githubUrls = {
         DOWNLOAD_URL: 'https://github.com/memphisdev/functions-templates/archive/refs/heads/master.zip',
         MEMPHIS_GIT_HTTPS: 'https://github.com/memphisdev/functions-templates.git',
         MEMPHIS_GIT_SSH: 'git@github.com:memphisdev/functions-templates.git'
+    },
+    cli: {
+        Windows: 'choco install memphis-cli',
+        Mac: `brew tap memphisdev/memphis-cli
+        brew install memphis-cli`,
+        'Linux RPM': `wget https://github.com/memphisdev/memphis-cli/releases/download/v0.0.1/memphis-cli_0.0.1_linux_amd64.rpm
+        sudo rpm -i memphis-cli_0.0.1_linux_amd64.rpm`,
+        'Linux APK': `wget https://github.com/memphisdev/memphis-cli/releases/download/v0.0.1/memphis-cli_0.0.1_linux_arm64.apk
+        apk add memphis-cli_0.0.1_linux_arm64.apk --allow-untrusted`,
+        code: 'mem func init myExampleFunc --lang [nodejs/go/python]'
     }
 };
 
