@@ -350,6 +350,7 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.ReleaseStuckLocks()
 	go s.ConsumeFunctionTasks()
 	go s.ScaleFunctionWorkers()
+	go s.ConnectorsDeadPodsRescheduler()
 	return nil
 }
 

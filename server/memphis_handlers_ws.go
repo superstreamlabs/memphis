@@ -398,7 +398,11 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 		}
 	}
 
-	connectors, err := s.GetConnectorsByStationAndPartition(station.ID, partitionNumber, len(station.PartitionsList))
+	sourceConnectors, err := s.GetSourceConnectorsByStationAndPartition(station.ID, partitionNumber, len(station.PartitionsList))
+	if err != nil {
+		return map[string]any{}, err
+	}
+	sinkConnectors, err := h.Consumers.GetSinkConnectorsByStation(sn, station, partitionNumber, station.PartitionsList)
 	if err != nil {
 		return map[string]any{}, err
 	}
@@ -433,7 +437,8 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 				"resend_disabled":                 station.ResendDisabled,
 				"functions_enabled":               functionsEnabled,
 				"max_amount_of_allowed_producers": usageLimit,
-				"connectors":                      connectors,
+				"source_connectors":               sourceConnectors,
+				"sink_connectors":                 sinkConnectors,
 				"act_as_dls_station_in_stations":  usedAsDlsStations,
 			}
 		} else {
@@ -464,7 +469,8 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 				"resend_disabled":                 station.ResendDisabled,
 				"functions_enabled":               functionsEnabled,
 				"max_amount_of_allowed_producers": usageLimit,
-				"connectors":                      connectors,
+				"source_connectors":               sourceConnectors,
+				"sink_connectors":                 sinkConnectors,
 				"act_as_dls_station_in_stations":  usedAsDlsStations,
 			}
 		}
@@ -514,7 +520,8 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 		"resend_disabled":                 station.ResendDisabled,
 		"functions_enabled":               functionsEnabled,
 		"max_amount_of_allowed_producers": usageLimit,
-		"connectors":                      connectors,
+		"source_connectors":               sourceConnectors,
+		"sink_connectors":                 sinkConnectors,
 		"act_as_dls_station_in_stations":  usedAsDlsStations,
 	}
 
