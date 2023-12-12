@@ -285,10 +285,6 @@ const StationOverviewHeader = ({ refresh }) => {
                                     {stationState?.stationMetaData?.partitions_number === 0 ? 1 : stationState?.stationMetaData?.partitions_number}
                                 </p>
                             )}
-                            <p>
-                                <b>Partitions: </b>
-                                {stationState?.stationMetaData?.partitions_number === 0 ? 1 : stationState?.stationMetaData?.partitions_number}
-                            </p>
                             <div className="flex-details-wrapper">
                                 <p style={{ display: 'flex' }}>
                                     <b style={{ marginRight: '5px' }}>Dead-letter for: </b>
