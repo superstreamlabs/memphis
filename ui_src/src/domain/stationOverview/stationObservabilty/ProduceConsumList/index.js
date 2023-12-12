@@ -214,8 +214,9 @@ const ProduceConsumList = ({ producer }) => {
     };
 
     const handleNewConnector = (connector, source) => {
-        source ? setConnectorsSourceList([...connectorsSourceList, connector]) : setConnectorsSinkList([...connectorsSinkList, ...connector]);
+        source === 'source' ? setConnectorsSourceList([...connectorsSourceList, connector]) : setConnectorsSinkList([...connectorsSinkList, connector]);
     };
+
     useEffect(() => {
         if (producer) {
             let [result, activeConsumers] = concatFunction('producer', stationState?.stationSocketData);
@@ -430,7 +431,7 @@ const ProduceConsumList = ({ producer }) => {
                                             </span>
                                             <div style={{ width: '92px', maxWidth: '100%' }}>
                                                 {row?.connector_connection_id ? (
-                                                    ''
+                                                    'N/A'
                                                 ) : (
                                                     <TooltipComponent text="connected | disconnected" placement="right">
                                                         {row.connected_producers_count + ' | ' + row.disconnected_producers_count}
