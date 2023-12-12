@@ -31,6 +31,17 @@ func SendNotification(tenantName string, title string, message string, msgType s
 					}
 				}
 			}
+		case "discord":
+			if tenantInetgrations, ok := IntegrationsConcurrentCache.Load(tenantName); ok {
+				if discordIntegration, ok := tenantInetgrations["discord"].(models.DiscordIntegration); ok {
+					if discordIntegration.Properties[msgType] {
+						err := f.(func(models.DiscordIntegration, string, string) error)(discordIntegration, title, message)
+						if err != nil {
+							return err
+						}
+					}
+				}
+			}
 		default:
 			return errors.New("failed sending notification: unsupported integration")
 		}
@@ -43,6 +54,12 @@ func shouldSendNotification(tenantName string, alertType string) bool {
 	if tenantInetgrations, ok := IntegrationsConcurrentCache.Load(tenantName); ok {
 		if slackIntegration, ok := tenantInetgrations["slack"].(models.SlackIntegration); ok {
 			if slackIntegration.Properties[alertType] {
+				return true
+			}
+		}
+
+		if discordIntegration, ok := tenantInetgrations["discord"].(models.DiscordIntegration); ok {
+			if discordIntegration.Properties[alertType] {
 				return true
 			}
 		}

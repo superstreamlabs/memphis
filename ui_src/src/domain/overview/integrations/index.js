@@ -17,10 +17,12 @@ import { useHistory } from 'react-router-dom';
 import { Context } from '../../../hooks/store';
 import debeziumIcon from '../../../../src/assets/images/debeziumIcon.svg';
 import slackLogo from '../../../../src/assets/images/slackLogo.svg';
+import discordIntegrationIcon from '../../../../src/assets/images/discordIntegrationIcon.svg';
 import s3Logo from '../../../../src/assets/images/s3Logo.svg';
 import pathDomains from '../../../router';
 import Modal from '../../../../src/components/modal';
 import SlackIntegration from '../../administration/integrations/components/slackIntegration';
+import DiscordIntegration from '../../administration/integrations/components/discordIntegration';
 import S3Integration from '../../administration/integrations/components/s3Integration';
 import DebeziumIntegration from '../../administration/integrations/components/debeziumIntegration';
 import { httpRequest } from '../../../services/http';
@@ -35,6 +37,7 @@ const Integrations = () => {
     const [modalIsOpen, modalFlip] = useState(false);
     const [integrations, setIntegrations] = useState([
         { name: 'Slack', logo: slackLogo, value: {} },
+        { name: 'Discord', logo: discordIntegrationIcon, value: {} },
         { name: 'S3', logo: s3Logo, value: {} },
         { name: 'Debezium', logo: debeziumIcon, value: {} }
     ]);
@@ -87,6 +90,16 @@ const Integrations = () => {
             case 'Slack':
                 return (
                     <SlackIntegration
+                        close={(value) => {
+                            modalFlip(false);
+                            updateIntegrationValue(value, 0);
+                        }}
+                        value={integrations[0]?.value}
+                    />
+                );
+            case 'Discord':
+                return (
+                    <DiscordIntegration
                         close={(value) => {
                             modalFlip(false);
                             updateIntegrationValue(value, 0);

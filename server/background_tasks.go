@@ -129,6 +129,11 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 					EditClusterCompHost("ui_host", integrationUpdate.UIUrl)
 				}
 				CacheDetails("slack", integrationUpdate.Keys, integrationUpdate.Properties, integrationUpdate.TenantName)
+			case "discord":
+				if s.opts.UiHost == "" {
+					EditClusterCompHost("ui_host", integrationUpdate.UIUrl)
+				}
+				CacheDetails("discord", integrationUpdate.Keys, integrationUpdate.Properties, integrationUpdate.TenantName)
 			case "s3":
 				CacheDetails("s3", integrationUpdate.Keys, integrationUpdate.Properties, integrationUpdate.TenantName)
 			case "github":
@@ -704,6 +709,28 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 				err = testSlackIntegration(authToken)
 				if err != nil {
 					serv.Warnf("[tenant: %s]CheckBrokenConnectedIntegrations at testSlackIntegration: %v", integration.TenantName, err.Error())
+					err = db.UpdateIsValidIntegration(integration.TenantName, integration.Name, false)
+					if err != nil {
+						serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", integration.TenantName, err.Error())
+					}
+				} else {
+					err = db.UpdateIsValidIntegration(integration.TenantName, integration.Name, true)
+					if err != nil {
+						serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", integration.TenantName, err.Error())
+					}
+				}
+			case "discord":
+				key := getAESKey()
+				if _, ok := integration.Keys["webhook_url"].(string); !ok {
+					integration.Keys["webhook_url"] = ""
+				}
+				webhookUrl, err := DecryptAES(key, integration.Keys["webhook_url"].(string))
+				if err != nil {
+					serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at DecryptAES: %v", integration.TenantName, err.Error())
+				}
+				err = testDiscordIntegration(webhookUrl)
+				if err != nil {
+					serv.Warnf("[tenant: %s]CheckBrokenConnectedIntegrations at testDiscordIntegration: %v", integration.TenantName, err.Error())
 					err = db.UpdateIsValidIntegration(integration.TenantName, integration.Name, false)
 					if err != nil {
 						serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", integration.TenantName, err.Error())

@@ -144,7 +144,7 @@ func (it IntegrationsHandler) getSlackIntegrationDetails(body models.CreateInteg
 		disconnectAlert = false
 	}
 
-	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, pmAlert, svfAlert, disconnectAlert, "", "", "", "", "", "", map[string]interface{}{}, "", "", "", "")
+	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, "", pmAlert, svfAlert, disconnectAlert, "", "", "", "", "", "", map[string]interface{}{}, "", "", "", "")
 	return keys, properties, 0, nil
 }
 
@@ -256,7 +256,7 @@ func updateSlackIntegration(tenantName string, authToken string, channelID strin
 	if err != nil {
 		return slackIntegration, err
 	}
-	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, pmAlert, svfAlert, disconnectAlert, "", "", "", "", "", "", map[string]interface{}{}, "", "", "", "")
+	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, "", pmAlert, svfAlert, disconnectAlert, "", "", "", "", "", "", map[string]interface{}{}, "", "", "", "")
 	stringMapKeys := GetKeysAsStringMap(keys)
 	cloneKeys := copyMaps(stringMapKeys)
 	encryptedValue, err := EncryptAES([]byte(authToken))

@@ -81,7 +81,7 @@ func (it IntegrationsHandler) handleCreateS3Integration(tenantName string, keys 
 		return models.Integration{}, statusCode, err
 	}
 
-	keysMap, properties := createIntegrationsKeysAndProperties("s3", "", "", false, false, false, keys["access_key"].(string), keys["secret_key"].(string), keys["bucket_name"].(string), keys["region"].(string), keys["url"].(string), keys["s3_path_style"].(string), map[string]interface{}{}, "", "", "", "")
+	keysMap, properties := createIntegrationsKeysAndProperties("s3", "", "", "", false, false, false, keys["access_key"].(string), keys["secret_key"].(string), keys["bucket_name"].(string), keys["region"].(string), keys["url"].(string), keys["s3_path_style"].(string), map[string]interface{}{}, "", "", "", "")
 	s3Integration, err := createS3Integration(tenantName, keysMap, properties)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
@@ -99,7 +99,7 @@ func (it IntegrationsHandler) handleUpdateS3Integration(tenantName string, body 
 		return models.Integration{}, statusCode, err
 	}
 	integrationType := strings.ToLower(body.Name)
-	keysMap, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, keys["access_key"].(string), keys["secret_key"].(string), keys["bucket_name"].(string), keys["region"].(string), keys["url"].(string), keys["s3_path_style"].(string), map[string]interface{}{}, "", "", "", "")
+	keysMap, properties := createIntegrationsKeysAndProperties(integrationType, "", "", "", false, false, false, keys["access_key"].(string), keys["secret_key"].(string), keys["bucket_name"].(string), keys["region"].(string), keys["url"].(string), keys["s3_path_style"].(string), map[string]interface{}{}, "", "", "", "")
 	s3Integration, err := updateS3Integration(tenantName, keysMap, properties)
 	if err != nil {
 		return s3Integration, 500, err
