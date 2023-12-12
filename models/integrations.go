@@ -34,9 +34,9 @@ type SlackIntegration struct {
 }
 
 type DiscordIntegration struct {
-	Name string 								`json:"name"`
-	Keys map[string]string 			`json:"keys"`
-	Properties map[string]bool	`json:"properties"`
+	Name       string            `json:"name"`
+	Keys       map[string]string `json:"keys"`
+	Properties map[string]bool   `json:"properties"`
 }
 
 type CreateIntegrationSchema struct {
