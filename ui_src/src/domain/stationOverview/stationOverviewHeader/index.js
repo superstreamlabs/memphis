@@ -263,15 +263,16 @@ const StationOverviewHeader = ({ refresh }) => {
                                     } days`}
                                     minWidth="35px"
                                 >
-                                    <HiOutlineExclamationCircle/>
+                                    <HiOutlineExclamationCircle />
                                 </TooltipComponent>
                             )}
                             <div className="flex-details-wrapper">
                                 {!isCloud() && (
-                                    <p style={{display: 'flex'}}>
+                                    <p style={{ display: 'flex' }}>
                                         <b>Partitions: </b>
                                         {stationState?.stationMetaData?.partitions_number === 0 ? 1 : stationState?.stationMetaData?.partitions_number}
-                                    </p>)}
+                                    </p>
+                                )}
                             </div>
                         </div>
                         <div className="storage-section">

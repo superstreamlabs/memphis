@@ -150,7 +150,7 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
                 settings: modifiedSettings,
                 partitions: [stationState?.stationPartition]
             });
-            newConnecor(data?.connector, source);
+            newConnecor(data?.connector, formFields?.connector_type?.toLocaleLowerCase());
         } catch (error) {
             setError(JSON.stringify(error));
         } finally {
