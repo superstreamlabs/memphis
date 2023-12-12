@@ -268,10 +268,11 @@ const StationOverviewHeader = ({ refresh }) => {
                             )}
                             <div className="flex-details-wrapper">
                                 {!isCloud() && (
-                                    <p style={{display: 'flex'}}>
+                                    <p style={{ display: 'flex' }}>
                                         <b>Partitions: </b>
                                         {stationState?.stationMetaData?.partitions_number === 0 ? 1 : stationState?.stationMetaData?.partitions_number}
-                                    </p>)}
+                                    </p>
+                                )}
                             </div>
                         </div>
                         <div className="storage-section">
@@ -285,9 +286,13 @@ const StationOverviewHeader = ({ refresh }) => {
                                     {stationState?.stationMetaData?.partitions_number === 0 ? 1 : stationState?.stationMetaData?.partitions_number}
                                 </p>
                             )}
+                            <p>
+                                <b>Partitions: </b>
+                                {stationState?.stationMetaData?.partitions_number === 0 ? 1 : stationState?.stationMetaData?.partitions_number}
+                            </p>
                             <div className="flex-details-wrapper">
-                                <p style={{display: 'flex'}}>
-                                    <b style={{marginRight: '5px'}}>Dead-letter for: </b>
+                                <p style={{ display: 'flex' }}>
+                                    <b style={{ marginRight: '5px' }}>Dead-letter for: </b>
                                     {stationState?.stationSocketData?.act_as_dls_station_in_stations &&
                                     stationState?.stationSocketData?.act_as_dls_station_in_stations.length ? (
                                         <OverflowTip text={stationState?.stationSocketData?.act_as_dls_station_in_stations.join(', ')} maxWidth={'70px'}>
