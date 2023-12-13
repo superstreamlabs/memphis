@@ -2601,8 +2601,8 @@ func deleteConnectorsTenantResources(tenantName string) error {
 	return nil
 }
 
-func (s *Server) GetSourceConnectorsByStationAndPartition(stationID, partitionNumber, numOfPartitions int) (map[string]interface{}, error) {
-	return map[string]interface{}{}, nil
+func (s *Server) GetSourceConnectorsByStationAndPartition(stationID, partitionNumber, numOfPartitions int) ([]string, error) {
+	return []string{}, nil
 }
 
 func (ch ConsumersHandler) GetSinkConnectorsByStation(stationName StationName, station models.Station, partition int, partitions []int) ([]string, error) {
