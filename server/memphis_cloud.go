@@ -1047,7 +1047,7 @@ type EditClusterConfigSchema struct {
 	RestGWHost                         string `json:"rest_gw_host"`
 	TSTimeSec                          int    `json:"tiered_storage_time_sec"`
 	MaxMsgSizeMb                       int    `json:"max_msg_size_mb"`
-	GCProducersConsumersRetentionHours int    `json:"gc_producer_consumer_retention_hours" binding:"required"`
+	GCProducersConsumersRetentionHours int    `json:"gc_producers_consumers_retention_hours" binding:"required"`
 }
 
 func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
