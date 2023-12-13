@@ -125,7 +125,7 @@ const ProduceConsumList = ({ producer }) => {
         {
             action: 'Develop a Consumer',
             onClick: () => {
-                setOpenCreateProducer(true);
+                setOpenCreateConsumer(true);
                 setOpenProducerPopover(false);
             }
         },

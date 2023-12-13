@@ -667,9 +667,11 @@
         margin-bottom: 0;
         display: flex;
         justify-content: space-between;
+        align-items: center;
         .flex {
             display: flex;
             gap: 5px;
+            align-items: center;
         }
         a {
             text-decoration: underline;
