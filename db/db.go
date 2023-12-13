@@ -4739,7 +4739,7 @@ func CountAllUsers() (int64, error) {
 	return count, nil
 }
 
-func CountAllUsersByTenant(tenantName string, filterOutApplicationUsers bool) (int64, error) {
+func CountAllUsersByTenant(tenantName string) (int64, error) {
 	var count int64
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -4749,9 +4749,6 @@ func CountAllUsersByTenant(tenantName string, filterOutApplicationUsers bool) (i
 	}
 	defer conn.Release()
 	query := `SELECT COUNT(*) FROM users WHERE tenant_name = $1 AND username NOT LIKE '$%'` // filter memphis internal users`
-	if filterOutApplicationUsers {
-		query = `SELECT COUNT(*) FROM users WHERE tenant_name = $1 AND username NOT LIKE '$%' AND type != 'application'` // filter memphis internal users`
-	}
 	stmt, err := conn.Conn().Prepare(ctx, "get_total_users_by_tenant", query)
 	if err != nil {
 		return 0, err
@@ -6689,7 +6686,7 @@ func GetAllUsersInDB() (bool, []models.User, error) {
 	return true, users, nil
 }
 
-func DeleteOldProducersAndConsumers(timeInterval time.Time) ([]models.LightCG, error) {
+func DeleteOldProducersAndConsumers(timeInterval time.Time, tenantName string) ([]models.LightCG, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -6698,13 +6695,43 @@ func DeleteOldProducersAndConsumers(timeInterval time.Time) ([]models.LightCG, e
 	}
 	defer conn.Release()
 
-	var queries []string
-	queries = append(queries, "DELETE FROM producers WHERE is_active = false AND updated_at < $1")
-	queries = append(queries, "WITH deleted AS (DELETE FROM consumers WHERE is_active = false AND updated_at < $1 RETURNING *) SELECT deleted.consumers_group, s.name as station_name, deleted.station_id , deleted.tenant_name, deleted.partitions FROM deleted INNER JOIN stations s ON deleted.station_id = s.id GROUP BY deleted.consumers_group, s.name, deleted.station_id, deleted.tenant_name, deleted.partitions")
+	queries := []string{
+		`DELETE FROM producers
+         WHERE is_active = false AND updated_at < $1 AND tenant_name = $2
+         AND id NOT IN (
+             SELECT MIN(id)
+             FROM producers
+             WHERE is_active = false AND updated_at < $1 AND tenant_name = $2
+             GROUP BY name
+         )`,
+		`
+        WITH deleted AS (
+            DELETE FROM consumers
+            WHERE is_active = false AND updated_at < $1 AND tenant_name = $2
+            AND id NOT IN (
+                SELECT MIN(id)
+                FROM consumers
+                WHERE is_active = false AND updated_at < $1 AND tenant_name = $2
+                GROUP BY consumers_group
+            )
+            RETURNING *
+        )
+        SELECT
+            deleted.consumers_group,
+            s.name as station_name,
+            deleted.station_id,
+            deleted.tenant_name,
+            deleted.partitions
+        FROM
+            deleted
+            INNER JOIN stations s ON deleted.station_id = s.id
+        GROUP BY
+            deleted.consumers_group, s.name, deleted.station_id, deleted.tenant_name, deleted.partitions`,
+	}
 
 	batch := &pgx.Batch{}
 	for _, q := range queries {
-		batch.Queue(q, timeInterval)
+		batch.Queue(q, timeInterval, tenantName)
 	}
 
 	br := conn.SendBatch(ctx, batch)

@@ -41,19 +41,20 @@ var (
 
 const (
 	// VERSION is the current version for the memphis server.
-	VERSION = "1.4.1" // ** changed by Memphis
+	VERSION = "1.3.0" // ** changed by Memphis
 
 	// ** added by Memphis
-	DEFAULT_SERVER_NAME                        = "memphis-0"
-	DEFAULT_WS_PORT                            = 7770
-	DEFAULT_UI_PORT                            = 9000
-	DEFAULT_REST_GW_PORT                       = 4444
-	DEFAULT_WS_TOKEN                           = "memphis"
-	DEFAULT_CLIENTS_TOKEN                      = "memphis"
-	SHOWABLE_ERROR_STATUS_CODE                 = 666
-	DEFAULT_TIERED_STORAGE_UPLOAD_INTERVAL_SEC = 8
-	DEFAULT_DLS_RETENTION_HOURS                = 3
-	DEFAULT_ENCRYPTION_SECRET_KEY = "thisis32bitlongpassphraseimusing"
+	DEFAULT_SERVER_NAME                          = "memphis-0"
+	DEFAULT_WS_PORT                              = 7770
+	DEFAULT_UI_PORT                              = 9000
+	DEFAULT_REST_GW_PORT                         = 4444
+	DEFAULT_WS_TOKEN                             = "memphis"
+	DEFAULT_CLIENTS_TOKEN                        = "memphis"
+	SHOWABLE_ERROR_STATUS_CODE                   = 666
+	DEFAULT_TIERED_STORAGE_UPLOAD_INTERVAL_SEC   = 8
+	DEFAULT_DLS_RETENTION_HOURS                  = 3
+	DEFAULT_GC_PRODUCER_CONSUMER_RETENTION_HOURS = 2
+	DEFAULT_ENCRYPTION_SECRET_KEY                = "thisis32bitlongpassphraseimusing"
 	// COMP_WITH_NATS_VERSION is the NATS version Memphis is compatible with
 	COMP_WITH_NATS_VERSION = "2.9.22"
 	// ** added by Memphis

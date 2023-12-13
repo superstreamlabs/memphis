@@ -740,12 +740,12 @@ type dlsRetentionHoursOption struct {
 
 type GCProducersConsumersRetentionHoursOption struct {
 	noopOption
-	newValue int
+	newValue map[string]int
 }
 
 func (o *GCProducersConsumersRetentionHoursOption) Apply(server *Server) {
 	// no need to update anything since it happens on the edit cluster configuration endpoint
-	server.Noticef("Reloaded: gc_producer_consumer_retention_hours = %d", o.newValue)
+	server.Noticef("Reloaded: gc_producer_consumer_retention_hours = %v", o.newValue)
 }
 
 // Apply the setting by updating the server info and each client.
@@ -1484,7 +1484,7 @@ func (s *Server) diffOptions(newOpts *Options) ([]option, error) {
 		case "restgwhost":
 			diffOpts = append(diffOpts, &restGwOption{newValue: newValue.(string)})
 		case "gcproducersconsumersretentionhours":
-			diffOpts = append(diffOpts, &GCProducersConsumersRetentionHoursOption{newValue: newValue.(int)})
+			diffOpts = append(diffOpts, &GCProducersConsumersRetentionHoursOption{newValue: newValue.(map[string]int)})
 		// ** added by Memphis
 		default:
 			// TODO(ik): Implement String() on those options to have a nice print.
