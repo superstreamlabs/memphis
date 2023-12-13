@@ -707,7 +707,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
+	
 	var response gin.H
 
 	// Check when the schema object in station is not empty, not optional for non native stations
@@ -1418,7 +1418,7 @@ func (mh MonitoringHandler) GetSystemGeneralInfo(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	usersCount, err := db.CountAllUsersByTenant(user.TenantName)
+	usersCount, err := db.CountAllUsersByTenant(user.TenantName, false)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]GetSystemGeneralInfo at CountAllUsersByTenant: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
