@@ -43,6 +43,7 @@ import { httpRequest } from '../../../../services/http';
 import Spinner from '../../../../components/spinner';
 import TooltipComponent from '../../../../components/tooltip/tooltip';
 import { isCloud } from '../../../../services/valueConvertor';
+import { sendTrace } from '../../../../services/genericServices';
 
 const overlayStylesConnectors = {
     borderRadius: '8px',
@@ -161,6 +162,11 @@ const ProduceConsumList = ({ producer }) => {
                 newConnecorList.splice(openConnectorPopoverItem, 1);
                 setConnectorsSinkList(newConnecorList);
             }
+            sendTrace('removeConnector', {
+                type: type,
+                connector: type === 'source' ? connectorsSourceList[openConnectorPopoverItem]?.type : connectorsSinkList[openConnectorPopoverItem]?.type,
+                name: type === 'source' ? connectorsSourceList[openConnectorPopoverItem]?.name : connectorsSinkList[openConnectorPopoverItem]?.name
+            });
             setLoader(false);
             setOpenConnectorPopover(false);
         } catch (error) {
@@ -184,6 +190,11 @@ const ProduceConsumList = ({ producer }) => {
                 newConnecorList[openConnectorPopoverItem].is_active = true;
                 setConnectorsSinkList(newConnecorList);
             }
+            sendTrace('startConnector', {
+                type: type,
+                connector: type === 'source' ? connectorsSourceList[openConnectorPopoverItem]?.type : connectorsSinkList[openConnectorPopoverItem]?.type,
+                name: type === 'source' ? connectorsSourceList[openConnectorPopoverItem]?.name : connectorsSinkList[openConnectorPopoverItem]?.name
+            });
             setLoader(false);
             setOpenConnectorPopover(false);
         } catch (error) {
@@ -206,6 +217,11 @@ const ProduceConsumList = ({ producer }) => {
                 newConnecorList[openConnectorPopoverItem].is_active = false;
                 setConnectorsSinkList(newConnecorList);
             }
+            sendTrace('stopConnector', {
+                type: type,
+                connector: type === 'source' ? connectorsSourceList[openConnectorPopoverItem]?.type : connectorsSinkList[openConnectorPopoverItem]?.type,
+                name: type === 'source' ? connectorsSourceList[openConnectorPopoverItem]?.name : connectorsSinkList[openConnectorPopoverItem]?.name
+            });
             setLoader(false);
             setOpenConnectorPopover(false);
         } catch (error) {

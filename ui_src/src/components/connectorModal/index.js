@@ -27,6 +27,8 @@ import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import CloudModal from '../cloudModal';
 import { isCloud } from '../../services/valueConvertor';
+import { sendTrace } from '../../services/genericServices';
+
 import { connectorTypes } from '../../connectors';
 
 const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
@@ -118,6 +120,11 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
             if (step === 1) {
                 try {
                     await connectorForm.validateFields();
+                    sendTrace('createConnector', {
+                        name: formFields?.name,
+                        type: formFields?.type?.toLocaleLowerCase(),
+                        connector_type: formFields?.connector_type?.toLocaleLowerCase()
+                    });
                     isCloud() ? createConnector() : setCloudModalOpen(true);
                 } catch (err) {
                     return;
