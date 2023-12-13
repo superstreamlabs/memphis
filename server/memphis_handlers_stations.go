@@ -436,8 +436,9 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
+	dlsStationNameToLower := strings.ToLower(csr.DlsStation)
 	if csr.DlsStation != "" {
-		DlsStation, err := StationNameFromStr(csr.DlsStation)
+		DlsStation, err := StationNameFromStr(dlsStationNameToLower)
 		if err != nil {
 			serv.Warnf("[tenant: %v][user:%v]createStationDirect at StationNameFromStr: Station %v: %v", csr.TenantName, csr.Username, csr.DlsStation, err.Error())
 			jsApiResp.Error = NewJSStreamCreateError(err)
@@ -452,7 +453,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		}
 		if !exist {
 			var created bool
-			dlsStationName, err := StationNameFromStr(csr.DlsStation)
+			dlsStationName, err := StationNameFromStr(dlsStationNameToLower)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user:%v]createStationDirect at DLS StationNameFromStr: %v", csr.TenantName, csr.Username, err.Error())
 				respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
@@ -520,7 +521,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		}
 	}
 
-	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled, user.TenantName, partitionsList, 2, csr.DlsStation)
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled, user.TenantName, partitionsList, 2, dlsStationNameToLower)
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exist") {
 			serv.Errorf("[tenant: %v][user:%v]createStationDirect at InsertNewStation: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
