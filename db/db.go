@@ -6696,16 +6696,8 @@ func DeleteOldProducersAndConsumers(timeInterval time.Time, tenantName string) (
 	defer conn.Release()
 
 	queries := []string{
-		`DELETE FROM producers
-         WHERE is_active = false AND updated_at < $1 AND tenant_name = $2
-         AND id NOT IN (
-             SELECT MIN(id)
-             FROM producers
-             WHERE is_active = false AND updated_at < $1 AND tenant_name = $2
-             GROUP BY name
-         )`,
-		`
-        WITH deleted AS (
+		`DELETE FROM producers WHERE is_active = false AND updated_at < $1 AND tenant_name = $2`,
+		`WITH deleted AS (
             DELETE FROM consumers
             WHERE is_active = false AND updated_at < $1 AND tenant_name = $2
             AND id NOT IN (
