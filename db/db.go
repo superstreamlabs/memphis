@@ -4749,10 +4749,12 @@ func CountAllUsersByTenant(tenantName string, filterOutApplicationUsers bool) (i
 	}
 	defer conn.Release()
 	query := `SELECT COUNT(*) FROM users WHERE tenant_name = $1 AND username NOT LIKE '$%'` // filter memphis internal users`
+	preparedStmtName := "get_total_users_by_tenant"
 	if filterOutApplicationUsers {
 		query = `SELECT COUNT(*) FROM users WHERE tenant_name = $1 AND username NOT LIKE '$%' AND type != 'application'` // filter memphis internal users`
+		preparedStmtName = "get_total_users_by_tenant_filtered"
 	}
-	stmt, err := conn.Conn().Prepare(ctx, "get_total_users_by_tenant", query)
+	stmt, err := conn.Conn().Prepare(ctx, preparedStmtName, query)
 	if err != nil {
 		return 0, err
 	}
