@@ -60,7 +60,7 @@ func (s *Server) SendNotification(tenantName string, title string, message strin
 							Time:       time.Now(),
 						}
 
-						err := saveSlackNotificationToQueue(s, notificationsStreamName, tenantName, &notificationMsg)
+						err := saveSlackNotificationToQueue(s, notificationsStreamName+".user_notifications", tenantName, &notificationMsg)
 						if err != nil {
 							return err
 						}

@@ -17,6 +17,7 @@ import (
 	"github.com/memphisdev/memphis/db"
 	"github.com/memphisdev/memphis/models"
 	"strings"
+	"time"
 
 	"github.com/slack-go/slack"
 )
@@ -354,6 +355,7 @@ func sendTenantSlackNotifications(s *Server, tenantName string, msgs []Notificat
 			s.Errorf("failed to send slack notification: " + err.Error())
 			var rateLimit *slack.RateLimitedError
 			if errors.As(err, &rateLimit) {
+				time.Sleep(rateLimit.RetryAfter)
 				// when we hit rate limit there's no point in trying to send further messages for this tenant
 				// instead retry them on the next run
 				return
