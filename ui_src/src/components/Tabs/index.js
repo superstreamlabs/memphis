@@ -24,7 +24,7 @@ import CheckboxComponent from '../checkBox';
 import { PriorityHighRounded } from '@material-ui/icons';
 import CloudOnly from '../cloudOnly';
 
-const CustomTabs = ({ tabs, onChange, value, disabled, length, tooltip, icon = false, checkbox = false, defaultActiveKey, tabsCounter }) => {
+const CustomTabs = ({ tabs, onChange, value, disabled, length, tooltip, icon = false, checkbox = false, defaultActiveKey, tabsCounter, icons }) => {
     return (
         <div className={!disabled ? 'tabs-container hover' : 'tabs-container'}>
             <Tabs
@@ -36,6 +36,7 @@ const CustomTabs = ({ tabs, onChange, value, disabled, length, tooltip, icon = f
                         disabled: tab?.disabled || disabled,
                         label: (
                             <label className="tabs-name" style={{ width: length && length[index] && '135px' }}>
+                                {icons && icons[index] && !icon && icons[index]}
                                 {checkbox && <CheckboxComponent checked={tab.checked} />}
                                 <TooltipComponent text={tooltip && tooltip[index]}>
                                     <>

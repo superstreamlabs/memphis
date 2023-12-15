@@ -14,7 +14,7 @@ import './style.scss';
 
 import { useState, useEffect, useContext } from 'react';
 import { LoadingOutlined } from '@ant-design/icons';
-import { Spin, Badge } from 'antd';
+import { Spin } from 'antd';
 import CustomTabs from '../../../../../components/Tabs';
 import FunctionBox from '../../../../functions/components/functionBox';
 import FunctionDetails from '../../../../functions/components/functionDetails';
@@ -28,13 +28,10 @@ import Modal from '../../../../../components/modal';
 import { ReactComponent as SearchIcon } from '../../../../../assets/images/searchIcon.svg';
 import { ReactComponent as CheckShieldIcon } from '../../../../../assets/images/checkShieldIcon.svg';
 import { ReactComponent as FunctionsModalIcon } from '../../../../../assets/images/vueSaxIcon.svg';
-import { ReactComponent as LockIcon } from '../../../../../assets/images/lockIcon.svg';
-import { ReactComponent as RefreshIcon } from '../../../../../assets/images/refresh.svg';
 import { StationStoreContext } from '../../../';
-import { SyncOutlined } from '@ant-design/icons';
 import { showMessages } from '../../../../../services/genericServices';
 import { OWNER } from '../../../../../const/globalConst';
-import TooltipComponent from '../../../../../components/tooltip/tooltip';
+import RefreshButton from '../../../../../components/refreshButton';
 
 const FunctionsModal = ({ open, clickOutside, applyFunction, referredFunction }) => {
     const [functionList, setFunctionList] = useState([]);
@@ -228,16 +225,7 @@ const FunctionsModal = ({ open, clickOutside, applyFunction, referredFunction })
                                 <p>Functions</p>
                                 <span className="title-section">
                                     <label>Say Goodbye to Manual Business Logic! Use Functions Instead of Building Complicated Clients.</label>
-                                    <span className="update-refresh">
-                                        {refreshIndeicator && <Badge dot />}
-                                        <div className="refresh-btn">
-                                            {isLoading ? (
-                                                <Spin indicator={<SyncOutlined style={{ color: '#6557FF', fontSize: '16px' }} spin />} />
-                                            ) : (
-                                                <RefreshIcon alt="refreshIcon" style={{ path: { color: '#6557FF' } }} onClick={getAllFunctions} />
-                                            )}
-                                        </div>
-                                    </span>
+                                    <RefreshButton refreshIndeicator={refreshIndeicator} onClick={getAllFunctions} isLoading={isLoading} />
                                 </span>
                             </div>
                             <div className="fdm-body">
@@ -293,6 +281,7 @@ const FunctionsModal = ({ open, clickOutside, applyFunction, referredFunction })
             <FunctionInputsModal
                 open={isInputsModalOpen}
                 clickOutside={() => setIsInputsModalOpen(false)}
+                handleInputsChange={(inputs) => handleInputsChange(inputs)}
                 rBtnClick={() => {
                     stationState?.stationFunctions?.functions?.length === 0 ? setIsApplyModalOpen(true) : onFunctionApply(selectedFunction);
                     setIsInputsModalOpen(false);

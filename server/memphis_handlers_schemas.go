@@ -939,7 +939,6 @@ func (s *Server) updateSchemaVersion(schemaID int, tenantName string, newSchemaR
 		s.Errorf("[tenant: %v][user: %v]updateSchemaVersion at db.GetShcemaVersionsCount: Schema %v: %v", tenantName, user.Username, newSchemaReq.Name, err.Error())
 		return err
 	}
-
 	_, currentSchema, err := db.GetSchemaVersionByNumberAndID(countVersions, schemaID)
 	if err != nil {
 		s.Errorf("[tenant: %v][user: %v]updateSchemaVersion at db.GetSchemaVersionByNumberAndID: Schema %v: %v", tenantName, user.Username, newSchemaReq.Name, err.Error())
@@ -947,8 +946,8 @@ func (s *Server) updateSchemaVersion(schemaID int, tenantName string, newSchemaR
 	}
 
 	if currentSchema.SchemaContent == newSchemaReq.SchemaContent {
-		alreadyExistInDB := fmt.Sprintf("%v already exist in the db", newSchemaReq.Name)
-		s.Warnf("[tenant: %v][user: %v]at updateSchemaVersion, %v already exist in the db", tenantName, user.Username, newSchemaReq.Name)
+		alreadyExistInDB := fmt.Sprintf("%v already exists in the db with the same schema content", newSchemaReq.Name)
+		s.Warnf("[tenant: %v][user: %v]at updateSchemaVersion, %v already exists in the db with the same schema content", tenantName, user.Username, newSchemaReq.Name)
 		return errors.New(alreadyExistInDB)
 	}
 

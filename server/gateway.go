@@ -761,7 +761,7 @@ func (s *Server) createGateway(cfg *gatewayCfg, url *url.URL, conn net.Conn) {
 	// Snapshot server options.
 	opts := s.getOpts()
 
-	now := time.Now().UTC()
+	now := time.Now()
 	c := &client{srv: s, nc: conn, start: now, last: now, kind: GATEWAY}
 
 	// Are we creating the gateway based on the configuration
@@ -870,9 +870,7 @@ func (s *Server) createGateway(cfg *gatewayCfg, url *url.URL, conn net.Conn) {
 
 	// Announce ourselves again to new connections.
 	if solicit && s.EventsEnabled() {
-		s.mu.Lock()
-		s.sendStatsz(fmt.Sprintf(serverStatsSubj, s.info.ID))
-		s.mu.Unlock()
+		s.sendStatszUpdate()
 	}
 }
 
@@ -2680,12 +2678,11 @@ func (s *Server) gatewayHandleSubjectNoInterest(c *client, acc *Account, accName
 	// If there is no subscription for this account, we would normally
 	// send an A-, however, if this account has the internal subscription
 	// for service reply, send a specific RS- for the subject instead.
-	hasSubs := acc.sl.Count() > 0
-	if !hasSubs {
-		acc.mu.RLock()
-		hasSubs = acc.siReply != nil
-		acc.mu.RUnlock()
-	}
+	// Need to grab the lock here since sublist can change during reload.
+	acc.mu.RLock()
+	hasSubs := acc.sl.Count() > 0 || acc.siReply != nil
+	acc.mu.RUnlock()
+
 	// If there is at least a subscription, possibly send RS-
 	if hasSubs {
 		sendProto := false
@@ -2964,7 +2961,7 @@ func (c *client) processInboundGatewayMsg(msg []byte) {
 	// Check if this is a service reply subject (_R_)
 	noInterest := len(r.psubs) == 0
 	checkNoInterest := true
-	if acc.imports.services != nil {
+	if acc.NumServiceImports() > 0 {
 		if isServiceReply(c.pa.subject) {
 			checkNoInterest = false
 		} else {

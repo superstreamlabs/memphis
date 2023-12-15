@@ -913,7 +913,7 @@ func GetActiveConnections() ([]string, error) {
 		return []string{}, err
 	}
 	defer conn.Release()
-	query := `SELECT connection_id FROM producers WHERE is_active = true UNION SELECT connection_id FROM consumers WHERE is_active = true;`
+	query := `SELECT connection_id FROM producers WHERE is_active = true AND type = 'application' UNION SELECT connection_id FROM consumers WHERE is_active = true AND type = 'application';`
 	stmt, err := conn.Conn().Prepare(ctx, "get_active_connection", query)
 	if err != nil {
 		return []string{}, err
@@ -2459,7 +2459,7 @@ func GetProducerByNameAndConnectionID(name string, connectionId string) (bool, m
 		return false, models.Producer{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM producers WHERE name = $1 AND connection_id = $2`
+	query := `SELECT * FROM producers WHERE name = $1 AND connection_id = $2 AND type = 'application'`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producer_by_name_and_connection_id", query)
 	if err != nil {
 		return false, models.Producer{}, err
@@ -2487,7 +2487,7 @@ func GetProducerByStationIDAndConnectionId(name string, stationId int, connectio
 		return false, models.Producer{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM producers WHERE name = $1 AND station_id = $2 AND connection_id = $3 ORDER BY is_active DESC LIMIT 1`
+	query := `SELECT * FROM producers WHERE name = $1 AND station_id = $2 AND connection_id = $3 AND type = 'application' ORDER BY is_active DESC LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producer_by_station_id_and_connection_id", query)
 	if err != nil {
 		return false, models.Producer{}, err
@@ -2515,7 +2515,7 @@ func GetProducerByNameAndStationID(name string, stationId int) (bool, models.Pro
 		return false, models.Producer{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM producers WHERE name = $1 AND station_id = $2 ORDER BY is_active DESC LIMIT 1`
+	query := `SELECT * FROM producers WHERE name = $1 AND station_id = $2 AND type = 'application' ORDER BY is_active DESC LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producer_by_name_and_station_id", query)
 	if err != nil {
 		return false, models.Producer{}, err
@@ -2544,7 +2544,7 @@ func GetActiveProducerByStationID(producerName string, stationId int) (bool, mod
 	}
 	defer conn.Release()
 
-	query := `SELECT * FROM producers WHERE name = $1 AND station_id = $2 AND is_active = true LIMIT 1`
+	query := `SELECT * FROM producers WHERE name = $1 AND station_id = $2 AND is_active = true AND type = 'application' LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_active_producer_by_station_id", query)
 	if err != nil {
 		return false, models.Producer{}, err
@@ -2574,7 +2574,7 @@ func GetProducersForGraph(tenantName string) ([]models.ProducerForGraph, error) 
 	defer conn.Release()
 	query := `SELECT p.name, p.station_id, p.app_id
 				FROM producers AS p
-				WHERE p.tenant_name = $1 AND p.is_active = true
+				WHERE p.tenant_name = $1 AND p.is_active = true AND p.type = 'application'
 				ORDER BY p.name, p.station_id DESC
 				LIMIT 10000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producers_for_graph", query)
@@ -2673,7 +2673,7 @@ func InsertNewProducer(name string, stationId int, producerType string, connecti
 	return newProducer, nil
 }
 
-func GetNotDeletedProducersByStationID(stationId int) ([]models.Producer, error) {
+func GetNotDeletedProducersByStationID(stationId int) ([]models.Producer, error) { // TODO: check if not needed - I think its not used
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -2682,7 +2682,7 @@ func GetNotDeletedProducersByStationID(stationId int) ([]models.Producer, error)
 	}
 	defer conn.Release()
 
-	query := `SELECT * FROM producers AS p WHERE p.station_id = $1 AND p.is_deleted = false`
+	query := `SELECT * FROM producers AS p WHERE p.station_id = $1 AND p.is_deleted = false AND p.type = 'application'`
 	stmt, err := conn.Conn().Prepare(ctx, "get_not_deleted_producers_by_station_id", query)
 	if err != nil {
 		return []models.Producer{}, err
@@ -2721,7 +2721,7 @@ func GetAllProducersByStationID(stationId int) ([]models.ExtendedProducer, error
 	COUNT(CASE WHEN NOT p.is_active THEN 1 END) OVER (PARTITION BY p.name) AS disconnected_producers_count
 FROM producers AS p
 LEFT JOIN stations AS s ON s.id = p.station_id
-WHERE p.station_id = $1
+WHERE p.station_id = $1 AND p.type = 'application'
 ORDER BY p.name, p.is_active DESC, p.updated_at DESC
 LIMIT 5000;
 `
@@ -2753,7 +2753,7 @@ func DeleteProducerByNameAndStationID(name string, stationId int) (bool, error) 
 		return false, err
 	}
 	defer conn.Release()
-	query := `DELETE FROM producers WHERE name = $1 AND station_id = $2 LIMIT 1`
+	query := `DELETE FROM producers WHERE name = $1 AND station_id = $2 AND type = 'application' LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_producer_by_name_and_station_id", query)
 	if err != nil {
 		return false, err
@@ -2819,7 +2819,7 @@ func CountActiveProudcersByStationID(stationId int) (int64, error) {
 		return 0, err
 	}
 	defer conn.Release()
-	query := `SELECT COUNT(*) FROM producers WHERE station_id = $1 AND is_active = true`
+	query := `SELECT COUNT(*) FROM producers WHERE station_id = $1 AND is_active = true AND type = 'application'`
 	stmt, err := conn.Conn().Prepare(ctx, "count_active_producers_by_station_id", query)
 	if err != nil {
 		return 0, err
@@ -2841,7 +2841,7 @@ func CountAllActiveProudcers() (int64, error) {
 		return 0, err
 	}
 	defer conn.Release()
-	query := `SELECT COUNT(*) FROM producers WHERE is_active = true`
+	query := `SELECT COUNT(*) FROM producers WHERE is_active = true AND type = 'application'`
 	stmt, err := conn.Conn().Prepare(ctx, "count_all_active_producers", query)
 	if err != nil {
 		return 0, err
@@ -2924,7 +2924,7 @@ func GetActiveConsumerByCG(consumersGroup string, stationId int) (bool, models.C
 	}
 	defer conn.Release()
 
-	query := `SELECT * FROM consumers WHERE consumers_group = $1 AND station_id = $2 LIMIT 1`
+	query := `SELECT * FROM consumers WHERE consumers_group = $1 AND station_id = $2 AND type = 'application' LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_active_consumer_by_cg", query)
 	if err != nil {
 		return false, models.Consumer{}, err
@@ -3051,7 +3051,7 @@ func GetConsumers() ([]models.Consumer, error) {
 		return []models.Consumer{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * From consumers`
+	query := `SELECT * From consumers AND type = 'application'`
 	stmt, err := conn.Conn().Prepare(ctx, "get_consumers", query)
 	if err != nil {
 		return []models.Consumer{}, err
@@ -3083,7 +3083,7 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 				COUNT (CASE WHEN c.is_active THEN 1 END) OVER (PARTITION BY c.name) AS count
 				FROM consumers AS c
 				LEFT JOIN stations AS s ON s.id = c.station_id
-				WHERE c.station_id = $1 ORDER BY c.name, c.consumers_group, c.updated_at DESC
+				WHERE c.station_id = $1 AND c.type = 'application' ORDER BY c.name, c.consumers_group, c.updated_at DESC
 				LIMIT 5000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_consumers_by_station", query)
 	if err != nil {
@@ -3114,7 +3114,7 @@ func GetConsumersForGraph(tenantName string) ([]models.ConsumerForGraph, error) 
 	defer conn.Release()
 	query := `SELECT c.name, c.consumers_group, c.station_id, c.app_id
 				FROM consumers AS c
-				WHERE c.tenant_name = $1 AND c.is_active = true
+				WHERE c.tenant_name = $1 AND c.is_active = true AND c.type = 'application'
 				ORDER BY c.name, c.station_id DESC
 				LIMIT 10000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_consumers_for_graph", query)
@@ -3172,7 +3172,7 @@ func DeleteConsumerByNameAndStationId(name string, stationId int) (bool, models.
 		return false, models.Consumer{}, err
 	}
 	defer conn.Release()
-	query := ` DELETE FROM consumers WHERE ctid = ( SELECT ctid FROM consumers WHERE name = $1 AND station_id = $ LIMIT 1) RETURNING *`
+	query := ` DELETE FROM consumers WHERE ctid = ( SELECT ctid FROM consumers WHERE name = $1 AND station_id = $2 LIMIT 1) RETURNING *`
 	deleteStmt, err := conn.Conn().Prepare(ctx, "delete_consumers", query)
 	if err != nil {
 		return false, models.Consumer{}, err
@@ -3241,7 +3241,7 @@ func CountActiveConsumersInCG(consumersGroup string, stationId int) (int64, erro
 		return 0, err
 	}
 	defer conn.Release()
-	query := `SELECT COUNT(*) FROM consumers WHERE station_id = $1 AND consumers_group = $2 AND is_active = true`
+	query := `SELECT COUNT(*) FROM consumers WHERE station_id = $1 AND consumers_group = $2 AND is_active = true AND type = 'application'`
 	stmt, err := conn.Conn().Prepare(ctx, "count_active_consumers_in_cg", query)
 	if err != nil {
 		return 0, err
@@ -3263,7 +3263,7 @@ func CountActiveConsumersByStationID(stationId int) (int64, error) {
 		return 0, err
 	}
 	defer conn.Release()
-	query := `SELECT COUNT(*) FROM consumers WHERE station_id = $1 AND is_active = true`
+	query := `SELECT COUNT(*) FROM consumers WHERE station_id = $1 AND is_active = true AND type = 'application'`
 	stmt, err := conn.Conn().Prepare(ctx, "count_active_consumers_by_station_id", query)
 	if err != nil {
 		return 0, err
@@ -3285,7 +3285,7 @@ func CountAllActiveConsumers() (int64, error) {
 		return 0, err
 	}
 	defer conn.Release()
-	query := `SELECT COUNT(*) FROM consumers WHERE is_active = true`
+	query := `SELECT COUNT(*) FROM consumers WHERE is_active = true AND type = 'application'`
 	stmt, err := conn.Conn().Prepare(ctx, "count_all_active_consumers", query)
 	if err != nil {
 		return 0, err
@@ -3390,7 +3390,7 @@ func GetActiveConsumerByStationID(consumerName string, stationId int) (bool, mod
 		return false, models.Consumer{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM consumers WHERE name = $1 AND station_id = $2 AND is_active = true LIMIT 1`
+	query := `SELECT * FROM consumers WHERE name = $1 AND station_id = $2 AND is_active = true AND type = 'application' LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_active_consumer_by_station_id", query)
 	if err != nil {
 		return false, models.Consumer{}, err
@@ -3502,7 +3502,7 @@ func GetActiveCgsByName(names []string, tenantName string) ([]models.LightConsum
 		SELECT c.consumers_group, s.name, COUNT(*)
 		FROM consumers AS c
 		LEFT JOIN stations AS s ON s.id = c.station_id
-		WHERE c.tenant_name = $1 AND c.consumers_group = ANY($2) AND c.is_active = true
+		WHERE c.tenant_name = $1 AND c.consumers_group = ANY($2) AND c.is_active = true AND c.type = 'application'
 		GROUP BY c.consumers_group, s.name, c.station_id;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_active_consumers_by_name", query)
 	if err != nil {
@@ -4739,7 +4739,7 @@ func CountAllUsers() (int64, error) {
 	return count, nil
 }
 
-func CountAllUsersByTenant(tenantName string) (int64, error) {
+func CountAllUsersByTenant(tenantName string, filterOutApplicationUsers bool) (int64, error) {
 	var count int64
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -4749,7 +4749,12 @@ func CountAllUsersByTenant(tenantName string) (int64, error) {
 	}
 	defer conn.Release()
 	query := `SELECT COUNT(*) FROM users WHERE tenant_name = $1 AND username NOT LIKE '$%'` // filter memphis internal users`
-	stmt, err := conn.Conn().Prepare(ctx, "get_total_users_by_tenant", query)
+	preparedStmtName := "get_total_users_by_tenant"
+	if filterOutApplicationUsers {
+		query = `SELECT COUNT(*) FROM users WHERE tenant_name = $1 AND username NOT LIKE '$%' AND type != 'application'` // filter memphis internal users`
+		preparedStmtName = "get_total_users_by_tenant_filtered"
+	}
+	stmt, err := conn.Conn().Prepare(ctx, preparedStmtName, query)
 	if err != nil {
 		return 0, err
 	}
@@ -5702,7 +5707,7 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName strin
 	}
 	defer tx.Rollback(ctx)
 
-	query := `SELECT EXISTS(SELECT 1 FROM consumers WHERE tenant_name = $1 AND consumers_group = $2)`
+	query := `SELECT EXISTS(SELECT 1 FROM consumers WHERE tenant_name = $1 AND consumers_group = $2 AND type = 'application')`
 	stmt, err := tx.Prepare(ctx, "check_if_consumer_exists", query)
 	if err != nil {
 		return 0, updated, err
@@ -7228,7 +7233,7 @@ func CountProudcersForStation(stationId int) (int64, error) {
 		return 0, err
 	}
 	defer conn.Release()
-	query := `SELECT COUNT(*) FROM producers WHERE station_id=$1`
+	query := `SELECT COUNT(*) FROM producers WHERE station_id=$1 AND type = 'application'`
 	stmt, err := conn.Conn().Prepare(ctx, "get_count_producers_for_station", query)
 	if err != nil {
 		return 0, err

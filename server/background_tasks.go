@@ -352,8 +352,9 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.ReleaseStuckLocks()
 	go s.ConsumeFunctionTasks()
 	go s.ScaleFunctionWorkers()
+	go s.ConnectorsDeadPodsRescheduler()
 
-	return nil
+  return nil
 }
 
 func (s *Server) uploadMsgsToTier2Storage() {
@@ -568,6 +569,8 @@ func (s *Server) ConsumeSchemaverseDlsMessages() {
 			subject := fmt.Sprintf(JSApiRequestNextT, dlsSchemaverseStream, SCHEMAVERSE_DLS_CONSUMER)
 			s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), subject, replySubj, nil, req, true)
 
+			s.Debugf("ConsumeSchemaverseDlsMessages: sending fetch request")
+
 			timeout := time.NewTimer(5 * time.Second)
 			msgs := make([]schemaverseDlsMsg, 0)
 			stop := false
@@ -585,12 +588,12 @@ func (s *Server) ConsumeSchemaverseDlsMessages() {
 					}
 				case <-timeout.C:
 					stop = true
-					s.Debugf("ConsumeSchemaverseDlsMessages: finished because of timer")
+					s.Debugf("ConsumeSchemaverseDlsMessages: finished because of timer: %v messages", len(msgs))
 				}
 			}
 			for _, message := range msgs {
 				msg := message.Msg
-				s.handleSchemaverseDlsMsg(msg)
+				err := s.handleSchemaverseDlsMsg(msg)
 				if err == nil {
 					// send ack
 					s.sendInternalAccountMsgWithEcho(s.MemphisGlobalAccount(), message.ReplySubject, []byte(_EMPTY_))

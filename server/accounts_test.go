@@ -1,4 +1,4 @@
-// Copyright 2018-2022 The NATS Authors
+// Copyright 2018-2023 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -269,7 +269,7 @@ func TestAccountIsolationExportImport(t *testing.T) {
 			// Setup NATS server.
 			s := opTrustBasicSetup()
 			defer s.Shutdown()
-			go s.Start()
+			s.Start()
 			if err := s.readyForConnections(5 * time.Second); err != nil {
 				t.Fatal(err)
 			}
@@ -1733,7 +1733,7 @@ func TestAccountRequestReplyTrackLatency(t *testing.T) {
 	defer s.Shutdown()
 
 	// Run server in Go routine. We need this one running for internal sending of msgs.
-	go s.Start()
+	s.Start()
 	// Wait for accept loop(s) to be started
 	if err := s.readyForConnections(10 * time.Second); err != nil {
 		t.Fatal(err)
@@ -2099,12 +2099,17 @@ func TestCrossAccountServiceResponseTypes(t *testing.T) {
 
 	cfoo.parseAsync(string(mReply))
 
-	var b [256]byte
-	n, err := crBar.Read(b[:])
-	if err != nil {
-		t.Fatalf("Error reading response: %v", err)
+	var buf []byte
+	for i := 0; i < 20; i++ {
+		b, err := crBar.ReadBytes('\n')
+		if err != nil {
+			t.Fatalf("Error reading response: %v", err)
+		}
+		buf = append(buf[:], b...)
+		if mraw = msgPat.FindAllStringSubmatch(string(buf), -1); len(mraw) == 10 {
+			break
+		}
 	}
-	mraw = msgPat.FindAllStringSubmatch(string(b[:n]), -1)
 	if len(mraw) != 10 {
 		t.Fatalf("Expected a response but got %d", len(mraw))
 	}
@@ -3677,4 +3682,76 @@ func TestAccountImportDuplicateResponseDeliveryWithLeafnodes(t *testing.T) {
 	if n, _, _ := sub.Pending(); n > 1 {
 		t.Fatalf("Expected only 1 response, got %d", n)
 	}
+}
+
+func TestAccountReloadServiceImportPanic(t *testing.T) {
+	conf := createConfFile(t, []byte(`
+		listen: 127.0.0.1:-1
+		accounts {
+			A {
+				users = [ { user: "a", pass: "p" } ]
+				exports [ { service: "HELP" } ]
+			}
+			B {
+				users = [ { user: "b", pass: "p" } ]
+				imports [ { service: { account: A, subject: "HELP"} } ]
+			}
+			$SYS { users = [ { user: "admin", pass: "s3cr3t!" } ] }
+		}
+	`))
+
+	s, _ := RunServerWithConfig(conf)
+	defer s.Shutdown()
+
+	// Now connect up the subscriber for HELP. No-op for this test.
+	nc, _ := jsClientConnect(t, s, nats.UserInfo("a", "p"))
+	_, err := nc.Subscribe("HELP", func(m *nats.Msg) { m.Respond([]byte("OK")) })
+	require_NoError(t, err)
+	defer nc.Close()
+
+	// Now create connection to account b where we will publish to HELP.
+	nc, _ = jsClientConnect(t, s, nats.UserInfo("b", "p"))
+	require_NoError(t, err)
+	defer nc.Close()
+
+	// We want to continually be publishing messages that will trigger the service import while calling reload.
+	done := make(chan bool)
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	var requests, responses atomic.Uint64
+	reply := nats.NewInbox()
+	_, err = nc.Subscribe(reply, func(m *nats.Msg) { responses.Add(1) })
+	require_NoError(t, err)
+
+	go func() {
+		defer wg.Done()
+		for {
+			select {
+			case <-done:
+				return
+			default:
+				nc.PublishRequest("HELP", reply, []byte("HELP"))
+				requests.Add(1)
+			}
+		}
+	}()
+
+	// Perform a bunch of reloads.
+	for i := 0; i < 1000; i++ {
+		err := s.Reload()
+		require_NoError(t, err)
+	}
+
+	close(done)
+	wg.Wait()
+
+	totalRequests := requests.Load()
+	checkFor(t, 10*time.Second, 250*time.Millisecond, func() error {
+		resp := responses.Load()
+		if resp == totalRequests {
+			return nil
+		}
+		return fmt.Errorf("Have not received all responses, want %d got %d", totalRequests, resp)
+	})
 }

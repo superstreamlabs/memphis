@@ -82,7 +82,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		var created bool
 		station, created, err = CreateDefaultStation(user.TenantName, s, pStationName, user.ID, user.Username, "", 0)
 		if err != nil {
-			if strings.Contains(err.Error(), "already exists") {
+			if strings.Contains(err.Error(), "already exists") ||  strings.Contains(err.Error(), "max amount") {
 				serv.Warnf("[tenant: %v][user: %v]createProducerDirectCommon at CreateDefaultStation: creating default station error - producer %v at station %v: %v", user.TenantName, user.Username, pName, pStationName.external, err.Error())
 			} else {
 				serv.Errorf("[tenant: %v][user: %v]createProducerDirectCommon at CreateDefaultStation: creating default station error - producer %v at station %v: %v", user.TenantName, user.Username, pName, pStationName.external, err.Error())
@@ -129,36 +129,43 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 
 	splitted := strings.Split(c.opts.Lang, ".")
 	sdkName := splitted[len(splitted)-1]
-	newProducer, err := db.InsertNewProducer(name, station.ID, producerType, pConnectionId, station.TenantName, station.PartitionsList, version, sdkName, appId)
-	if err != nil {
-		serv.Warnf("[tenant: %v][user: %v]createProducerDirectCommon at InsertNewProducer: %v", user.TenantName, user.Username, err.Error())
-		return false, false, err, models.Station{}
-	}
-	message := "Producer " + name + " connected"
-	var auditLogs []interface{}
-	newAuditLog := models.AuditLog{
-		StationName:       pStationName.Ext(),
-		Message:           message,
-		CreatedBy:         user.ID,
-		CreatedByUsername: user.Username,
-		CreatedAt:         time.Now(),
-		TenantName:        user.TenantName,
-	}
-	auditLogs = append(auditLogs, newAuditLog)
-	err = CreateAuditLogs(auditLogs)
-	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]createProducerDirectCommon at CreateAuditLogs: Producer %v at station %v: %v", user.TenantName, user.Username, pName, pStationName.external, err.Error())
-		return false, false, err, models.Station{}
-	}
-
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		ip := serv.getIp()
-		analyticsParams := map[string]interface{}{"producer-name": newProducer.Name, "ip": ip}
-		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-create-producer-sdk")
-		if strings.HasPrefix(newProducer.Name, "rest_gateway") {
-			analyticsParams = map[string]interface{}{}
-			analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-send-messages-via-rest-gw")
+	if strings.HasPrefix(user.Username, "$") && name != "gui" {
+		_, err := db.InsertNewProducer(name, station.ID, "connector", pConnectionId, station.TenantName, station.PartitionsList, version, sdkName, appId)
+		if err != nil {
+			serv.Warnf("[tenant: %v][user: %v]createProducerDirectCommon at InsertNewProducer: %v", user.TenantName, user.Username, err.Error())
+			return false, false, err, models.Station{}
+		}
+	} else {
+		newProducer, err := db.InsertNewProducer(name, station.ID, producerType, pConnectionId, station.TenantName, station.PartitionsList, version, sdkName, appId)
+		if err != nil {
+			serv.Warnf("[tenant: %v][user: %v]createProducerDirectCommon at InsertNewProducer: %v", user.TenantName, user.Username, err.Error())
+			return false, false, err, models.Station{}
+		}
+		message := "Producer " + name + " connected"
+		var auditLogs []interface{}
+		newAuditLog := models.AuditLog{
+			StationName:       pStationName.Ext(),
+			Message:           message,
+			CreatedBy:         user.ID,
+			CreatedByUsername: user.Username,
+			CreatedAt:         time.Now(),
+			TenantName:        user.TenantName,
+		}
+		auditLogs = append(auditLogs, newAuditLog)
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]createProducerDirectCommon at CreateAuditLogs: Producer %v at station %v: %v", user.TenantName, user.Username, pName, pStationName.external, err.Error())
+			return false, false, err, models.Station{}
+		}
+		shouldSendAnalytics, _ := shouldSendAnalytics()
+		if shouldSendAnalytics {
+			ip := serv.getIp()
+			analyticsParams := map[string]interface{}{"producer-name": newProducer.Name, "ip": ip}
+			analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-create-producer-sdk")
+			if strings.HasPrefix(newProducer.Name, "rest_gateway") {
+				analyticsParams = map[string]interface{}{}
+				analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-send-messages-via-rest-gw")
+			}
 		}
 	}
 

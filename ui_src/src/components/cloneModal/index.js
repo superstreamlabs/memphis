@@ -17,19 +17,34 @@ import { FiDownload } from 'react-icons/fi';
 import Copy from '../copy';
 import CustomTabs from '../Tabs';
 import { githubUrls } from '../../const/globalConst';
+import { SiLinux, SiApple, SiWindows11 } from 'react-icons/si';
 
 const CloneModal = ({ type }) => {
-    const [tabValue, setTabValue] = useState('HTTPS');
+    const [tabValue, setTabValue] = useState(type === 'cli' ? 'Windows' : 'HTTPS');
     const downloadRepoArchive = async () => {
         window.open(githubUrls[type].DOWNLOAD_URL, '_blank');
     };
 
     return (
         <div className="clone-wrapper">
-            <p className="title"> Clone</p>
-            <p className="subtitle">Kindly clone our explanatory repository to quickly start.</p>
-            <CustomTabs tabs={['HTTPS', 'SSH']} size={'small'} tabValue={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
-            {tabValue === 'HTTPS' ? (
+            {type === 'cli' ? (
+                <>
+                    <p className="title">Functions Template Generator</p>
+                </>
+            ) : (
+                <>
+                    <p className="title">Clone</p>
+                    <p className="subtitle">Kindly clone our explanatory repository to quickly start.</p>
+                </>
+            )}
+            <CustomTabs
+                tabs={type === 'cli' ? ['Windows', 'Mac', 'Linux RPM', 'Linux APK'] : ['HTTPS', 'SSH']}
+                icons={type === 'cli' ? [<SiWindows11 />, <SiApple />, <SiLinux />, <SiLinux />] : []}
+                size={'small'}
+                tabValue={tabValue}
+                onChange={(tabValue) => setTabValue(tabValue)}
+            />
+            {type !== 'cli' && tabValue === 'HTTPS' && (
                 <>
                     <div className="url-wrapper">
                         <p className="url-text"> {githubUrls[type].MEMPHIS_GIT_HTTPS}</p>
@@ -38,7 +53,8 @@ const CloneModal = ({ type }) => {
                         </div>
                     </div>
                 </>
-            ) : (
+            )}
+            {type !== 'cli' && tabValue === 'SSH' && (
                 <>
                     <div className="url-wrapper">
                         <p className="url-text"> {githubUrls[type].MEMPHIS_GIT_SSH}</p>
@@ -48,23 +64,42 @@ const CloneModal = ({ type }) => {
                     </div>
                 </>
             )}
+            {type === 'cli' && (
+                <>
+                    <div className="url-wrapper">
+                        <p className="url-text"> {githubUrls[type][tabValue]}</p>
+                        <div className="icon">
+                            <Copy width="18" data={githubUrls[type][tabValue]} />
+                        </div>
+                    </div>
+                    <p className="create-func-cli">Create a basic Memphis function template</p>
+                    <div className="url-wrapper">
+                        <p className="url-text"> {githubUrls[type]?.code}</p>
+                        <div className="icon">
+                            <Copy width="18" data={githubUrls[type]?.code} />
+                        </div>
+                    </div>
+                </>
+            )}
             <p className="secondary-text">Use Git or checkout with SVN using the web URL.</p>
 
-            <div className="footer">
-                <Button
-                    placeholder={
-                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                            <FiDownload width={16} height={14} /> Download ZIP
-                        </div>
-                    }
-                    colorType={'purple'}
-                    onClick={downloadRepoArchive}
-                    fontSize={'14px'}
-                    fontWeight={500}
-                    border="none"
-                    backgroundColorType={'none'}
-                />
-            </div>
+            {type !== 'cli' && (
+                <div className="footer">
+                    <Button
+                        placeholder={
+                            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                <FiDownload width={16} height={14} /> Download ZIP
+                            </div>
+                        }
+                        colorType={'purple'}
+                        onClick={downloadRepoArchive}
+                        fontSize={'14px'}
+                        fontWeight={500}
+                        border="none"
+                        backgroundColorType={'none'}
+                    />
+                </div>
+            )}
         </div>
     );
 };

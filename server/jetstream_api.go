@@ -1,4 +1,4 @@
-// Copyright 2020-2022 The NATS Authors
+// Copyright 2020-2023 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -735,13 +735,13 @@ type jsAPIRoutedReq struct {
 
 func (js *jetStream) apiDispatch(sub *subscription, c *client, acc *Account, subject, reply string, rmsg []byte) {
 	// No lock needed, those are immutable.
-	wrappedSubject := memphisFindJSAPIWrapperSubject(c, subject)
-	s, rr := js.srv, js.apiSubs.Match(wrappedSubject)
+	wrappedSubject := memphisFindJSAPIWrapperSubject(c, subject) // ** added by memphis
+	s, rr := js.srv, js.apiSubs.Match(wrappedSubject)            // ** changed to wrappedSubject by memphis
 
 	hdr, _ := c.msgParts(rmsg)
 	if len(getHeader(ClientInfoHdr, hdr)) == 0 {
 		// Check if this is the system account. We will let these through for the account info only.
-		if s.SystemAccount() != acc || wrappedSubject != JSApiAccountInfo {
+		if s.SystemAccount() != acc || wrappedSubject != JSApiAccountInfo { // ** changed to wrappedSubject by memphis
 			return
 		}
 	}
@@ -754,7 +754,7 @@ func (js *jetStream) apiDispatch(sub *subscription, c *client, acc *Account, sub
 	// We should only have psubs and only 1 per result.
 	// FIXME(dlc) - Should we respond here with NoResponders or error?
 	if len(rr.psubs) != 1 {
-		s.Warnf("Malformed JetStream API Request: [%s] %q", wrappedSubject, rmsg)
+		s.Warnf("Malformed JetStream API Request: [%s] %q", wrappedSubject, rmsg) // ** changed to wrappedSubject by memphis
 		return
 	}
 	jsub := rr.psubs[0]
@@ -764,7 +764,7 @@ func (js *jetStream) apiDispatch(sub *subscription, c *client, acc *Account, sub
 		start := time.Now()
 		jsub.icb(sub, c, acc, subject, reply, rmsg)
 		if dur := time.Since(start); dur >= readLoopReportThreshold {
-			s.Warnf("Internal subscription on %q took too long: %v", wrappedSubject, dur)
+			s.Warnf("Internal subscription on %q took too long: %v", wrappedSubject, dur) // ** changed to wrappedSubject by memphis
 		}
 		return
 	}
@@ -837,13 +837,13 @@ func (s *Server) setJetStreamExportSubs() error {
 		{JSApiTemplateInfo, s.jsTemplateInfoRequest},
 		{JSApiTemplateDelete, s.jsTemplateDeleteRequest},
 		{JSApiStreamCreate, s.jsStreamCreateRequest},
-		{memphisJSApiStreamCreate, s.memphisJSApiWrapStreamCreate},
+		{memphisJSApiStreamCreate, s.memphisJSApiWrapStreamCreate}, // ** added by memphis
 		{JSApiStreamUpdate, s.jsStreamUpdateRequest},
 		{JSApiStreams, s.jsStreamNamesRequest},
 		{JSApiStreamList, s.jsStreamListRequest},
 		{JSApiStreamInfo, s.jsStreamInfoRequest},
 		{JSApiStreamDelete, s.jsStreamDeleteRequest},
-		{memphisJSApiStreamDelete, s.memphisJSApiWrapStreamDelete},
+		{memphisJSApiStreamDelete, s.memphisJSApiWrapStreamDelete}, // ** added by memphis
 		{JSApiStreamPurge, s.jsStreamPurgeRequest},
 		{JSApiStreamSnapshot, s.jsStreamSnapshotRequest},
 		{JSApiStreamRestore, s.jsStreamRestoreRequest},
@@ -890,6 +890,7 @@ func (s *Server) sendAPIErrResponse(ci *ClientInfo, acc *Account, subject, reply
 	s.sendJetStreamAPIAuditAdvisory(ci, acc, subject, request, response)
 }
 
+// ** added by memphis
 func (s *Server) sendAPIErrResponseWithEcho(ci *ClientInfo, acc *Account, subject, reply, request, response string) {
 	acc.trackAPIErr()
 	if reply != _EMPTY_ {
@@ -898,13 +899,22 @@ func (s *Server) sendAPIErrResponseWithEcho(ci *ClientInfo, acc *Account, subjec
 	s.sendJetStreamAPIAuditAdvisory(ci, acc, subject, request, response)
 }
 
+// ** added by memphis
+
 const errRespDelay = 500 * time.Millisecond
 
 func (s *Server) sendDelayedAPIErrResponse(ci *ClientInfo, acc *Account, subject, reply, request, response string, rg *raftGroup) {
+	js := s.getJetStream()
+	if js == nil {
+		return
+	}
 	var quitCh <-chan struct{}
+	js.mu.RLock()
 	if rg != nil && rg.node != nil {
 		quitCh = rg.node.QuitC()
 	}
+	js.mu.RUnlock()
+
 	s.startGoRoutine(func() {
 		defer s.grWG.Done()
 		select {
@@ -1281,12 +1291,14 @@ func (jsa *jsAccount) tieredReservation(tier string, cfg *StreamConfig) int64 {
 }
 
 // Request to create a stream.
+// ** changed by memphis
 func (s *Server) jsStreamCreateRequest(sub *subscription, c *client, acc *Account, subject, reply string, rmsg []byte) {
 	s.jsStreamCreateRequestIntern(sub, c, acc, subject, reply, rmsg)
 }
 
-func (s *Server) jsStreamCreateRequestIntern(sub *subscription, c *client, _ *Account, subject, reply string, rmsg []byte) {
-	var cfg StreamConfig
+// ** changed by memphis
+
+func (s *Server) jsStreamCreateRequestIntern(sub *subscription, c *client, _ *Account, subject, reply string, rmsg []byte) { // ** changed by memphis
 	if c == nil || !s.JetStreamEnabled() {
 		return
 	}
@@ -1323,6 +1335,7 @@ func (s *Server) jsStreamCreateRequestIntern(sub *subscription, c *client, _ *Ac
 		return
 	}
 
+	var cfg StreamConfig
 	if err := json.Unmarshal(msg, &cfg); err != nil {
 		resp.Error = NewJSInvalidJSONError()
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
@@ -1902,7 +1915,7 @@ func (s *Server) jsStreamInfoRequest(sub *subscription, c *client, a *Account, s
 
 				if actualSize > 0 {
 					sd = make(map[string]uint64, actualSize)
-					subjState = make(map[string]SimpleState, actualSize)
+					subjState = make(map[string]SimpleState, actualSize) // ** added by Memphis
 					for _, ss := range subjs[offset:end] {
 						sd[ss] = st[ss]
 						subjState[ss] = subjectsState[ss] // ** added by Memphis
@@ -1999,18 +2012,24 @@ func (s *Server) jsStreamLeaderStepDownRequest(sub *subscription, c *client, _ *
 		return
 	}
 
-	// Call actual stepdown.
-	if mset != nil {
+	if mset == nil {
+		resp.Success = true
+		s.sendAPIResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(resp))
+		return
+	}
+
+	// Call actual stepdown. Do this in a Go routine.
+	go func() {
 		if node := mset.raftNode(); node != nil {
 			mset.setLeader(false)
 			// TODO (mh) eventually make sure all go routines exited and all channels are cleared
 			time.Sleep(250 * time.Millisecond)
 			node.StepDown()
 		}
-	}
 
-	resp.Success = true
-	s.sendAPIResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(resp))
+		resp.Success = true
+		s.sendAPIResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(resp))
+	}()
 }
 
 // Request to have a consumer leader stepdown.
@@ -2105,16 +2124,23 @@ func (s *Server) jsConsumerLeaderStepDownRequest(sub *subscription, c *client, _
 		return
 	}
 
-	// Call actual stepdown.
-	if n := o.raftNode(); n != nil {
+	n := o.raftNode()
+	if n == nil {
+		resp.Success = true
+		s.sendAPIResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(resp))
+		return
+	}
+
+	// Call actual stepdown. Do this in a Go routine.
+	go func() {
 		o.setLeader(false)
 		// TODO (mh) eventually make sure all go routines exited and all channels are cleared
 		time.Sleep(250 * time.Millisecond)
 		n.StepDown()
-	}
 
-	resp.Success = true
-	s.sendAPIResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(resp))
+		resp.Success = true
+		s.sendAPIResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(resp))
+	}()
 }
 
 // Request to remove a peer from a clustered stream.
@@ -2668,7 +2694,7 @@ func (s *Server) jsLeaderAccountPurgeRequest(sub *subscription, c *client, _ *Ac
 }
 
 // Request to have the meta leader stepdown.
-// These will only be received the the meta leaders, so less checking needed.
+// These will only be received by the meta leader, so less checking needed.
 func (s *Server) jsLeaderStepDownRequest(sub *subscription, c *client, _ *Account, subject, reply string, rmsg []byte) {
 	if c == nil || !s.JetStreamEnabled() {
 		return
@@ -2763,11 +2789,13 @@ func isEmptyRequest(req []byte) bool {
 }
 
 // Request to delete a stream.
+// ** added/changed by Memphis
 func (s *Server) jsStreamDeleteRequest(sub *subscription, c *client, acc *Account, subject, reply string, rmsg []byte) {
 	s.jsStreamDeleteRequestIntern(sub, c, acc, subject, reply, rmsg)
 }
+// ** added/changed by Memphis
 
-func (s *Server) jsStreamDeleteRequestIntern(sub *subscription, c *client, _ *Account, subject, reply string, rmsg []byte) {
+func (s *Server) jsStreamDeleteRequestIntern(sub *subscription, c *client, _ *Account, subject, reply string, rmsg []byte) { // ** added/changed by Memphis
 	if c == nil || !s.JetStreamEnabled() {
 		return
 	}
@@ -3342,7 +3370,7 @@ func (s *Server) processStreamRestore(ci *ClientInfo, acc *Account, cfg *StreamC
 
 	var total int
 
-	// FIXM(dlc) - Probably take out of network path eventually due to disk I/O?
+	// FIXME(dlc) - Probably take out of network path eventually due to disk I/O?
 	processChunk := func(sub *subscription, c *client, _ *Account, subject, reply string, msg []byte) {
 		// We require reply subjects to communicate back failures, flow etc. If they do not have one log and cancel.
 		if reply == _EMPTY_ {
@@ -3376,7 +3404,7 @@ func (s *Server) processStreamRestore(ci *ClientInfo, acc *Account, cfg *StreamC
 		// TODO(dlc) - We could check apriori and cancel initial request if we know it won't fit.
 		total += len(msg)
 		if js.wouldExceedLimits(FileStorage, total) {
-			s.resourcesExeededError()
+			s.resourcesExceededError()
 			resultCh <- result{NewJSInsufficientResourcesError(), reply}
 			return
 		}
@@ -3782,11 +3810,11 @@ func (s *Server) jsConsumerCreateRequest(sub *subscription, c *client, a *Accoun
 		} else {
 			streamName = streamNameFromSubject(subject)
 			consumerName = consumerNameFromSubject(subject)
-		}
-		// New has optional filtered subject as part of main subject..
-		if n > 7 {
-			tokens := strings.Split(subject, tsep)
-			filteredSubject = strings.Join(tokens[6:], tsep)
+			// New has optional filtered subject as part of main subject..
+			if n > 6 {
+				tokens := strings.Split(subject, tsep)
+				filteredSubject = strings.Join(tokens[6:], tsep)
+			}
 		}
 	}
 

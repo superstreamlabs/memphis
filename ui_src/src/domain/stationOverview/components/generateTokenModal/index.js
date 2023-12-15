@@ -25,6 +25,7 @@ import CreateUserDetails from '../../../users/createUserDetails';
 import { Drawer } from 'antd';
 import { LOCAL_STORAGE_ACCOUNT_ID, LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../../../const/localStorageConsts';
 import { isCloud } from '../../../../services/valueConvertor';
+import { sendTrace } from '../../../../services/genericServices';
 
 const GenerateTokenModal = ({ host, close, returnToken, restProducer, stationName }) => {
     const [isLoading, setIsLoading] = useState(true);
@@ -105,6 +106,12 @@ const GenerateTokenModal = ({ host, close, returnToken, restProducer, stationNam
         }
     };
 
+    const produceConsumeRest = (action) => {
+        sendTrace('produceConsumeRest', {
+            action: action
+        });
+    };
+
     return (
         <div className="generate-modal-wrapper">
             {!isLoading && (
@@ -126,18 +133,6 @@ const GenerateTokenModal = ({ host, close, returnToken, restProducer, stationNam
                             <div className="user-password-section">
                                 <div className="app-username">
                                     <p className="field-title">Client-type user</p>
-                                    {/* <SelectComponent
-                                        placeholder="choose your app user"
-                                        colorType="black"
-                                        backgroundColorType="none"
-                                        borderColorType="gray"
-                                        radiusType="semi-round"
-                                        height="40px"
-                                        popupClassName="select-options"
-                                        options={appUsers}
-                                        value={formFields?.username || appUsers[0]}
-                                        onChange={(e) => updateState('username', e)}
-                                    /> */}
                                     <CustomSelect
                                         placeholder="choose your app user"
                                         value={formFields?.username || appUsers[0]}
@@ -228,14 +223,14 @@ const GenerateTokenModal = ({ host, close, returnToken, restProducer, stationNam
                         <div className="user-password-section">
                             <div className="api-token">
                                 <p className="field-title">Produce</p>
-                                <div className="input-and-copy">
+                                <div className="input-and-copy" onClick={() => produceConsumeRest('produce')}>
                                     <span className="url-span">{`https://${host}.restgw.cloud.memphis.dev/stations/${stationName}/produce/single?authorization=${userToken?.jwt_refresh_token}`}</span>
                                     <Copy data={userToken?.jwt_refresh_token} width={20} />
                                 </div>
                             </div>
                             <div className="api-token">
                                 <p className="field-title">Consume</p>
-                                <div className="input-and-copy">
+                                <div className="input-and-copy" onClick={() => produceConsumeRest('consume')}>
                                     <span className="url-span">{`https://${host}.restgw.cloud.memphis.dev/stations/${stationName}/consume/batch?authorization=${userToken?.jwt_refresh_token}`}</span>
                                     <Copy data={userToken?.jwt_refresh_token} width={20} />
                                 </div>

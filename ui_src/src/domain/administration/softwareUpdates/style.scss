@@ -22,9 +22,9 @@
         }
     }
     .statistics {
-        display: grid;
-        grid-template-columns: 24% 24% 24% 24%;
+        display: flex;
         justify-content: space-between;
+        gap: 15px;
         .stat-item {
             height: 100%;
             width: 100%;
@@ -47,9 +47,9 @@
         }
     }
     .charts {
-        display: grid;
-        grid-template-columns: 32% 33% 32%;
+        display: flex;
         justify-content: space-between;
+        gap: 15px;
         .info-item {
             height: 100%;
             width: 100%;

@@ -10,6 +10,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Package logger logs to the windows event log
 package logger
 
 import (
@@ -109,9 +111,11 @@ func (l *SysLogger) Tracef(format string, v ...interface{}) {
 	}
 }
 
+// ** added by Memphis
 // Systemf logs a system statement
 func (l *SysLogger) Systemf(format string, v ...interface{}) {
 	if l.trace {
 		l.writer.Info(4, formatMsg("SYSTEM", format, v...))
 	}
 }
+// ** added by Memphis

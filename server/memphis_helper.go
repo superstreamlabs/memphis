@@ -489,6 +489,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			MaxConsumers: -1,
 			MaxMsgs:      int64(-1),
 			MaxBytes:     int64(-1),
+			MaxAge:       time.Second * ws_updates_interval_sec, // since it stores only 1 msg per second
 			Discard:      DiscardOld,
 			MaxMsgsPer:   ws_updates_interval_sec,
 			Storage:      FileStorage,
@@ -590,13 +591,11 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// create function tasks consumer
 	if shouldCreateSystemTasksStream() && !FUNCTIONS_TASKS_CONSUMER_CREATED {
-		replicas := GetStationReplicas(1)
 		cc := ConsumerConfig{
 			Durable:       FUNCTION_TASKS_CONSUMER,
 			DeliverPolicy: DeliverAll,
 			AckPolicy:     AckExplicit,
 			MaxAckPending: 1,
-			Replicas:      replicas,
 			FilterSubject: systemTasksStreamName + ".functions",
 			AckWait:       time.Duration(90) * time.Second,
 			MaxDeliver:    5,

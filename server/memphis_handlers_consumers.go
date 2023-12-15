@@ -182,10 +182,19 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 
 	splitted := strings.Split(c.opts.Lang, ".")
 	sdkName := splitted[len(splitted)-1]
-	newConsumer, err := db.InsertNewConsumer(name, station.ID, consumerType, connectionId, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages, tenantName, station.PartitionsList, requestVersion, sdkName, appId)
-	if err != nil {
-		serv.Errorf("[tenant: %v]createConsumerDirectCommon at InsertNewConsumer: Consumer %v at station %v :%v", user.TenantName, consumerName, cStationName, err.Error())
-		return []int{}, err
+	var newConsumer models.Consumer
+	if strings.HasPrefix(user.Username, "$") {
+		newConsumer, err = db.InsertNewConsumer(name, station.ID, "connector", connectionId, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages, tenantName, station.PartitionsList, requestVersion, sdkName, appId)
+		if err != nil {
+			serv.Errorf("[tenant: %v]createConsumerDirectCommon at InsertNewConsumer: Consumer %v at station %v :%v", user.TenantName, consumerName, cStationName, err.Error())
+			return []int{}, err
+		}
+	} else {
+		newConsumer, err = db.InsertNewConsumer(name, station.ID, consumerType, connectionId, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages, tenantName, station.PartitionsList, requestVersion, sdkName, appId)
+		if err != nil {
+			serv.Errorf("[tenant: %v]createConsumerDirectCommon at InsertNewConsumer: Consumer %v at station %v :%v", user.TenantName, consumerName, cStationName, err.Error())
+			return []int{}, err
+		}
 	}
 
 	message := "Consumer " + name + " connected"

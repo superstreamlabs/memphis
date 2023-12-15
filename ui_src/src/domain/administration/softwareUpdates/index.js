@@ -35,7 +35,7 @@ import AuthService from '../../../services/auth';
 import { Checkbox } from 'antd';
 import ImgUploader from './imgUploader';
 import { LOCAL_STORAGE_USER_TYPE, LOCAL_STORAGE_ACCOUNT_ID } from '../../../const/localStorageConsts';
-import TooltipComponent from '../../../components/tooltip/tooltip';
+import Support from '../../../components/sideBar/support';
 
 function SoftwareUpates({}) {
     const [state, dispatch] = useContext(Context);
@@ -49,7 +49,7 @@ function SoftwareUpates({}) {
     const [checkboxdeleteAccount, setCheckboxdeleteAccount] = useState(false);
     const [delateLoader, setDelateLoader] = useState(false);
     const systemDataComponents = [
-        { title: 'Amount of brokers', value: systemData?.total_amount_brokers },
+        { title: 'Amount of brokers', value: systemData?.total_amount_brokers, ossOnly: true },
         { title: 'total stations', value: systemData?.total_stations },
         { title: 'total users', value: systemData?.total_users },
         { title: 'total schemas', value: systemData?.total_schemas }
@@ -145,7 +145,7 @@ function SoftwareUpates({}) {
             <div className="rows">
                 <div className="item-component">
                     <div className="title-component">
-                        <div className="versions" onClick={() => isUpdateAvailable && window.open(latestVersionUrl, '_blank')}>
+                        <div className="versions" onClick={() => !isCloud() && isUpdateAvailable && window.open(latestVersionUrl, '_blank')}>
                             <LogoTexeMemphis alt="Memphis logo" width="300px" />
                             {isCloud() ? (
                                 <div className="hostname">
@@ -180,14 +180,14 @@ function SoftwareUpates({}) {
                 </div>
                 <div className="statistics">
                     {systemDataComponents.map((item, index) => {
-                        return (
+                        return (isCloud() && !item.ossOnly) || !isCloud() ? (
                             <div className="item-component" key={`${item}-${index}`}>
                                 <span className="stat-item">
                                     <label className="title">{item.title}</label>
                                     <label className="numbers">{item.value}</label>
                                 </span>
                             </div>
-                        );
+                        ) : null;
                     })}
                 </div>
                 <div className="charts">{informationPanelData.map((item, index) => genrateInformationPanel(item, index))}</div>
@@ -241,7 +241,7 @@ function SoftwareUpates({}) {
                     </div>
                 </div>
             </div>
-            <CloudModal type={'bundle'} open={isCloudModalOpen} handleClose={() => setIsCloudModalOpen(false)} />
+
             <Modal
                 header={<DeleteWrapperIcon alt="deleteWrapperIcon" />}
                 width="520px"
@@ -265,6 +265,17 @@ function SoftwareUpates({}) {
                 />
                 <br />
             </Modal>
+            <Modal
+                width="400px"
+                height="550px"
+                className={'support-modal'}
+                displayButtons={false}
+                clickOutside={() => setIsCloudModalOpen(false)}
+                open={isCloud && isCloudModalOpen}
+            >
+                <Support closeModal={(e) => setIsCloudModalOpen(false)} />
+            </Modal>
+            <CloudModal type={'bundle'} open={!isCloud() && isCloudModalOpen} handleClose={() => setIsCloudModalOpen(false)} />
         </div>
     );
 }

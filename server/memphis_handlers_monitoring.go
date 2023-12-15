@@ -695,12 +695,19 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		}
 	}
 
-	connectors, err := mh.S.GetConnectorsByStationAndPartition(station.ID, body.PartitionNumber, len(station.PartitionsList))
+	sourceConnectors, err := mh.S.GetSourceConnectorsByStationAndPartition(station.ID, body.PartitionNumber, len(station.PartitionsList))
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetConnectorsByStationAndPartition: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetSourceConnectorsByStationAndPartition: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+	sinkConnectors, err := consumersHandler.GetSinkConnectorsByStation(stationName, station, body.PartitionNumber, station.PartitionsList)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetSinkConnectorsByStation: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	
 	var response gin.H
 
 	// Check when the schema object in station is not empty, not optional for non native stations
@@ -722,9 +729,6 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				return
 			}
 			updatesAvailable := !schemaVersion.Active
-			if schema.Name == "" && schema.Type == "" && station.SchemaVersionNumber == 0 {
-				updatesAvailable = false
-			}
 			schemaDetails = models.StationOverviewSchemaDetails{
 				SchemaName:       schema.Name,
 				VersionNumber:    station.SchemaVersionNumber,
@@ -759,7 +763,8 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"resend_disabled":                 station.ResendDisabled,
 			"functions_enabled":               functionsEnabled,
 			"max_amount_of_allowed_producers": usageLimit,
-			"connectors":                      connectors,
+			"source_connectors":               sourceConnectors,
+			"sink_connectors":                 sinkConnectors,
 			"act_as_dls_station_in_stations":  usedAsDlsStations,
 		}
 	} else {
@@ -793,7 +798,8 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				"resend_disabled":                 station.ResendDisabled,
 				"functions_enabled":               functionsEnabled,
 				"max_amount_of_allowed_producers": usageLimit,
-				"connectors":                      connectors,
+				"source_connectors":               sourceConnectors,
+				"sink_connectors":                 sinkConnectors,
 				"act_as_dls_station_in_stations":  usedAsDlsStations,
 			}
 		} else {
@@ -824,7 +830,8 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				"resend_disabled":                 station.ResendDisabled,
 				"functions_enabled":               functionsEnabled,
 				"max_amount_of_allowed_producers": usageLimit,
-				"connectors":                      connectors,
+				"source_connectors":               sourceConnectors,
+				"sink_connectors":                 sinkConnectors,
 				"act_as_dls_station_in_stations":  usedAsDlsStations,
 			}
 		}
@@ -1411,7 +1418,7 @@ func (mh MonitoringHandler) GetSystemGeneralInfo(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	usersCount, err := db.CountAllUsersByTenant(user.TenantName)
+	usersCount, err := db.CountAllUsersByTenant(user.TenantName, false)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]GetSystemGeneralInfo at CountAllUsersByTenant: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

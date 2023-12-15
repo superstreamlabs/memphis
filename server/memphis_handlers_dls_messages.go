@@ -155,45 +155,47 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	return nil
 }
 
-func (s *Server) handleSchemaverseDlsMsg(msg []byte) {
+func (s *Server) handleSchemaverseDlsMsg(msg []byte) error {
 	tenantName, stringMessage, err := s.getTenantNameAndMessage(msg)
 	if err != nil {
 		s.Errorf("handleSchemaverseDlsMsg at getTenantNameAndMessage: %v", err.Error())
-		return
+		return err
 	}
 	var message models.SchemaVerseDlsMessageSdk
 	err = json.Unmarshal([]byte(stringMessage), &message)
 	if err != nil {
 		serv.Errorf("[tenant: %v]handleSchemaverseDlsMsg: %v", tenantName, err.Error())
-		return
+		return err
 	}
 
 	exist, station, err := db.GetStationByName(message.StationName, tenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v]handleSchemaverseDlsMsg: %v", tenantName, err.Error())
-		return
+		return err
 	}
 	if !exist {
 		serv.Warnf("[tenant: %v]handleSchemaverseDlsMsg: station %v couldn't been found", tenantName, message.StationName)
-		return
+		return nil
 	}
 
 	message.Message.TimeSent = time.Now()
 	_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, message.Producer.Name, []string{}, models.MessagePayload(message.Message), message.ValidationError, tenantName, message.PartitionNumber)
 	if err != nil {
 		serv.Errorf("[tenant: %v]handleSchemaverseDlsMsg: %v", tenantName, err.Error())
-		return
+		return err
 	}
 	data, err := hex.DecodeString(message.Message.Data)
 	if err != nil {
 		serv.Errorf("[tenant: %v]handleSchemaverseDlsMsg at DecodeString: %v", tenantName, err.Error())
-		return
+		return err
 	}
 	err = s.sendToDlsStation(station, data, message.Message.Headers, "failed_schema", "")
 	if err != nil {
 		serv.Errorf("[tenant: %v]handleSchemaverseDlsMsg at sendToDlsStation: station: %v, Error while getting notified about a poison message: %v", tenantName, station.DlsStation, err.Error())
-		return
+		return err
 	}
+
+	return nil
 }
 
 func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station, partitionNumber int) ([]models.LightDlsMessageResponse, []models.LightDlsMessageResponse, []models.LightDlsMessageResponse, int, error) {

@@ -41,6 +41,7 @@ import { Context } from '../../hooks/store';
 import Modal from '../../components/modal';
 import CloudModal from '../../components/cloudModal';
 import { FaArrowCircleUp } from 'react-icons/fa';
+import RefreshButton from '../../components/refreshButton';
 
 const StationsList = () => {
     const [state, dispatch] = useContext(Context);
@@ -203,6 +204,7 @@ const StationsList = () => {
                         </span>
                     </div>
                     <div className="right-side">
+                        <RefreshButton onClick={() => getAllStations()} isLoading={isLoading} />
                         <Button
                             height="34px"
                             placeholder={`Delete selected (${isCheck?.length})`}

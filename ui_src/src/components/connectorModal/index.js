@@ -27,6 +27,8 @@ import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import CloudModal from '../cloudModal';
 import { isCloud } from '../../services/valueConvertor';
+import { sendTrace } from '../../services/genericServices';
+
 import { connectorTypes } from '../../connectors';
 
 const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
@@ -81,8 +83,8 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
         else setIsEditing(true);
         value !== '' &&
             conntectorsNewFields[index]?.options?.push({
-                name: value,
-                value: value
+                name: value?.trim(),
+                value: value?.trim()
             });
         setConnectorInputFields(conntectorsNewFields);
     };
@@ -115,15 +117,24 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
         );
     const onFinish = async () => {
         try {
-            await connectorForm.validateFields();
             if (step === 1) {
-                isCloud() ? createConnector() : setCloudModalOpen(true);
+                try {
+                    await connectorForm.validateFields();
+                    sendTrace('createConnector', {
+                        name: formFields?.name,
+                        type: formFields?.type?.toLocaleLowerCase(),
+                        connector_type: formFields?.connector_type?.toLocaleLowerCase()
+                    });
+                    isCloud() ? createConnector() : setCloudModalOpen(true);
+                } catch (err) {
+                    return;
+                }
             } else {
                 resError ? setStep(1) : clickOutside();
                 setError(null);
             }
         } catch (err) {
-            console.log(err);
+            return;
         }
     };
 
@@ -133,7 +144,6 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
         setStep(2);
         try {
             const modifiedSettings = { ...formFields?.settings };
-
             for (const key in modifiedSettings) {
                 if (Array.isArray(modifiedSettings[key])) {
                     modifiedSettings[key] = modifiedSettings[key].join(',');
@@ -147,7 +157,7 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
                 settings: modifiedSettings,
                 partitions: [stationState?.stationPartition]
             });
-            newConnecor(data?.connector, source);
+            newConnecor(data?.connector, formFields?.connector_type?.toLocaleLowerCase());
         } catch (error) {
             setError(JSON.stringify(error));
         } finally {
@@ -155,7 +165,7 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
         }
     };
 
-    const generateFormItem = (input, index) => {
+    const generateFormItem = (input, index, depth, inputName) => {
         return (
             <>
                 <Form.Item
@@ -247,10 +257,17 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
                         />
                     )}
                 </Form.Item>
-                {input?.children &&
+
+                {depth === 0 &&
+                    input?.children &&
                     formFields?.settings &&
                     formFields?.settings[input?.name] &&
-                    connectorInputFields[index][formFields?.settings[input?.name]]?.map((child, index) => generateFormItem(child, index))}
+                    connectorInputFields[index][formFields?.settings[input?.name]]?.map((child, index) => generateFormItem(child, index, depth + 1, input?.name))}
+
+                {depth === 1 &&
+                    input?.children &&
+                    formFields?.settings[input?.name] &&
+                    input[formFields?.settings[input?.name]]?.map((child, index) => generateFormItem(child, index, depth + 1, input?.name))}
             </>
         );
     };
@@ -267,7 +284,6 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
             }
             className={'modal-wrapper produce-modal'}
             width="550px"
-            height="60vh"
             clickOutside={clickOutside}
             open={open}
             displayButtons={true}
@@ -317,16 +333,19 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
                                 disabled={false}
                             />
                         </Form.Item>
-                        <Divider />
-                        <div className="connector-inputs">
-                            {formFields?.type &&
-                                connectorInputFields?.map((input, index) => {
-                                    return generateFormItem(input, index);
-                                })}
-                        </div>
+                        {formFields?.type && (
+                            <>
+                                <Divider />
+                                <div className="connector-inputs">
+                                    {connectorInputFields?.map((input, index) => {
+                                        return generateFormItem(input, index, 0);
+                                    })}
+                                </div>
+                            </>
+                        )}
                     </Form>
                 )}
-                {step === 2 && !resError && (
+                {step === 2 && (!resError || (resError && Object.keys(resError)?.length === 0)) && (
                     <div className="validation">
                         {loading ? (
                             <>
@@ -339,7 +358,7 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
                     </div>
                 )}
 
-                {step === 2 && resError && !loading && <div className="result">{resError}</div>}
+                {step === 2 && resError && Object.keys(resError)?.length > 0 && !loading && <div className="result">{resError}</div>}
             </div>
             <CloudModal type="cloud" open={cloudModalopen} handleClose={() => setCloudModalOpen(false)} />
         </Modal>

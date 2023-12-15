@@ -1837,6 +1837,9 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 	if streamInfo.State.FirstSeq > 0 {
 		startSeq = streamInfo.State.FirstSeq
 	}
+	if streamInfo.State.LastSeq > ws_updates_interval_sec {
+		startSeq = streamInfo.State.LastSeq - ws_updates_interval_sec + 1
+	}
 
 	cc := ConsumerConfig{
 		OptStartSeq:   startSeq,
@@ -2343,6 +2346,10 @@ func (s *Server) ScaleFunctionWorkers() {
 	return
 }
 
+func (s *Server) ConnectorsDeadPodsRescheduler() {
+	return
+}
+
 func (s *Server) ConsumeFunctionsDlsMessages() {
 
 }
@@ -2592,4 +2599,12 @@ func deleteConnectorsStationResources(tenantName string, stationID int) error {
 
 func deleteConnectorsTenantResources(tenantName string) error {
 	return nil
+}
+
+func (s *Server) GetSourceConnectorsByStationAndPartition(stationID, partitionNumber, numOfPartitions int) ([]string, error) {
+	return []string{}, nil
+}
+
+func (ch ConsumersHandler) GetSinkConnectorsByStation(stationName StationName, station models.Station, partition int, partitions []int) ([]string, error) {
+	return []string{}, nil
 }

@@ -1,4 +1,10 @@
 .custom-collapse {
+
+    .ant-collapse-content-box {
+        max-height: 150px;
+        overflow-y: auto;
+    }
+
     position: relative;
     .collapse-arrow {
         transform: rotate(-90deg);

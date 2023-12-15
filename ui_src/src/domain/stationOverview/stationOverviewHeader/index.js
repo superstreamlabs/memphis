@@ -44,13 +44,14 @@ import TagsList from '../../../components/tagList';
 import Button from '../../../components/button';
 import Modal from '../../../components/modal';
 import Auditing from '../components/auditing';
+import RefreshButton from '../../../components/refreshButton';
 import AsyncTasks from '../../../components/asyncTasks';
 import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
 import { TIERED_STORAGE_UPLOAD_INTERVAL, LOCAL_STORAGE_ACCOUNT_ID, LOCAL_STORAGE_ENV, LOCAL_STORAGE_BROKER_HOST } from '../../../const/localStorageConsts';
 import { Context } from '../../../hooks/store';
 
-const StationOverviewHeader = () => {
+const StationOverviewHeader = ({ refresh }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [state, dispatch] = useContext(Context);
     const [updateSchemaModal, setUpdateSchemaModal] = useState(false);
@@ -65,6 +66,7 @@ const StationOverviewHeader = () => {
     const [useDlsModal, setUseDlsModal] = useState(false);
     const [disableModal, setDisableModal] = useState(false);
     const [disableLoader, setDisableLoader] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const getAllowedActions = useGetAllowedActions();
     const history = useHistory();
 
@@ -95,6 +97,10 @@ const StationOverviewHeader = () => {
                 break;
         }
     }, [stationState?.stationMetaData?.retention_type]);
+
+    useEffect(() => {
+        setIsLoading(false);
+    }, [stationState]);
 
     const returnToStaionsList = () => {
         history.push(pathDomains.stations);
@@ -177,6 +183,11 @@ const StationOverviewHeader = () => {
         }
     };
 
+    const handleRefreshStationData = () => {
+        setIsLoading(true);
+        refresh();
+    };
+
     return (
         <div className="station-overview-header">
             <div className="title-wrapper">
@@ -217,7 +228,9 @@ const StationOverviewHeader = () => {
                         </span>
                     </div>
                 </div>
+
                 <div className="station-buttons">
+                    <RefreshButton onClick={() => handleRefreshStationData()} isLoading={isLoading} />
                     {stationState?.stationMetaData?.partitions_number > 1 && (
                         <PartitionsFilter partitions_number={stationState?.stationMetaData?.partitions_number || 0} />
                     )}
@@ -239,7 +252,7 @@ const StationOverviewHeader = () => {
             <div className="details">
                 <div className="main-details">
                     <div className="left-side">
-                        <div className="flex-details-wrapper">
+                        <div className="storage-section">
                             <p>
                                 <b>Retention:</b> {retentionValue}
                             </p>
@@ -253,20 +266,28 @@ const StationOverviewHeader = () => {
                                     <HiOutlineExclamationCircle />
                                 </TooltipComponent>
                             )}
+                            <div className="flex-details-wrapper">
+                                {!isCloud() && (
+                                    <p style={{display: 'flex'}}>
+                                        <b>Partitions: </b>
+                                        {stationState?.stationMetaData?.partitions_number === 0 ? 1 : stationState?.stationMetaData?.partitions_number}
+                                    </p>)}
+                            </div>
                         </div>
                         <div className="storage-section">
-                            {!isCloud() && (
+                            {!isCloud() ? (
                                 <p>
                                     <b>Replicas:</b> {replicasConvertor(stationState?.stationMetaData?.replicas, false)}
                                 </p>
+                            ) : (
+                                <p>
+                                    <b>Partitions: </b>
+                                    {stationState?.stationMetaData?.partitions_number === 0 ? 1 : stationState?.stationMetaData?.partitions_number}
+                                </p>
                             )}
-                            <p>
-                                <b>Partitions: </b>
-                                {stationState?.stationMetaData?.partitions_number === 0 ? 1 : stationState?.stationMetaData?.partitions_number}
-                            </p>
                             <div className="flex-details-wrapper">
-                                <p style={{ display: 'flex' }}>
-                                    <b style={{ marginRight: '5px' }}>Dead-letter for: </b>
+                                <p style={{display: 'flex'}}>
+                                    <b style={{marginRight: '5px'}}>Dead-letter for: </b>
                                     {stationState?.stationSocketData?.act_as_dls_station_in_stations &&
                                     stationState?.stationSocketData?.act_as_dls_station_in_stations.length ? (
                                         <OverflowTip text={stationState?.stationSocketData?.act_as_dls_station_in_stations.join(', ')} maxWidth={'70px'}>

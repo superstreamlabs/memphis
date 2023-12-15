@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.0cf18b58.css",
-    "main.js": "/static/js/main.ef97735c.js",
+    "main.css": "/static/css/main.76219de5.css",
+    "main.js": "/static/js/main.9e0d0460.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -149,7 +149,7 @@
     "static/media/noTagsFound.svg": "/static/media/noTagsFound.337cbf0635c097bfc8f55174a6716d91.svg",
     "static/media/emptyTags.svg": "/static/media/emptyTags.cc3c010bc99b5579619b02885f447c9a.svg",
     "static/media/attachedPlaceholder.svg": "/static/media/attachedPlaceholder.b1f38ca10ba6cbd7af24f8b4dae01db8.svg",
-    "static/media/metricsErrorIcon.svg": "/static/media/metricsErrorIcon.a0fd01441cbb39e0561012ab82753c9b.svg",
+    "static/media/metricsErrorIcon.svg": "/static/media/metricsErrorIcon.f29aebbf9adb377253533d9ae0cd817e.svg",
     "static/media/cloudOnlyIcon.svg": "/static/media/cloudOnlyIcon.03429acada3dd36d70c7332fc129f0b3.svg",
     "static/media/DeadLetterInHours.svg": "/static/media/DeadLetterInHours.a4eeee945c9d499ac137ada117bd98aa.svg",
     "static/media/RestHostname.svg": "/static/media/RestHostname.4888794d8ee01dec3e16da8145982e2c.svg",
@@ -157,9 +157,9 @@
     "static/media/integrationIcon.svg": "/static/media/integrationIcon.20d1e3c63cd6d432f8b84d63a029d707.svg",
     "static/media/integrationIconColor.svg": "/static/media/integrationIconColor.a55aa8f85e8499c0c2bcdc72e2dea1a2.svg",
     "static/media/proccessingIcon.svg": "/static/media/proccessingIcon.46806ab06a768f68f876a0b4bc861a1c.svg",
+    "static/media/metricsIcon.svg": "/static/media/metricsIcon.c59e5910dc3e94d65bd3956770932228.svg",
     "static/media/DeadLetteredMessages.svg": "/static/media/DeadLetteredMessages.585f63bd9ae514421daf68c91edb41c1.svg",
     "static/media/newSchemaIcon.svg": "/static/media/newSchemaIcon.e5e9ffaa7702664cdd6f396d0b345c1e.svg",
-    "static/media/metricsIcon.svg": "/static/media/metricsIcon.901dec3f6f6a1b494a295c400c6991db.svg",
     "static/media/Calendar.svg": "/static/media/Calendar.af439a1c292c3e762d5df5de98f89502.svg",
     "static/media/newUserIcon.svg": "/static/media/newUserIcon.33b372f9d3e986e63ef6ab845da63c29.svg",
     "static/media/signup.svg": "/static/media/signup.c41faf7613261ce831d03037fb47806b.svg",
@@ -218,6 +218,7 @@
     "static/media/functionCardIcon.svg": "/static/media/functionCardIcon.b9a0a8a193310091eca7bab9f43f5bd2.svg",
     "static/media/asyncIcon.svg": "/static/media/asyncIcon.263cde6ac835b02e46217b9561d11eee.svg",
     "static/media/purge.svg": "/static/media/purge.138eb15dd4ab408a29c28c77b2616b8e.svg",
+    "static/media/orderingIcon.svg": "/static/media/orderingIcon.2da44318fa67dfc983d072676c90bdb4.svg",
     "static/media/testEventModalcon.svg": "/static/media/testEventModalcon.b9dc3f9d81be21e5f73506754cb64a58.svg",
     "static/media/consumeLagIcon.svg": "/static/media/consumeLagIcon.67333d12e2fa8213ea1d0231a1d9f170.svg",
     "static/media/rollBackIcon.svg": "/static/media/rollBackIcon.d27a828890f2a4e685738694d53dbfb5.svg",
@@ -236,7 +237,6 @@
     "static/media/logsActive.svg": "/static/media/logsActive.dd10b6ca576cba4444205502394b8456.svg",
     "static/media/storage.svg": "/static/media/storage.6a918fd2ccba4582d4b45da508962d21.svg",
     "static/media/functionIntegrate.svg": "/static/media/functionIntegrate.378f5726aca9c90df0c17fb6a228537b.svg",
-    "static/media/quickActionBtn.svg": "/static/media/quickActionBtn.128d63b0fb71e3b92c6d2a045472f13b.svg",
     "static/media/memphisFunctionIcon.svg": "/static/media/memphisFunctionIcon.eb8845f201448eb7f0846d760bd1cdaa.svg",
     "static/media/integrated.svg": "/static/media/integrated.d41f7d8e37e5b9404c9156672c0469fe.svg",
     "static/media/producerIcon.svg": "/static/media/producerIcon.37cc3a30a0e54a4b85ad25ce2965da0e.svg",
@@ -260,6 +260,7 @@
     "static/media/tagsIcon.svg": "/static/media/tagsIcon.105d4c97471f48d8cae78fa570b12475.svg",
     "static/media/star.svg": "/static/media/star.8699de919483296eb55b8a677dbb5c7e.svg",
     "static/media/purplePlus.svg": "/static/media/purplePlus.bfe969de4dc4fe79e31969de689acb4c.svg",
+    "static/media/cliIcon.svg": "/static/media/cliIcon.3d130733a0ae4bbcc5875c488aab2c5a.svg",
     "static/media/arrowRight.svg": "/static/media/arrowRight.1428c8d12a7b93f1b5cd7329e0837761.svg",
     "static/media/warnIcon.svg": "/static/media/warnIcon.bcd5179783b0503822d46c2ea334fb9b.svg",
     "static/media/arrowTopGray.svg": "/static/media/arrowTopGray.477b72b2dfd5c2a271571bbb94ad27e9.svg",
@@ -279,7 +280,6 @@
     "static/media/retentionIcon.svg": "/static/media/retentionIcon.1bad53366a0bc248fa647412a9b3a732.svg",
     "static/media/plusIconGray.svg": "/static/media/plusIconGray.1230ee93547e7d33b3202ec657d9657f.svg",
     "static/media/userPerson.svg": "/static/media/userPerson.ff1d63b3458add3062c152ad9b2ba333.svg",
-    "static/media/metricsClockIcon.svg": "/static/media/metricsClockIcon.25df1fbb0c4862c0adcaded25a52fb2c.svg",
     "static/media/remoteStorage.svg": "/static/media/remoteStorage.db23172541bec67ae83be84924574645.svg",
     "static/media/requestsGray.svg": "/static/media/requestsGray.4353f2c3977ca42e61270d98cf753381.svg",
     "static/media/integrationRequestIcon.svg": "/static/media/integrationRequestIcon.506de0d8af164310e144f90a3858c1cf.svg",
@@ -291,6 +291,7 @@
     "static/media/paymentsGray.svg": "/static/media/paymentsGray.5b47c51db2ea9b6ac864da7c7f1963f8.svg",
     "static/media/redirectIcon.svg": "/static/media/redirectIcon.fd4af1a8971f8bd9499888ffd8dd2a43.svg",
     "static/media/deleteWrapperIcon.svg": "/static/media/deleteWrapperIcon.d0f3e104cb36f0d99b55178735730d84.svg",
+    "static/media/metricsClockIcon.svg": "/static/media/metricsClockIcon.31976110104611c6e41bb2abdabdfc5a.svg",
     "static/media/paymentsColor.svg": "/static/media/paymentsColor.5d1339878ec45e734fff414b719b1124.svg",
     "static/media/usedIcon.svg": "/static/media/usedIcon.3ee64ce6307a6d01fec9e9b29d96674d.svg",
     "static/media/stopUsingIcon.svg": "/static/media/stopUsingIcon.7e0db2ab31e9777c5ec29a204dd7a982.svg",
@@ -332,10 +333,11 @@
     "static/media/processIcon.svg": "/static/media/processIcon.4fce57ee9aa3518f30f3326d044af8b1.svg",
     "static/media/createdDateIcon.svg": "/static/media/createdDateIcon.70a357bc6971cfb816442e264457fbbb.svg",
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg",
+    "static/media/collapseArrowWhite.svg": "/static/media/collapseArrowWhite.c68eb5ea1b76d27ff3a58051d4ce11e6.svg",
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.0cf18b58.css",
-    "static/js/main.ef97735c.js"
+    "static/css/main.76219de5.css",
+    "static/js/main.9e0d0460.js"
   ]
 }
