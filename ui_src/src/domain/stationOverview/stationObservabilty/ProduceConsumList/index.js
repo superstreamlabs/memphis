@@ -43,6 +43,7 @@ import { httpRequest } from '../../../../services/http';
 import Spinner from '../../../../components/spinner';
 import TooltipComponent from '../../../../components/tooltip/tooltip';
 import { isCloud } from '../../../../services/valueConvertor';
+import { sendTrace } from '../../../../services/genericServices';
 
 const overlayStylesConnectors = {
     borderRadius: '8px',
@@ -125,7 +126,7 @@ const ProduceConsumList = ({ producer }) => {
         {
             action: 'Develop a Consumer',
             onClick: () => {
-                setOpenCreateProducer(true);
+                setOpenCreateConsumer(true);
                 setOpenProducerPopover(false);
             }
         },
@@ -161,6 +162,11 @@ const ProduceConsumList = ({ producer }) => {
                 newConnecorList.splice(openConnectorPopoverItem, 1);
                 setConnectorsSinkList(newConnecorList);
             }
+            sendTrace('removeConnector', {
+                type: type,
+                connector: type === 'source' ? connectorsSourceList[openConnectorPopoverItem]?.type : connectorsSinkList[openConnectorPopoverItem]?.type,
+                name: type === 'source' ? connectorsSourceList[openConnectorPopoverItem]?.name : connectorsSinkList[openConnectorPopoverItem]?.name
+            });
             setLoader(false);
             setOpenConnectorPopover(false);
         } catch (error) {
@@ -184,6 +190,11 @@ const ProduceConsumList = ({ producer }) => {
                 newConnecorList[openConnectorPopoverItem].is_active = true;
                 setConnectorsSinkList(newConnecorList);
             }
+            sendTrace('startConnector', {
+                type: type,
+                connector: type === 'source' ? connectorsSourceList[openConnectorPopoverItem]?.type : connectorsSinkList[openConnectorPopoverItem]?.type,
+                name: type === 'source' ? connectorsSourceList[openConnectorPopoverItem]?.name : connectorsSinkList[openConnectorPopoverItem]?.name
+            });
             setLoader(false);
             setOpenConnectorPopover(false);
         } catch (error) {
@@ -206,6 +217,11 @@ const ProduceConsumList = ({ producer }) => {
                 newConnecorList[openConnectorPopoverItem].is_active = false;
                 setConnectorsSinkList(newConnecorList);
             }
+            sendTrace('stopConnector', {
+                type: type,
+                connector: type === 'source' ? connectorsSourceList[openConnectorPopoverItem]?.type : connectorsSinkList[openConnectorPopoverItem]?.type,
+                name: type === 'source' ? connectorsSourceList[openConnectorPopoverItem]?.name : connectorsSinkList[openConnectorPopoverItem]?.name
+            });
             setLoader(false);
             setOpenConnectorPopover(false);
         } catch (error) {
@@ -214,8 +230,9 @@ const ProduceConsumList = ({ producer }) => {
     };
 
     const handleNewConnector = (connector, source) => {
-        source ? setConnectorsSourceList([...connectorsSourceList, connector]) : setConnectorsSinkList([...connectorsSinkList, ...connector]);
+        source === 'source' ? setConnectorsSourceList([...connectorsSourceList, connector]) : setConnectorsSinkList([...connectorsSinkList, connector]);
     };
+
     useEffect(() => {
         if (producer) {
             let [result, activeConsumers] = concatFunction('producer', stationState?.stationSocketData);
@@ -430,7 +447,7 @@ const ProduceConsumList = ({ producer }) => {
                                             </span>
                                             <div style={{ width: '92px', maxWidth: '100%' }}>
                                                 {row?.connector_connection_id ? (
-                                                    ''
+                                                    'N/A'
                                                 ) : (
                                                     <TooltipComponent text="connected | disconnected" placement="right">
                                                         {row.connected_producers_count + ' | ' + row.disconnected_producers_count}

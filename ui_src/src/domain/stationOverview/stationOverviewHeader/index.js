@@ -252,7 +252,7 @@ const StationOverviewHeader = ({ refresh }) => {
             <div className="details">
                 <div className="main-details">
                     <div className="left-side">
-                        <div className="flex-details-wrapper">
+                        <div className="storage-section">
                             <p>
                                 <b>Retention:</b> {retentionValue}
                             </p>
@@ -266,20 +266,28 @@ const StationOverviewHeader = ({ refresh }) => {
                                     <HiOutlineExclamationCircle />
                                 </TooltipComponent>
                             )}
+                            <div className="flex-details-wrapper">
+                                {!isCloud() && (
+                                    <p style={{display: 'flex'}}>
+                                        <b>Partitions: </b>
+                                        {stationState?.stationMetaData?.partitions_number === 0 ? 1 : stationState?.stationMetaData?.partitions_number}
+                                    </p>)}
+                            </div>
                         </div>
                         <div className="storage-section">
-                            {!isCloud() && (
+                            {!isCloud() ? (
                                 <p>
                                     <b>Replicas:</b> {replicasConvertor(stationState?.stationMetaData?.replicas, false)}
                                 </p>
+                            ) : (
+                                <p>
+                                    <b>Partitions: </b>
+                                    {stationState?.stationMetaData?.partitions_number === 0 ? 1 : stationState?.stationMetaData?.partitions_number}
+                                </p>
                             )}
-                            <p>
-                                <b>Partitions: </b>
-                                {stationState?.stationMetaData?.partitions_number === 0 ? 1 : stationState?.stationMetaData?.partitions_number}
-                            </p>
                             <div className="flex-details-wrapper">
-                                <p style={{ display: 'flex' }}>
-                                    <b style={{ marginRight: '5px' }}>Dead-letter for: </b>
+                                <p style={{display: 'flex'}}>
+                                    <b style={{marginRight: '5px'}}>Dead-letter for: </b>
                                     {stationState?.stationSocketData?.act_as_dls_station_in_stations &&
                                     stationState?.stationSocketData?.act_as_dls_station_in_stations.length ? (
                                         <OverflowTip text={stationState?.stationSocketData?.act_as_dls_station_in_stations.join(', ')} maxWidth={'70px'}>

@@ -6,10 +6,11 @@
         justify-content: space-between;
         padding-bottom: 10px !important;
     }
+
     .paywall-header{
         p{
             font-family: 'InterSemiBold' !important;
-            font-size: 28px;
+            font-size: 24px;
             margin: 0;
         }
     }
@@ -22,7 +23,7 @@
         color: #667085;
     }
     .description, .question-info{
-        font-size: 14px;
+        font-size: 12px;
         color: #667085;
         font-family: 'Inter';
         display: flex;
@@ -53,10 +54,11 @@
             .stigg-header-wrapper{
                 min-height: 220px!important;
                 .stigg-plan-header{
-                    font-size: 22px;
+                    font-size: 20px;
                     font-family: 'InterSemiBold' !important;
                     //color: black !important;
                     color: #6C727F !important;
+                    padding-bottom: 0;
                 }
                 .typography-level-1{
                     font-family: 'InterSemiBold' !important;
@@ -101,8 +103,9 @@
                     .stigg-paywall-plan-button{
                         background: transparent !important;
                         border-color: var(--purple) !important;
-                        p{
+                        p {
                             color: var(--purple) !important;
+                            font-size: 15px!important;
                         }
                     }
                     .stigg-paywall-plan-button:hover{
@@ -137,12 +140,19 @@
                 height: 1px !important;
             }
             .stigg-plan-entitlements-container{
-                gap: 8px !important;
+                gap: 10px !important;
+                max-height: calc( 100vh - 550px);
+                min-height: 250px;
+                overflow-y: auto;
+                width: 100%;
                 .stigg-plan-entitlements-title{
-                    font-size: 16px!important;
+                    background: #fff;
+                    position: sticky;
+                    top: 0;
+                    padding-bottom: 5px!important;
+                    font-size: 14px!important;
                     font-weight: 300!important;
                     line-height: normal!important;
-                    margin-bottom: 8px!important;
                     color: black !important;
                     font-family: 'Inter' !important;
                 }

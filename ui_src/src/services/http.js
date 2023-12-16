@@ -22,7 +22,6 @@ import EmailLink from '../components/emailLink';
 import { showMessages } from './genericServices';
 
 export async function httpRequest(method, endPointUrl, data = {}, headers = {}, queryParams = {}, authNeeded = true, timeout = 0, serverUrl = null, displayMsg = true) {
-    let isSkipGetStarted;
     if (authNeeded) {
         const token = localStorage.getItem(LOCAL_STORAGE_TOKEN);
         headers['Authorization'] = 'Bearer ' + token;

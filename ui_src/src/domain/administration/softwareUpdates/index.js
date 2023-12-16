@@ -35,7 +35,7 @@ import AuthService from '../../../services/auth';
 import { Checkbox } from 'antd';
 import ImgUploader from './imgUploader';
 import { LOCAL_STORAGE_USER_TYPE, LOCAL_STORAGE_ACCOUNT_ID } from '../../../const/localStorageConsts';
-import TooltipComponent from '../../../components/tooltip/tooltip';
+import Support from '../../../components/sideBar/support';
 
 function SoftwareUpates({}) {
     const [state, dispatch] = useContext(Context);
@@ -241,7 +241,7 @@ function SoftwareUpates({}) {
                     </div>
                 </div>
             </div>
-            <CloudModal type={'bundle'} open={isCloudModalOpen} handleClose={() => setIsCloudModalOpen(false)} />
+
             <Modal
                 header={<DeleteWrapperIcon alt="deleteWrapperIcon" />}
                 width="520px"
@@ -265,6 +265,17 @@ function SoftwareUpates({}) {
                 />
                 <br />
             </Modal>
+            <Modal
+                width="400px"
+                height="550px"
+                className={'support-modal'}
+                displayButtons={false}
+                clickOutside={() => setIsCloudModalOpen(false)}
+                open={isCloud && isCloudModalOpen}
+            >
+                <Support closeModal={(e) => setIsCloudModalOpen(false)} />
+            </Modal>
+            <CloudModal type={'bundle'} open={!isCloud() && isCloudModalOpen} handleClose={() => setIsCloudModalOpen(false)} />
         </div>
     );
 }

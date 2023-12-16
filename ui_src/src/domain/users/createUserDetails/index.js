@@ -16,7 +16,6 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Form } from 'antd';
 import { HiLockClosed } from 'react-icons/hi';
 import Input from '../../../components/Input';
-import RadioButton from '../../../components/radioButton';
 import Button from '../../../components/button';
 import SelectComponent from '../../../components/select';
 import { httpRequest } from '../../../services/http';

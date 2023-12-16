@@ -82,7 +82,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		var created bool
 		station, created, err = CreateDefaultStation(user.TenantName, s, pStationName, user.ID, user.Username, "", 0)
 		if err != nil {
-			if strings.Contains(err.Error(), "already exists") {
+			if strings.Contains(err.Error(), "already exists") ||  strings.Contains(err.Error(), "max amount") {
 				serv.Warnf("[tenant: %v][user: %v]createProducerDirectCommon at CreateDefaultStation: creating default station error - producer %v at station %v: %v", user.TenantName, user.Username, pName, pStationName.external, err.Error())
 			} else {
 				serv.Errorf("[tenant: %v][user: %v]createProducerDirectCommon at CreateDefaultStation: creating default station error - producer %v at station %v: %v", user.TenantName, user.Username, pName, pStationName.external, err.Error())
