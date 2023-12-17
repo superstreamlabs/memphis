@@ -4742,7 +4742,6 @@ func CountAllUsers() (int64, error) {
 func CountAllUsersByTenant(tenantName string, filterOutApplicationUsers bool) (int64, error) {
 	var count int64
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
