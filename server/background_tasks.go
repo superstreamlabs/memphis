@@ -621,38 +621,9 @@ func (s *Server) RemoveOldProducersAndConsumers() {
 	for range ticker.C {
 		for tenantName, rt := range s.opts.GCProducersConsumersRetentionHours {
 			configurationTime := time.Now().Add(time.Hour * time.Duration(-rt))
-			deletedCGs, err := db.DeleteOldProducersAndConsumers(configurationTime, tenantName)
+			_, err := db.DeleteOldProducersAndConsumers(configurationTime, tenantName)
 			if err != nil {
 				serv.Errorf("RemoveOldProducersAndConsumers at DeleteOldProducersAndConsumers : %v", err.Error())
-			}
-
-			var CGsList []string
-			for _, cg := range deletedCGs {
-				CGsList = append(CGsList, cg.CGName)
-			}
-
-			remainingCG, err := db.GetAllDeletedConsumersFromList(CGsList)
-			if err != nil {
-				serv.Errorf("RemoveOldProducersAndConsumers at GetAllDeletedConsumersFromList: %v", err.Error())
-			}
-
-			CGmap := make(map[string]string)
-			for _, name := range remainingCG {
-				CGmap[name] = "."
-			}
-
-			for _, cg := range deletedCGs {
-				if _, ok := CGmap[cg.CGName]; !ok {
-					_, err := StationNameFromStr(cg.StationName)
-					if err == nil {
-						err = db.RemovePoisonedCg(cg.StationId, cg.CGName)
-						if err != nil {
-							serv.Errorf("RemoveOldProducersAndConsumers at RemovePoisonedCg: %v", err.Error())
-						}
-					} else {
-						serv.Errorf("RemoveOldProducersAndConsumers at StationNameFromStr: %v", err.Error())
-					}
-				}
 			}
 		}
 	}
