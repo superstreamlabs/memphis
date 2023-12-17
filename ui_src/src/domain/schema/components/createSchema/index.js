@@ -521,8 +521,7 @@ function CreateSchema({ createNew }) {
                                         htmlType="button"
                                         disabled={
                                             formFields?.schema_content === '' ||
-                                            formFields?.schema_content?.includes('type') ||
-                                            formFields?.schema_content?.includes('properties')
+                                            formFields?.schema_content?.includes('$schema')
                                         }
                                         onClick={() => handleConvetJsonToJsonSchema(formFields?.schema_content)}
                                     />
