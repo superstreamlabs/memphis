@@ -643,13 +643,8 @@ func (s *Server) RemoveOldProducersAndConsumers() {
 
 			for _, cg := range deletedCGs {
 				if _, ok := CGmap[cg.CGName]; !ok {
-					stationName, err := StationNameFromStr(cg.StationName)
+					_, err := StationNameFromStr(cg.StationName)
 					if err == nil {
-						err = s.RemoveConsumer(cg.TenantName, stationName, cg.CGName, cg.PartitionsList)
-						if err != nil {
-							serv.Errorf("RemoveOldProducersAndConsumers at RemoveConsumer: %v", err.Error())
-						}
-
 						err = db.RemovePoisonedCg(cg.StationId, cg.CGName)
 						if err != nil {
 							serv.Errorf("RemoveOldProducersAndConsumers at RemovePoisonedCg: %v", err.Error())
