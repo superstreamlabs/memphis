@@ -25,7 +25,11 @@ import {
     LOCAL_STORAGE_ENV,
     LOCAL_STORAGE_REST_GW_HOST,
     LOCAL_STORAGE_REST_GW_PORT,
-    LOCAL_STORAGE_USER_PASS_BASED_AUTH
+    LOCAL_STORAGE_USER_PASS_BASED_AUTH,
+    LOCAL_STORAGE_PRODUCER_COMMUNICATION_TYPE,
+    LOCAL_STORAGE_PRODUCER_PROGRAMMING_LANGUAGE,
+    LOCAL_STORAGE_CONSUMER_COMMUNICATION_TYPE,
+    LOCAL_STORAGE_CONSUMER_PROGRAMMING_LANGUAGE,
 } from '../../const/localStorageConsts';
 import GenerateTokenModal from '../../domain/stationOverview/components/generateTokenModal';
 import { ReactComponent as NoCodeExampleIcon } from '../../assets/images/noCodeExample.svg';
@@ -104,6 +108,26 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
     useEffect(() => {
         protocolSelected === 'SDK' ? changeSDKDynamicCode(langSelected) : changeRestDynamicCode(langSelected);
     }, [formFields, tabValue]);
+
+    useEffect(() => {
+        const communicationTypeStorage = !consumer ? LOCAL_STORAGE_PRODUCER_COMMUNICATION_TYPE : LOCAL_STORAGE_CONSUMER_COMMUNICATION_TYPE;
+        const communicationType = localStorage.getItem(communicationTypeStorage);
+        if (communicationType) setProtocolSelected(communicationType);
+
+        const programmingLanguageStorage = !consumer ? LOCAL_STORAGE_PRODUCER_PROGRAMMING_LANGUAGE : LOCAL_STORAGE_CONSUMER_PROGRAMMING_LANGUAGE;
+        const programmingLanguage = localStorage.getItem(programmingLanguageStorage);
+        if (programmingLanguage) setLangSelected(programmingLanguage);
+    }, []);
+
+    useEffect(() => {
+        const communicationType = !consumer ? LOCAL_STORAGE_PRODUCER_COMMUNICATION_TYPE : LOCAL_STORAGE_CONSUMER_COMMUNICATION_TYPE;
+        localStorage.setItem(communicationType, protocolSelected);
+    }, [protocolSelected]);
+
+    useEffect(() => {
+        const programmingLanguage = !consumer ? LOCAL_STORAGE_PRODUCER_PROGRAMMING_LANGUAGE : LOCAL_STORAGE_CONSUMER_PROGRAMMING_LANGUAGE;
+        localStorage.setItem(programmingLanguage, langSelected);
+    }, [langSelected]);
 
     const updateFormFields = (field, value) => {
         setFormFields({ ...formFields, [field]: value });

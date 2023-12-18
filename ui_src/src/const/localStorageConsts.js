@@ -44,3 +44,7 @@ export const LOGS_RETENTION_IN_DAYS = 'logs_retention';
 export const TIERED_STORAGE_UPLOAD_INTERVAL = 'tiered_storage_time_sec';
 export const USER_IMAGE = 'user_image';
 export const LOCAL_STORAGE_FUNCTION_PAGE_VIEW = 'function_page_view';
+export const LOCAL_STORAGE_PRODUCER_COMMUNICATION_TYPE = 'producer_communication_type';
+export const LOCAL_STORAGE_PRODUCER_PROGRAMMING_LANGUAGE = 'producer_programming_language';
+export const LOCAL_STORAGE_CONSUMER_COMMUNICATION_TYPE = 'consumer_communication_type';
+export const LOCAL_STORAGE_CONSUMER_PROGRAMMING_LANGUAGE = 'consumer_programming_language';
