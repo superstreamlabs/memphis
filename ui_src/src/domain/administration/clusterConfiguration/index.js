@@ -113,42 +113,31 @@ function ClusterConfiguration() {
             {!isLoading && (
                 <>
                     <div className="configuration-body">
-                        {isCloud() ? (
-                            <SliderRow
-                                title="DEAD LETTERED MESSAGES RETENTION IN HOURS"
-                                desc="Amount of hours to retain dead lettered messages in a DLS"
-                                value={formFields?.dls_retention}
-                                img={DeadLetterInHours}
-                                min={1}
-                                max={30}
-                                unit={'h'}
-                                onChanges={(e) => handleChange('dls_retention', e)}
-                            />
-                        ) : (
+                        <SliderRow
+                            title="DEAD LETTERED MESSAGES RETENTION IN HOURS"
+                            desc="Amount of hours to retain dead lettered messages in a DLS"
+                            value={formFields?.dls_retention}
+                            img={DeadLetterInHours}
+                            min={1}
+                            max={30}
+                            unit={'h'}
+                            onChanges={(e) => handleChange('dls_retention', e)}
+                        />
+                        <SliderRow
+                            title="DISCONNECTED PRODUCERS AND CONSUMERS RETENTION"
+                            desc="Amount of hours to retain inactive producers and consumers"
+                            value={formFields?.gc_producer_consumer_retention_hours}
+                            img={DeadLetterInHours}
+                            min={1}
+                            max={48}
+                            unit={'h'}
+                            onChanges={(e) => handleChange('gc_producer_consumer_retention_hours', e)}
+                        />
+                        {!isCloud() && (
                             <>
                                 <SliderRow
-                                    title="DEAD LETTERED MESSAGES RETENTION IN HOURS"
-                                    desc="Amount of hours to retain dead lettered messages in a DLS"
-                                    value={formFields?.dls_retention}
-                                    img={DeadLetterInHours}
-                                    min={1}
-                                    max={30}
-                                    unit={'h'}
-                                    onChanges={(e) => handleChange('dls_retention', e)}
-                                />
-                                <SliderRow
-                                    title="DISCONNECTED PRODUCERS AND CONSUMERS RETENTION"
-                                    desc="Amount of hours to retain inactive producerd and consumers"
-                                    value={formFields?.gc_producer_consumer_retention_hours}
-                                    img={DeadLetterInHours}
-                                    min={1}
-                                    max={48}
-                                    unit={'h'}
-                                    onChanges={(e) => handleChange('gc_producer_consumer_retention_hours', e)}
-                                />
-                                <SliderRow
                                     title="MAX MESSAGE SIZE"
-                                    desc="Maximum  message size (payload + headers) in megabytes"
+                                    desc="Maximum message size (payload + headers) in megabytes"
                                     value={formFields?.max_msg_size_mb}
                                     img={DeadLetterInHours}
                                     min={1}
@@ -171,12 +160,11 @@ function ClusterConfiguration() {
                                     desc="(if configured) The interval which the broker will migrate a batch of messages to the second storage tier"
                                     img={TieredStorageInterval}
                                     value={formFields?.tiered_storage_time_sec}
-                                    onChanges={(e, err) => {
-                                        handleChange('tiered_storage_time_sec', e, err);
-                                    }}
+                                    onChanges={(e, err) => handleChange('tiered_storage_time_sec', e, err)}
                                 />
                             </>
                         )}
+
                         {localStorage.getItem(LOCAL_STORAGE_ENV) !== 'docker' && !isCloud() && (
                             <>
                                 <InputRow
