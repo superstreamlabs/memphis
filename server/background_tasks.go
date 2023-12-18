@@ -610,7 +610,7 @@ func (s *Server) RemoveOldDlsMsgs() {
 			configurationTime := time.Now().Add(time.Hour * time.Duration(-rt))
 			err := db.DeleteOldDlsMessageByRetention(configurationTime, tenantName)
 			if err != nil {
-				serv.Errorf("RemoveOldDlsMsgs: %v", err.Error())
+				serv.Errorf("[tenant: %v]RemoveOldDlsMsgs: %v", tenantName, err.Error())
 			}
 		}
 	}
@@ -619,44 +619,11 @@ func (s *Server) RemoveOldDlsMsgs() {
 func (s *Server) RemoveOldProducersAndConsumers() {
 	ticker := time.NewTicker(15 * time.Minute)
 	for range ticker.C {
-		timeInterval := time.Now().Add(time.Duration(time.Hour * -time.Duration(s.opts.GCProducersConsumersRetentionHours)))
-		deletedCGs, err := db.DeleteOldProducersAndConsumers(timeInterval)
-		if err != nil {
-			serv.Errorf("RemoveOldProducersAndConsumers at DeleteOldProducersAndConsumers : %v", err.Error())
-		}
-
-		var CGsList []string
-		for _, cg := range deletedCGs {
-			CGsList = append(CGsList, cg.CGName)
-		}
-
-		remainingCG, err := db.GetAllDeletedConsumersFromList(CGsList)
-		if err != nil {
-			serv.Errorf("RemoveOldProducersAndConsumers at GetAllDeletedConsumersFromList: %v", err.Error())
-		}
-
-		CGmap := make(map[string]string)
-		for _, name := range remainingCG {
-			CGmap[name] = "."
-		}
-
-		for _, cg := range deletedCGs {
-			if _, ok := CGmap[cg.CGName]; !ok {
-				stationName, err := StationNameFromStr(cg.StationName)
-				if err == nil {
-					err = s.RemoveConsumer(cg.TenantName, stationName, cg.CGName, cg.PartitionsList)
-					if err != nil {
-						serv.Errorf("RemoveOldProducersAndConsumers at RemoveConsumer: %v", err.Error())
-					}
-
-					err = db.RemovePoisonedCg(cg.StationId, cg.CGName)
-					if err != nil {
-						serv.Errorf("RemoveOldProducersAndConsumers at RemovePoisonedCg: %v", err.Error())
-					}
-				} else {
-					serv.Errorf("RemoveOldProducersAndConsumers at StationNameFromStr: %v", err.Error())
-				}
-
+		for tenantName, rt := range s.opts.GCProducersConsumersRetentionHours {
+			configurationTime := time.Now().Add(time.Hour * time.Duration(-rt))
+			err := db.DeleteOldProducersAndConsumers(configurationTime, tenantName)
+			if err != nil {
+				serv.Errorf("[tenant: %v]RemoveOldProducersAndConsumers at DeleteOldProducersAndConsumers : %v", tenantName, err.Error())
 			}
 		}
 	}

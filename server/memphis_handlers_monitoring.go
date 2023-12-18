@@ -707,7 +707,6 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	
 	var response gin.H
 
 	// Check when the schema object in station is not empty, not optional for non native stations

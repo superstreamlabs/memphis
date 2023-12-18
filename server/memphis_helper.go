@@ -1513,6 +1513,10 @@ func GetMemphisOpts(opts *Options) (*Options, error) {
 		opts.DlsRetentionHours = make(map[string]int)
 	}
 
+	if opts.GCProducersConsumersRetentionHours == nil { // for cases the broker started without config file
+		opts.GCProducersConsumersRetentionHours = make(map[string]int)
+	}
+
 	for _, conf := range configs {
 		switch conf.Key {
 		case "dls_retention":
@@ -1535,7 +1539,7 @@ func GetMemphisOpts(opts *Options) (*Options, error) {
 			opts.MaxPayload = int32(v * 1024 * 1024)
 		case "gc_producer_consumer_retention_hours":
 			v, _ := strconv.Atoi(conf.Value)
-			opts.GCProducersConsumersRetentionHours = v
+			opts.GCProducersConsumersRetentionHours[conf.TenantName] = v
 		}
 	}
 

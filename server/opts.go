@@ -294,7 +294,7 @@ type Options struct {
 	LogsRetentionDays                  int            `json:"-"`
 	TieredStorageUploadIntervalSec     int            `json:"-"`
 	DlsRetentionHours                  map[string]int `json:"-"`
-	GCProducersConsumersRetentionHours int            `json:"-"`
+	GCProducersConsumersRetentionHours map[string]int `json:"-"`
 	UiHost                             string         `json:"-"`
 	RestGwHost                         string         `json:"-"`
 	BrokerHost                         string         `json:"-"`
@@ -1531,7 +1531,8 @@ func (o *Options) processConfigFileLine(k string, v interface{}, errors *[]error
 			*errors = append(*errors, &configErr{tk, "error gc_producer_consumer_retention_hours config: has to be positive and not more than 168"})
 			return
 		}
-		o.GCProducersConsumersRetentionHours = value
+		o.GCProducersConsumersRetentionHours = make(map[string]int)
+		o.GCProducersConsumersRetentionHours[conf.MemphisGlobalAccountName] = value
 
 	case "ui_host":
 		value := v.(string)
@@ -4898,8 +4899,10 @@ func setBaselineOptions(opts *Options) {
 	if opts.LogsRetentionDays == 0 {
 		opts.LogsRetentionDays = 7
 	}
-	if opts.GCProducersConsumersRetentionHours == 0 {
-		opts.GCProducersConsumersRetentionHours = 2
+	for tenant, value := range opts.GCProducersConsumersRetentionHours {
+		if value == 0 {
+			opts.GCProducersConsumersRetentionHours[tenant] = DEFAULT_GC_PRODUCER_CONSUMER_RETENTION_HOURS
+		}
 	}
 	if opts.TieredStorageUploadIntervalSec == 0 {
 		opts.TieredStorageUploadIntervalSec = DEFAULT_TIERED_STORAGE_UPLOAD_INTERVAL_SEC

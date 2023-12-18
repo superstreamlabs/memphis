@@ -1039,6 +1039,17 @@ func (s *Server) UploadTenantUsageToDB() error {
 func IncrementEventCounter(tenantName string, eventType string, size int64, amount int64, subj string, msg []byte, hdr []byte) {
 }
 
+type EditClusterConfigSchema struct {
+	DlsRetention                       int    `json:"dls_retention" binding:"required"`
+	LogsRetention                      int    `json:"logs_retention" binding:"required"`
+	BrokerHost                         string `json:"broker_host"`
+	UiHost                             string `json:"ui_host"`
+	RestGWHost                         string `json:"rest_gw_host"`
+	TSTimeSec                          int    `json:"tiered_storage_time_sec"`
+	MaxMsgSizeMb                       int    `json:"max_msg_size_mb"`
+	GCProducersConsumersRetentionHours int    `json:"gc_producer_consumer_retention_hours" binding:"required"`
+}
+
 func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
@@ -1047,7 +1058,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 		return
 	}
 
-	var body models.EditClusterConfigSchema
+	var body EditClusterConfigSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
@@ -1060,7 +1071,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 			return
 		}
 	}
-	if ch.S.opts.GCProducersConsumersRetentionHours != body.GCProducersConsumersRetentionHours {
+	if ch.S.opts.GCProducersConsumersRetentionHours[user.TenantName] != body.GCProducersConsumersRetentionHours {
 		err := changeGCProducersConsumersRetentionHours(body.GCProducersConsumersRetentionHours, user.TenantName)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]EditConfigurations at changeGCProducersConsumersRetentionHours: %v", user.TenantName, user.Username, err.Error())
@@ -1080,6 +1091,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 		if body.TSTimeSec > 3600 || body.TSTimeSec < 5 {
 			serv.Errorf("[tenant: %v][user: %v]EditConfigurations: Tiered storage time can't be less than 5 seconds or more than 60 minutes", user.TenantName, user.Username)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Tiered storage time can't be less than 5 seconds or more than 60 minutes"})
+			return
 		} else {
 			err := changeTSTime(body.TSTimeSec)
 			if err != nil {
@@ -1177,7 +1189,7 @@ func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 		"rest_gw_host":                         ch.S.opts.RestGwHost,
 		"tiered_storage_time_sec":              ch.S.opts.TieredStorageUploadIntervalSec,
 		"max_msg_size_mb":                      ch.S.opts.MaxPayload / 1024 / 1024,
-		"gc_producer_consumer_retention_hours": ch.S.opts.GCProducersConsumersRetentionHours,
+		"gc_producer_consumer_retention_hours": ch.S.opts.GCProducersConsumersRetentionHours[user.TenantName],
 	})
 }
 

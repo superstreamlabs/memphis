@@ -6691,70 +6691,40 @@ func GetAllUsersInDB() (bool, []models.User, error) {
 	return true, users, nil
 }
 
-func DeleteOldProducersAndConsumers(timeInterval time.Time) ([]models.LightCG, error) {
+func DeleteOldProducersAndConsumers(timeInterval time.Time, tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return []models.LightCG{}, err
+		return err
 	}
 	defer conn.Release()
 
-	var queries []string
-	queries = append(queries, "DELETE FROM producers WHERE is_active = false AND updated_at < $1")
-	queries = append(queries, "WITH deleted AS (DELETE FROM consumers WHERE is_active = false AND updated_at < $1 RETURNING *) SELECT deleted.consumers_group, s.name as station_name, deleted.station_id , deleted.tenant_name, deleted.partitions FROM deleted INNER JOIN stations s ON deleted.station_id = s.id GROUP BY deleted.consumers_group, s.name, deleted.station_id, deleted.tenant_name, deleted.partitions")
+	queries := []string{
+		`DELETE FROM producers WHERE is_active = false AND updated_at < $1 AND tenant_name = $2`,
+		`DELETE FROM consumers
+		WHERE is_active = false AND updated_at < $1 AND tenant_name = $2
+		AND id NOT IN (
+			SELECT MIN(id)
+			FROM consumers
+			WHERE is_active = false AND updated_at < $1 AND tenant_name = $2
+			GROUP BY consumers_group
+		)`,
+	}
 
 	batch := &pgx.Batch{}
 	for _, q := range queries {
-		batch.Queue(q, timeInterval)
+		batch.Queue(q, timeInterval, tenantName)
 	}
 
 	br := conn.SendBatch(ctx, batch)
 
 	_, err = br.Exec()
 	if err != nil {
-		return []models.LightCG{}, err
+		return err
 	}
 
-	rows, err := br.Query()
-	if err != nil {
-		return []models.LightCG{}, err
-	}
-
-	cgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.LightCG])
-	if err != nil {
-		return []models.LightCG{}, err
-	}
-
-	return cgs, err
-}
-
-func GetAllDeletedConsumersFromList(consumers []string) ([]string, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return []string{}, err
-	}
-	defer conn.Release()
-	query := "SELECT consumers_group FROM consumers WHERE consumers_group = ANY($1) GROUP BY station_id, consumers_group"
-
-	rows, err := conn.Query(ctx, query, consumers)
-	if err != nil {
-		return []string{}, err
-	}
-	defer rows.Close()
-	var remainingCG []string
-	for rows.Next() {
-		var cgName string
-		err := rows.Scan(&cgName)
-		if err != nil {
-			return []string{}, err
-		}
-		remainingCG = append(remainingCG, cgName)
-	}
-
-	return remainingCG, nil
+	return nil
 }
 
 func RemovePoisonedCg(stationId int, cgName string) error {
