@@ -610,7 +610,7 @@ func (s *Server) RemoveOldDlsMsgs() {
 			configurationTime := time.Now().Add(time.Hour * time.Duration(-rt))
 			err := db.DeleteOldDlsMessageByRetention(configurationTime, tenantName)
 			if err != nil {
-				serv.Errorf("RemoveOldDlsMsgs: %v", err.Error())
+				serv.Errorf("[tenant: %v]RemoveOldDlsMsgs: %v", tenantName, err.Error())
 			}
 		}
 	}
@@ -621,9 +621,9 @@ func (s *Server) RemoveOldProducersAndConsumers() {
 	for range ticker.C {
 		for tenantName, rt := range s.opts.GCProducersConsumersRetentionHours {
 			configurationTime := time.Now().Add(time.Hour * time.Duration(-rt))
-			_, err := db.DeleteOldProducersAndConsumers(configurationTime, tenantName)
+			err := db.DeleteOldProducersAndConsumers(configurationTime, tenantName)
 			if err != nil {
-				serv.Errorf("RemoveOldProducersAndConsumers at DeleteOldProducersAndConsumers : %v", err.Error())
+				serv.Errorf("[tenant: %v]RemoveOldProducersAndConsumers at DeleteOldProducersAndConsumers : %v", tenantName, err.Error())
 			}
 		}
 	}

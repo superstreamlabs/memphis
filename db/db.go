@@ -6691,12 +6691,12 @@ func GetAllUsersInDB() (bool, []models.User, error) {
 	return true, users, nil
 }
 
-func DeleteOldProducersAndConsumers(timeInterval time.Time, tenantName string) ([]models.LightCG, error) {
+func DeleteOldProducersAndConsumers(timeInterval time.Time, tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return []models.LightCG{}, err
+		return err
 	}
 	defer conn.Release()
 
@@ -6735,48 +6735,10 @@ func DeleteOldProducersAndConsumers(timeInterval time.Time, tenantName string) (
 
 	_, err = br.Exec()
 	if err != nil {
-		return []models.LightCG{}, err
+		return err
 	}
 
-	rows, err := br.Query()
-	if err != nil {
-		return []models.LightCG{}, err
-	}
-
-	cgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.LightCG])
-	if err != nil {
-		return []models.LightCG{}, err
-	}
-
-	return cgs, err
-}
-
-func GetAllDeletedConsumersFromList(consumers []string) ([]string, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return []string{}, err
-	}
-	defer conn.Release()
-	query := "SELECT consumers_group FROM consumers WHERE consumers_group = ANY($1) GROUP BY station_id, consumers_group"
-
-	rows, err := conn.Query(ctx, query, consumers)
-	if err != nil {
-		return []string{}, err
-	}
-	defer rows.Close()
-	var remainingCG []string
-	for rows.Next() {
-		var cgName string
-		err := rows.Scan(&cgName)
-		if err != nil {
-			return []string{}, err
-		}
-		remainingCG = append(remainingCG, cgName)
-	}
-
-	return remainingCG, nil
+	return nil
 }
 
 func RemovePoisonedCg(stationId int, cgName string) error {
