@@ -6702,28 +6702,14 @@ func DeleteOldProducersAndConsumers(timeInterval time.Time, tenantName string) e
 
 	queries := []string{
 		`DELETE FROM producers WHERE is_active = false AND updated_at < $1 AND tenant_name = $2`,
-		`WITH deleted AS (
-            DELETE FROM consumers
-            WHERE is_active = false AND updated_at < $1 AND tenant_name = $2
-            AND id NOT IN (
-                SELECT MIN(id)
-                FROM consumers
-                WHERE is_active = false AND updated_at < $1 AND tenant_name = $2
-                GROUP BY consumers_group
-            )
-            RETURNING *
-        )
-        SELECT
-            deleted.consumers_group,
-            s.name as station_name,
-            deleted.station_id,
-            deleted.tenant_name,
-            deleted.partitions
-        FROM
-            deleted
-            INNER JOIN stations s ON deleted.station_id = s.id
-        GROUP BY
-            deleted.consumers_group, s.name, deleted.station_id, deleted.tenant_name, deleted.partitions`,
+		`DELETE FROM consumers
+		WHERE is_active = false AND updated_at < $1 AND tenant_name = $2
+		AND id NOT IN (
+			SELECT MIN(id)
+			FROM consumers
+			WHERE is_active = false AND updated_at < $1 AND tenant_name = $2
+			GROUP BY consumers_group
+		)`,
 	}
 
 	batch := &pgx.Batch{}
