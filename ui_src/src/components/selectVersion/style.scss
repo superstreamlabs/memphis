@@ -14,6 +14,13 @@
             margin-left: 10px;
         }
     }
+    .schema-name {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: nowrap;
+    }
 }
 .select-version-options{
     background: #FFFFFF;
