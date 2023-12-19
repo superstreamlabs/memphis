@@ -16,10 +16,8 @@ import StatusIndication from '../indication';
 const ConsumerWithStatus = ({ name, count, is_active }) => {
     return (
         <>
-            <span className="title-with-count">
-            {name}
-            </span>   
-            {count > 1 && <span className="consumer-number-title">{count}</span>}
+            <span className="title-with-count">{name}</span>
+            {count > 1 && <span className="consumer-number-title">{count?.toLocaleString()}</span>}
             <status is="x3d">
                 <StatusIndication is_active={is_active} is_deleted={false} />
             </status>

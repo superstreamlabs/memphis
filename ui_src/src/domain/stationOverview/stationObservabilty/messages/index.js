@@ -48,8 +48,6 @@ import { Divider } from 'antd';
 import FunctionsOverview from '../components/functionsOverview';
 import CloudModal from '../../../../components/cloudModal';
 import { ReactComponent as CleanDisconnectedProducersIcon } from '../../../../assets/images/clean_disconnected_producers.svg';
-import { json } from 'generate-schema';
-import pathDomains from '../../../../router';
 
 const Messages = ({ referredFunction }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -59,7 +57,15 @@ const Messages = ({ referredFunction }) => {
     const [resendProcced, setResendProcced] = useState(false);
     const [ignoreProcced, setIgnoreProcced] = useState(false);
     const [userScrolled, setUserScrolled] = useState(false);
-    const [subTabValue, setSubTabValue] = useState('Unacknowledged');
+    const [subTabValue, setSubTabValue] = useState(
+        stationState && stationState?.stationSocketData?.poison_messages?.length > 0
+            ? 'Unacknowledged'
+            : stationState?.stationSocketData?.schema_failed_messages?.length > 0
+            ? 'Schema violation'
+            : stationState?.stationSocketData?.functions_failed_messages?.length > 0
+            ? 'Functions'
+            : 'Unacknowledged'
+    );
     const [tabValue, setTabValue] = useState('Messages');
     const [isCheck, setIsCheck] = useState([]);
     const [useDlsModal, setUseDlsModal] = useState(false);
@@ -71,6 +77,10 @@ const Messages = ({ referredFunction }) => {
     const dls = stationState?.stationMetaData?.dls_station === '' ? null : stationState?.stationMetaData?.dls_station;
     const tabs = ['Messages', 'Dead-letter', 'Configuration'];
     const [disableLoaderCleanDisconnectedProducers, setDisableLoaderCleanDisconnectedProducers] = useState(false);
+
+    const url = window.location.href;
+    const stationName = url.split('stations/')[1];
+
     const subTabs = isCloud()
         ? [
               { name: 'Unacknowledged', disabled: false },
@@ -81,8 +91,6 @@ const Messages = ({ referredFunction }) => {
               { name: 'Unacknowledged', disabled: false },
               { name: 'Schema violation', disabled: !stationState?.stationMetaData?.is_native }
           ];
-    const url = window.location.href;
-    const stationName = url.split('stations/')[1];
 
     useEffect(() => {
         activeTab === 'general' && setTabValue('Messages');
@@ -167,9 +175,13 @@ const Messages = ({ referredFunction }) => {
         stationDispatch({ type: 'SET_SELECTED_ROW_PARTITION', payload: null });
         setSelectedRowIndex(null);
         setIsCheck([]);
-
         setTabValue(newValue);
-        subTabValue === 'Schema violation' && setSubTabValue('Unacknowledged');
+        if (newValue === tabs[1]) {
+            if (stationState?.stationSocketData?.poison_messages?.length > 0) setSubTabValue(subTabs[0]?.name);
+            else if (stationState?.stationSocketData?.schema_failed_messages?.length > 0) setSubTabValue(subTabs[1]?.name);
+            else if (stationState?.stationSocketData?.functions_failed_messages?.length > 0) setSubTabValue(subTabs[2]?.name);
+            else setSubTabValue(subTabs[0]?.name);
+        }
     };
 
     useEffect(() => {
@@ -456,10 +468,20 @@ const Messages = ({ referredFunction }) => {
                     {tabValue === tabs[1] && (
                         <div className="tabs">
                             <CustomTabs
-                                defaultValue
+                                // defaultValue
+                                defaultActiveKey={
+                                    stationState && stationState?.stationSocketData?.poison_messages?.length > 0
+                                        ? 'Unacknowledged'
+                                        : stationState?.stationSocketData?.schema_failed_messages?.length > 0
+                                        ? 'Schema violation'
+                                        : stationState?.stationSocketData?.functions_failed_messages?.length > 0
+                                        ? 'Functions'
+                                        : 'Unacknowledged'
+                                }
                                 value={subTabValue}
                                 onChange={handleChangeSubMenuItem}
                                 tabs={subTabs}
+                                activeTab={subTabValue}
                                 length={[
                                     stationState?.stationSocketData?.poison_messages?.length || null,
                                     stationState?.stationSocketData?.schema_failed_messages?.length || null,
