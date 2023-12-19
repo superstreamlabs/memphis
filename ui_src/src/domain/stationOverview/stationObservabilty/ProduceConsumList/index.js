@@ -25,6 +25,7 @@ import { ReactComponent as ProducerIcon } from '../../../../assets/images/produc
 import { ReactComponent as ConnectIcon } from '../../../../assets/images/connectIcon.svg';
 import { IoPlayCircleOutline, IoRemoveCircleOutline, IoPause, IoWarning } from 'react-icons/io5';
 import { HiDotsVertical } from 'react-icons/hi';
+import { MdError } from 'react-icons/md';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { ReactComponent as UnsupportedIcon } from '../../../../assets/images/unsupported.svg';
 import StatusIndication from '../../../../components/indication';
@@ -89,8 +90,8 @@ const ProduceConsumList = ({ producer }) => {
     const [selectedConnector, setSelectedConnector] = useState(null);
     const [openConnectorModal, setOpenConnectorModal] = useState(false);
     const [openConnectorError, setOpenConnectorError] = useState(false);
+    const [actionItem, setActionItem] = useState(null);
     const [loading, setLoader] = useState(false);
-
     const producerItemsList = [
         {
             action: 'Produce Synthetic Data',
@@ -248,7 +249,7 @@ const ProduceConsumList = ({ producer }) => {
 
     useEffect(() => {
         arrangeData(selectedRowIndex);
-    }, [producersList, cgsList]);
+    }, [producersList, cgsList, connectorsSinkList]);
 
     const concatFunction = (type, data) => {
         let connected = [];
@@ -273,6 +274,8 @@ const ProduceConsumList = ({ producer }) => {
             concatArrays = connected.concat(disconnected);
             concatArrays = concatArrays.concat(deleted);
             return concatArrays;
+        } else if (type === 'sinks') {
+            return [];
         } else {
             connected = data?.connected_consumers || [];
             disconnected = data?.disconnected_consumers || [];
@@ -289,7 +292,9 @@ const ProduceConsumList = ({ producer }) => {
     };
 
     const arrangeData = (rowIndex) => {
-        let concatAllConsumers = concatFunction('consumers', cgsList[rowIndex]);
+        let concatAllConsumers = cgsList[rowIndex]
+            ? concatFunction('consumers', cgsList[rowIndex] || connectorsSinkList[rowIndex - cgsList?.length])
+            : concatFunction('sinks', cgsList[rowIndex] || connectorsSinkList[rowIndex - cgsList?.length]);
         let consumersDetails = [];
         concatAllConsumers.map((row, index) => {
             let consumer = {
@@ -304,23 +309,28 @@ const ProduceConsumList = ({ producer }) => {
             details: [
                 {
                     name: 'Unacknowledged messages',
-                    value: cgsList[rowIndex]?.poison_messages?.toLocaleString()
+                    value: cgsList[rowIndex]?.poison_messages?.toLocaleString() || connectorsSinkList[rowIndex - cgsList?.length]?.poison_messages?.toLocaleString()
                 },
                 {
                     name: 'Unprocessed messages',
-                    value: cgsList[rowIndex]?.unprocessed_messages?.toLocaleString()
+                    value:
+                        cgsList[rowIndex]?.unprocessed_messages?.toLocaleString() ||
+                        connectorsSinkList[rowIndex - cgsList?.length]?.unprocessed_messages?.toLocaleString()
                 },
                 {
                     name: 'In process message',
-                    value: cgsList[rowIndex]?.in_process_messages?.toLocaleString()
+                    value:
+                        cgsList[rowIndex]?.in_process_messages?.toLocaleString() || connectorsSinkList[rowIndex - cgsList?.length]?.in_process_messages?.toLocaleString()
                 },
                 {
                     name: 'Max ack time',
-                    value: `${cgsList[rowIndex]?.max_ack_time_ms?.toLocaleString()}ms`
+                    value: `${
+                        cgsList[rowIndex]?.max_ack_time_ms?.toLocaleString() || connectorsSinkList[rowIndex - cgsList?.length]?.max_ack_time_ms?.toLocaleString()
+                    }ms`
                 },
                 {
                     name: 'Max message deliveries',
-                    value: cgsList[rowIndex]?.max_msg_deliveries
+                    value: cgsList[rowIndex]?.max_msg_deliveries || connectorsSinkList[rowIndex - cgsList?.length]?.max_msg_deliveries
                 }
             ],
             consumers: consumersDetails
@@ -336,6 +346,11 @@ const ProduceConsumList = ({ producer }) => {
         } else if (is_deleted) {
             return 'pubSub-row deleted';
         } else return 'pubSub-row';
+    };
+
+    const handleConnectorErr = (index, row) => {
+        setSelectedConnector(row);
+        setOpenConnectorError(true);
     };
 
     const restGWHost =
@@ -357,8 +372,8 @@ const ProduceConsumList = ({ producer }) => {
                             <p className="title">
                                 <TooltipComponent text="max allowed producers" placement="right">
                                     <>
-                                        Sources ({(producersList?.length > 0 && countProducers(producersList)) || 0}
-                                        {isCloud() && '/' + stationState?.stationSocketData?.max_amount_of_allowed_producers})
+                                        Sources ({(producersList?.length > 0 && countProducers(producersList).toLocaleString()) || 0}
+                                        {isCloud() && '/' + stationState?.stationSocketData?.max_amount_of_allowed_producers?.toLocaleString()})
                                     </>
                                 </TooltipComponent>
                             </p>
@@ -379,7 +394,8 @@ const ProduceConsumList = ({ producer }) => {
                     {!producer && (
                         <span className="poduce-consume-header">
                             <p className="title">
-                                Consumer groups {(cgsList?.length > 0 || connectorsSinkList?.length > 0) && `(${cgsList?.length + connectorsSinkList?.length})`}
+                                Consumer groups{' '}
+                                {(cgsList?.length > 0 || connectorsSinkList?.length > 0) && `(${(cgsList?.length + connectorsSinkList?.length)?.toLocaleString()})`}
                             </p>
                             <Popover
                                 overlayInnerStyle={overlayStylesConnectors}
@@ -398,18 +414,18 @@ const ProduceConsumList = ({ producer }) => {
                 </div>
                 {producer && (producersList?.length > 0 || connectorsSourceList?.length > 0) && (
                     <div className="coulmns-table">
-                        <span style={{ width: '100px' }}>Name</span>
-                        <span style={{ width: '100px' }}>Count</span>
-                        <span style={{ width: '35px' }}>Status</span>
+                        <span style={{ width: '120px' }}>Name</span>
+                        <span style={{ width: '120px' }}>Count</span>
+                        <span style={{ width: '40px' }}>Status</span>
                         <span style={{ width: '20px' }}></span>
                     </div>
                 )}
                 {!producer && (cgsList.length > 0 || connectorsSinkList?.length > 0) && (
                     <div className="coulmns-table">
-                        <span style={{ width: '60px' }}>Name</span>
-                        <span style={{ width: '100px', textAlign: 'center' }}>Unacknowledged</span>
+                        <span style={{ width: '120px' }}>Name</span>
+                        <span style={{ width: '80px', textAlign: 'center' }}>Unacked</span>
                         <span style={{ width: '80px', textAlign: 'center' }}>Unprocessed</span>
-                        <span style={{ width: '35px', textAlign: 'center' }}>Status</span>
+                        <span style={{ width: '45px', textAlign: 'center' }}>Status</span>
                         <span style={{ width: '20px' }}></span>
                     </div>
                 )}
@@ -444,18 +460,23 @@ const ProduceConsumList = ({ producer }) => {
                                                 <OverflowTip text={row.name} width={'80px'}>
                                                     {row.name}
                                                 </OverflowTip>
+                                                {row?.error_logs_exist && (
+                                                    <span onClick={() => handleConnectorErr(index, row)}>
+                                                        <MdError size={'16px'} fill={'#E54F4F'} />
+                                                    </span>
+                                                )}
                                             </span>
                                             <div style={{ width: '92px', maxWidth: '100%' }}>
                                                 {row?.connector_connection_id ? (
                                                     'N/A'
                                                 ) : (
-                                                    <TooltipComponent text="connected | disconnected">
-                                                        {row.connected_producers_count + ' | ' + row.disconnected_producers_count}
+                                                    <TooltipComponent text="connected | disconnected" placement="right">
+                                                        {row?.connected_producers_count?.toLocaleString() + ' | ' + row?.disconnected_producers_count?.toLocaleString()}
                                                     </TooltipComponent>
                                                 )}
                                             </div>
                                             <span className="status-icon" style={{ width: '38px' }}>
-                                                <StatusIndication is_active={row.is_active} is_deleted={row.is_active} />
+                                                <StatusIndication is_active={row?.is_active} is_deleted={row?.is_active} />
                                             </span>
                                             <Popover
                                                 overlayInnerStyle={overlayStyleConnectors}
@@ -470,16 +491,21 @@ const ProduceConsumList = ({ producer }) => {
                                                     <>
                                                         <MenuItem
                                                             name={row?.is_active ? 'Pause' : 'Play'}
-                                                            onClick={() => (row?.is_active ? stopConnector('source') : startConnector('source'))}
+                                                            onClick={() => {
+                                                                setActionItem(0);
+                                                                row?.is_active ? stopConnector('source') : startConnector('source');
+                                                            }}
                                                             icon={row?.is_active ? <IoPause /> : <IoPlayCircleOutline />}
+                                                            loader={loading && actionItem === 0}
                                                         />
                                                         <MenuItem
                                                             name={'Disconnect'}
                                                             onClick={() => {
+                                                                setActionItem(1);
                                                                 removeConnector('source');
                                                             }}
                                                             icon={<IoRemoveCircleOutline />}
-                                                            loader={loading && openConnectorPopoverItem === index}
+                                                            loader={loading && actionItem === 1}
                                                         />
                                                         <MenuItem
                                                             name={'Erros'}
@@ -520,9 +546,14 @@ const ProduceConsumList = ({ producer }) => {
                                                         <ProducerIcon />
                                                     </TooltipComponent>
                                                 )}
-                                                <OverflowTip text={row.name} width={'80px'}>
-                                                    {row.name}
+                                                <OverflowTip text={row?.name} width={'80px'}>
+                                                    {row?.name}
                                                 </OverflowTip>
+                                                {row?.error_logs_exist && (
+                                                    <span onClick={() => handleConnectorErr(index, row)}>
+                                                        <MdError size={'16px'} fill={'#E54F4F'} />
+                                                    </span>
+                                                )}
                                             </span>
                                             <OverflowTip
                                                 text={row?.poison_messages?.toLocaleString()}
@@ -530,10 +561,10 @@ const ProduceConsumList = ({ producer }) => {
                                                 textAlign={'center'}
                                                 textColor={row?.poison_messages > 0 ? '#F7685B' : null}
                                             >
-                                                {row?.poison_messages?.toLocaleString()}
+                                                {row?.poison_messages?.toLocaleString() || 0}
                                             </OverflowTip>
                                             <OverflowTip text={row?.unprocessed_messages?.toLocaleString()} width={'80px'} textAlign={'center'}>
-                                                {row?.unprocessed_messages?.toLocaleString()}
+                                                {row?.unprocessed_messages?.toLocaleString() || 0}
                                             </OverflowTip>
                                             <span className="status-icon" style={{ width: '35px' }}>
                                                 <StatusIndication is_active={row?.is_active} is_deleted={row?.is_deleted} />
@@ -551,10 +582,22 @@ const ProduceConsumList = ({ producer }) => {
                                                     <>
                                                         <MenuItem
                                                             name={row?.is_active ? 'Pause' : 'Play'}
-                                                            onClick={() => (row?.is_active ? stopConnector('sink') : startConnector('sink'))}
+                                                            onClick={() => {
+                                                                setActionItem(0);
+                                                                row?.is_active ? stopConnector('sink') : startConnector('sink');
+                                                            }}
                                                             icon={row?.is_active ? <IoPause /> : <IoPlayCircleOutline />}
+                                                            loader={loading && actionItem === 0}
                                                         />
-                                                        <MenuItem name={'Disconnect'} onClick={() => removeConnector('sink')} icon={<IoRemoveCircleOutline />} />
+                                                        <MenuItem
+                                                            name={'Disconnect'}
+                                                            onClick={() => {
+                                                                setActionItem(1);
+                                                                removeConnector('sink');
+                                                            }}
+                                                            icon={<IoRemoveCircleOutline />}
+                                                            loader={loading && actionItem === 1}
+                                                        />
                                                         <MenuItem
                                                             name={'Erros'}
                                                             onClick={() => {
@@ -583,10 +626,10 @@ const ProduceConsumList = ({ producer }) => {
                         </div>
                         <div style={{ marginRight: '10px' }} id={producer ? 'producer-details' : 'consumer-details'}>
                             {producer && (producersList?.length > 0 || connectorsSourceList?.length > 0)}
-                            {!producer && cgsList?.length > 0 && (
+                            {!producer && (cgsList?.length > 0 || connectorsSourceList?.length > 0) && (
                                 <Space direction="vertical">
-                                    <CustomCollapse header="Details" status={false} defaultOpen={true} data={cgDetails.details} />
-                                    <CustomCollapse header="Consumers" data={cgDetails.consumers} consumerList={true} />
+                                    <CustomCollapse header="Details" status={false} defaultOpen={true} data={cgDetails?.details} />
+                                    <CustomCollapse header="Consumers" data={cgDetails?.consumers} consumerList={true} />
                                 </Space>
                             )}
                         </div>

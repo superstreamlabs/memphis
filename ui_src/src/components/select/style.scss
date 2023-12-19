@@ -16,7 +16,15 @@
         background-color: transparent;
     }
     .ant-select-selection-item span {
-        display: none;
+        // display: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        .comment {
+            margin-left: 5px;
+            color: #5e5e68 !important;
+            font-family: 'Inter' !important;
+        }
     }
     label {
         display: flex;

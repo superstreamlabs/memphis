@@ -224,14 +224,14 @@ const GenerateTokenModal = ({ host, close, returnToken, restProducer, stationNam
                             <div className="api-token">
                                 <p className="field-title">Produce</p>
                                 <div className="input-and-copy" onClick={() => produceConsumeRest('produce')}>
-                                    <span className="url-span">{`https://${host}.restgw.cloud.memphis.dev/stations/${stationName}/produce/single?authorization=${userToken?.jwt_refresh_token}`}</span>
+                                    <span className="url-span">{`${host}.restgw.cloud.memphis.dev/stations/${stationName}/produce/single?authorization=${userToken?.jwt_refresh_token}`}</span>
                                     <Copy data={userToken?.jwt_refresh_token} width={20} />
                                 </div>
                             </div>
                             <div className="api-token">
                                 <p className="field-title">Consume</p>
                                 <div className="input-and-copy" onClick={() => produceConsumeRest('consume')}>
-                                    <span className="url-span">{`https://${host}.restgw.cloud.memphis.dev/stations/${stationName}/consume/batch?authorization=${userToken?.jwt_refresh_token}`}</span>
+                                    <span className="url-span">{`${host}.restgw.cloud.memphis.dev/stations/${stationName}/consume/batch?authorization=${userToken?.jwt_refresh_token}`}</span>
                                     <Copy data={userToken?.jwt_refresh_token} width={20} />
                                 </div>
                             </div>

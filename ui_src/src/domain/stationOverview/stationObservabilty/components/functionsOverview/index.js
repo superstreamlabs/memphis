@@ -181,7 +181,10 @@ const FunctionsOverview = ({ referredFunction, dismissFunction, moveToGenralView
         setCurrentFunction(null);
     };
 
-    const isDataMoving = stationState?.stationSocketData?.connected_producers?.length > 0 && stationState?.stationMetaData?.is_native;
+    const isDataMoving =
+        (stationState?.stationSocketData?.connected_producers?.length > 0 ||
+            stationState?.stationSocketData?.source_connectors?.filter((connector) => connector?.is_active)?.length > 0) &&
+        stationState?.stationMetaData?.is_native;
 
     const statisticsData = [
         { name: 'Awaiting msgs', data: stationState?.stationFunctions?.total_awaiting_messages?.toLocaleString() },
