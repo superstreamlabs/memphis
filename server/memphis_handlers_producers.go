@@ -82,7 +82,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		var created bool
 		station, created, err = CreateDefaultStation(user.TenantName, s, pStationName, user.ID, user.Username, "", 0)
 		if err != nil {
-			if strings.Contains(err.Error(), "already exists") ||  strings.Contains(err.Error(), "max amount") {
+			if strings.Contains(err.Error(), "already exists") || strings.Contains(err.Error(), "max amount") {
 				serv.Warnf("[tenant: %v][user: %v]createProducerDirectCommon at CreateDefaultStation: creating default station error - producer %v at station %v: %v", user.TenantName, user.Username, pName, pStationName.external, err.Error())
 			} else {
 				serv.Errorf("[tenant: %v][user: %v]createProducerDirectCommon at CreateDefaultStation: creating default station error - producer %v at station %v: %v", user.TenantName, user.Username, pName, pStationName.external, err.Error())
@@ -256,23 +256,27 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	respondWithResp(s.MemphisGlobalAccountString(), s, reply, &resp)
 }
 
-func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]models.ExtendedProducer, []models.ExtendedProducer, []models.ExtendedProducer, error) { // for socket io endpoint
+func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]models.ExtendedProducerResponse, []models.ExtendedProducerResponse, []models.ExtendedProducerResponse, error) { // for socket io endpoint
 	producers, err := db.GetAllProducersByStationID(station.ID)
 	if err != nil {
-		return []models.ExtendedProducer{}, []models.ExtendedProducer{}, []models.ExtendedProducer{}, err
+		return []models.ExtendedProducerResponse{}, []models.ExtendedProducerResponse{}, []models.ExtendedProducerResponse{}, err
 	}
 
-	var connectedProducers []models.ExtendedProducer
-	var disconnectedProducers []models.ExtendedProducer
-	var deletedProducers []models.ExtendedProducer
+	var connectedProducers []models.ExtendedProducerResponse
+	var disconnectedProducers []models.ExtendedProducerResponse
+	var deletedProducers []models.ExtendedProducerResponse
 	producersNames := []string{}
 
 	for _, producer := range producers {
 		if slices.Contains(producersNames, producer.Name) {
 			continue
 		}
+		needToUpdateVersion := false
+		if producer.Version < lastProducerConsumerCreationReqVersion {
+			needToUpdateVersion = true
+		}
 
-		producerExtendedRes := models.ExtendedProducer{
+		producerExtendedRes := models.ExtendedProducerResponse{
 			ID:                         producer.ID,
 			Name:                       producer.Name,
 			StationName:                producer.StationName,
@@ -280,6 +284,8 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 			IsActive:                   producer.IsActive,
 			DisconnedtedProducersCount: producer.DisconnedtedProducersCount,
 			ConnectedProducersCount:    producer.ConnectedProducersCount,
+			Sdk:                        producer.Sdk,
+			NeedToUpdateVersion:        needToUpdateVersion,
 		}
 
 		producersNames = append(producersNames, producer.Name)
@@ -291,15 +297,15 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 	}
 
 	if len(connectedProducers) == 0 {
-		connectedProducers = []models.ExtendedProducer{}
+		connectedProducers = []models.ExtendedProducerResponse{}
 	}
 
 	if len(disconnectedProducers) == 0 {
-		disconnectedProducers = []models.ExtendedProducer{}
+		disconnectedProducers = []models.ExtendedProducerResponse{}
 	}
 
 	if len(deletedProducers) == 0 {
-		deletedProducers = []models.ExtendedProducer{}
+		deletedProducers = []models.ExtendedProducerResponse{}
 	}
 
 	sort.Slice(connectedProducers, func(i, j int) bool {

@@ -51,10 +51,11 @@ var noMetricsInstalledLog bool
 var noMetricsPermissionLog bool
 
 const (
-	healthyStatus   = "healthy"
-	unhealthyStatus = "unhealthy"
-	dangerousStatus = "dangerous"
-	riskyStatus     = "risky"
+	healthyStatus                          = "healthy"
+	unhealthyStatus                        = "unhealthy"
+	dangerousStatus                        = "dangerous"
+	riskyStatus                            = "risky"
+	lastProducerConsumerCreationReqVersion = 3
 )
 
 func clientSetClusterConfig() error {
@@ -530,7 +531,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		functionsEnabled = false
 	}
 
-	connectedProducers, disconnectedProducers, deletedProducers := make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0)
+	connectedProducers, disconnectedProducers, deletedProducers := make([]models.ExtendedProducerResponse, 0), make([]models.ExtendedProducerResponse, 0), make([]models.ExtendedProducerResponse, 0)
 	if station.IsNative {
 		connectedProducers, disconnectedProducers, deletedProducers, err = producersHandler.GetProducersByStation(station)
 		if err != nil {

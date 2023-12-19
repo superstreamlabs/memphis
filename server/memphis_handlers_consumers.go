@@ -344,7 +344,11 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 	if err != nil {
-		s.Errorf("[tenant: %v][user: %v]createConsumerDirect at getSchemaUpdateInitFromStation: Consumer %v at station %v: %v", ccr.TenantName, ccr.Username, ccr.Name, ccr.StationName, err.Error())
+		if strings.Contains(err.Error(), "not exist") {
+			s.Warnf("[tenant: %v][user: %v]createConsumerDirect at getSchemaUpdateInitFromStation: Consumer %v at station %v: %v", ccr.TenantName, ccr.Username, ccr.Name, ccr.StationName, err.Error())
+		} else {
+			s.Errorf("[tenant: %v][user: %v]createConsumerDirect at getSchemaUpdateInitFromStation: Consumer %v at station %v: %v", ccr.TenantName, ccr.Username, ccr.Name, ccr.StationName, err.Error())
+		}
 		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		return
 	}
@@ -382,9 +386,9 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 				Name:                  consumer.ConsumersGroup,
 				MaxAckTimeMs:          consumer.MaxAckTimeMs,
 				MaxMsgDeliveries:      consumer.MaxMsgDeliveries,
-				ConnectedConsumers:    []models.ExtendedConsumer{},
-				DisconnectedConsumers: []models.ExtendedConsumer{},
-				DeletedConsumers:      []models.ExtendedConsumer{},
+				ConnectedConsumers:    []models.ExtendedConsumerResponse{},
+				DisconnectedConsumers: []models.ExtendedConsumerResponse{},
+				DeletedConsumers:      []models.ExtendedConsumerResponse{},
 				IsActive:              consumer.IsActive,
 				LastStatusChangeDate:  consumer.UpdatedAt,
 				PartitionsList:        consumer.PartitionsList,
@@ -399,16 +403,23 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 			cg = m[consumer.ConsumersGroup]
 		}
 
-		consumerRes := models.ExtendedConsumer{
-			ID:               consumer.ID,
-			Name:             consumer.Name,
-			IsActive:         consumer.IsActive,
-			ConsumersGroup:   consumer.ConsumersGroup,
-			MaxAckTimeMs:     consumer.MaxAckTimeMs,
-			MaxMsgDeliveries: consumer.MaxMsgDeliveries,
-			StationName:      consumer.StationName,
-			Count:            consumer.Count,
-			PartitionsList:   consumer.PartitionsList,
+		needToUpdateVersion := false
+		if consumer.Version < lastProducerConsumerCreationReqVersion {
+			needToUpdateVersion = true
+		}
+
+		consumerRes := models.ExtendedConsumerResponse{
+			ID:                  consumer.ID,
+			Name:                consumer.Name,
+			IsActive:            consumer.IsActive,
+			ConsumersGroup:      consumer.ConsumersGroup,
+			MaxAckTimeMs:        consumer.MaxAckTimeMs,
+			MaxMsgDeliveries:    consumer.MaxMsgDeliveries,
+			StationName:         consumer.StationName,
+			Count:               consumer.Count,
+			PartitionsList:      consumer.PartitionsList,
+			Sdk:                 consumer.Sdk,
+			NeedToUpdateVersion: needToUpdateVersion,
 		}
 
 		if consumer.IsActive {
