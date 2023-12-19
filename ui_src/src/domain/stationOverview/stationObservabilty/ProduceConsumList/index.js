@@ -449,7 +449,7 @@ const ProduceConsumList = ({ producer }) => {
                                                 {row?.connector_connection_id ? (
                                                     'N/A'
                                                 ) : (
-                                                    <TooltipComponent text="connected | disconnected" placement="right">
+                                                    <TooltipComponent text="connected | disconnected">
                                                         {row.connected_producers_count + ' | ' + row.disconnected_producers_count}
                                                     </TooltipComponent>
                                                 )}
