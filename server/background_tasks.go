@@ -625,6 +625,11 @@ func (s *Server) RemoveOldProducersAndConsumers() {
 			if err != nil {
 				serv.Errorf("[tenant: %v]RemoveOldProducersAndConsumers at DeleteOldProducersAndConsumers : %v", tenantName, err.Error())
 			}
+			time := time.Now().Add(-time.Hour * 3 * 24)
+			err = db.RemoveAuditLogsByTenantAndCreatedAt(tenantName, time)
+			if err != nil {
+				serv.Errorf("[tenant: %v]RemoveOldProducersAndConsumers at RemoveAuditLogsByTenantAndCreatedAt : %v", tenantName, err.Error())
+			}
 		}
 	}
 }

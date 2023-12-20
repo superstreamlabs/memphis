@@ -1099,6 +1099,26 @@ func RemoveAuditLogsByTenant(tenantName string) error {
 	return nil
 }
 
+func RemoveAuditLogsByTenantAndCreatedAt(tenantName string, createdAt time.Time) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	query := `DELETE FROM audit_logs WHERE tenant_name = $1 AND created_at < $2`
+	stmt, err := conn.Conn().Prepare(ctx, "remove_audit_logs_by_tenant_and_created_at", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, tenantName, createdAt)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Station Functions
 func GetActiveStationsPerTenant(tenantName string) ([]models.Station, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
