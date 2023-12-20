@@ -238,7 +238,7 @@ function SideBar() {
 
     const MenuItem = ({ icon, activeIcon, name, route, onClick, onMouseEnter, onMouseLeave, badge }) => {
         return (
-            <div className={'item-wrapper ' + (state.route === route ? 'ms-active' : '')} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onClick={onClick}>
+            <div className={'item-wrapper ' + (state.route === route ? 'ms-active ' : '') + (hoveredItem === route ? 'item-wrapper-hovered' : '')} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onClick={onClick}>
                 <div className="icon">{state.route === route ? activeIcon : hoveredItem === route ? activeIcon : icon}</div>
                 <p className={state.route === route ? 'checked' : 'name'}>{name}</p>
                 {badge && <label className="badge">{badge}</label>}
@@ -246,7 +246,7 @@ function SideBar() {
         );
     };
 
-    const PopoverActionItem = ({ icon, name, onClick, upgrade }) => {
+    const PopoverActionItem = ({icon, name, onClick, upgrade}) => {
         upgrade && setBannerType('upgrade');
         return (
             <div

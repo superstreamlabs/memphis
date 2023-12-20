@@ -34,7 +34,7 @@ html.dark-mode {
 
     button, .upgrade-button-wrapper, .integration-name svg, .memphis-gif svg, .data-box svg,
     .canvas-wrapper svg, .circle-img svg, .versions svg, .logo-wrapper svg, .schema-box-wrapper .is-used svg,
-    .station-meta svg, .details-wrapper svg, .item-wrapper.ms-active .icon svg, .item-wrap .icons svg, .loader-uploading svg,
+    .station-meta svg, .details-wrapper svg, .item-wrap .icons svg, .loader-uploading svg,
     svg.lock-feature-icon, .ant-modal-content button svg, svg.icons-sidebar, .station-overview-container svg,
     .header-icon svg, .header-img-container svg, .integrate-header svg, deatils downloads svg,
     .git-repos-item .repo-item-icon-memphis, .ant-drawer-header-title svg {
@@ -46,10 +46,6 @@ html.dark-mode {
     svg.collapse-arrow-icon, .collapse-arrow, .messages-amount svg, actions svg, .ant-drawer-close svg {
       filter: initial;
     }
-
-    //.ant-drawer-header-title svg {
-    //  filter: $color-invert-filter-reverse;
-    //}
 
     .bottom-sidebar-icons .item-wrap svg path, {
       fill: $color-text-dark !important;
@@ -115,7 +111,7 @@ html.dark-mode {
   }
 
   .station-overview-container .pubSub-list-container .header, .ant-tabs-top > .ant-tabs-nav::before, .ant-tabs-bottom > .ant-tabs-nav::before, .ant-tabs-top > div > .ant-tabs-nav::before, .ant-tabs-bottom > div > .ant-tabs-nav::before,
-  .pubSub-list-container .coulmns-table, .station-overview-header .details .info-buttons .audit,  {
+  .pubSub-list-container .coulmns-table, .station-overview-header .details .info-buttons .audit, {
     border-color: $color-border-medium !important;
   }
 
@@ -180,7 +176,7 @@ html.dark-mode {
     }
 
     .ant-collapse-item {
-      background: transparent!important;
+      background: transparent !important;
     }
   }
 
@@ -271,16 +267,19 @@ html.dark-mode {
   }
 
   .function-box-wrapper {
-    background: $color-background-medium!important;
+    background: $color-background-medium !important;
     border-color: transparent;
+
     .button-container.uninstall-btn {
       filter: $color-invert-filter-reverse;
     }
+
     footer {
       border-color: $color-border-medium;
     }
+
     .function-name > * {
-      color: $color-text-dark!important;
+      color: $color-text-dark !important;
     }
   }
 
@@ -387,38 +386,44 @@ html.dark-mode {
   .badgeGreen {
     background: #86e1ac;
   }
+
   .badgeOrange {
     background: #f5cfab;
   }
 
   .function-drawer-container {
     .ant-tree {
-      background: transparent!important;
+      background: transparent !important;
     }
+
     .drawer-header svg {
       filter: $color-invert-filter-reverse;
     }
+
     .action-section-btn .header-flex:nth-child(1), .action-section-btn .button-container:nth-child(2) button {
       filter: none;
     }
   }
+
   .users-container .user-action .button-container button {
     filter: initial;
   }
+
   .ant-table-cell.ant-table-cell-row-hover {
-    background: darken(#E6EAE8, 3%)!important;
+    background: darken(#E6EAE8, 3%) !important;
   }
 
   .requests-container .usage-details .segment-data .tab-container, .stigg-customer-portal-subscriptions-overview, .stigg-payment-details-section-layout,
   .stigg-invoices-section-layout {
-    background: darken(#E6EAE8, 2%)!important;
+    background: darken(#E6EAE8, 2%) !important;
   }
 
   .stigg-plan-offering-container, .stigg-period-picker-container {
     background: darken(#E6EAE8, 2%);
   }
+
   .pricing-plans-modal .emcdfp60 .stigg-plan-offering-container .stigg-plan-entitlements-container .stigg-plan-entitlements-title {
-    background: transparent!important;
+    background: transparent !important;
   }
 
   .pricing-plans-modal .emcdfp60 .stigg-plan-offering-container .stigg-header-wrapper .stigg-paywall-plan-button-layout button[disabled] {
@@ -435,12 +440,12 @@ html.dark-mode {
   }
 
   .ms-function-card-inner, .tab-functions-inner-add {
-    border-color: $color-border-light!important;
+    border-color: $color-border-light !important;
   }
 
   .ant-form-item {
     .ant-select-selector, input {
-      background-color: transparent!important;
+      background-color: transparent !important;
     }
   }
 
@@ -462,7 +467,7 @@ html.dark-mode {
   }
 
   .log-content-wrapper log-header, .log-content-wrapper log-content {
-    border-color: $color-border-light!important;
+    border-color: $color-border-light !important;
   }
 
   .logs-wrapper logs, .log-content-wrapper {
@@ -474,6 +479,10 @@ html.dark-mode {
     filter: none;
   }
 
+  .ant-form-item-control-input-content .button-container {
+    display: none;
+  }
+
   .logs-wrapper logs .logsl .even .log-payload {
     background: $color-background-light;
   }
@@ -481,11 +490,25 @@ html.dark-mode {
   .log-badge-container .badge.warn {
     background-color: rgb(160 128 22);
   }
+
   .log-badge-container .badge.info {
     background-color: #939595;
   }
+
   .log-badge-container .error {
     background-color: rgb(228 128 102);
+  }
+
+  input[type="text"], .ant-input-password, .ant-select.select, .install-copy {
+    border-color: $color-border-medium !important;
+  }
+
+  .ant-form-item-control-input-content .button-container:first-child button {
+    filter: none;
+  }
+
+  .item-wrapper.ms-active .icon svg, .item-wrapper.item-wrapper-hovered .icon svg, {
+    filter: $color-invert-filter-reverse !important;
   }
 
 }
