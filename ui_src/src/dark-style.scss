@@ -36,7 +36,7 @@ html.dark-mode {
     .canvas-wrapper svg, .circle-img svg, .versions svg, .logo-wrapper svg, .schema-box-wrapper .is-used svg,
     .station-meta svg, .details-wrapper svg, .item-wrapper.ms-active .icon svg, .item-wrap .icons svg, .loader-uploading svg,
     svg.lock-feature-icon, .ant-modal-content button svg, svg.icons-sidebar, .station-overview-container svg,
-    .header-icon svg, .header-img-container svg, .integrate-header svg,
+    .header-icon svg, .header-img-container svg, .integrate-header svg, deatils downloads svg,
     .git-repos-item .repo-item-icon-memphis, .ant-drawer-header-title svg {
       filter: $color-invert-filter-reverse;
       background-color: initial;
@@ -279,6 +279,9 @@ html.dark-mode {
     footer {
       border-color: $color-border-medium;
     }
+    .function-name > * {
+      color: $color-text-dark!important;
+    }
   }
 
   .cloud-modal-btns > * {
@@ -314,7 +317,8 @@ html.dark-mode {
     background: #D1CFCD;
   }
 
-  .stations-container .err-stations-list .rows-wrapper .even, .messages-container .list-wrapper .list .even .row-message, .generic-list-wrapper .list .rows-wrapper .pubSub-row:nth-child(even) {
+  .stations-container .err-stations-list .rows-wrapper .even, .messages-container .list-wrapper .list .even .row-message,
+  .generic-list-wrapper .list .rows-wrapper .pubSub-row:nth-child(even) {
     background: #D1CFCD;
   }
 
@@ -445,12 +449,40 @@ html.dark-mode {
     filter: $color-invert-filter-reverse;
   }
 
-  .anticon.anticon-close svg {
+  .anticon.anticon-close svg, .overview-wrapper .btn-section svg, .logs-wrapper .loader svg, .logs-wrapper .logs-loader svg {
     filter: $color-invert-filter-reverse;
   }
 
   .users-container .users-list-container .ant-table-thead .ant-table-cell {
     background: #E6EAE8;
+  }
+
+  .logs-wrapper .placeholder p {
+    color: $color-text-grey !important;
+  }
+
+  .log-content-wrapper log-header, .log-content-wrapper log-content {
+    border-color: $color-border-light!important;
+  }
+
+  .logs-wrapper logs, .log-content-wrapper {
+    background: #D1CFCD;
+    box-shadow: none;
+  }
+
+  .logs-wrapper .header-title-wrapper .button-container button, .collapse-footer .button-container:first-child button {
+    filter: none;
+  }
+
+  .logs-wrapper logs .logsl .even .log-payload {
+    background: $color-background-light;
+  }
+
+  .log-badge-container .badge.warn {
+    background-color: rgba(255, 160, 67, 0.3);
+  }
+  .log-badge-container .badge.info {
+    background-color: rgba(32, 201, 172, 0.2);
   }
 
 }
