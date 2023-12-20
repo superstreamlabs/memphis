@@ -479,13 +479,13 @@ html.dark-mode {
   }
 
   .log-badge-container .badge.warn {
-    background-color: rgba(255, 160, 67, 0.3);
+    background-color: rgb(160 128 22);
   }
   .log-badge-container .badge.info {
-    background-color: rgba(32, 201, 172, 0.2);
+    background-color: #939595;
   }
   .log-badge-container .error {
-    background-color: rgba(252, 52, 0, 0.3);
+    background-color: rgb(228 128 102);
   }
 
 }
