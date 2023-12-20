@@ -51,18 +51,18 @@ type ExtendedConsumer struct {
 }
 
 type ExtendedConsumerResponse struct {
-	ID                  int       `json:"id"`
-	Name                string    `json:"name"`
-	UpdatedAt           time.Time `json:"updated_at"`
-	IsActive            bool      `json:"is_active"`
-	ConsumersGroup      string    `json:"consumers_group"`
-	MaxAckTimeMs        int64     `json:"max_ack_time_ms"`
-	MaxMsgDeliveries    int       `json:"max_msg_deliveries"`
-	StationName         string    `json:"station_name,omitempty"`
-	PartitionsList      []int     `json:"partitions_list"`
-	Count               int       `json:"count"`
-	Sdk                 string    `json:"sdk"`
-	NeedToUpdateVersion bool      `json:"need_to_update_version"`
+	ID               int       `json:"id"`
+	Name             string    `json:"name"`
+	UpdatedAt        time.Time `json:"updated_at"`
+	IsActive         bool      `json:"is_active"`
+	ConsumersGroup   string    `json:"consumers_group"`
+	MaxAckTimeMs     int64     `json:"max_ack_time_ms"`
+	MaxMsgDeliveries int       `json:"max_msg_deliveries"`
+	StationName      string    `json:"station_name,omitempty"`
+	PartitionsList   []int     `json:"partitions_list"`
+	Count            int       `json:"count"`
+	SdkLanguage      string    `json:"sdk_language"`
+	UpdateAvailable  bool      `json:"update_available"`
 }
 
 type LightConsumer struct {

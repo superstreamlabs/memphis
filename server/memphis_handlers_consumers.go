@@ -404,22 +404,22 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 		}
 
 		needToUpdateVersion := false
-		if consumer.Version < lastProducerConsumerCreationReqVersion {
+		if consumer.Version < lastConsumerCreationReqVersion && consumer.IsActive {
 			needToUpdateVersion = true
 		}
 
 		consumerRes := models.ExtendedConsumerResponse{
-			ID:                  consumer.ID,
-			Name:                consumer.Name,
-			IsActive:            consumer.IsActive,
-			ConsumersGroup:      consumer.ConsumersGroup,
-			MaxAckTimeMs:        consumer.MaxAckTimeMs,
-			MaxMsgDeliveries:    consumer.MaxMsgDeliveries,
-			StationName:         consumer.StationName,
-			Count:               consumer.Count,
-			PartitionsList:      consumer.PartitionsList,
-			Sdk:                 consumer.Sdk,
-			NeedToUpdateVersion: needToUpdateVersion,
+			ID:               consumer.ID,
+			Name:             consumer.Name,
+			IsActive:         consumer.IsActive,
+			ConsumersGroup:   consumer.ConsumersGroup,
+			MaxAckTimeMs:     consumer.MaxAckTimeMs,
+			MaxMsgDeliveries: consumer.MaxMsgDeliveries,
+			StationName:      consumer.StationName,
+			Count:            consumer.Count,
+			PartitionsList:   consumer.PartitionsList,
+			SdkLanguage:      consumer.Sdk,
+			UpdateAvailable:  needToUpdateVersion,
 		}
 
 		if consumer.IsActive {

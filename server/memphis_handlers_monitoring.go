@@ -51,11 +51,12 @@ var noMetricsInstalledLog bool
 var noMetricsPermissionLog bool
 
 const (
-	healthyStatus                          = "healthy"
-	unhealthyStatus                        = "unhealthy"
-	dangerousStatus                        = "dangerous"
-	riskyStatus                            = "risky"
-	lastProducerConsumerCreationReqVersion = 3
+	healthyStatus                  = "healthy"
+	unhealthyStatus                = "unhealthy"
+	dangerousStatus                = "dangerous"
+	riskyStatus                    = "risky"
+	lastProducerCreationReqVersion = 3
+	lastConsumerCreationReqVersion = 3
 )
 
 func clientSetClusterConfig() error {

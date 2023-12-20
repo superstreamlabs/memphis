@@ -54,8 +54,8 @@ type ExtendedProducerResponse struct {
 	IsActive                   bool      `json:"is_active"`
 	ConnectedProducersCount    int       `json:"connected_producers_count"`
 	DisconnedtedProducersCount int       `json:"disconnected_producers_count"`
-	NeedToUpdateVersion        bool      `json:"need_to_update_version"`
-	Sdk                        string    `json:"sdk"`
+	SdkLanguage                string    `json:"sdk_language"`
+	UpdateAvailable            bool      `json:"update_available"`
 }
 
 type LightProducer struct {

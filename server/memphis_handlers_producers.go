@@ -272,7 +272,7 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 			continue
 		}
 		needToUpdateVersion := false
-		if producer.Version < lastProducerConsumerCreationReqVersion {
+		if producer.Version < lastProducerCreationReqVersion && producer.IsActive {
 			needToUpdateVersion = true
 		}
 
@@ -284,8 +284,8 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 			IsActive:                   producer.IsActive,
 			DisconnedtedProducersCount: producer.DisconnedtedProducersCount,
 			ConnectedProducersCount:    producer.ConnectedProducersCount,
-			Sdk:                        producer.Sdk,
-			NeedToUpdateVersion:        needToUpdateVersion,
+			SdkLanguage:                producer.Sdk,
+			UpdateAvailable:            needToUpdateVersion,
 		}
 
 		producersNames = append(producersNames, producer.Name)
