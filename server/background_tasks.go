@@ -343,7 +343,7 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.InitializeThroughputSampling()
 	go s.UploadTenantUsageToDB()
 	go s.RefreshFirebaseFunctionsKey()
-	go s.RemoveOldProducersAndConsumers()
+	go s.RemoveOldProducersAndConsumersAndAuditLogs()
 	go ScheduledCloudCacheRefresh()
 	go s.SendBillingAlertWhenNeeded()
 	go s.CheckBrokenConnectedIntegrations()
@@ -616,19 +616,19 @@ func (s *Server) RemoveOldDlsMsgs() {
 	}
 }
 
-func (s *Server) RemoveOldProducersAndConsumers() {
+func (s *Server) RemoveOldProducersAndConsumersAndAuditLogs() {
 	ticker := time.NewTicker(15 * time.Minute)
 	for range ticker.C {
 		for tenantName, rt := range s.opts.GCProducersConsumersRetentionHours {
 			configurationTime := time.Now().Add(time.Hour * time.Duration(-rt))
 			err := db.DeleteOldProducersAndConsumers(configurationTime, tenantName)
 			if err != nil {
-				serv.Errorf("[tenant: %v]RemoveOldProducersAndConsumers at DeleteOldProducersAndConsumers : %v", tenantName, err.Error())
+				serv.Errorf("[tenant: %v]RemoveOldProducersAndConsumersAndAuditLogs at DeleteOldProducersAndConsumers : %v", tenantName, err.Error())
 			}
 			time := time.Now().Add(-time.Hour * 3 * 24)
 			err = db.RemoveAuditLogsByTenantAndCreatedAt(tenantName, time)
 			if err != nil {
-				serv.Errorf("[tenant: %v]RemoveOldProducersAndConsumers at RemoveAuditLogsByTenantAndCreatedAt : %v", tenantName, err.Error())
+				serv.Errorf("[tenant: %v]RemoveOldProducersAndConsumersAndAuditLogs at RemoveAuditLogsByTenantAndCreatedAt : %v", tenantName, err.Error())
 			}
 		}
 	}
