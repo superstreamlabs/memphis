@@ -49,6 +49,7 @@ const Button = ({
     tooltip,
     tooltip_placement = 'bottom',
     isVisible = true,
+    customClasses,
 }) => {
     const handleClick = (e) => {
         onClick(e);
@@ -98,7 +99,7 @@ const Button = ({
 
     return (
         (isVisible &&
-        <div className="button-container" style={styleButtonContainer}>
+        <div className={"button-container " + customClasses} style={styleButtonContainer}>
             <TooltipComponent text={tooltip} placement={tooltip_placement}>
                 <ButtonDesign {...fieldProps} className={disabled && 'noHover'}>
                     <span style={{ fontFamily: fontFamily }}>{placeholder}</span>
