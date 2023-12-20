@@ -209,7 +209,7 @@ const Integrations = () => {
                         <Button
                             width="150px"
                             height="34px"
-                            placeholder="Close"
+                            placeholder="Cancel"
                             colorType="black"
                             radiusType="circle"
                             backgroundColorType="white"

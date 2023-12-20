@@ -274,6 +274,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                             disabled={!isValid || functionDetails?.installed_in_progress}
                                             isLoading={loader || functionDetails?.installed_in_progress}
                                             onClick={() => (!functionDetails?.installed || functionDetails?.updates_available ? handleInstall() : handleUnInstall())}
+                                            customClasses={!functionDetails?.installed || functionDetails?.updates_available ? 'install-btn' : 'uninstall-btn'}
                                         />
                                     </span>
                                 </TooltipComponent>

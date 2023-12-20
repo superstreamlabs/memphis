@@ -48,3 +48,4 @@ export const LOCAL_STORAGE_PRODUCER_COMMUNICATION_TYPE = 'producer_communication
 export const LOCAL_STORAGE_PRODUCER_PROGRAMMING_LANGUAGE = 'producer_programming_language';
 export const LOCAL_STORAGE_CONSUMER_COMMUNICATION_TYPE = 'consumer_communication_type';
 export const LOCAL_STORAGE_CONSUMER_PROGRAMMING_LANGUAGE = 'consumer_programming_language';
+export const LOCAL_STORAGE_DARK_MODE = 'dark_mode';
