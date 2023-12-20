@@ -392,6 +392,7 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 				IsActive:              consumer.IsActive,
 				LastStatusChangeDate:  consumer.UpdatedAt,
 				PartitionsList:        consumer.PartitionsList,
+				SdkLanguage:           consumers[0].Sdk,
 			}
 			m[consumer.ConsumersGroup] = cg
 		} else {
@@ -401,11 +402,13 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 			m[consumer.ConsumersGroup].IsActive = consumer.IsActive
 			m[consumer.ConsumersGroup].LastStatusChangeDate = consumer.UpdatedAt
 			cg = m[consumer.ConsumersGroup]
+			cg.SdkLanguage = consumers[0].Sdk
 		}
 
 		needToUpdateVersion := false
 		if consumer.Version < lastConsumerCreationReqVersion && consumer.IsActive {
 			needToUpdateVersion = true
+			cg.UpdateAvailable = true
 		}
 
 		consumerRes := models.ExtendedConsumerResponse{

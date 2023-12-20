@@ -84,6 +84,8 @@ type Cg struct {
 	DeletedConsumers      []ExtendedConsumerResponse `json:"deleted_consumers"`
 	LastStatusChangeDate  time.Time                  `json:"last_status_change_date"`
 	PartitionsList        []int                      `json:"partitions_list"`
+	SdkLanguage           string                     `json:"sdk_language"`
+	UpdateAvailable       bool                       `json:"update_available"`
 }
 
 type GetAllConsumersByStationSchema struct {
