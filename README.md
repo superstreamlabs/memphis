@@ -48,7 +48,7 @@ docker compose -f docker-compose.yml -p memphis up
 
 </div>
 
-## ✨ Key Features [v1.4.0](https://docs.memphis.dev/memphis/release-notes/releases/v1.4.0)
+## ✨ Key Features [v1.4.1](https://docs.memphis.dev/memphis/release-notes/releases/v1.4.1-latest)
 
 [**Take part in our roadmap!**](https://memphis.dev/roadmap)
 
