@@ -2738,7 +2738,9 @@ func GetAllProducersByStationID(stationId int) ([]models.ExtendedProducer, error
     s.name,
     p.is_active,
 	COUNT(CASE WHEN p.is_active THEN 1 END) OVER (PARTITION BY p.name) AS connected_producers_count,
-	COUNT(CASE WHEN NOT p.is_active THEN 1 END) OVER (PARTITION BY p.name) AS disconnected_producers_count
+	COUNT(CASE WHEN NOT p.is_active THEN 1 END) OVER (PARTITION BY p.name) AS disconnected_producers_count,
+	p.version,
+	p.sdk
 FROM producers AS p
 LEFT JOIN stations AS s ON s.id = p.station_id
 WHERE p.station_id = $1 AND p.type = 'application'
@@ -3100,7 +3102,7 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 	}
 	defer conn.Release()
 	query := `SELECT DISTINCT ON (c.name, c.consumers_group) c.id, c.name, c.updated_at, c.is_active, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name, c.partitions,
-				COUNT (CASE WHEN c.is_active THEN 1 END) OVER (PARTITION BY c.name) AS count
+				COUNT (CASE WHEN c.is_active THEN 1 END) OVER (PARTITION BY c.name) AS count, c.version, c.sdk
 				FROM consumers AS c
 				LEFT JOIN stations AS s ON s.id = c.station_id
 				WHERE c.station_id = $1 AND c.type = 'application' ORDER BY c.name, c.consumers_group, c.updated_at DESC

@@ -305,7 +305,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 		functionsEnabled = false
 	}
 
-	connectedProducers, disconnectedProducers, deletedProducers := make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0)
+	connectedProducers, disconnectedProducers, deletedProducers := make([]models.ExtendedProducerResponse, 0), make([]models.ExtendedProducerResponse, 0), make([]models.ExtendedProducerResponse, 0)
 	if station.IsNative {
 		connectedProducers, disconnectedProducers, deletedProducers, err = h.Producers.GetProducersByStation(station)
 		if err != nil {

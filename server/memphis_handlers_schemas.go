@@ -689,7 +689,7 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 	schemaContent := body.SchemaContent
 	err = validateSchemaContent(schemaContent, schema.Type)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]CreateNewVersion at validateSchemaContent: Schema %v: %v", user.TenantName, user.Username, body.SchemaName, err.Error())
+		serv.Warnf("[tenant: %v][user: %v]CreateNewVersion at validateSchemaContent: Schema %v: %v", user.TenantName, user.Username, body.SchemaName, err.Error())
 		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}

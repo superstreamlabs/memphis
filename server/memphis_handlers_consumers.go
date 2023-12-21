@@ -344,7 +344,11 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 	if err != nil {
-		s.Errorf("[tenant: %v][user: %v]createConsumerDirect at getSchemaUpdateInitFromStation: Consumer %v at station %v: %v", ccr.TenantName, ccr.Username, ccr.Name, ccr.StationName, err.Error())
+		if strings.Contains(err.Error(), "not exist") {
+			s.Warnf("[tenant: %v][user: %v]createConsumerDirect at getSchemaUpdateInitFromStation: Consumer %v at station %v: %v", ccr.TenantName, ccr.Username, ccr.Name, ccr.StationName, err.Error())
+		} else {
+			s.Errorf("[tenant: %v][user: %v]createConsumerDirect at getSchemaUpdateInitFromStation: Consumer %v at station %v: %v", ccr.TenantName, ccr.Username, ccr.Name, ccr.StationName, err.Error())
+		}
 		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		return
 	}
@@ -382,12 +386,13 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 				Name:                  consumer.ConsumersGroup,
 				MaxAckTimeMs:          consumer.MaxAckTimeMs,
 				MaxMsgDeliveries:      consumer.MaxMsgDeliveries,
-				ConnectedConsumers:    []models.ExtendedConsumer{},
-				DisconnectedConsumers: []models.ExtendedConsumer{},
-				DeletedConsumers:      []models.ExtendedConsumer{},
+				ConnectedConsumers:    []models.ExtendedConsumerResponse{},
+				DisconnectedConsumers: []models.ExtendedConsumerResponse{},
+				DeletedConsumers:      []models.ExtendedConsumerResponse{},
 				IsActive:              consumer.IsActive,
 				LastStatusChangeDate:  consumer.UpdatedAt,
 				PartitionsList:        consumer.PartitionsList,
+				SdkLanguage:           consumers[0].Sdk,
 			}
 			m[consumer.ConsumersGroup] = cg
 		} else {
@@ -397,9 +402,16 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 			m[consumer.ConsumersGroup].IsActive = consumer.IsActive
 			m[consumer.ConsumersGroup].LastStatusChangeDate = consumer.UpdatedAt
 			cg = m[consumer.ConsumersGroup]
+			cg.SdkLanguage = consumers[0].Sdk
 		}
 
-		consumerRes := models.ExtendedConsumer{
+		needToUpdateVersion := false
+		if consumer.Version < lastConsumerCreationReqVersion && consumer.IsActive {
+			needToUpdateVersion = true
+			cg.UpdateAvailable = true
+		}
+
+		consumerRes := models.ExtendedConsumerResponse{
 			ID:               consumer.ID,
 			Name:             consumer.Name,
 			IsActive:         consumer.IsActive,
@@ -409,6 +421,8 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 			StationName:      consumer.StationName,
 			Count:            consumer.Count,
 			PartitionsList:   consumer.PartitionsList,
+			SdkLanguage:      consumer.Sdk,
+			UpdateAvailable:  needToUpdateVersion,
 		}
 
 		if consumer.IsActive {
