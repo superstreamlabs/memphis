@@ -66,7 +66,6 @@ func handleConnectMessage(client *client) error {
 		isNativeMemphisClient bool
 		username              string
 		connectionId          string
-		err                   error
 	)
 	switch len(splittedMemphisInfo) {
 	case 2:
@@ -112,28 +111,28 @@ func handleConnectMessage(client *client) error {
 		return errors.New("please use a user of type Root/Application and not Management")
 	}
 
+	connectionId = splittedMemphisInfo[0]
 	if isNativeMemphisClient {
-		connectionId = splittedMemphisInfo[0]
-		exist, err := db.UpdateProducersCounsumersConnection(connectionId, true)
-		if err != nil {
-			client.Errorf("[tenant: %v][user: %v]handleConnectMessage at UpdateProducersCounsumersConnection: %v", user.TenantName, username, err.Error())
-			return err
-		}
-		if !exist {
-			go func() {
+		go func(s *Server, tenantName, username, connectionId, lang string, isNativeClient bool) {
+			exist, err := db.UpdateProducersCounsumersConnection(connectionId, true)
+			if err != nil {
+				s.Errorf("[tenant: %v][user: %v]handleConnectMessage at UpdateProducersCounsumersConnection: %v", tenantName, username, err.Error())
+				return
+			}
+			if !exist {
 				shouldSendAnalytics, _ := shouldSendAnalytics()
 				if shouldSendAnalytics { // exist indicates it is a reconnect
-					splitted := strings.Split(client.opts.Lang, ".")
+					splitted := strings.Split(lang, ".")
 					sdkName := splitted[len(splitted)-1]
 					event := "user-connect-sdk"
-					if !isNativeMemphisClient {
+					if !isNativeClient {
 						event = "user-connect-nats-sdk"
 					}
 					analyticsParams := map[string]interface{}{"sdk": sdkName}
-					analytics.SendEvent(user.TenantName, username, analyticsParams, event)
+					analytics.SendEvent(tenantName, username, analyticsParams, event)
 				}
-			}()
-		}
+			}
+		}(client.srv, user.TenantName, username, connectionId, client.opts.Lang, isNativeMemphisClient)
 		updateNewClientWithConfig(client, connectionId)
 	}
 
