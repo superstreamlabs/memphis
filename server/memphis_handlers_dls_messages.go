@@ -465,8 +465,8 @@ func (s *Server) sendToDlsStation(station models.Station, messagePayload []byte,
 
 			if shouldRoundRobin {
 				rand.Seed(time.Now().UnixNano())
-				randomIndex := rand.Intn(len(dlsStation.PartitionsList))
-				subject = fmt.Sprintf("%s$%v.final", dlsStationName.Intern(), station.PartitionsList[randomIndex])
+				randomIndex := rand.Intn(len(dlsStation.PartitionsList) - 1)
+				subject = fmt.Sprintf("%s$%v.final", dlsStationName.Intern(), dlsStation.PartitionsList[randomIndex])
 			}
 
 			acc, err := s.LookupAccount(station.TenantName)

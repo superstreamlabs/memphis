@@ -118,4 +118,5 @@ func (l *SysLogger) Systemf(format string, v ...interface{}) {
 		l.writer.Info(4, formatMsg("SYSTEM", format, v...))
 	}
 }
+
 // ** added by Memphis

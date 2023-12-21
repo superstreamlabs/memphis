@@ -91,6 +91,7 @@ func ParsePedantic(data string) (map[string]interface{}, error) {
 	}
 	return p.mapping, nil
 }
+
 // Added by Memphis **
 
 // ParseFileWithChecks is equivalent to ParseFile but runs in pedantic mode.
