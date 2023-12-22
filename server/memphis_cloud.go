@@ -1272,6 +1272,14 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	}
 
 	serv.Noticef("[tenant: %v][user: %v] has logged in", user.TenantName, user.Username)
+
+	lastLogin, err := db.UpdateLastLoginUser(user.ID)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]Login at UpdateLastLoginUser: User %v: %v", user.TenantName, user.Username, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		analyticsParams := make(map[string]interface{})
@@ -1290,6 +1298,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"created_at":              user.CreatedAt,
 		"already_logged_in":       user.AlreadyLoggedIn,
 		"avatar_id":               user.AvatarId,
+		"last_login":              lastLogin,
 		"send_analytics":          shouldSendAnalytics,
 		"env":                     env,
 		"full_name":               user.FullName,
@@ -1369,7 +1378,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	}
 	exist, _, err := memphis_cache.GetUser(username, user.TenantName, true)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]AddUser at GetUserByUsername: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]AddUser at GetUser: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1801,6 +1810,14 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 
 	domain := ""
 	secure := true
+
+	lastLogin, err := db.UpdateLastLoginUser(user.ID)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]RefreshToken at UpdateLastLoginUser: User %v: %v", user.TenantName, user.Username, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	c.SetCookie("memphis-jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 	c.IndentedJSON(200, gin.H{
 		"jwt":                     token,
@@ -1816,6 +1833,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"namespace":               serv.opts.K8sNamespace,
 		"full_name":               user.FullName,
 		"skip_get_started":        user.SkipGetStarted,
+		"last_login":              lastLogin,
 		"broker_host":             serv.opts.BrokerHost,
 		"rest_gw_host":            serv.opts.RestGwHost,
 		"ui_host":                 serv.opts.UiHost,
