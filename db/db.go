@@ -132,6 +132,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		ALTER TABLE users ADD COLUMN IF NOT EXISTS position VARCHAR NOT NULL DEFAULT '';
 		ALTER TABLE users ADD COLUMN IF NOT EXISTS owner VARCHAR NOT NULL DEFAULT '';
 		ALTER TABLE users ADD COLUMN IF NOT EXISTS description VARCHAR NOT NULL DEFAULT '';
+		ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMPTZ NOT NULL DEFAULT NOW();		
 		ALTER TABLE users DROP CONSTRAINT IF EXISTS users_username_key;
 		ALTER TABLE users DROP CONSTRAINT IF EXISTS users_username_tenant_name_key;
 		ALTER TABLE users ADD CONSTRAINT users_username_tenant_name_key UNIQUE(username, tenant_name);
@@ -157,6 +158,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		position VARCHAR NOT NULL DEFAULT '',
 		owner VARCHAR NOT NULL DEFAULT '',
 		description VARCHAR NOT NULL DEFAULT '',
+		last_login TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 		PRIMARY KEY (id),
 		CONSTRAINT fk_tenant_name
 			FOREIGN KEY(tenant_name)
@@ -4680,34 +4682,6 @@ func GetUserForLoginByUsernameAndTenant(username, tenantname string) (bool, mode
 	return true, users[0], nil
 }
 
-func GetUserByUserId(userId int) (bool, models.User, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return false, models.User{}, err
-	}
-	defer conn.Release()
-	query := `SELECT * FROM users WHERE id = $1 LIMIT 1`
-	stmt, err := conn.Conn().Prepare(ctx, "get_user_by_id", query)
-	if err != nil {
-		return false, models.User{}, err
-	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, userId)
-	if err != nil {
-		return false, models.User{}, err
-	}
-	defer rows.Close()
-	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
-	if err != nil {
-		return false, models.User{}, err
-	}
-	if len(users) == 0 {
-		return false, models.User{}, nil
-	}
-	return true, users[0], nil
-}
-
 func GetAllUsers(tenantName string) ([]models.FilteredGenericUser, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -4716,7 +4690,7 @@ func GetAllUsers(tenantName string) ([]models.FilteredGenericUser, error) {
 		return []models.FilteredGenericUser{}, err
 	}
 	defer conn.Release()
-	query := `SELECT s.id, s.username, s.type, s.created_at, s.avatar_id, s.full_name, s.pending, s.position, s.team, s.owner, s.description FROM users AS s WHERE tenant_name=$1 AND username NOT LIKE '$%'` // filter memphis internal users
+	query := `SELECT s.id, s.username, s.type, s.created_at, s.avatar_id, s.full_name, s.pending, s.position, s.team, s.owner, s.description, s.last_login FROM users AS s WHERE tenant_name=$1 AND username NOT LIKE '$%'` // filter memphis internal users
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_users", query)
 	if err != nil {
 		return []models.FilteredGenericUser{}, err
@@ -4894,6 +4868,26 @@ func UpdateUserAlreadyLoggedIn(userId int) error {
 	stmt, _ := conn.Conn().Prepare(ctx, "update_user_already_logged_in", query)
 	conn.Conn().Query(ctx, stmt.Name, userId)
 	return nil
+}
+
+func UpdateLastLoginUser(userId int) (time.Time, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return time.Time{}, err
+	}
+	defer conn.Release()
+	query := `UPDATE users SET last_login = NOW() WHERE id = $1 RETURNING last_login`
+	stmt, err := conn.Conn().Prepare(ctx, "update_last_login_in_user", query)
+	if err != nil {
+		return time.Time{}, err
+	}
+	var lastLogin time.Time
+	if err := conn.Conn().QueryRow(ctx, stmt.Name, userId).Scan(&lastLogin); err != nil {
+		return time.Time{}, err
+	}
+	return lastLogin, nil
 }
 
 func UpdateSkipGetStarted(username string, tenantName string) error {

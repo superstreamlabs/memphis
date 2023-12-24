@@ -698,7 +698,7 @@ func (s *Server) destroyCGFromNats(c *client, reply, userName, tenantName string
 		_, user, err := memphis_cache.GetUser(username, consumer.TenantName, false)
 		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
 			errMsg := fmt.Sprintf("[tenant: %v]Consumer group %v at station %v: %v", tenantName, consumer.ConsumersGroup, station.Name, err.Error())
-			serv.Errorf("destroyCGFromNats at GetUserByUsername: " + errMsg)
+			serv.Errorf("destroyCGFromNats at GetUser: " + errMsg)
 			respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 			return
 		}
