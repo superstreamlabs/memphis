@@ -64,8 +64,8 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 			connectionIds := make(map[string]string)
 			for _, conn := range conns.Conns {
 				connId := strings.Split(conn.Name, "::")[0]
-				if connId != "" {
-					connectionIds[connId] = ""
+				if connId != _EMPTY_ {
+					connectionIds[connId] = _EMPTY_
 				}
 			}
 
@@ -125,7 +125,7 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 			}
 			switch strings.ToLower(integrationUpdate.Name) {
 			case "slack":
-				if s.opts.UiHost == "" {
+				if s.opts.UiHost == _EMPTY_ {
 					EditClusterCompHost("ui_host", integrationUpdate.UIUrl)
 				}
 				CacheDetails("slack", integrationUpdate.Keys, integrationUpdate.Properties, integrationUpdate.TenantName)
@@ -181,7 +181,7 @@ func (s *Server) ListenForNotificationEvents() error {
 				return
 			}
 			notificationMsg := notification.Msg
-			if notification.Code != "" {
+			if notification.Code != _EMPTY_ {
 				notificationMsg = notificationMsg + "\n```" + notification.Code + "```"
 			}
 			err = SendNotification(tenantName, notification.Title, notificationMsg, notification.Type)
@@ -418,7 +418,7 @@ func (s *Server) ConsumeUnackedMsgs() {
 			sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), replySubj, replySubj+"_sid", func(_ *client, subject, reply string, msg []byte) {
 				go func(subject, reply string, msg []byte) {
 					// Ignore 409 Exceeded MaxWaiting cases
-					if reply != "" {
+					if reply != _EMPTY_ {
 						message := unAckedMsg{
 							Msg:          msg,
 							ReplySubject: reply,
@@ -485,7 +485,7 @@ func (s *Server) ConsumeTieredStorageMsgs() {
 			sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), replySubj, replySubj+"_sid", func(_ *client, subject, reply string, msg []byte) {
 				go func(subject, reply string, msg []byte) {
 					// Ignore 409 Exceeded MaxWaiting cases
-					if reply != "" {
+					if reply != _EMPTY_ {
 						message := tsMsg{
 							Msg:          msg,
 							ReplySubject: reply,
@@ -548,7 +548,7 @@ func (s *Server) ConsumeSchemaverseDlsMessages() {
 			sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), replySubj, replySubj+"_sid", func(_ *client, subject, reply string, msg []byte) {
 				go func(subject, reply string, msg []byte) {
 					// Ignore 409 Exceeded MaxWaiting cases
-					if reply != "" {
+					if reply != _EMPTY_ {
 						message := schemaverseDlsMsg{
 							Msg:          msg,
 							ReplySubject: reply,
@@ -646,7 +646,7 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 			switch integration.Name {
 			case "github":
 				if _, ok := integration.Keys["installation_id"].(string); !ok {
-					integration.Keys["installation_id"] = ""
+					integration.Keys["installation_id"] = _EMPTY_
 				}
 				err := testGithubIntegration(integration.Keys["installation_id"].(string))
 				if err != nil {
@@ -664,10 +664,10 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 			case "slack":
 				key := getAESKey()
 				if _, ok := integration.Keys["auth_token"].(string); !ok {
-					integration.Keys["auth_token"] = ""
+					integration.Keys["auth_token"] = _EMPTY_
 				}
 				if _, ok := integration.Keys["channel_id"].(string); !ok {
-					integration.Keys["channel_id"] = ""
+					integration.Keys["channel_id"] = _EMPTY_
 				}
 				authToken, err := DecryptAES(key, integration.Keys["auth_token"].(string))
 				if err != nil {
@@ -689,22 +689,22 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 			case "s3":
 				key := getAESKey()
 				if _, ok := integration.Keys["access_key"].(string); !ok {
-					integration.Keys["access_key"] = ""
+					integration.Keys["access_key"] = _EMPTY_
 				}
 				if _, ok := integration.Keys["secret_key"].(string); !ok {
-					integration.Keys["secret_key"] = ""
+					integration.Keys["secret_key"] = _EMPTY_
 				}
 				if _, ok := integration.Keys["region"].(string); !ok {
-					integration.Keys["region"] = ""
+					integration.Keys["region"] = _EMPTY_
 				}
 				if _, ok := integration.Keys["url"].(string); !ok {
-					integration.Keys["url"] = ""
+					integration.Keys["url"] = _EMPTY_
 				}
 				if _, ok := integration.Keys["s3_path_style"].(string); !ok {
-					integration.Keys["s3_path_style"] = ""
+					integration.Keys["s3_path_style"] = _EMPTY_
 				}
 				if _, ok := integration.Keys["bucket_name"].(string); !ok {
-					integration.Keys["bucket_name"] = ""
+					integration.Keys["bucket_name"] = _EMPTY_
 				}
 				accessKey := integration.Keys["access_key"].(string)
 				secretKey, err := DecryptAES(key, integration.Keys["secret_key"].(string))
@@ -712,7 +712,7 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 					serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at DecryptAES: %v", integration.TenantName, err.Error())
 				}
 
-				provider := credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")
+				provider := credentials.NewStaticCredentialsProvider(accessKey, secretKey, _EMPTY_)
 				_, err = provider.Retrieve(context.Background())
 				if err != nil {
 					if strings.Contains(err.Error(), "static credentials are empty") {

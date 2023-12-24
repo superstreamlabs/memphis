@@ -342,7 +342,7 @@ func newFileStore(fcfg FileStoreConfig, cfg StreamConfig) (*fileStore, error) {
 	return newFileStoreWithCreated(fcfg, cfg, time.Now().UTC(), nil, nil)
 }
 
-// ** added by memphis
+// ** added by memphis -  this is a copy of the newFileStoreWithCreated function with the account added **
 func newFileStoreWithCreatedMemphis(fcfg FileStoreConfig, cfg StreamConfig, created time.Time, prf, oldprf keyGen, account *Account) (*fileStore, error) {
 	if cfg.Name == _EMPTY_ {
 		return nil, fmt.Errorf("name required")
@@ -383,13 +383,16 @@ func newFileStoreWithCreatedMemphis(fcfg FileStoreConfig, cfg StreamConfig, crea
 	dios <- struct{}{}
 
 	fs := &fileStore{
-		fcfg:    fcfg,
-		psim:    make(map[string]*psi),
-		bim:     make(map[uint32]*msgBlock),
-		cfg:     FileStreamInfo{Created: created, StreamConfig: cfg},
-		prf:     prf,
-		oldprf:  oldprf,
-		qch:     make(chan struct{}),
+		fcfg:   fcfg,
+		psim:   make(map[string]*psi),
+		bim:    make(map[uint32]*msgBlock),
+		cfg:    FileStreamInfo{Created: created, StreamConfig: cfg},
+		prf:    prf,
+		oldprf: oldprf,
+		qch:    make(chan struct{}),
+		fch:    make(chan struct{}, 1),
+		fsld:   make(chan struct{}),
+		srv:    fcfg.srv,
 		account: account, // ** added by memphis **
 	}
 
@@ -421,9 +424,84 @@ func newFileStoreWithCreatedMemphis(fcfg FileStoreConfig, cfg StreamConfig, crea
 		}
 	}
 
-	// Recover our message state.
-	if err := fs.recoverMsgs(); err != nil {
-		return nil, err
+	// Attempt to recover our state.
+	err = fs.recoverFullState()
+	if err != nil {
+		// Hold onto state
+		prior := fs.state
+		// Reset anything that could have been set from above.
+		fs.state = StreamState{}
+		fs.psim, fs.tsl = make(map[string]*psi), 0
+		fs.bim = make(map[uint32]*msgBlock)
+		fs.blks = nil
+		fs.tombs = nil
+
+		// Recover our message state the old way
+		if err := fs.recoverMsgs(); err != nil {
+			return nil, err
+		}
+
+		// Check if our prior state remembers a last sequence past where we can see.
+		if fs.ld != nil && prior.LastSeq > fs.state.LastSeq {
+			fs.state.LastSeq, fs.state.LastTime = prior.LastSeq, prior.LastTime
+			if lmb, err := fs.newMsgBlockForWrite(); err == nil {
+				lmb.writeTombstone(prior.LastSeq, prior.LastTime.UnixNano())
+			} else {
+				return nil, err
+			}
+		}
+		// Since we recovered here, make sure to kick ourselves to write out our stream state.
+		fs.dirty++
+		defer fs.kickFlushStateLoop()
+	}
+
+	// Also make sure we get rid of old idx and fss files on return.
+	// Do this in separate go routine vs inline and at end of processing.
+	defer func() {
+		go fs.cleanupOldMeta()
+	}()
+
+	// Lock while do enforcements and removals.
+	fs.mu.Lock()
+
+	// Check if we have any left over tombstones to process.
+	if len(fs.tombs) > 0 {
+		for _, seq := range fs.tombs {
+			fs.removeMsg(seq, false, true, false)
+			fs.removeFromLostData(seq)
+		}
+		// Not needed after this phase.
+		fs.tombs = nil
+	}
+
+	// Limits checks and enforcement.
+	fs.enforceMsgLimit()
+	fs.enforceBytesLimit()
+
+	// Do age checks too, make sure to call in place.
+	if fs.cfg.MaxAge != 0 {
+		fs.expireMsgsOnRecover()
+		fs.startAgeChk()
+	}
+
+	// If we have max msgs per subject make sure the is also enforced.
+	if fs.cfg.MaxMsgsPer > 0 {
+		fs.enforceMsgPerSubjectLimit(false)
+	}
+
+	// Grab first sequence for check below while we have lock.
+	firstSeq := fs.state.FirstSeq
+	fs.mu.Unlock()
+
+	// If the stream has an initial sequence number then make sure we
+	// have purged up until that point. We will do this only if the
+	// recovered first sequence number is before our configured first
+	// sequence. Need to do this locked as by now the age check timer
+	// has started.
+	if cfg.FirstSeq > 0 && firstSeq <= cfg.FirstSeq {
+		if _, err := fs.purge(cfg.FirstSeq); err != nil {
+			return nil, err
+		}
 	}
 
 	// Write our meta data if it does not exist or is zero'd out.
@@ -445,7 +523,11 @@ func newFileStoreWithCreatedMemphis(fcfg FileStoreConfig, cfg StreamConfig, crea
 		}
 	}
 
-	fs.syncTmr = time.AfterFunc(fs.fcfg.SyncInterval, fs.syncBlocks)
+	// Setup our sync timer.
+	fs.setSyncTimer()
+
+	// Spin up the go routine that will write out or full state stream index.
+	go fs.flushStreamStateLoop(fs.fch, fs.qch, fs.fsld)
 
 	return fs, nil
 }

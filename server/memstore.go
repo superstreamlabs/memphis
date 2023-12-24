@@ -63,7 +63,7 @@ func newMemStore(cfg *StreamConfig) (*memStore, error) {
 	return ms, nil
 }
 
-// ** added by memphis
+// ** added by memphis - this is a copy of newMemStore with account added **
 func newMemStoreMemphis(cfg *StreamConfig, account *Account) (*memStore, error) {
 	if cfg == nil {
 		return nil, fmt.Errorf("config required")

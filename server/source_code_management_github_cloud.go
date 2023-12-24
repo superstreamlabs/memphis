@@ -62,7 +62,7 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 	var client *github.Client
 	var err error
 	client = getGithubClientWithoutAccessToken()
-	_, repoContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, "", &github.RepositoryContentGetOptions{
+	_, repoContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, _EMPTY_, &github.RepositoryContentGetOptions{
 		Ref: branch})
 	if err != nil {
 		return functionsDetails, err
@@ -103,20 +103,20 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 						continue
 					}
 
-					if _, ok := contentMap["memory"]; !ok || contentMap["memory"] == "" {
+					if _, ok := contentMap["memory"]; !ok || contentMap["memory"] == _EMPTY_ {
 						contentMap["memory"] = 128 * 1024 * 1024
 					}
 
-					if _, ok := contentMap["storage"]; !ok || contentMap["storage"] == "" {
+					if _, ok := contentMap["storage"]; !ok || contentMap["storage"] == _EMPTY_ {
 						contentMap["storage"] = 512 * 1024 * 1024
 					}
 
 					dependenciesMissing := false
-					if dependencies, ok := contentMap["dependencies"]; !ok || dependencies == nil || dependencies.(string) == "" {
+					if dependencies, ok := contentMap["dependencies"]; !ok || dependencies == nil || dependencies.(string) == _EMPTY_ {
 						dependenciesMissing = true
 					}
-					runtime := ""
-					if runtimeInterface, ok := contentMap["runtime"]; !ok || runtimeInterface == nil || runtimeInterface.(string) == "" {
+					runtime := _EMPTY_
+					if runtimeInterface, ok := contentMap["runtime"]; !ok || runtimeInterface == nil || runtimeInterface.(string) == _EMPTY_ {
 						continue
 					} else {
 						runtime = runtimeInterface.(string)
@@ -174,8 +174,8 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 						TenantName:   tenantName,
 					}
 
-					functionName := ""
-					if functionNameInterface, ok := contentMap["function_name"]; !ok || functionNameInterface == nil || functionNameInterface.(string) == "" {
+					functionName := _EMPTY_
+					if functionNameInterface, ok := contentMap["function_name"]; !ok || functionNameInterface == nil || functionNameInterface.(string) == _EMPTY_ {
 						continue
 					} else {
 						functionName = functionNameInterface.(string)
@@ -224,5 +224,5 @@ func getGithubKeys(githubIntegrationDetails map[string]interface{}, repoOwner, r
 }
 
 func retrieveGithubAppName() string {
-	return ""
+	return _EMPTY_
 }

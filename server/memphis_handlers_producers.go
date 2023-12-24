@@ -80,7 +80,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 			return false, false, err, models.Station{}
 		}
 		var created bool
-		station, created, err = CreateDefaultStation(user.TenantName, s, pStationName, user.ID, user.Username, "", 0)
+		station, created, err = CreateDefaultStation(user.TenantName, s, pStationName, user.ID, user.Username, _EMPTY_, 0)
 		if err != nil {
 			if strings.Contains(err.Error(), "already exists") || strings.Contains(err.Error(), "max amount") {
 				serv.Warnf("[tenant: %v][user: %v]createProducerDirectCommon at CreateDefaultStation: creating default station error - producer %v at station %v: %v", user.TenantName, user.Username, pName, pStationName.external, err.Error())
@@ -336,7 +336,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 			return
 		}
 		dprV0.TenantName = tenantName
-		if c.memphisInfo.connectionId == "" {
+		if c.memphisInfo.connectionId == _EMPTY_ {
 			s.destroyProducerDirectV0(c, reply, dprV0)
 			return
 		} else {
@@ -379,7 +379,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	}
 
 	username := c.memphisInfo.username
-	if username == "" {
+	if username == _EMPTY_ {
 		username = dpr.Username
 	}
 	_, user, err := memphis_cache.GetUser(username, dpr.TenantName, false)
@@ -441,7 +441,7 @@ func (s *Server) destroyProducerDirectV0(c *client, reply string, dpr destroyPro
 	}
 
 	username := c.memphisInfo.username
-	if username == "" {
+	if username == _EMPTY_ {
 		username = dpr.Username
 	}
 	_, user, err := memphis_cache.GetUser(username, dpr.TenantName, false)

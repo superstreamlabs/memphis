@@ -69,7 +69,7 @@ func aggregateClientConnections(s *Server) (map[string]string, error) {
 
 			for k := range incomingConnIds {
 				lock.Lock()
-				connectionIds[k] = ""
+				connectionIds[k] = _EMPTY_
 				lock.Unlock()
 			}
 		}(copyBytes(msg))

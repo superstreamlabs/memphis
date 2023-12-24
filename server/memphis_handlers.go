@@ -123,7 +123,7 @@ func CreateDefaultStation(tenantName string, s *Server, sn StationName, userId i
 		return models.Station{}, false, err
 	}
 
-	newStation, rowsUpdated, err := db.InsertNewStation(stationName, userId, username, "message_age_sec", 3600, "file", replicas, schemaName, schemaVersionNumber, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false, tenantName, []int{1}, 2, "")
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName, userId, username, "message_age_sec", 3600, "file", replicas, schemaName, schemaVersionNumber, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false, tenantName, []int{1}, 2, _EMPTY_)
 	if err != nil {
 		return models.Station{}, false, err
 	}
@@ -173,22 +173,22 @@ func CreateDefaultSchema(username, tenantName string, userId int) (string, error
 	}`
 	newSchema, rowsUpdated, err := db.InsertNewSchema(defaultSchemaName, defualtSchemaType, username, tenantName)
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 
 	if rowsUpdated == 1 {
-		_, _, err = db.InsertNewSchemaVersion(1, userId, username, defualtSchemaContent, newSchema.ID, "", "", true, tenantName)
+		_, _, err = db.InsertNewSchemaVersion(1, userId, username, defualtSchemaContent, newSchema.ID, _EMPTY_, _EMPTY_, true, tenantName)
 		if err != nil {
-			return "", err
+			return _EMPTY_, err
 		}
 	} else {
 		errMsg := fmt.Sprintf("Schema with the name %v already exists ", newSchema.Name)
-		return "", fmt.Errorf(errMsg)
+		return _EMPTY_, fmt.Errorf(errMsg)
 	}
 
 	err = CreateDefaultTags("schema", newSchema.ID, tenantName)
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 	return newSchema.Name, nil
 }

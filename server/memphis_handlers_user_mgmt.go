@@ -161,7 +161,7 @@ func removeTenantResources(tenantName string, user models.User) error {
 		return err
 	}
 
-	err = sendDeleteAllFunctionsReqToMS(user, tenantName, "github", "", "", "aws_lambda", "", true)
+	err = sendDeleteAllFunctionsReqToMS(user, tenantName, "github", _EMPTY_, _EMPTY_, "aws_lambda", _EMPTY_, true)
 	if err != nil {
 		return err
 	}
@@ -264,7 +264,7 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 	}
 	token, err := at.SignedString([]byte(configuration.JWT_SECRET))
 	if err != nil {
-		return "", "", err
+		return _EMPTY_, _EMPTY_, err
 	}
 
 	atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(REFRESH_JWT_EXPIRES_IN_MINUTES)).Unix()
@@ -272,7 +272,7 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 	at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	refreshToken, err := at.SignedString([]byte(configuration.REFRESH_JWT_SECRET))
 	if err != nil {
-		return "", "", err
+		return _EMPTY_, _EMPTY_, err
 	}
 
 	return token, refreshToken, nil
@@ -281,7 +281,7 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 func imageToBase64(imagePath string) (string, error) {
 	bytes, err := os.ReadFile(imagePath)
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 
 	fileExt := filepath.Ext(imagePath)
@@ -365,7 +365,7 @@ func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		analyticsParams := make(map[string]interface{})
-		analytics.SendEvent("", "", analyticsParams, "user-open-ui")
+		analytics.SendEvent(_EMPTY_, _EMPTY_, analyticsParams, "user-open-ui")
 	}
 	c.IndentedJSON(200, gin.H{"show_signup": showSignup})
 }
@@ -395,7 +395,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	hashedPwdString := string(hashedPwd)
 	subscription := body.Subscribtion
 
-	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, serv.MemphisGlobalAccountString(), false, "", "", "", "")
+	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, serv.MemphisGlobalAccountString(), false, _EMPTY_, _EMPTY_, _EMPTY_, _EMPTY_)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exist") {
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User already exists"})
@@ -415,7 +415,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	}
 
 	env := "K8S"
-	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
+	if configuration.DOCKER_ENV != _EMPTY_ || configuration.LOCAL_CLUSTER_ENV {
 		env = "docker"
 	}
 
@@ -450,7 +450,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		analytics.SendEvent(newUser.TenantName, username, analyticsParams, "user-signup")
 	}
 
-	domain := ""
+	domain := _EMPTY_
 	secure := false
 	c.SetCookie("memphis-jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 	c.IndentedJSON(200, gin.H{
@@ -653,7 +653,7 @@ func (umh UserMgmtHandler) GetCompanyLogo(c *gin.Context) {
 		return
 	}
 	if !exist {
-		c.IndentedJSON(200, gin.H{"image": ""})
+		c.IndentedJSON(200, gin.H{"image": _EMPTY_})
 		return
 	}
 
@@ -715,7 +715,7 @@ func (umh UserMgmtHandler) GetActiveUsers(tenantName, page string) ([]string, er
 	}
 
 	for _, user := range userList {
-		if user.Username != "" {
+		if user.Username != _EMPTY_ {
 			users = append(users, user.Username)
 		}
 	}
@@ -939,7 +939,7 @@ func CreateInternalApplicationUserForExistTenants() error {
 		return err
 	}
 	for _, tenant := range tenants {
-		_, err := db.CreateUserIfNotExist("$"+tenant.Name, "application", password, "", false, 1, tenant.Name, false, "", "", "", "")
+		_, err := db.CreateUserIfNotExist("$"+tenant.Name, "application", password, _EMPTY_, false, 1, tenant.Name, false, _EMPTY_, _EMPTY_, _EMPTY_, _EMPTY_)
 		if err != nil {
 			return err
 		}

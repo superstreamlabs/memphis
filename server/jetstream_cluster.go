@@ -8341,7 +8341,7 @@ func (mset *stream) processClusterStreamInfoRequest(reply string) {
 	}
 
 	// ** added by Memphis
-	si.State.Subjects = mset.store.SubjectsTotals("")
+	si.State.Subjects = mset.store.SubjectsTotals(_EMPTY_)
 	// ** added by Memphis
 
 	// Check for out of band catchups.

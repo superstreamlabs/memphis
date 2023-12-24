@@ -712,7 +712,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	var response gin.H
 
 	// Check when the schema object in station is not empty, not optional for non native stations
-	if station.SchemaName != "" && station.SchemaVersionNumber != 0 {
+	if station.SchemaName != _EMPTY_ && station.SchemaVersionNumber != 0 {
 		var schemaDetails models.StationOverviewSchemaDetails
 		exist, schema, err := db.GetSchemaByName(station.SchemaName, station.TenantName)
 		if err != nil {
@@ -1256,7 +1256,7 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 	}
 	splitted_output := strings.Split(stdout.String(), "\n")
 	parsedline := strings.Fields(splitted_output[1])
-	if stderr.String() != "" {
+	if stderr.String() != _EMPTY_ {
 		return usage, errors.New(stderr.String())
 	}
 	if len(parsedline) > 1 {
@@ -1286,7 +1286,7 @@ func (mh MonitoringHandler) GetAvailableReplicas(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	replicas := v.Routes + 1
+	replicas := len(v.Cluster.URLs)
 	replicas = GetAvailableReplicas(replicas)
 	c.IndentedJSON(200, gin.H{
 		"available_replicas": replicas})
@@ -1338,18 +1338,18 @@ func getComponentsStructByOneComp(comp models.SysComponent) models.Components {
 func getK8sClusterTimestamp() (string, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 
 	ctx := context.Background()
 	clusterInfo, err := clientset.CoreV1().Namespaces().Get(ctx, "kube-system", v1Apimachinery.GetOptions{})
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 
 	creationTime := clusterInfo.CreationTimestamp.Time
@@ -1362,7 +1362,7 @@ func getDockerMacAddress() (string, error) {
 	var macAdress string
 	ifaces, err := net.Interfaces()
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 
 	for _, iface := range ifaces {

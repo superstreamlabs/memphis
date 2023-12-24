@@ -276,7 +276,7 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string, tenantNa
 			partition := tokenAt(subj, 3)
 			partitionInt, err := strconv.Atoi(partition)
 			if err != nil {
-				return "", err
+				return _EMPTY_, err
 			}
 			return h.Monitoring.GetFunctionsOverview(stationName, tenantName, partitionInt)
 		}, nil
@@ -483,7 +483,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 		return map[string]any{}, err
 	}
 	updatesAvailable := !schemaVersion.Active
-	if schema.Name == "" && schema.Type == "" && station.SchemaVersionNumber == 0 {
+	if schema.Name == _EMPTY_ && schema.Type == _EMPTY_ && station.SchemaVersionNumber == 0 {
 		updatesAvailable = false
 	}
 	schemaDetails := models.StationOverviewSchemaDetails{
@@ -548,7 +548,7 @@ func (s *Server) sendSystemMessageOnWS(user models.User, systemMessage SystemMes
 		return err
 	}
 
-	if systemMessage.Id == "" {
+	if systemMessage.Id == _EMPTY_ {
 		uid, err := uuid.NewV4()
 		if err != nil {
 			err = fmt.Errorf("sendSystemMessageOnWS at uuid.NewV4: %v", err.Error())

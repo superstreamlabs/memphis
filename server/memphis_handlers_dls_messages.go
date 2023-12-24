@@ -66,7 +66,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	}
 	lenPayload := len(data) + len(headers)
 	// backward compatibility
-	if accountName == "" {
+	if accountName == _EMPTY_ {
 		accountName = s.MemphisGlobalAccountString()
 	}
 	stationName := StationNameFromStreamName(streamName)
@@ -107,11 +107,11 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		}
 	}
 
-	producedByHeader := ""
+	producedByHeader := _EMPTY_
 	poisonedCgs := []string{}
 	if station.IsNative {
 		producedByHeader = headersJson["$memphis_producedBy"]
-		if producedByHeader == "" {
+		if producedByHeader == _EMPTY_ {
 			producedByHeader = "unknown"
 		}
 
@@ -134,7 +134,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		return err
 	}
 	if !updated {
-		err = s.sendToDlsStation(station, data, headersJson, "unacked", "")
+		err = s.sendToDlsStation(station, data, headersJson, "unacked", _EMPTY_)
 		if err != nil {
 			serv.Errorf("[tenant: %v]handleNewUnackedMsg at sendToDlsStation: station: %v, Error while getting notified about a poison message: %v", station.TenantName, station.DlsStation, err.Error())
 			return err
@@ -189,7 +189,7 @@ func (s *Server) handleSchemaverseDlsMsg(msg []byte) error {
 		serv.Errorf("[tenant: %v]handleSchemaverseDlsMsg at DecodeString: %v", tenantName, err.Error())
 		return err
 	}
-	err = s.sendToDlsStation(station, data, message.Message.Headers, "failed_schema", "")
+	err = s.sendToDlsStation(station, data, message.Message.Headers, "failed_schema", _EMPTY_)
 	if err != nil {
 		serv.Errorf("[tenant: %v]handleSchemaverseDlsMsg at sendToDlsStation: station: %v, Error while getting notified about a poison message: %v", tenantName, station.DlsStation, err.Error())
 		return err
@@ -368,8 +368,8 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 		return poisonedCgs[i].CgName < poisonedCgs[j].CgName
 	})
 
-	schemaType := ""
-	if station.SchemaName != "" {
+	schemaType := _EMPTY_
+	if station.SchemaName != _EMPTY_ {
 		exist, schema, err := db.GetSchemaByName(station.SchemaName, station.TenantName)
 		if err != nil {
 			return models.DlsMessageResponse{}, err
@@ -445,7 +445,7 @@ func GetPoisonedCgsByMessage(station models.Station, messageSeq, partitionNumber
 }
 
 func (s *Server) sendToDlsStation(station models.Station, messagePayload []byte, headers map[string]string, dlsType, functionName string) error {
-	if station.DlsStation != "" {
+	if station.DlsStation != _EMPTY_ {
 		exist, dlsStation, err := db.GetStationByName(station.DlsStation, station.TenantName)
 		if err != nil {
 			return err
@@ -455,7 +455,7 @@ func (s *Server) sendToDlsStation(station models.Station, messagePayload []byte,
 			if err != nil {
 				return err
 			}
-			subject := ""
+			subject := _EMPTY_
 			shouldRoundRobin := false
 			if dlsStation.Version == 0 {
 				subject = fmt.Sprintf("%s.final", dlsStationName.Intern())
