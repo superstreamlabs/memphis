@@ -384,7 +384,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	}
 	_, user, err := memphis_cache.GetUser(username, dpr.TenantName, false)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]destroyProducerDirect at GetUserByUsername: Producer %v at station %v: %v", dpr.TenantName, dpr.Username, name, dpr.StationName, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]destroyProducerDirect at GetUser: Producer %v at station %v: %v", dpr.TenantName, dpr.Username, name, dpr.StationName, err.Error())
 	}
 	message := "Producer " + name + " has been destroyed"
 	serv.Noticef("[tenant: %v][user: %v]: %v", tenantName, username, message)
@@ -446,7 +446,7 @@ func (s *Server) destroyProducerDirectV0(c *client, reply string, dpr destroyPro
 	}
 	_, user, err := memphis_cache.GetUser(username, dpr.TenantName, false)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]destroyProducerDirectV0 at GetUserByUsername: Producer %v at station %v: %v", dpr.TenantName, dpr.Username, name, dpr.StationName, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]destroyProducerDirectV0 at GetUser: Producer %v at station %v: %v", dpr.TenantName, dpr.Username, name, dpr.StationName, err.Error())
 	}
 	message := "Producer " + name + " has been destroyed"
 	serv.Noticef("[tenant: %v][user: %v]: %v", dpr.TenantName, username, message)
