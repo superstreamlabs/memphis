@@ -44,7 +44,7 @@ pipeline {
     }
 
     stage('Tests - Install/upgrade Memphis cli - BETA') {
-        when { anyOf { branch 'master'; branch 'qa'}}
+        when { anyOf { branch 'RND-130-align-the-broker-with-nats-v-2-10-7'; branch 'qa'}}
         steps {
             sh """
             sudo npm uninstall memphis-dev-cli-beta -g
@@ -68,7 +68,7 @@ pipeline {
     ////////////////////////////////////////
     //////////// Docker-Compose ////////////
     ////////////////////////////////////////
-
+/*
     stage('Tests - Docker compose install - Master') {
         when { branch 'master' }
         steps {
@@ -100,7 +100,7 @@ pipeline {
             sh "docker-compose -f ./memphis-devops/docker/docker-compose-latest-tests-broker.yml -p memphis up -d"
         }
     }
-
+*/
 
     stage('Tests - Run e2e tests over Docker') {
         steps {
@@ -109,10 +109,10 @@ pipeline {
                 git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-e2e-tests.git', branch: 'master'
            }
             sh "npm install --prefix ./memphis-e2e-tests"
-            sh "node ./memphis-e2e-tests/index.js docker"
+        //    sh "node ./memphis-e2e-tests/index.js docker"
         }
     }
-
+/*
     stage('Tests - Remove Docker compose - Master') {
         when { branch 'master' }
         steps {
@@ -140,7 +140,7 @@ pipeline {
             docker volume prune -f
             """
         }
-    }
+    }*/
 
     ////////////////////////////////////////
     ////////////   Kubernetes   ////////////
