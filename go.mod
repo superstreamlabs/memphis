@@ -9,11 +9,11 @@ require (
 	github.com/go-playground/validator/v10 v10.14.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/jhump/protoreflect v1.13.0
-	github.com/klauspost/compress v1.16.7
+	github.com/klauspost/compress v1.17.0
 	github.com/minio/highwayhash v1.0.2
-	github.com/nats-io/jwt/v2 v2.5.0
-	github.com/nats-io/nats.go v1.28.0
-	github.com/nats-io/nkeys v0.4.4
+	github.com/nats-io/jwt/v2 v2.5.3
+	github.com/nats-io/nats.go v1.31.0
+	github.com/nats-io/nkeys v0.4.6
 	github.com/nats-io/nuid v1.0.1
 	github.com/tkanos/gonfig v0.0.0-20210106201359-53e13348de2f
 	go.uber.org/automaxprocs v1.5.3
@@ -33,7 +33,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.11.64
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.33.0
 	github.com/aws/smithy-go v1.13.5
-	github.com/docker/docker v20.10.24+incompatible
+	github.com/docker/docker v24.0.7+incompatible
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/graph-gophers/graphql-go v1.5.0
 	github.com/hamba/avro/v2 v2.13.0
@@ -61,7 +61,6 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/tools v0.12.0 // indirect
