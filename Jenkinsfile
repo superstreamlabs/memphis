@@ -44,7 +44,7 @@ pipeline {
     }
 
     stage('Tests - Install/upgrade Memphis cli - BETA') {
-        when { anyOf { branch 'RND-130-align-the-broker-with-nats-v-2-10-7'; branch 'qa'}}
+        when { anyOf { branch 'valera'; branch 'qa'}}
         steps {
             sh """
             sudo npm uninstall memphis-dev-cli-beta -g
