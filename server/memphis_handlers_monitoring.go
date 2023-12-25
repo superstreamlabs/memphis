@@ -892,8 +892,8 @@ func (s *Server) GetSystemLogs(amount uint64,
 	cc := ConsumerConfig{
 		OptStartSeq:   startSeq,
 		DeliverPolicy: DeliverByStartSequence,
-		AckPolicy:     AckExplicit,
-		Durable:       durableName,
+		AckPolicy:     AckNone,
+		Name:          durableName,
 		Replicas:      1,
 	}
 
@@ -912,8 +912,6 @@ func (s *Server) GetSystemLogs(amount uint64,
 	req := []byte(strconv.FormatUint(amount, 10))
 	sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
-			// ack
-			s.sendInternalAccountMsg(s.MemphisGlobalAccount(), reply, []byte(_EMPTY_))
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
 
@@ -950,7 +948,6 @@ func (s *Server) GetSystemLogs(amount uint64,
 cleanup:
 	timer.Stop()
 	s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
-	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(s.MemphisGlobalAccountString(), syslogsStreamName, durableName) })
 
 	var resMsgs []models.Log
 	if uint64(len(msgs)) < amount && streamInfo.State.Msgs > amount && streamInfo.State.FirstSeq < startSeq {

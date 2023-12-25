@@ -660,7 +660,7 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 		}
 		for _, info := range allStreamInfo {
 			streamName := info.Config.Name
-			if !strings.Contains(streamName, "$memphis") {
+			if !strings.Contains(streamName, MEMPHIS_GLOBAL_ACCOUNT) {
 				if strings.Contains(streamName, "$") {
 					stationNameAndPartition := strings.Split(streamName, "$")
 					stationTotalMsgs[stationNameAndPartition[0]] += int(info.State.Subjects[streamName+".final"])
@@ -777,7 +777,7 @@ func (sh StationsHandler) GetAllStationsDetailsLight(shouldExtend bool, tenantNa
 		}
 		for _, info := range streamsInfo {
 			streamName := info.Config.Name
-			if !strings.Contains(streamName, "$memphis") {
+			if !strings.Contains(streamName, MEMPHIS_GLOBAL_ACCOUNT) {
 				totalMessages += info.State.Subjects[streamName+".final"]
 				if strings.Contains(streamName, "$") {
 					stationNameAndPartition := strings.Split(streamName, "$")
@@ -1846,7 +1846,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
 
 	for header := range headersJson {
-		if strings.HasPrefix(header, "$memphis") {
+		if strings.HasPrefix(header, MEMPHIS_GLOBAL_ACCOUNT) {
 			delete(headersJson, header)
 		}
 	}

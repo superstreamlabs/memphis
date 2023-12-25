@@ -4975,8 +4975,8 @@ func (js *jetStream) processConsumerLeaderChange(o *consumer, isLeader bool) err
 	if isLeader {
 		// ** added by Memphis
 		logFunc := s.Noticef
-		if strings.Contains(streamName, "$memphis") ||
-			strings.Contains(consumerName, "$memphis") {
+		if strings.Contains(streamName, MEMPHIS_GLOBAL_ACCOUNT) ||
+			strings.Contains(consumerName, MEMPHIS_GLOBAL_ACCOUNT) {
 			logFunc = s.Debugf
 		}
 		// ** added by Memphis

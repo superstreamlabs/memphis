@@ -3740,7 +3740,7 @@ func (fs *fileStore) removeMsg(seq uint64, secure, viaLimits, needFSLock bool) (
 	// ** added by memphis
 	// send the message to tiered 2 storage if needed
 	tieredStorageEnabled := fs.cfg.StreamConfig.TieredStorageEnabled
-	if !secure && !strings.HasPrefix(fs.cfg.StreamConfig.Name, "$memphis") && tieredStorageEnabled && serv != nil {
+	if !secure && !strings.HasPrefix(fs.cfg.StreamConfig.Name, MEMPHIS_GLOBAL_ACCOUNT) && tieredStorageEnabled && serv != nil {
 		err = serv.sendToTier2Storage(fs, copyBytes(sm.buf), sm.seq, "s3")
 		if err != nil {
 			return false, err

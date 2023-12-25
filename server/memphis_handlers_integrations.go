@@ -614,8 +614,8 @@ func (s *Server) getIntegrationAuditLogs(integrationType, tenantName string) ([]
 	durableName := INTEGRATIONS_AUDIT_LOGS_CONSUMER + "_" + uid
 	cc := ConsumerConfig{
 		DeliverPolicy: DeliverAll,
-		AckPolicy:     AckExplicit,
-		Durable:       durableName,
+		AckPolicy:     AckNone,
+		Name:          durableName,
 		Replicas:      1,
 		FilterSubject: filterSubject,
 	}
@@ -631,8 +631,6 @@ func (s *Server) getIntegrationAuditLogs(integrationType, tenantName string) ([]
 	req := []byte(strconv.FormatUint(amount, 10))
 	sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
-			// ack
-			s.sendInternalAccountMsg(s.MemphisGlobalAccount(), reply, []byte(_EMPTY_))
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
 
@@ -669,9 +667,6 @@ func (s *Server) getIntegrationAuditLogs(integrationType, tenantName string) ([]
 cleanup:
 	timer.Stop()
 	s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
-	time.AfterFunc(500*time.Millisecond, func() {
-		serv.memphisRemoveConsumer(s.MemphisGlobalAccountString(), integrationsAuditLogsStream, durableName)
-	})
 
 	resMsgs := []models.IntegrationsAuditLog{}
 	for _, msg := range msgs {

@@ -1141,7 +1141,7 @@ func (ms *memStore) removeMsg(seq uint64, secure bool) bool {
 	// ** added by memphis
 	// send the message to tiered 2 storage if needed
 	tieredStorageEnabled := ms.cfg.TieredStorageEnabled
-	if !secure && !strings.HasPrefix(ms.cfg.Name, "$memphis") && tieredStorageEnabled && serv != nil {
+	if !secure && !strings.HasPrefix(ms.cfg.Name, MEMPHIS_GLOBAL_ACCOUNT) && tieredStorageEnabled && serv != nil {
 		serv.sendToTier2Storage(ms, copyBytes(sm.buf), sm.seq, "s3")
 	}
 	// ** added by memphis
