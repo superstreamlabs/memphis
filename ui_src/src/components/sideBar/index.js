@@ -239,14 +239,14 @@ function SideBar() {
     const MenuItem = ({ icon, activeIcon, name, route, onClick, onMouseEnter, onMouseLeave, badge }) => {
         return (
             <div className={'item-wrapper ' + (state.route === route ? 'ms-active ' : '') + (hoveredItem === route ? 'item-wrapper-hovered' : '')} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onClick={onClick}>
-                <div className="icon">{state.route === route ? activeIcon : hoveredItem === route ? activeIcon : icon}</div>
+                <div className="icon ">{state.route === route ? activeIcon : hoveredItem === route ? activeIcon : icon}</div>
                 <p className={state.route === route ? 'checked' : 'name'}>{name}</p>
                 {badge && <label className="badge">{badge}</label>}
             </div>
         );
     };
 
-    const PopoverActionItem = ({icon, name, onClick, upgrade}) => {
+    const PopoverActionItem = ({ icon, name, onClick, upgrade }) => {
         upgrade && setBannerType('upgrade');
         return (
             <div
@@ -598,11 +598,11 @@ function SideBar() {
 
                 <div className="item-wrapper ms-appearance-wrapper">
                     <div className="ms-appearance">
-                        <div className={'ms-appearance-light ' + (!darkMode && 'ms-active')} onClick={() => handleDarkMode(false)}>
-                            <SunIcon/>
+                        <div className={'ms-appearance-light ' + (!darkMode && 'ms-active')} onClick={ () => handleDarkMode(false)}>
+                            <SunIcon />
                             <span className="ms-appearance-text">Light</span>
                         </div>
-                        <div className={'ms-appearance-dark ' + (darkMode && 'ms-active')} onClick={() => handleDarkMode(true)}>
+                        <div className={'ms-appearance-dark ' + (darkMode && 'ms-active')} onClick={ () => handleDarkMode(true)}>
                             <MoonIcon/>
                             <span className="ms-appearance-text">Dark</span>
                         </div>
