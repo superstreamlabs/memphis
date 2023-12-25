@@ -12,13 +12,9 @@
 
 export const ENVIRONMENT = process.env.NODE_ENV ? process.env.NODE_ENV : 'development';
 const SERVER_URL_PRODUCTION = `${window.location.href.split('//')[1].split('/')[0]}/api`;
-var ws_server_url_prod = `${window.location.href.split('//')[1].split('/')[0]}`;
-if (ws_server_url_prod?.includes(':')) ws_server_url_prod = ws_server_url_prod.split(':')[0];
-export const WS_SERVER_URL_PRODUCTION = ws_server_url_prod;
 const SSL_PREFIX = window.location.protocol === 'https:' ? 'https://' : 'http://';
 
 export const SERVER_URL = ENVIRONMENT === 'production' ? `${SSL_PREFIX}${SERVER_URL_PRODUCTION}` : `http://localhost:9000/api`;
-export const WS_PREFIX = window.location.href?.includes('https') ? 'wss' : 'ws';
 export const URL = window.location.href;
 
 export const HANDLE_REFRESH_INTERVAL = 600000;

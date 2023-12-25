@@ -53,6 +53,7 @@ type Configuration struct {
 	FUNCTIONS_ADMIN_SERVICE_HOST string
 	FUNCTIONS_ADMIN_SERVICE_PORT string
 	INITIAL_CONFIG_FILE          string
+	WS_HOST                      string
 }
 
 func GetConfig() Configuration {
@@ -99,6 +100,9 @@ func GetConfig() Configuration {
 	}
 	if configuration.FUNCTIONS_ADMIN_SERVICE_PORT == "" {
 		configuration.FUNCTIONS_ADMIN_SERVICE_PORT = "8880"
+	}
+	if configuration.WS_HOST == "" {
+		configuration.WS_HOST = "ws://localhost:7770"
 	}
 
 	gin.SetMode(gin.ReleaseMode)

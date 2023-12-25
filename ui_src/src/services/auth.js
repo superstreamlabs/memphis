@@ -30,10 +30,10 @@ import {
     LOCAL_STORAGE_REST_GW_PORT,
     LOCAL_STORAGE_HTTP_PORT,
     LOCAL_STORAGE_CLIENTS_PORT,
-    LOCAL_STORAGE_WS_PORT,
     LOCAL_STORAGE_CONNECTION_TOKEN,
     LOCAL_STORAGE_USER_PASS_BASED_AUTH,
     LOCAL_STORAGE_ACCOUNT_ID,
+    LOCAL_STORAGE_WS_HOST,
     LOCAL_STORAGE_INTERNAL_WS_PASS,
     LOCAL_STORAGE_WELCOME_MESSAGE,
     DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS,
@@ -68,7 +68,6 @@ const AuthService = (function () {
         localStorage.setItem(LOCAL_STORAGE_REST_GW_HOST, userData.rest_gw_host);
         localStorage.setItem(LOCAL_STORAGE_UI_HOST, userData.ui_host);
         localStorage.setItem(LOCAL_STORAGE_TIERED_STORAGE_TIME, userData.tiered_storage_time_sec);
-        localStorage.setItem(LOCAL_STORAGE_WS_PORT, userData.ws_port);
         localStorage.setItem(LOCAL_STORAGE_CLIENTS_PORT, userData.clients_port);
         localStorage.setItem(LOCAL_STORAGE_HTTP_PORT, userData.http_port);
         localStorage.setItem(LOCAL_STORAGE_REST_GW_PORT, userData.rest_gw_port);
@@ -76,6 +75,7 @@ const AuthService = (function () {
         localStorage.setItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH, userData.user_pass_based_auth);
         localStorage.setItem(LOCAL_STORAGE_ACCOUNT_ID, userData.account_id);
         localStorage.setItem(LOCAL_STORAGE_ACCOUNT_NAME, userData.account_name);
+        localStorage.setItem(LOCAL_STORAGE_WS_HOST, userData.ws_host);
         localStorage.setItem(LOCAL_STORAGE_INTERNAL_WS_PASS, userData.internal_ws_pass);
         localStorage.setItem(DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS, userData.dls_retention);
         localStorage.setItem(LOGS_RETENTION_IN_DAYS, userData.logs_retention);
