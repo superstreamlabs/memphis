@@ -92,12 +92,12 @@ func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamCo
 			}
 
 			username := c.opts.Username
-			if username == "" {
+			if username == _EMPTY_ {
 				username = strings.Split(c.getRawAuthUser(), "::")[0]
 			}
 			csr := createStationRequest{
 				StationName:       cfg.Name,
-				SchemaName:        "",
+				SchemaName:        _EMPTY_,
 				RetentionType:     retentionType,
 				RetentionValue:    retentionValue,
 				StorageType:       storageType,
@@ -109,7 +109,7 @@ func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamCo
 				},
 				Username:             username,
 				TieredStorageEnabled: false,
-				DlsStation:           "",
+				DlsStation:           _EMPTY_,
 			}
 
 			s.createStationDirectIntern(c, reply, &csr, false)
@@ -144,7 +144,7 @@ func memphisDeleteNonNativeStationIfNeeded(s *Server, reply string, streamName s
 	case resp := <-respCh:
 		if resp != nil && resp.Success {
 			username := c.opts.Username
-			if username == "" {
+			if username == _EMPTY_ {
 				username = strings.Split(c.getRawAuthUser(), "::")[0]
 			}
 			dsr := destroyStationRequest{StationName: streamName, Username: username}
@@ -211,22 +211,22 @@ func validateStreamName(streamName string) (string, error) {
 	firstLetterErr := errors.New(firstLetterErrStr)
 
 	if len(name) == 0 {
-		return "", emptyErr
+		return _EMPTY_, emptyErr
 	}
 
 	if len(name) > 128 {
-		return "", tooLongErr
+		return _EMPTY_, tooLongErr
 	}
 
 	re := regexp.MustCompile("^[a-z0-9_-]*$")
 
 	validName := re.MatchString(name)
 	if !validName {
-		return "", invalidCharErr
+		return _EMPTY_, invalidCharErr
 	}
 
 	if name[0:1] == "-" || name[0:1] == "_" || name[len(name)-1:] == "." || name[len(name)-1:] == "-" || name[len(name)-1:] == "_" {
-		return "", firstLetterErr
+		return _EMPTY_, firstLetterErr
 	}
 
 	return name, nil

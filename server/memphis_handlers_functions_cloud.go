@@ -183,37 +183,37 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 				}
 			}
 
-			description := ""
+			description := _EMPTY_
 			descriptionInterface, ok := fucntionContentMap["description"]
 			if ok {
 				description = descriptionInterface.(string)
 			}
 
-			functionName := ""
-			if functionNameInterface, ok := fucntionContentMap["function_name"]; !ok || functionNameInterface == nil || functionNameInterface.(string) == "" {
+			functionName := _EMPTY_
+			if functionNameInterface, ok := fucntionContentMap["function_name"]; !ok || functionNameInterface == nil || functionNameInterface.(string) == _EMPTY_ {
 				errMsg := fmt.Errorf("function in %s repository is invalid since its memphis.yaml file is missing the function_name field", repo)
 				return functions, errMsg
 			} else {
 				functionName = functionNameInterface.(string)
 			}
 
-			runtime := ""
-			if runtimeInterface, ok := fucntionContentMap["runtime"]; !ok || runtimeInterface == nil || runtimeInterface.(string) == "" {
+			runtime := _EMPTY_
+			if runtimeInterface, ok := fucntionContentMap["runtime"]; !ok || runtimeInterface == nil || runtimeInterface.(string) == _EMPTY_ {
 				errMsg := fmt.Errorf("function %s placed in %s repository is invalid since its memphis.yaml file is missing the runtime field", repo, functionName)
 				return functions, errMsg
 			} else {
 				runtime = runtimeInterface.(string)
 			}
 			regex := regexp.MustCompile(`[0-9]+|\\.$`)
-			language := regex.ReplaceAllString(runtime, "")
+			language := regex.ReplaceAllString(runtime, _EMPTY_)
 			language = strings.TrimRight(language, ".")
 			if strings.Contains(language, "-edge") {
 				language = strings.Trim(language, ".-edge")
 			}
 
-			dependencies := ""
+			dependencies := _EMPTY_
 			dependenciesMissing := false
-			if dependenciesInterface, ok := fucntionContentMap["dependencies"]; !ok || dependenciesInterface == nil || dependenciesInterface.(string) == "" {
+			if dependenciesInterface, ok := fucntionContentMap["dependencies"]; !ok || dependenciesInterface == nil || dependenciesInterface.(string) == _EMPTY_ {
 				dependenciesMissing = true
 			} else {
 				dependencies = dependenciesInterface.(string)
@@ -235,7 +235,7 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 				byMemphis = true
 			}
 
-			handler := ""
+			handler := _EMPTY_
 			if _, ok := fucntionContentMap["handler"].(string); ok {
 				handler = fucntionContentMap["handler"].(string)
 			}

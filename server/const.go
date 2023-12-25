@@ -98,10 +98,16 @@ const (
 	// TLS_TIMEOUT is the TLS wait time.
 	TLS_TIMEOUT = 2 * time.Second
 
+	// DEFAULT_TLS_HANDSHAKE_FIRST_FALLBACK_DELAY is the default amount of
+	// time for the server to wait for the TLS handshake with a client to
+	// be initiated before falling back to sending the INFO protocol first.
+	// See TLSHandshakeFirst and TLSHandshakeFirstFallback options.
+	DEFAULT_TLS_HANDSHAKE_FIRST_FALLBACK_DELAY = 50 * time.Millisecond
+
 	// AUTH_TIMEOUT is the authorization wait time.
 	AUTH_TIMEOUT = 2 * time.Second
 
-	// DEFAULT_PING_INTERVAL is how often pings are sent to clients and routes.
+	// DEFAULT_PING_INTERVAL is how often pings are sent to clients, etc...
 	DEFAULT_PING_INTERVAL = 2 * time.Minute
 
 	// DEFAULT_PING_MAX_OUT is maximum allowed pings outstanding before disconnect.
@@ -136,6 +142,9 @@ const (
 
 	// DEFAULT_ROUTE_DIAL Route dial timeout.
 	DEFAULT_ROUTE_DIAL = 1 * time.Second
+
+	// DEFAULT_ROUTE_POOL_SIZE Route default pool size
+	DEFAULT_ROUTE_POOL_SIZE = 3
 
 	// DEFAULT_LEAF_NODE_RECONNECT LeafNode reconnect interval.
 	DEFAULT_LEAF_NODE_RECONNECT = time.Second

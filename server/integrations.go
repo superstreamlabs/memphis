@@ -186,7 +186,7 @@ func deleteIntegrationFromTenant(tenantName string, integrationType string, inte
 }
 
 func hideIntegrationSecretKey(secretKey string) string {
-	if secretKey != "" {
+	if secretKey != _EMPTY_ {
 		lastCharsSecretKey := secretKey[len(secretKey)-4:]
 		secretKey = "****" + lastCharsSecretKey
 		return secretKey

@@ -920,13 +920,14 @@ func (c *client) parse(buf []byte) error {
 					c.argBuf = nil
 				} else {
 					arg = buf[c.as : i-c.drop]
-
+					// *** added by Memphis
 					d := json.NewDecoder(strings.NewReader(string(arg)))
 					err := d.Decode(&c.opts)
 
 					if err != nil {
 						return err
 					}
+					// *** added by Memphis
 				}
 				if err := c.overMaxControlLineLimit(arg, mcl); err != nil {
 					return err

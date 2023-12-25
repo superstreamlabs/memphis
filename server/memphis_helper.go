@@ -223,7 +223,7 @@ func (s *Server) WaitForLeaderElection() {
 			break
 		}
 
-		if ci.Leader != "" {
+		if ci.Leader != _EMPTY_ {
 			break
 		} else {
 			time.Sleep(100 * time.Millisecond)
@@ -650,7 +650,7 @@ func getInternalConsumerName(cn string) string {
 
 func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, station models.Station, partitionsList []int) error {
 	var consumerName string
-	if consumer.ConsumersGroup != "" {
+	if consumer.ConsumersGroup != _EMPTY_ {
 		consumerName = consumer.ConsumersGroup
 	} else {
 		consumerName = consumer.Name
@@ -1105,7 +1105,7 @@ func (s *Server) GetMessagesFromPartition(station models.Station, streamName str
 
 	filterSubj := streamName + ".final"
 	if !station.IsNative {
-		filterSubj = ""
+		filterSubj = _EMPTY_
 	}
 	replicas := 1
 	if streamInfo.Config.Retention == InterestPolicy {
@@ -1306,21 +1306,21 @@ func (s *Server) GetLeaderAndFollowers(station models.Station, partitionNumber i
 	var streamInfo *StreamInfo
 	stationName, err := StationNameFromStr(station.Name)
 	if err != nil {
-		return "", []string{}, err
+		return _EMPTY_, []string{}, err
 	}
 	if len(station.PartitionsList) > 0 {
 		if partitionNumber == -1 {
-			return "", []string{}, nil
+			return _EMPTY_, []string{}, nil
 		}
 		streamName := fmt.Sprintf("%s$%s", stationName.Intern(), strconv.Itoa(partitionNumber))
 		streamInfo, err = s.memphisStreamInfo(station.TenantName, streamName)
 		if err != nil {
-			return "", []string{}, err
+			return _EMPTY_, []string{}, err
 		}
 	} else { // backward compatibility
 		streamInfo, err = s.memphisStreamInfo(station.TenantName, stationName.Intern())
 		if err != nil {
-			return "", []string{}, err
+			return _EMPTY_, []string{}, err
 		}
 
 	}
@@ -1403,7 +1403,7 @@ func (s *Server) ResendPoisonMessage(tenantName, subject string, data, headers [
 
 	hdrs["$memphis_producedBy"] = "$memphis_dls"
 
-	if hdrs["producedBy"] != "" {
+	if hdrs["producedBy"] != _EMPTY_ {
 		delete(hdrs, "producedBy")
 	}
 
@@ -1487,7 +1487,7 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 			return nil, ErrBadHeader
 		}
 		key := kv[:i]
-		if key == "" {
+		if key == _EMPTY_ {
 			// Skip empty keys.
 			continue
 		}
@@ -1605,9 +1605,9 @@ func generateJSONString(accounts map[string]AccountConfig) (string, error) {
 		Accounts: accounts,
 	}
 
-	jsonString, err := json.MarshalIndent(data, " ", "")
+	jsonString, err := json.MarshalIndent(data, " ", _EMPTY_)
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 	var dataMap map[string]interface{}
 	err = json.Unmarshal(jsonString, &dataMap)
@@ -1622,11 +1622,11 @@ func getAccountsAndUsersString() (string, error) {
 	decriptionKey := getAESKey()
 	users, err := db.GetAllUsersByType([]string{"application"})
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 	tenants, err := db.GetAllTenantsWithoutGlobal()
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 	globalUsers := []UserConfig{{User: "$$memphis", Password: getInternalUserPassword()}}
 	accounts := map[string]AccountConfig{
@@ -1639,11 +1639,11 @@ func getAccountsAndUsersString() (string, error) {
 	if shouldCreateRootUserforGlobalAcc {
 		_, globalT, err := db.GetGlobalTenant()
 		if err != nil {
-			return "", err
+			return _EMPTY_, err
 		}
 		decryptedPass, err := DecryptAES(decriptionKey, globalT.InternalWSPass)
 		if err != nil {
-			return "", err
+			return _EMPTY_, err
 		}
 		globalUsers = append(globalUsers, UserConfig{User: "$memphis_user$1", Password: decryptedPass})
 		globalUsers = append(globalUsers, UserConfig{User: "root$1", Password: configuration.ROOT_PASSWORD})
@@ -1653,7 +1653,7 @@ func getAccountsAndUsersString() (string, error) {
 		tName := user.TenantName
 		decryptedUserPassword, err := DecryptAES(decriptionKey, user.Password)
 		if err != nil {
-			return "", err
+			return _EMPTY_, err
 		}
 		if tName == MEMPHIS_GLOBAL_ACCOUNT {
 			globalUsers = append(globalUsers, UserConfig{User: user.Username + "$1", Password: decryptedUserPassword})
@@ -1668,7 +1668,7 @@ func getAccountsAndUsersString() (string, error) {
 	for _, t := range tenants {
 		decryptedUserPassword, err := DecryptAES(decriptionKey, t.InternalWSPass)
 		if err != nil {
-			return "", err
+			return _EMPTY_, err
 		}
 		internalAppUser := fmt.Sprintf("$%s$%v", t.Name, t.ID) // for internal use
 		usrsList := []UserConfig{{User: "$" + t.Name, Password: getInternalUserPassword()}, {User: internalAppUser, Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}, {User: MEMPHIS_USERNAME + "$" + strconv.Itoa(t.ID), Password: decryptedUserPassword}}
@@ -1687,7 +1687,7 @@ func getAccountsAndUsersString() (string, error) {
 	accounts[MEMPHIS_GLOBAL_ACCOUNT] = AccountConfig{Jetstream: &enableJetStream, Users: globalUsers, Limits: map[string]*int{"max_connections": &noLimit}, Exports: memphisReplaceExportString}
 	jsonString, err := generateJSONString(accounts)
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 	jsonString = strings.ReplaceAll(jsonString, `"replaceImports"`, memphisImportString)
 	jsonString = strings.ReplaceAll(jsonString, `"replaceExports"`, memphisExportString)
@@ -1725,7 +1725,7 @@ func upsertAccountsAndUsers(Accounts []*Account, Users []*User) error {
 					UserType:   "application",
 					CreatedAt:  time.Now(),
 					AvatarId:   1,
-					FullName:   "",
+					FullName:   _EMPTY_,
 					TenantName: tenantName,
 				}
 				usersToUpsert = append(usersToUpsert, newUser)
@@ -1781,14 +1781,14 @@ func (s *Server) getIp() string {
 	resp, err := http.Get("https://ifconfig.me")
 	if err != nil {
 		serv.Warnf("getIp: error get ip: %s", err.Error())
-		return ""
+		return _EMPTY_
 	}
 	defer resp.Body.Close()
 
 	ip, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		serv.Warnf("getIp: error reading response get ip body: %s", err.Error())
-		return ""
+		return _EMPTY_
 	}
 	return string(ip)
 }

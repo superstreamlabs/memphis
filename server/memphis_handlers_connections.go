@@ -141,7 +141,7 @@ func handleConnectMessage(client *client) error {
 }
 
 func (mci *memphisClientInfo) updateDisconnection(tenantName string) error {
-	if mci.connectionId == "" {
+	if mci.connectionId == _EMPTY_ {
 		return nil
 	}
 
@@ -174,7 +174,7 @@ func (mci *memphisClientInfo) updateDisconnection(tenantName string) error {
 				}
 			}
 		}
-		msg := ""
+		msg := _EMPTY_
 		if len(producerNames) > 0 {
 			msg = producerNames
 		}

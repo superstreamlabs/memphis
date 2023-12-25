@@ -90,7 +90,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	}
 
 	consumerGroup := strings.ToLower(cGroup)
-	if consumerGroup != "" {
+	if consumerGroup != _EMPTY_ {
 		err = validateConsumerName(consumerGroup)
 		if err != nil {
 			serv.Warnf("[tenant: %v][user: %v]createConsumerDirectCommon at validateConsumerName: Failed creating consumer %v at station %v : %v", tenantName, userName, consumerName, cStationName, err.Error())
@@ -136,7 +136,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 			return []int{}, err
 		}
 		var created bool
-		station, created, err = CreateDefaultStation(user.TenantName, s, stationName, user.ID, user.Username, "", 0)
+		station, created, err = CreateDefaultStation(user.TenantName, s, stationName, user.ID, user.Username, _EMPTY_, 0)
 		if err != nil {
 			serv.Warnf("[tenant: %v]createConsumerDirectCommon at CreateDefaultStation: Consumer %v at station %v : %v", tenantName, consumerName, cStationName, err.Error())
 			return []int{}, err
@@ -206,7 +206,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 				return []int{}, err
 			}
 			if !comparePartitionsList(consumerFromGroup.PartitionsList, newConsumer.PartitionsList) {
-				existingPartitions := ""
+				existingPartitions := _EMPTY_
 				for i, pl := range consumerFromGroup.PartitionsList {
 					existingPartitions += strconv.Itoa(pl)
 					if i < len(consumerFromGroup.PartitionsList)-1 {
@@ -339,7 +339,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 
 	schemaUpdate, err := getSchemaUpdateInitFromStation(sn, ccr.TenantName)
 	if err == ErrNoSchema {
-		v1Resp := createConsumerResponseV1{PartitionsUpdate: models.PartitionsUpdate{PartitionsList: partitions}, Err: ""}
+		v1Resp := createConsumerResponseV1{PartitionsUpdate: models.PartitionsUpdate{PartitionsList: partitions}, Err: _EMPTY_}
 		respondWithResp(s.MemphisGlobalAccountString(), s, reply, &v1Resp)
 		return
 	}
@@ -355,7 +355,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	if len(partitions) == 0 && ccr.RequestVersion < 2 {
 		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 	} else {
-		v1Resp := createConsumerResponseV1{SchemaUpdate: *schemaUpdate, PartitionsUpdate: models.PartitionsUpdate{PartitionsList: partitions}, Err: ""}
+		v1Resp := createConsumerResponseV1{SchemaUpdate: *schemaUpdate, PartitionsUpdate: models.PartitionsUpdate{PartitionsList: partitions}, Err: _EMPTY_}
 		respondWithResp(s.MemphisGlobalAccountString(), s, reply, &v1Resp)
 	}
 }
@@ -576,7 +576,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 			return
 		}
 		dcrV0.TenantName = tenantName
-		if c.memphisInfo.connectionId == "" {
+		if c.memphisInfo.connectionId == _EMPTY_ {
 			s.destroyConsumerDirectV0(c, reply, dcrV0)
 			return
 		} else {
@@ -692,7 +692,7 @@ func (s *Server) destroyCGFromNats(c *client, reply, userName, tenantName string
 	name := strings.ToLower(consumer.Name)
 	if deleted {
 		username := c.memphisInfo.username
-		if username == "" {
+		if username == _EMPTY_ {
 			username = userName
 		}
 		_, user, err := memphis_cache.GetUser(username, consumer.TenantName, false)

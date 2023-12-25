@@ -72,6 +72,7 @@ func TestDefaultOptions(t *testing.T) {
 		MaxTracedMsgLen:       0,
 		JetStreamMaxMemory:    -1,
 		JetStreamMaxStore:     -1,
+		SyncInterval:          2 * time.Minute,
 	}
 
 	opts := &Options{}
@@ -119,6 +120,7 @@ func TestConfigFile(t *testing.T) {
 		LameDuckDuration:      4 * time.Minute,
 		ConnectErrorReports:   86400,
 		ReconnectErrorReports: 5,
+		authBlockDefined:      true,
 	}
 
 	opts, err := ProcessConfigFile("./configs/test.conf")
@@ -131,13 +133,14 @@ func TestConfigFile(t *testing.T) {
 
 func TestTLSConfigFile(t *testing.T) {
 	golden := &Options{
-		ConfigFile:  "./configs/tls.conf",
-		Host:        "127.0.0.1",
-		Port:        4443,
-		Username:    "derek",
-		Password:    "foo",
-		AuthTimeout: 1.0,
-		TLSTimeout:  2.0,
+		ConfigFile:       "./configs/tls.conf",
+		Host:             "127.0.0.1",
+		Port:             4443,
+		Username:         "derek",
+		Password:         "foo",
+		AuthTimeout:      1.0,
+		TLSTimeout:       2.0,
+		authBlockDefined: true,
 	}
 	opts, err := ProcessConfigFile("./configs/tls.conf")
 	if err != nil {
@@ -282,6 +285,7 @@ func TestMergeOverrides(t *testing.T) {
 		LameDuckDuration:      4 * time.Minute,
 		ConnectErrorReports:   86400,
 		ReconnectErrorReports: 5,
+		authBlockDefined:      true,
 	}
 	fopts, err := ProcessConfigFile("./configs/test.conf")
 	if err != nil {
@@ -1131,6 +1135,7 @@ func TestBadNkeyConfig(t *testing.T) {
 	if err := os.WriteFile(confFileName, []byte(content), 0666); err != nil {
 		t.Fatalf("Error writing config file: %v", err)
 	}
+	defer removeFile(t, confFileName)
 	if _, err := ProcessConfigFile(confFileName); err == nil {
 		t.Fatalf("Expected an error from nkey entry with password")
 	}
@@ -1147,6 +1152,7 @@ func TestNkeyWithPassConfig(t *testing.T) {
 	if err := os.WriteFile(confFileName, []byte(content), 0666); err != nil {
 		t.Fatalf("Error writing config file: %v", err)
 	}
+	defer removeFile(t, confFileName)
 	if _, err := ProcessConfigFile(confFileName); err == nil {
 		t.Fatalf("Expected an error from bad nkey entry")
 	}
@@ -1163,6 +1169,7 @@ func TestTokenWithUserPass(t *testing.T) {
 	if err := os.WriteFile(confFileName, []byte(content), 0666); err != nil {
 		t.Fatalf("Error writing config file: %v", err)
 	}
+	defer removeFile(t, confFileName)
 	_, err := ProcessConfigFile(confFileName)
 	if err == nil {
 		t.Fatal("Expected error, got none")
@@ -1184,6 +1191,7 @@ func TestTokenWithUsers(t *testing.T) {
 	if err := os.WriteFile(confFileName, []byte(content), 0666); err != nil {
 		t.Fatalf("Error writing config file: %v", err)
 	}
+	defer removeFile(t, confFileName)
 	_, err := ProcessConfigFile(confFileName)
 	if err == nil {
 		t.Fatal("Expected error, got none")
@@ -2084,6 +2092,7 @@ func TestParsingGateways(t *testing.T) {
 	if err := os.WriteFile(file, []byte(content), 0600); err != nil {
 		t.Fatalf("Error writing config file: %v", err)
 	}
+	defer removeFile(t, file)
 	opts, err := ProcessConfigFile(file)
 	if err != nil {
 		t.Fatalf("Error processing file: %v", err)
@@ -2337,6 +2346,7 @@ func TestParsingGatewaysErrors(t *testing.T) {
 			if err := os.WriteFile(file, []byte(test.content), 0600); err != nil {
 				t.Fatalf("Error writing config file: %v", err)
 			}
+			defer removeFile(t, file)
 			_, err := ProcessConfigFile(file)
 			if err == nil {
 				t.Fatalf("Expected to fail, did not. Content:\n%s", test.content)

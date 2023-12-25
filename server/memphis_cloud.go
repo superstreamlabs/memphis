@@ -164,7 +164,7 @@ func CreateRootUserOnFirstSystemLoad() (bool, error) {
 	}
 	hashedPwdString := string(hashedPwd)
 
-	created, err := db.UpsertUserUpdatePassword(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, serv.MemphisGlobalAccountString())
+	created, err := db.UpsertUserUpdatePassword(ROOT_USERNAME, "root", hashedPwdString, _EMPTY_, false, 1, serv.MemphisGlobalAccountString())
 	if err != nil {
 		return false, err
 	}
@@ -194,10 +194,10 @@ func CreateRootUserOnFirstSystemLoad() (bool, error) {
 
 			ip := serv.getIp()
 			analyticsParams := map[string]interface{}{"installation-type": installationType, "device-id": deviceIdValue, "source": configuration.INSTALLATION_SOURCE, "ip": ip}
-			analytics.SendEvent("", "", analyticsParams, "installation")
+			analytics.SendEvent(_EMPTY_, _EMPTY_, analyticsParams, "installation")
 
 			if configuration.EXPORTER {
-				analytics.SendEvent("", "", analyticsParams, "enable-exporter")
+				analytics.SendEvent(_EMPTY_, _EMPTY_, analyticsParams, "enable-exporter")
 			}
 		})
 	}
@@ -735,8 +735,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					}
 				}
 			}
-			mountpath := ""
-			containerForExec := ""
+			mountpath := _EMPTY_
+			containerForExec := _EMPTY_
 			for _, container := range pod.Spec.Containers {
 				for _, port := range container.Ports {
 					if int(port.ContainerPort) != 0 {
@@ -774,7 +774,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					}
 					storageUsage = shortenFloat(float64(v.JetStream.Stats.Store))
 				}
-			} else if containerForExec != "" && mountpath != "" {
+			} else if containerForExec != _EMPTY_ && mountpath != _EMPTY_ {
 				storageUsage, err = getContainerStorageUsage(config, mountpath, containerForExec, pod.Name, mh.S.opts.K8sNamespace)
 				if err != nil {
 					return components, metricsEnabled, err
@@ -833,16 +833,16 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				}
 			}
 			if d.Name == "memphis-rest-gateway" {
-				if mh.S.opts.RestGwHost != "" {
+				if mh.S.opts.RestGwHost != _EMPTY_ {
 					hosts = []string{mh.S.opts.RestGwHost}
 				}
 			} else if d.Name == "memphis" {
-				if mh.S.opts.BrokerHost == "" {
+				if mh.S.opts.BrokerHost == _EMPTY_ {
 					hosts = []string{}
 				} else {
 					hosts = []string{mh.S.opts.BrokerHost}
 				}
-				if mh.S.opts.UiHost != "" {
+				if mh.S.opts.UiHost != _EMPTY_ {
 					hosts = append(hosts, mh.S.opts.UiHost)
 				}
 			} else if strings.Contains(d.Name, "metadata") {
@@ -888,16 +888,16 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				}
 			}
 			if s.Name == "memphis-rest-gateway" {
-				if mh.S.opts.RestGwHost != "" {
+				if mh.S.opts.RestGwHost != _EMPTY_ {
 					hosts = []string{mh.S.opts.RestGwHost}
 				}
 			} else if s.Name == "memphis" {
-				if mh.S.opts.BrokerHost == "" {
+				if mh.S.opts.BrokerHost == _EMPTY_ {
 					hosts = []string{}
 				} else {
 					hosts = []string{mh.S.opts.BrokerHost}
 				}
-				if mh.S.opts.UiHost != "" {
+				if mh.S.opts.UiHost != _EMPTY_ {
 					hosts = append(hosts, mh.S.opts.UiHost)
 				}
 			} else if strings.Contains(s.Name, "metadata") {
@@ -949,7 +949,7 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 
 	logSource := request.LogSource
 	if filterSubjectSuffix != _EMPTY_ {
-		if request.LogSource == "empty" || request.LogSource == "" {
+		if request.LogSource == "empty" || request.LogSource == _EMPTY_ {
 			filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, "*", filterSubjectSuffix)
 		} else if request.LogSource != "empty" && request.LogType != "external" {
 			filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, logSource, filterSubjectSuffix)
@@ -998,7 +998,7 @@ func (mh MonitoringHandler) DownloadSystemLogs(c *gin.Context) {
 func memphisWSGetSystemLogs(h *Handlers, logLevel, logSource string) (models.SystemLogsResponse, error) {
 	const amount = 100
 	const timeout = 3 * time.Second
-	filterSubjectSuffix := ""
+	filterSubjectSuffix := _EMPTY_
 	switch logLevel {
 	case "err":
 		filterSubjectSuffix = syslogsErrSubject
@@ -1249,7 +1249,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	}
 
 	env := "K8S"
-	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
+	if configuration.DOCKER_ENV != _EMPTY_ || configuration.LOCAL_CLUSTER_ENV {
 		env = "docker"
 	}
 	exist, tenant, err := db.GetTenantByName(user.TenantName)
@@ -1286,7 +1286,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-login")
 	}
 
-	domain := ""
+	domain := _EMPTY_
 	secure := false
 	c.SetCookie("memphis-jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 	c.IndentedJSON(200, gin.H{
@@ -1402,7 +1402,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		avatarId = body.AvatarId
 	}
 
-	if body.Password == "" {
+	if body.Password == _EMPTY_ {
 		serv.Warnf("[tenant: %v][user: %v]AddUser: Password was not provided for user %v", user.TenantName, user.Username, username)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
 		return
@@ -1428,11 +1428,11 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 
 	var brokerConnectionCreds string
 	if userType == "application" {
-		fullName = ""
+		fullName = _EMPTY_
 		subscription = false
 		pending = false
 		if configuration.USER_PASS_BASED_AUTH {
-			if body.Password == "" {
+			if body.Password == _EMPTY_ {
 				serv.Warnf("[tenant: %v][user: %v]AddUser: Password was not provided for user %v", user.TenantName, user.Username, username)
 				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
 				return
@@ -1651,7 +1651,7 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 }
 
 func (s *Server) GetCustomDeploymentId() string {
-	return ""
+	return _EMPTY_
 }
 
 func (s *Server) sendLogToAnalytics(label string, log []byte) {
@@ -1662,7 +1662,7 @@ func (s *Server) sendLogToAnalytics(label string, log []byte) {
 			return
 		}
 		analyticsParams := map[string]interface{}{"err_source": s.getLogSource(), "err_log": string(log)}
-		analytics.SendEvent("", "", analyticsParams, "error")
+		analytics.SendEvent(_EMPTY_, _EMPTY_, analyticsParams, "error")
 	default:
 		return
 	}
@@ -1785,7 +1785,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 	}
 
 	env := "K8S"
-	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
+	if configuration.DOCKER_ENV != _EMPTY_ || configuration.LOCAL_CLUSTER_ENV {
 		env = "docker"
 	}
 
@@ -1808,7 +1808,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	domain := ""
+	domain := _EMPTY_
 	secure := true
 
 	lastLogin, err := db.UpdateLastLoginUser(user.ID)
@@ -2079,7 +2079,7 @@ func updateSystemLiveness() {
 	shouldSend, _ := shouldSendAnalytics()
 	if shouldSend {
 		stationsHandler := StationsHandler{S: serv}
-		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetailsLight(false, "", nil)
+		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetailsLight(false, _EMPTY_, nil)
 		if err != nil {
 			serv.Warnf("updateSystemLiveness: %v", err.Error())
 			return
@@ -2098,7 +2098,7 @@ func updateSystemLiveness() {
 		}
 
 		analyticsParams := map[string]interface{}{"total-messages": strconv.Itoa(int(totalMessages)), "total-dls-messages": strconv.Itoa(int(totalDlsMsgs)), "total-stations": strconv.Itoa(len(stations)), "active-producers": strconv.Itoa(int(producersCount)), "active-consumers": strconv.Itoa(int(consumersCount))}
-		analytics.SendEvent("", "", analyticsParams, "system-is-up")
+		analytics.SendEvent(_EMPTY_, _EMPTY_, analyticsParams, "system-is-up")
 	}
 }
 
@@ -2165,7 +2165,7 @@ func (sh StationsHandler) Produce(c *gin.Context) {
 		return
 	}
 
-	subject := ""
+	subject := _EMPTY_
 	shouldRoundRobin := false
 	if station.Version == 0 {
 		subject = fmt.Sprintf("%s.final", stationName.Intern())
@@ -2408,7 +2408,7 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetails(messageId int, dlsType str
 		Message:         dlsMsg.Message,
 		UpdatedAt:       dlsMsg.UpdatedAt,
 		ValidationError: dlsMsg.ValidationError,
-		FunctionName:    "",
+		FunctionName:    _EMPTY_,
 	}
 
 	return dlsMsgResponse, nil
@@ -2432,7 +2432,7 @@ func createUser(userName, userType, password string) error {
 	}
 
 	avatarId := 1
-	if password == "" {
+	if password == _EMPTY_ {
 		return fmt.Errorf("Password was not provided for user %s", username)
 	}
 	passwordErr := validatePassword(password)
@@ -2448,17 +2448,17 @@ func createUser(userName, userType, password string) error {
 		password = string(hashedPwd)
 	}
 
-	fullName := ""
+	fullName := _EMPTY_
 	subscription := false
 	pending := false
-	team := ""
-	position := ""
-	owner := ""
-	description := ""
+	team := _EMPTY_
+	position := _EMPTY_
+	owner := _EMPTY_
+	description := _EMPTY_
 	var err error
 	if userType == "application" {
 		if configuration.USER_PASS_BASED_AUTH {
-			if password == "" {
+			if password == _EMPTY_ {
 				return fmt.Errorf("Password was not provided for user for user %v", username)
 			}
 			password, err = EncryptAES([]byte(password))
@@ -2487,8 +2487,8 @@ func convertToUsers(usersData []interface{}) []userDetails {
 	for _, userData := range usersData {
 		userMap, ok := userData.(map[interface{}]interface{})
 		if ok {
-			userVal := ""
-			passwordVal := ""
+			userVal := _EMPTY_
+			passwordVal := _EMPTY_
 			_, okUser := userMap["user"].(string)
 			if okUser {
 				userVal = userMap["user"].(string)
@@ -2571,7 +2571,7 @@ func CreateUsersFromConfigOnFirstSystemLoad() (int, error) {
 
 	if configuration.DEV_ENV == "true" && !k8sEnv || configuration.DOCKER_ENV == "true" {
 		initialConfigFile = os.Getenv("INITIAL_CONFIG_FILE")
-		if initialConfigFile == "" {
+		if initialConfigFile == _EMPTY_ {
 			return 0, fmt.Errorf("INITIAL_CONFIG_FILE environment variable is not set.")
 		}
 	}

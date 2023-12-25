@@ -109,7 +109,7 @@ func (ash AsyncTasksHandler) GetAllAsyncTasks(tenantName string) ([]models.Async
 		return []models.AsyncTaskRes{}, err
 	}
 	for i, task := range asyncTasks {
-		if task.StationName == "" {
+		if task.StationName == _EMPTY_ {
 			metaData, _ := task.Data.(map[string]interface{})
 			if len(metaData) > 0 {
 				data := metaData["name"].(string)

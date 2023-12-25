@@ -1,6 +1,6 @@
 module github.com/memphisdev/memphis
 
-go 1.19
+go 1.20
 
 require (
 	github.com/gin-contrib/cors v1.4.0
@@ -9,11 +9,11 @@ require (
 	github.com/go-playground/validator/v10 v10.14.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/jhump/protoreflect v1.13.0
-	github.com/klauspost/compress v1.16.7
+	github.com/klauspost/compress v1.17.0
 	github.com/minio/highwayhash v1.0.2
-	github.com/nats-io/jwt/v2 v2.5.0
-	github.com/nats-io/nats.go v1.28.0
-	github.com/nats-io/nkeys v0.4.4
+	github.com/nats-io/jwt/v2 v2.5.3
+	github.com/nats-io/nats.go v1.31.0
+	github.com/nats-io/nkeys v0.4.6
 	github.com/nats-io/nuid v1.0.1
 	github.com/tkanos/gonfig v0.0.0-20210106201359-53e13348de2f
 	go.uber.org/automaxprocs v1.5.3
