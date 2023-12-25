@@ -102,7 +102,7 @@ func GetConfig() Configuration {
 		configuration.FUNCTIONS_ADMIN_SERVICE_PORT = "8880"
 	}
 	if configuration.WS_HOST == "" {
-		configuration.WS_HOST = "ws://localhost:7770"
+		configuration.WS_HOST = "localhost:7770"
 	}
 
 	gin.SetMode(gin.ReleaseMode)

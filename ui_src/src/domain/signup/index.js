@@ -39,6 +39,7 @@ import Input from '../../components/Input';
 import Tooltip from '../../components/tooltip/tooltip';
 import pathDomains from '../../router';
 import { connect } from 'nats.ws';
+import { WS_PREFIX } from '../../config';
 
 const Signup = (props) => {
     const [state, dispatch] = useContext(Context);
@@ -117,7 +118,8 @@ const Signup = (props) => {
                 if (data) {
                     AuthService.saveToLocalStorage(data);
                     try {
-                        const wsHost = localStorage.getItem(LOCAL_STORAGE_WS_HOST);
+                        let wsHost = localStorage.getItem(LOCAL_STORAGE_WS_HOST);
+                        wsHost = `${WS_PREFIX}://${wsHost}`;
                         let conn;
                         if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
                             const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID);
@@ -137,7 +139,7 @@ const Signup = (props) => {
                             });
                         }
                         dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
-                    } catch (error) {}
+                    } catch (error) { }
                     dispatch({ type: 'SET_USER_DATA', payload: data });
                     history.push(referer);
                 }

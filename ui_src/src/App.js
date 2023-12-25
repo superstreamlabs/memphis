@@ -31,7 +31,7 @@ import {
     USER_IMAGE,
     LOCAL_STORAGE_PLAN
 } from './const/localStorageConsts';
-import { CLOUD_URL, HANDLE_REFRESH_INTERVAL } from './config';
+import { CLOUD_URL, HANDLE_REFRESH_INTERVAL, WS_PREFIX } from './config';
 import { isCheckoutCompletedTrue, isCloud } from './services/valueConvertor';
 import { ReactComponent as InfoNotificationIcon } from './assets/images/infoNotificationIcon.svg';
 import { handleRefreshTokenRequest, httpRequest } from './services/http';
@@ -99,7 +99,8 @@ const App = withRouter(() => {
                 AuthService.saveToLocalStorage(data);
                 dispatch({ type: 'SET_USER_DATA', payload: data });
                 try {
-                    const wsHost = localStorage.getItem(LOCAL_STORAGE_WS_HOST);
+                    let wsHost = localStorage.getItem(LOCAL_STORAGE_WS_HOST);
+                    wsHost = `${WS_PREFIX}://${wsHost}`;
                     let conn;
                     if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
                         const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID);
@@ -165,7 +166,8 @@ const App = withRouter(() => {
             if (handleRefreshData !== '') {
                 if (firstTime) {
                     try {
-                        const wsHost = localStorage.getItem(LOCAL_STORAGE_WS_HOST);
+                        let wsHost = localStorage.getItem(LOCAL_STORAGE_WS_HOST);
+                        wsHost = `${WS_PREFIX}://${wsHost}`;
                         let conn;
                         if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
                             const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID);

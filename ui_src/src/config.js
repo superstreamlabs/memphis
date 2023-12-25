@@ -15,6 +15,7 @@ const SERVER_URL_PRODUCTION = `${window.location.href.split('//')[1].split('/')[
 const SSL_PREFIX = window.location.protocol === 'https:' ? 'https://' : 'http://';
 
 export const SERVER_URL = ENVIRONMENT === 'production' ? `${SSL_PREFIX}${SERVER_URL_PRODUCTION}` : `http://localhost:9000/api`;
+export const WS_PREFIX = window.location.href?.includes('https') ? 'wss' : 'ws';
 export const URL = window.location.href;
 
 export const HANDLE_REFRESH_INTERVAL = 600000;

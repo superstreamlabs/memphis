@@ -35,6 +35,7 @@ import { Context } from '../../hooks/store';
 import Input from '../../components/Input';
 import pathDomains from '../../router';
 import { connect } from 'nats.ws';
+import { WS_PREFIX } from '../../config';
 
 const Login = (props) => {
     const [state, dispatch] = useContext(Context);
@@ -93,7 +94,8 @@ const Login = (props) => {
                 if (data) {
                     AuthService.saveToLocalStorage(data);
                     try {
-                        const wsHost = localStorage.getItem(LOCAL_STORAGE_WS_HOST);
+                        let wsHost = localStorage.getItem(LOCAL_STORAGE_WS_HOST);
+                        wsHost = `${WS_PREFIX}://${wsHost}`;
                         let conn;
                         if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
                             const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID);
