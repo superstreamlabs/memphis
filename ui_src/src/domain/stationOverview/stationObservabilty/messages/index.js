@@ -12,12 +12,12 @@
 
 import './style.scss';
 
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useRef } from 'react';
 import { InfoOutlined } from '@material-ui/icons';
 
 import { DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS } from '../../../../const/localStorageConsts';
 import { ReactComponent as DeadLetterPlaceholderIcon } from '../../../../assets/images/deadLetterPlaceholder.svg';
-import { isCloud, messageParser, msToUnits } from '../../../../services/valueConvertor';
+import { isCloud, messageParser, msToUnits, parsingDate } from '../../../../services/valueConvertor';
 import { ReactComponent as PurgeWrapperIcon } from '../../../../assets/images/purgeWrapperIcon.svg';
 import { ReactComponent as WaitingMessagesIcon } from '../../../../assets/images/waitingMessages.svg';
 import { ReactComponent as IdempotencyIcon } from '../../../../assets/images/idempotencyIcon.svg';
@@ -77,7 +77,7 @@ const Messages = ({ referredFunction }) => {
     const dls = stationState?.stationMetaData?.dls_station === '' ? null : stationState?.stationMetaData?.dls_station;
     const tabs = ['Messages', 'Dead-letter', 'Configuration'];
     const [disableLoaderCleanDisconnectedProducers, setDisableLoaderCleanDisconnectedProducers] = useState(false);
-
+    const divRef = useRef(null);
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
 
@@ -95,6 +95,16 @@ const Messages = ({ referredFunction }) => {
     useEffect(() => {
         activeTab === 'general' && setTabValue('Messages');
     }, [activeTab]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (divRef.current && !divRef.current.contains(event.target)) setSelectedRowIndex(null);
+        };
+        document.addEventListener('click', handleClickOutside);
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, []);
 
     useEffect(() => {
         referredFunction && setActiveTab('functions');
@@ -292,11 +302,23 @@ const Messages = ({ referredFunction }) => {
                 >
                     {selectedRowIndex === id && selectedRowPartition === partition && <div className="hr-selected"></div>}
                     <span className="preview-message">
-                        {tabValue === tabs[1] ? messageParser('string', message?.message?.data) : messageParser('string', message?.data)}
+                        <lable>{tabValue === tabs[1] ? message?.id : message?.message_seq}</lable>
+                        <lable className="label">{tabValue === tabs[1] ? parsingDate(message?.message?.time_sent, true) : parsingDate(message?.created_at, true)}</lable>
+                        <lable className="label">{tabValue === tabs[1] ? messageParser('string', message?.message?.data) : messageParser('string', message?.data)}</lable>
                     </span>
                 </div>
             </div>
         );
+    };
+
+    const getHeight = (isDls, rowHeightPx) => {
+        return !isDls
+            ? stationState?.stationSocketData?.messages?.length * rowHeightPx
+            : subTabValue === 'Unacknowledged'
+            ? stationState?.stationSocketData?.poison_messages?.length * rowHeightPx
+            : subTabValue === 'Functions'
+            ? stationState?.stationSocketData?.functions_failed_messages?.length * rowHeightPx
+            : stationState?.stationSocketData?.schema_failed_messages?.length * rowHeightPx;
     };
 
     const listGeneratorWrapper = () => {
@@ -304,32 +326,31 @@ const Messages = ({ referredFunction }) => {
         return (
             <div className={isDls ? 'list-wrapper dls-list' : 'list-wrapper msg-list'}>
                 <div className="coulmns-table">
-                    <div className="left-coulmn-wrapper">
-                        <p className="left-coulmn">Messages</p>
+                    <p>Seq ID</p>
+                    <p>Timestamp</p>
+                    <span>
+                        <p>Payload </p>
                         <TooltipComponent text={`DLS retention is ${localStorage.getItem(DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS)} hours.`} minWidth="35px">
                             <InfoOutlined />
                         </TooltipComponent>
-                    </div>
-                    <p className="right-coulmn">Information</p>
+                    </span>
                 </div>
-                <div className="list">
-                    <div className="rows-wrapper">
-                        <Virtuoso
-                            data={
-                                !isDls
-                                    ? stationState?.stationSocketData?.messages
-                                    : subTabValue === 'Unacknowledged'
-                                    ? stationState?.stationSocketData?.poison_messages
-                                    : subTabValue === 'Functions'
-                                    ? stationState?.stationSocketData?.functions_failed_messages
-                                    : stationState?.stationSocketData?.schema_failed_messages
-                            }
-                            onScroll={() => handleScroll()}
-                            overscan={100}
-                            itemContent={(index, message) => listGenerator(index, message)}
-                        />
-                    </div>
-                    <MessageDetails isDls={isDls} isFailedSchemaMessage={subTabValue === 'Schema violation'} isFailedFunctionMessage={subTabValue === 'Functions'} />
+                <div className="rows-wrapper" ref={divRef}>
+                    <Virtuoso
+                        style={{ height: `${getHeight(isDls, 37)}px` }}
+                        data={
+                            !isDls
+                                ? stationState?.stationSocketData?.messages
+                                : subTabValue === 'Unacknowledged'
+                                ? stationState?.stationSocketData?.poison_messages
+                                : subTabValue === 'Functions'
+                                ? stationState?.stationSocketData?.functions_failed_messages
+                                : stationState?.stationSocketData?.schema_failed_messages
+                        }
+                        onScroll={() => handleScroll()}
+                        overscan={100}
+                        itemContent={(index, message) => listGenerator(index, message)}
+                    />
                 </div>
             </div>
         );
@@ -468,7 +489,6 @@ const Messages = ({ referredFunction }) => {
                     {tabValue === tabs[1] && (
                         <div className="tabs">
                             <CustomTabs
-                                // defaultValue
                                 defaultActiveKey={
                                     stationState && stationState?.stationSocketData?.poison_messages?.length > 0
                                         ? 'Unacknowledged'
@@ -733,6 +753,13 @@ const Messages = ({ referredFunction }) => {
                 />
             </Modal>
             <CloudModal open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} type="cloud" />
+            <MessageDetails
+                open={selectedRowIndex !== null}
+                isDls={tabValue === tabs[1]}
+                isFailedSchemaMessage={subTabValue === 'Schema violation'}
+                isFailedFunctionMessage={subTabValue === 'Functions'}
+                unselect={() => setSelectedRowIndex(null)}
+            />
         </div>
     );
 };

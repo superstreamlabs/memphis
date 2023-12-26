@@ -1,20 +1,112 @@
-.info-box{
-    background: #FFFFFF;
-    border: 1px solid #EFEFEF;
-    box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.06);
-    border-radius: 8px;
+.message-wrapper {
+    height: 100%;
+    position: relative;
     display: flex;
-    padding: 12px 16px;
-    margin: 0;
+    flex-direction: column;
     justify-content: space-between;
-    .title{
-        font-family: "InterSemiBold";
-        font-size: 14px;
+
+    .content-wrapper {
+        overflow-y: auto;
+        height: 100%;
     }
-    .content{
-        font-family: "InterMedium";
-        font-size: 14px;
-        color: #84818a;
-        margin-left: 10px;
+    .content-wrapper-dls {
+        overflow-y: auto;
+        height: calc(100% - 50px);
+    }
+    .message-detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px 0;
+        border-bottom: 1px solid #efefef;
+        .segment-button-wrapper {
+            width: fit-content;
+        }
+        .title {
+            font-family: 'InterSemiBold';
+            font-size: 14px;
+            // color: #84818a;
+            color: rgba(0, 0, 0, 0.85);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .content {
+            font-family: 'Inter';
+            font-size: 14px;
+            color: #84818a;
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            .val {
+                font-family: 'InterSemiBold' !important;
+            }
+        }
+        .content-json {
+            min-height: 100px;
+            height: 100%;
+            display: flex;
+            align-items: flex-start;
+            section {
+                height: 100%;
+                min-height: 300px;
+            }
+        }
+    }
+    .message-detail-item:last-child {
+        border-bottom: none;
+    }
+    .button-container {
+        padding-top: 5px !important;
+        margin-left: 3%;
+
+        .botton-title {
+            display: flex;
+
+            svg {
+                margin-right: 5px;
+            }
+
+            p {
+                margin: 0;
+            }
+        }
+
+        .noHover {
+            display: block !important;
+        }
+    }
+
+    .memphis-gif {
+        display: flex;
+        justify-content: center;
+
+        div {
+            width: 10vw;
+        }
+    }
+
+    .placeholder {
+        align-items: center;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        position: absolute;
+        justify-self: center;
+
+        p {
+            font-family: 'InterSemiBold';
+            font-size: 16px;
+            color: rgba(74, 73, 92, 0.8);
+        }
+    }
+}
+.ant-drawer-body {
+    .spinner-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
     }
 }

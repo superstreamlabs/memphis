@@ -117,7 +117,7 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                         )}
                         {(header === 'Validation error' || header === 'Error') && (
                             <div className="message">
-                                <p>{data}</p>
+                                <label>{data}</label>
                             </div>
                         )}
                     </div>

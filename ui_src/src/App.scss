@@ -1,7 +1,7 @@
 //ANT design v4
 @import '~antd/dist/antd.css';
 @import '@stigg/react-sdk/dist/styles.css';
-@import "dark-style";
+@import 'dark-style';
 
 .App {
     text-align: center;
@@ -46,7 +46,7 @@
 
 ::-webkit-scrollbar {
     width: 0px;
-    height: 0px;
+    height: 3px;
 }
 
 ::-webkit-scrollbar-thumb {

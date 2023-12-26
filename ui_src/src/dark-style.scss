@@ -317,7 +317,7 @@ html.dark-mode {
   }
 
   .stations-container .err-stations-list .rows-wrapper .even, .messages-container .list-wrapper .list .even .row-message,
-  .generic-list-wrapper .list .rows-wrapper .pubSub-row:nth-child(even) {
+  .generic-list-wrapper .list .rows-wrapper .pubSub-row:nth-child(even), .messages-container .list-wrapper .even .row-message {
     background: #D1CFCD;
   }
 
@@ -509,6 +509,39 @@ html.dark-mode {
 
   .item-wrapper.ms-active .icon svg, .item-wrapper.item-wrapper-hovered .icon svg, {
     filter: $color-invert-filter-reverse !important;
+  }
+
+  .message-detail-item {
+    .ant-collapse-content-box {
+      background: darken(#E6EAE8, 2%);
+    }
+    label {
+      color: $color-border-medium;
+    }
+    .content label:last-child {
+      color: $color-border-medium!important;
+    }
+  }
+
+  .message-journey-container {
+    .canvas-wrapper svg {
+      filter: initial!important;
+    }
+    .poison-producer, .poison-message, .consumer-group {
+      background: $color-background-medium;
+    }
+    .consumer-group .content-wrapper .details, .consumer-group .content-wrapper .consumers {
+      background: darken(#E6EAE8, 2%);
+    }
+    .canvas-wrapper .producer {
+      stroke: rgba(101, 87, 255, 0.4);
+    }
+    .canvas-wrapper .consumer {
+      stroke: rgba(255, 54, 36, 0.4);
+    }
+    .consumer-group header {
+      background: #f18e85;
+    }
   }
 
 }

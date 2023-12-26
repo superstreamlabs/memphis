@@ -43,10 +43,7 @@
             display: flex;
             align-items: center;
         }
-        p.url-text::-webkit-scrollbar {
-            width: 3px;
-            height: 4px;
-        }
+
         .icon {
             height: 33px;
             width: 37px;
@@ -59,10 +56,6 @@
             border-bottom-right-radius: inherit;
             cursor: pointer;
         }
-    }
-    div.url-wrapper::-webkit-scrollbar {
-        width: 3px;
-        height: 4px;
     }
     .create-func-cli {
         font-size: 14px;
