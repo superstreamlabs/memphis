@@ -358,7 +358,7 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 		}
 
 		for header := range dlsMsg.MessageDetails.Headers {
-			if strings.HasPrefix(header, "$memphis") {
+			if strings.HasPrefix(header, MEMPHIS_GLOBAL_ACCOUNT) {
 				delete(dlsMsg.MessageDetails.Headers, header)
 			}
 		}

@@ -489,7 +489,7 @@ func (ch ConsumersHandler) GetDelayedCgsByTenant(tenantName string, streams []*S
 	consumers := make(map[string]map[string]models.DelayedCg, 0)
 	consumerNames := []string{}
 	for _, stream := range streams {
-		if strings.HasPrefix(stream.Config.Name, "$memphis") {
+		if strings.HasPrefix(stream.Config.Name, MEMPHIS_GLOBAL_ACCOUNT) {
 			continue
 		}
 		offset := 0
@@ -510,7 +510,7 @@ func (ch ConsumersHandler) GetDelayedCgsByTenant(tenantName string, streams []*S
 			return []models.DelayedCgResp{}, err
 		}
 		for _, consumer := range resp.Consumers {
-			if strings.HasPrefix(consumer.Config.FilterSubject, "$memphis") || !strings.HasSuffix(consumer.Config.FilterSubject, ".final") { // skip consumers that are not user consumers
+			if strings.HasPrefix(consumer.Config.FilterSubject, MEMPHIS_GLOBAL_ACCOUNT) || !strings.HasSuffix(consumer.Config.FilterSubject, ".final") { // skip consumers that are not user consumers
 				continue
 			}
 			if strings.Contains(consumer.Stream, "$") {

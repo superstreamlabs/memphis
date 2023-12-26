@@ -1158,7 +1158,7 @@ func (s *Server) GetMessagesFromPartition(station models.Station, streamName str
 			producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
 
 			for header := range headersJson {
-				if strings.HasPrefix(header, "$memphis") {
+				if strings.HasPrefix(header, MEMPHIS_GLOBAL_ACCOUNT) {
 					delete(headersJson, header)
 				}
 			}
@@ -1210,8 +1210,8 @@ func (s *Server) memphisGetMsgs(tenantName, filterSubj, streamName string, start
 		FilterSubject: filterSubj,
 		OptStartSeq:   startSeq,
 		DeliverPolicy: DeliverByStartSequence,
-		Durable:       durableName,
-		AckPolicy:     AckExplicit,
+		Name:          durableName,
+		AckPolicy:     AckNone,
 		Replicas:      consumerReplicas,
 	}
 
@@ -1232,9 +1232,6 @@ func (s *Server) memphisGetMsgs(tenantName, filterSubj, streamName string, start
 
 	sub, err := s.subscribeOnAcc(account, reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, reply string, msg []byte, findHeader bool) {
-			// ack
-			s.sendInternalAccountMsg(account, reply, []byte(_EMPTY_))
-
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
 
@@ -1285,7 +1282,6 @@ func (s *Server) memphisGetMsgs(tenantName, filterSubj, streamName string, start
 cleanup:
 	timer.Stop()
 	s.unsubscribeOnAcc(account, sub)
-	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(tenantName, streamName, durableName) })
 
 	return msgs, nil
 }

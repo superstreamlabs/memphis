@@ -3330,7 +3330,7 @@ func (o *consumer) decDeliveryCount(sseq uint64) {
 // send a delivery exceeded advisory.
 func (o *consumer) notifyDeliveryExceeded(sseq, dc uint64, sm *StoreMsg) { // ** added by memphis (sm to notifyDeliveryExceeded) **
 	// *** added by memphis
-	if strings.HasPrefix(o.stream, "$memphis") { // skipping memphis streams max deliveries events
+	if strings.HasPrefix(o.stream, MEMPHIS_GLOBAL_ACCOUNT) { // skipping memphis streams max deliveries events
 		return
 	}
 	// added by memphis ***
