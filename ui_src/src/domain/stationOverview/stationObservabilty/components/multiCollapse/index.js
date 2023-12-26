@@ -13,16 +13,13 @@ import './style.scss';
 
 import React, { useEffect, useState } from 'react';
 import { Collapse } from 'antd';
-
-import CollapseArrow from '../../../../../assets/images/collapseArrow.svg';
 import { ReactComponent as CollapseArrowIcon } from '../../../../../assets/images/collapseArrow.svg';
 import StatusIndication from '../../../../../components/indication';
-import TooltipComponent from '../../../../../components/tooltip/tooltip';
 
 const { Panel } = Collapse;
 
-const MultiCollapse = ({ data, header, defaultOpen, tooltip = null }) => {
-    const [activeKey, setActiveKey] = useState(defaultOpen ? ['1'] : []);
+const MultiCollapse = ({ data }) => {
+    const [activeKey, setActiveKey] = useState([]);
     const [activeChiledKey, setActiveChiledKey] = useState();
     const [collapseData, setCollapseData] = useState();
 
@@ -38,110 +35,43 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null }) => {
     };
 
     return (
-        <>
-            {header !== undefined ? (
-                <Collapse ghost defaultActiveKey={activeKey} onChange={onChange} className="custom-collapse multi" showArrow={false}>
-                    <Panel
-                        showArrow={false}
-                        collapsible={collapseData?.length === 0 ? 'disabled' : null}
-                        header={
-                            <TooltipComponent text={tooltip}>
-                                <div className="collapse-header">
-                                    <p className="title">
-                                        {header} <span className="consumer-number">{collapseData?.length}</span>
-                                    </p>
-
-                                    <status is="x3d">
-                                        {activeKey[0] === '1' ? (
-                                            <CollapseArrowIcon className="collapse-arrow-icon open" />
-                                        ) : (
-                                            <CollapseArrowIcon className="collapse-arrow-icon close" />
-                                        )}
-                                    </status>
-                                </div>
-                            </TooltipComponent>
-                        }
-                        key="1"
-                    >
-                        <Collapse ghost accordion={true} className="collapse-child" onChange={onChiledChange}>
-                            {collapseData?.length > 0 &&
-                                collapseData?.map((row, index) => {
-                                    return (
-                                        <Panel
-                                            showArrow={false}
-                                            header={
-                                                <div className="collapse-header">
-                                                    <p className="title">{row.name}</p>
-                                                    <status is="x3d">
-                                                        <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
-                                                        <CollapseArrowIcon
-                                                            className={Number(activeChiledKey) === index ? 'collapse-arrow open' : 'collapse-arrow close'}
-                                                            alt="collapse-arrow"
-                                                        />
-                                                    </status>
-                                                </div>
-                                            }
-                                            key={index}
-                                        >
-                                            {row.details?.length > 0 &&
-                                                row.details?.map((row, index) => {
-                                                    if (row.value !== '-1') {
-                                                        return (
-                                                            <div className="panel-child" key={index}>
-                                                                <content is="x3d" key={index}>
-                                                                    <p>{row.name}</p>
-                                                                    <span>{row.value}</span>
-                                                                </content>
-                                                            </div>
-                                                        );
-                                                    }
-                                                })}
-                                        </Panel>
-                                    );
-                                })}
-                        </Collapse>
-                    </Panel>
-                </Collapse>
-            ) : (
-                <div className="custom-collapse multi">
-                    <Collapse ghost accordion={true} className="collapse-child" onChange={onChiledChange}>
-                        {collapseData?.length > 0 &&
-                            collapseData?.map((row, index) => {
-                                return (
-                                    <Panel
-                                        showArrow={false}
-                                        header={
-                                            <div className="collapse-header">
-                                                <p className="title">{row.name}</p>
-                                                <status is="x3d">
-                                                    <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
-                                                    <CollapseArrowIcon
-                                                        className={Number(activeChiledKey) === index ? 'collapse-arrow open' : 'collapse-arrow close'}
-                                                        alt="collapse-arrow"
-                                                    />
-                                                </status>
+        <div className="custom-collapse multi">
+            <Collapse ghost accordion={true} className="collapse-child" onChange={onChiledChange}>
+                {collapseData?.length > 0 &&
+                    collapseData?.map((row, index) => {
+                        return (
+                            <Panel
+                                showArrow={false}
+                                header={
+                                    <div className="collapse-header">
+                                        <p className="title">{row.name}</p>
+                                        <span className="status">
+                                            <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
+                                            <CollapseArrowIcon
+                                                className={Number(activeChiledKey) === index ? 'collapse-arrow open' : 'collapse-arrow close'}
+                                                alt="collapse-arrow"
+                                            />
+                                        </span>
+                                    </div>
+                                }
+                                key={index}
+                            >
+                                {row.details?.length > 0 &&
+                                    row.details?.map((row, index) => {
+                                        return (
+                                            <div className="panel-child" key={index}>
+                                                <content is="x3d" key={index}>
+                                                    <p>{row.name}</p>
+                                                    <span>{row.value}</span>
+                                                </content>
                                             </div>
-                                        }
-                                        key={index}
-                                    >
-                                        {row.details?.length > 0 &&
-                                            row.details?.map((row, index) => {
-                                                return (
-                                                    <div className="panel-child" key={index}>
-                                                        <content is="x3d" key={index}>
-                                                            <p>{row.name}</p>
-                                                            <span>{row.value}</span>
-                                                        </content>
-                                                    </div>
-                                                );
-                                            })}
-                                    </Panel>
-                                );
-                            })}
-                    </Collapse>
-                </div>
-            )}
-        </>
+                                        );
+                                    })}
+                            </Panel>
+                        );
+                    })}
+            </Collapse>
+        </div>
     );
 };
 

@@ -13,29 +13,39 @@ import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import Lottie from 'lottie-react';
-import { Space } from 'antd';
-
-import { convertBytes, parsingDate } from '../../../../../services/valueConvertor';
-import { ReactComponent as AttachedPlaceholderIcon } from '../../../../../assets/images/attachedPlaceholder.svg';
-import animationData from '../../../../../assets/lotties/MemphisGif.json';
+import { convertBytes, parsingDate, messageParser } from '../../../../../services/valueConvertor';
+import { httpRequest } from '../../../../../services/http';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { ReactComponent as JourneyIcon } from '../../../../../assets/images/journey.svg';
-import { httpRequest } from '../../../../../services/http';
-import Button from '../../../../../components/button';
-import { StationStoreContext } from '../../..';
-import CustomCollapse from '../customCollapse';
-import MultiCollapse from '../multiCollapse';
+import { CiViewList } from 'react-icons/ci';
+import SegmentButton from '../../../../../components/segmentButton';
 import StatusIndication from '../../../../../components/indication';
+import Spinner from '../../../../../components/spinner';
+import Button from '../../../../../components/button';
+import Copy from '../../../../../components/copy';
+import { LOCAL_STORAGE_MSG_PARSER } from '../../../../../const/localStorageConsts';
+import Editor, { loader } from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
+import MultiCollapse from '../multiCollapse';
+import { StationStoreContext } from '../../..';
+import { Drawer } from 'antd';
 
-const MessageDetails = ({ isDls, isFailedSchemaMessage = false, isFailedFunctionMessage = false }) => {
+loader.init();
+loader.config({ monaco });
+
+const MessageDetails = ({ open, isDls, unselect, isFailedSchemaMessage = false, isFailedFunctionMessage = false }) => {
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [messageDetails, setMessageDetails] = useState({});
     const [loadMessageData, setLoadMessageData] = useState(false);
+    const [payloadType, setPayloadType] = useState('string');
 
     const history = useHistory();
+
+    useEffect(() => {
+        if (localStorage.getItem(LOCAL_STORAGE_MSG_PARSER) !== null) setPayloadType(localStorage.getItem(LOCAL_STORAGE_MSG_PARSER));
+    }, []);
 
     useEffect(() => {
         if (Object.keys(messageDetails).length !== 0) {
@@ -143,66 +153,142 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false, isFailedFunction
         }
     };
 
-    const loader = () => {
+    const generateEditor = (langCode, value) => {
         return (
-            <div className="memphis-gif">
-                <Lottie animationData={animationData} loop={true} />
+            <>
+                <Editor
+                    options={{
+                        minimap: { enabled: false },
+                        scrollbar: { verticalScrollbarSize: 0, horizontalScrollbarSize: 0 },
+                        scrollBeyondLastLine: false,
+                        roundedSelection: false,
+                        formatOnPaste: true,
+                        formatOnType: true,
+                        readOnly: true,
+                        fontSize: '12px',
+                        fontFamily: 'Inter',
+                        height: '100%',
+                        minHeight: 'fit-content',
+                        lineNumbers: 'off',
+                        glyphMargin: false,
+                        lineDecorationsWidth: 0,
+                        lineNumbersMinChars: 0
+                    }}
+                    language={langCode}
+                    height="100%"
+                    width="100%"
+                    value={value}
+                />
+                <Copy data={value} />
+            </>
+        );
+    };
+
+    const loader = <Spinner fontSize={60} style={{ display: 'flex', justifyContent: 'center' }} />;
+
+    const messageDetailsItem = (props) => {
+        const { title, value, showIsActive, is_active, headers, details, payload, cg } = props;
+        const keysArray = headers ? Object.keys(value) : null;
+        return (
+            <div className="message-detail-item">
+                <span className="title">
+                    <CiViewList style={{ color: '#6557FF' }} />
+                    {title}
+                </span>
+                {!headers && !details && !payload && !cg && (
+                    <span className="content">
+                        {value} {showIsActive && <StatusIndication is_active={is_active} />}
+                        <Copy data={value} />
+                    </span>
+                )}
+                {headers &&
+                    keysArray &&
+                    keysArray.map((item) => (
+                        <span key={item} className="content">
+                            <label>{item}</label>
+                            <label className="val">{value[item]}</label>
+                            <Copy data={value[item]} />
+                        </span>
+                    ))}
+                {details &&
+                    value?.map((item) => (
+                        <span key={item.name} className="content">
+                            <label>{item.name}</label>
+                            <label className="val">{item.value}</label>
+                            <Copy data={`${item.name} ${item.value}`} />
+                        </span>
+                    ))}
+                {payload && (
+                    <>
+                        <SegmentButton
+                            value={payloadType || 'string'}
+                            options={['string', 'bytes', 'json', 'protobuf']}
+                            onChange={(e) => {
+                                setPayloadType(e);
+                                localStorage.setItem(LOCAL_STORAGE_MSG_PARSER, e);
+                            }}
+                        />
+                        <span className="content content-json">{generateEditor('json', messageParser(payloadType, value))}</span>
+                    </>
+                )}
+
+                {cg && (
+                    <MultiCollapse
+                        header="Failed CGs"
+                        tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
+                        defaultOpen={false}
+                        data={messageDetails?.poisonedCGs}
+                    />
+                )}
             </div>
         );
     };
 
     return (
-        <>
-            <div className={`message-wrapper ${isDls && !isFailedSchemaMessage && !isFailedFunctionMessage && 'message-wrapper-dls'}`}>
-                {loadMessageData ? (
-                    loader()
-                ) : stationState?.selectedRowId && Object.keys(messageDetails).length > 0 ? (
-                    <>
-                        <div className="row-data">
-                            <Space direction="vertical">
-                                {!isFailedFunctionMessage && messageDetails?.validationError !== '' && (
-                                    <CustomCollapse status={false} header="Validation error" data={messageDetails?.validationError} message={true} />
-                                )}
-                                {isFailedFunctionMessage && messageDetails?.function_name !== '' && (
-                                    <div className="info-box">
-                                        <div>
-                                            <span className="title">Function</span>
-                                            <span className="content">{messageDetails?.function_name}</span>
-                                        </div>
-                                    </div>
-                                )}
-                                {isFailedFunctionMessage && messageDetails?.validationError !== '' && (
-                                    <CustomCollapse status={false} header="Error" data={messageDetails?.validationError} message={true} />
-                                )}
-                                <div className="info-box">
-                                    <div>
-                                        <span className="title">Producer name</span>
-                                        <span className="content">{messageDetails?.producer?.details[0].value}</span>
-                                    </div>
-                                    <StatusIndication is_active={messageDetails?.producer.is_active} />
-                                </div>
+        <div onClick={(e) => e.stopPropagation()}>
+            <Drawer
+                placement="right"
+                title="Message details"
+                onClose={() => {
+                    stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
+                    unselect();
+                }}
+                destroyOnClose={true}
+                width="450px"
+                open={open}
+                mask={false}
+                bodyStyle={{ height: '100%', position: 'relative' }}
+            >
+                {loadMessageData && loader}
+                {!loadMessageData && stationState?.selectedRowId && Object.keys(messageDetails).length > 0 && (
+                    <div className={`message-wrapper ${isDls && !isFailedSchemaMessage && !isFailedFunctionMessage ? 'message-wrapper-dls' : undefined}`}>
+                        <span className={`${isDls && !isFailedSchemaMessage && !isFailedFunctionMessage ? 'content-wrapper-dls' : 'content-wrapper'}`}>
+                            {isFailedFunctionMessage &&
+                                messageDetails?.validationError !== '' &&
+                                messageDetailsItem({ title: 'Error', value: messageDetails?.validationError, error: true })}
+                            {!isFailedFunctionMessage &&
+                                messageDetails?.validationError !== '' &&
+                                messageDetailsItem({ title: 'Validation error', value: messageDetails?.validationError, error: true })}
+                            {isFailedFunctionMessage &&
+                                messageDetails?.function_name !== '' &&
+                                messageDetailsItem({ title: 'Function', value: messageDetails?.function_name })}
+                            {messageDetailsItem({
+                                title: 'Producer name',
+                                value: messageDetails?.producer?.details[0].value,
+                                showIsActive: true,
+                                is_active: messageDetails?.producer.is_active
+                            })}
 
-                                {!isFailedSchemaMessage && !isFailedFunctionMessage && (
-                                    <MultiCollapse
-                                        header="Failed CGs"
-                                        tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
-                                        defaultOpen={false}
-                                        data={messageDetails?.poisonedCGs}
-                                    />
-                                )}
-                                <CustomCollapse status={false} header="Metadata" data={messageDetails?.details} />
-
-                                <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails?.headers} message={true} />
-                                <CustomCollapse
-                                    status={false}
-                                    header="Payload"
-                                    defaultOpen={true}
-                                    data={messageDetails?.message}
-                                    message={true}
-                                    schemaType={stationState?.schemaType}
-                                />
-                            </Space>
-                        </div>
+                            {isDls &&
+                                !isFailedSchemaMessage &&
+                                !isFailedFunctionMessage &&
+                                messageDetailsItem({ title: 'Failed CGs', value: messageDetails?.poisonedCGs, cg: true })}
+                            {messageDetailsItem({ title: 'Metadata', value: messageDetails?.details, details: true })}
+                            {messageDetails?.headers &&
+                                Object.keys(messageDetails?.headers)?.length > 0 &&
+                                messageDetailsItem({ title: 'Headers', value: messageDetails?.headers, headers: true })}
+                            {messageDetailsItem({ title: 'Payload', value: messageDetails?.message, payload: true })}
+                        </span>
                         {isDls && !isFailedSchemaMessage && !isFailedFunctionMessage && (
                             <Button
                                 width="96%"
@@ -223,15 +309,10 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false, isFailedFunction
                                 onClick={() => history.push(`${window.location.pathname}/${messageDetails?.id}`)}
                             />
                         )}
-                    </>
-                ) : (
-                    <div className="placeholder">
-                        <AttachedPlaceholderIcon />
-                        <p>No message selected</p>
                     </div>
                 )}
-            </div>
-        </>
+            </Drawer>
+        </div>
     );
 };
 
