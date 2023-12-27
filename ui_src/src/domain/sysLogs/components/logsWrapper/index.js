@@ -273,6 +273,7 @@ export default LogsWrapper;
 const Footer = () => {
     return (
         <div
+            className="logs-loader"
             style={{
                 display: 'flex',
                 justifyContent: 'center',

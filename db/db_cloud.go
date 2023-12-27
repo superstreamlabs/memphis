@@ -12,14 +12,16 @@
 package db
 
 const (
-	testEventsTable               = ``
-	functionsTable                = ``
-	attachedFunctionsTable        = ``
-	functionsEngineWorkersTable   = ``
-	scheduledFunctionWorkersTable = ``
-	connectorsEngineWorkersTable  = ``
-	connectorsConnectionsTable    = ``
-	connectorsTable               = ``
+	testEventsTable                 = ``
+	functionsTable                  = ``
+	attachedFunctionsTable          = ``
+	functionsEngineWorkersTable     = ``
+	scheduledFunctionWorkersTable   = ``
+	connectorsEngineWorkersTable    = ``
+	connectorsConnectionsTable      = ``
+	connectorsTable                 = ``
+	alterConnectorsTable            = ``
+	alterConnectorsConnectionsTable = ``
 )
 
 type FunctionSchema struct {

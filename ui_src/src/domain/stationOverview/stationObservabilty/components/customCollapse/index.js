@@ -117,7 +117,7 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                         )}
                         {(header === 'Validation error' || header === 'Error') && (
                             <div className="message">
-                                <p>{data}</p>
+                                <label>{data}</label>
                             </div>
                         )}
                     </div>
@@ -139,8 +139,8 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                             data?.details?.map((row, index) => {
                                 return (
                                     <content is="x3d" key={index}>
-                                        <p>{row.name}</p>
-                                        <span>{row.value}</span>
+                                        <p>{row?.name}</p>
+                                        <span>{row?.value?.toLocaleString()}</span>
                                     </content>
                                 );
                             })}

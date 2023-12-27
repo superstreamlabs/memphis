@@ -32,6 +32,7 @@ type User struct {
 	Team            string    `json:"team"`
 	Owner           string    `json:"owner"`
 	Description     string    `json:"description"`
+	LastLogin       time.Time `json:"last_login"`
 }
 
 type Image struct {
@@ -90,6 +91,21 @@ type SendTraceSchema struct {
 }
 
 type FilteredGenericUser struct {
+	ID          int       `json:"id"`
+	Username    string    `json:"username"`
+	UserType    string    `json:"user_type"`
+	CreatedAt   time.Time `json:"created_at"`
+	AvatarId    int       `json:"avatar_id"`
+	FullName    string    `json:"full_name"`
+	Pending     bool      `json:"pending"`
+	Position    string    `json:"position"`
+	Team        string    `json:"team"`
+	Owner       string    `json:"owner"`
+	Description string    `json:"description"`
+	LastLogin   time.Time `json:"last_login"`
+}
+
+type FilteredAppUser struct {
 	ID          int       `json:"id"`
 	Username    string    `json:"username"`
 	UserType    string    `json:"user_type"`

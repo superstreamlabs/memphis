@@ -25,6 +25,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -279,6 +280,25 @@ var jsMixedModeGlobalAccountTempl = `
 `
 
 var jsGWTempl = `%s{name: %s, urls: [%s]}`
+
+var jsClusterAccountLimitsTempl = `
+	listen: 127.0.0.1:-1
+	server_name: %s
+	jetstream: {max_mem_store: 256MB, max_file_store: 2GB, store_dir: '%s'}
+
+	cluster {
+		name: %s
+		listen: 127.0.0.1:%d
+		routes = [%s]
+	}
+
+	no_auth_user: js
+
+	accounts {
+		$JS { users = [ { user: "js", pass: "p" } ]; jetstream: {max_store: 1MB, max_mem: 0} }
+		$SYS { users = [ { user: "admin", pass: "s3cr3t!" } ] }
+	}
+`
 
 func createJetStreamTaggedSuperCluster(t *testing.T) *supercluster {
 	return createJetStreamTaggedSuperClusterWithGWProxy(t, nil)
@@ -1434,6 +1454,25 @@ func (c *cluster) waitOnLeader() {
 	c.t.Fatalf("Expected a cluster leader, got none")
 }
 
+func (c *cluster) waitOnAccount(account string) {
+	c.t.Helper()
+	expires := time.Now().Add(40 * time.Second)
+	for time.Now().Before(expires) {
+		found := true
+		for _, s := range c.servers {
+			acc, err := s.fetchAccount(account)
+			found = found && err == nil && acc != nil
+		}
+		if found {
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+		continue
+	}
+
+	c.t.Fatalf("Expected account %q to exist but didn't", account)
+}
+
 // Helper function to check that a cluster is formed
 func (c *cluster) waitOnClusterReady() {
 	c.t.Helper()
@@ -1511,6 +1550,21 @@ func (c *cluster) stopAll() {
 func (c *cluster) restartAll() {
 	c.t.Helper()
 	for i, s := range c.servers {
+		if !s.Running() {
+			opts := c.opts[i]
+			s, o := RunServerWithConfig(opts.ConfigFile)
+			c.servers[i] = s
+			c.opts[i] = o
+		}
+	}
+	c.waitOnClusterReady()
+}
+
+func (c *cluster) lameDuckRestartAll() {
+	c.t.Helper()
+	for i, s := range c.servers {
+		s.lameDuckMode()
+		s.WaitForShutdown()
 		if !s.Running() {
 			opts := c.opts[i]
 			s, o := RunServerWithConfig(opts.ConfigFile)
@@ -1615,6 +1669,7 @@ func (o *consumer) setInActiveDeleteThreshold(dthresh time.Duration) error {
 
 // Net Proxy - For introducing RTT and BW constraints.
 type netProxy struct {
+	sync.RWMutex
 	listener net.Listener
 	conns    []net.Conn
 	rtt      time.Duration
@@ -1667,8 +1722,8 @@ func (np *netProxy) start() {
 				continue
 			}
 			np.conns = append(np.conns, client, server)
-			go np.loop(np.rtt, np.up, client, server)
-			go np.loop(np.rtt, np.down, server, client)
+			go np.loop(np.up, client, server)
+			go np.loop(np.down, server, client)
 		}
 	}()
 }
@@ -1681,8 +1736,7 @@ func (np *netProxy) routeURL() string {
 	return strings.Replace(np.url, "nats", "nats-route", 1)
 }
 
-func (np *netProxy) loop(rtt time.Duration, tbw int, r, w net.Conn) {
-	delay := rtt / 2
+func (np *netProxy) loop(tbw int, r, w net.Conn) {
 	const rbl = 8192
 	var buf [rbl]byte
 	ctx := context.Background()
@@ -1692,9 +1746,13 @@ func (np *netProxy) loop(rtt time.Duration, tbw int, r, w net.Conn) {
 	for {
 		n, err := r.Read(buf[:])
 		if err != nil {
+			w.Close()
 			return
 		}
 		// RTT delays
+		np.RLock()
+		delay := np.rtt / 2
+		np.RUnlock()
 		if delay > 0 {
 			time.Sleep(delay)
 		}
@@ -1702,9 +1760,16 @@ func (np *netProxy) loop(rtt time.Duration, tbw int, r, w net.Conn) {
 			return
 		}
 		if _, err = w.Write(buf[:n]); err != nil {
+			r.Close()
 			return
 		}
 	}
+}
+
+func (np *netProxy) updateRTT(rtt time.Duration) {
+	np.Lock()
+	np.rtt = rtt
+	np.Unlock()
 }
 
 func (np *netProxy) stop() {

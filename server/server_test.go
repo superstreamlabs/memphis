@@ -19,6 +19,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -419,7 +420,7 @@ func TestClientAdvertiseInCluster(t *testing.T) {
 
 	checkURLs := func(expected string) {
 		t.Helper()
-		checkFor(t, time.Second, 15*time.Millisecond, func() error {
+		checkFor(t, 2*time.Second, 15*time.Millisecond, func() error {
 			srvs := nc.DiscoveredServers()
 			for _, u := range srvs {
 				if u == expected {
@@ -611,6 +612,8 @@ func TestNilMonitoringPort(t *testing.T) {
 type DummyAuth struct {
 	t         *testing.T
 	needNonce bool
+	deadline  time.Time
+	register  bool
 }
 
 func (d *DummyAuth) Check(c ClientAuthentication) bool {
@@ -620,12 +623,26 @@ func (d *DummyAuth) Check(c ClientAuthentication) bool {
 		d.t.Fatalf("Received a nonce when none was expected")
 	}
 
-	return c.GetOpts().Username == "valid"
+	if c.GetOpts().Username != "valid" {
+		return false
+	}
+
+	if !d.register {
+		return true
+	}
+
+	u := &User{
+		Username:           c.GetOpts().Username,
+		ConnectionDeadline: d.deadline,
+	}
+	c.RegisterUser(u)
+
+	return true
 }
 
 func TestCustomClientAuthentication(t *testing.T) {
 	testAuth := func(t *testing.T, nonce bool) {
-		clientAuth := &DummyAuth{t, nonce}
+		clientAuth := &DummyAuth{t: t, needNonce: nonce}
 
 		opts := DefaultOptions()
 		opts.CustomClientAuthentication = clientAuth
@@ -675,7 +692,8 @@ func TestCustomRouterAuthentication(t *testing.T) {
 	s3 := RunServer(opts3)
 	defer s3.Shutdown()
 	checkClusterFormed(t, s, s3)
-	checkNumRoutes(t, s3, 1)
+	// Default pool size + 1 for system account
+	checkNumRoutes(t, s3, DEFAULT_ROUTE_POOL_SIZE+1)
 }
 
 func TestMonitoringNoTimeout(t *testing.T) {
@@ -756,10 +774,7 @@ func TestLameDuckMode(t *testing.T) {
 
 	// Check that if there is no client, server is shutdown
 	srvA.lameDuckMode()
-	srvA.mu.Lock()
-	shutdown := srvA.shutdown
-	srvA.mu.Unlock()
-	if !shutdown {
+	if !srvA.isShuttingDown() {
 		t.Fatalf("Server should have shutdown")
 	}
 
@@ -1205,9 +1220,7 @@ func TestServerValidateGatewaysOptions(t *testing.T) {
 func TestAcceptError(t *testing.T) {
 	o := DefaultOptions()
 	s := New(o)
-	s.mu.Lock()
-	s.running = true
-	s.mu.Unlock()
+	s.running.Store(true)
 	defer s.Shutdown()
 	orgDelay := time.Hour
 	delay := s.acceptError("Test", fmt.Errorf("any error"), orgDelay)
@@ -2067,4 +2080,30 @@ func TestServerRateLimitLogging(t *testing.T) {
 	c2.RateLimitWarnf("Warning number 2")
 
 	checkLog(c1, c2)
+}
+
+// https://github.com/nats-io/nats-server/discussions/4535
+func TestServerAuthBlockAndSysAccounts(t *testing.T) {
+	conf := createConfFile(t, []byte(`
+		listen: 127.0.0.1:-1
+		server_name: s-test
+		authorization {
+			users = [ { user: "u", password: "pass"} ]
+		}
+		accounts {
+			$SYS: { users: [ { user: admin, password: pwd } ] }
+		}
+	`))
+
+	s, _ := RunServerWithConfig(conf)
+	defer s.Shutdown()
+
+	// This should work of course.
+	nc, err := nats.Connect(s.ClientURL(), nats.UserInfo("u", "pass"))
+	require_NoError(t, err)
+	defer nc.Close()
+
+	// This should not.
+	_, err = nats.Connect(s.ClientURL())
+	require_Error(t, err, nats.ErrAuthorization, errors.New("nats: Authorization Violation"))
 }

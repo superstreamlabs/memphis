@@ -89,6 +89,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                     return;
                 }
                 try {
+                    handleLoader(true);
                     const bodyRequest = fieldsValue;
                     const data = await httpRequest('POST', ApiEndpoints.ADD_USER, bodyRequest);
                     if (data) {
@@ -97,6 +98,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                 } catch (error) {
                     handleLoader(false);
                 } finally {
+                    handleLoader(false);
                     getAllowedActions();
                 }
             }

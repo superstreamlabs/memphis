@@ -103,7 +103,6 @@ const (
 	Follower RaftState = iota
 	Leader
 	Candidate
-	Observer
 	Closed
 )
 
@@ -115,8 +114,6 @@ func (state RaftState) String() string {
 		return "CANDIDATE"
 	case Leader:
 		return "LEADER"
-	case Observer:
-		return "OBSERVER"
 	case Closed:
 		return "CLOSED"
 	}
@@ -125,108 +122,105 @@ func (state RaftState) String() string {
 
 type raft struct {
 	sync.RWMutex
-	created  time.Time
-	group    string
-	sd       string
-	id       string
-	wal      WAL
-	wtype    StorageType
-	track    bool
-	werr     error
-	state    RaftState
-	hh       hash.Hash64
-	snapfile string
-	csz      int
-	qn       int
-	peers    map[string]*lps
-	removed  map[string]struct{}
-	acks     map[uint64]map[string]struct{}
-	pae      map[uint64]*appendEntry
-	elect    *time.Timer
-	active   time.Time
-	llqrt    time.Time
-	lsut     time.Time
-	term     uint64 // The current vote term
-	pterm    uint64 // Previous term from the last snapshot
-	pindex   uint64 // Previous index from the last snapshot
-	commit   uint64 // Sequence number of the most recent commit
-	applied  uint64 // Sequence number of the most recently applied commit
-	leader   string // The ID of the leader
-	vote     string
-	hash     string
-	s        *Server
-	c        *client
-	js       *jetStream
-	dflag    bool
-	pleader  bool
-	observer bool
-	extSt    extensionState
 
-	// Subjects for votes, updates, replays.
-	psubj  string
-	rpsubj string
-	vsubj  string
-	vreply string
-	asubj  string
-	areply string
+	created time.Time // Time that the group was created
+	accName string    // Account name of the asset this raft group is for
+	group   string    // Raft group
+	sd      string    // Store directory
+	id      string    // Node ID
 
-	sq    *sendq
-	aesub *subscription
+	wal   WAL         // WAL store (filestore or memstore)
+	wtype StorageType // WAL type, e.g. FileStorage or MemoryStorage
+	track bool        //
+	werr  error       // Last write error
 
-	// Are we doing a leadership transfer.
-	lxfer bool
+	state    atomic.Int32 // RaftState
+	hh       hash.Hash64  // Highwayhash, used for snapshots
+	snapfile string       // Snapshot filename
 
-	// For holding term and vote and peerstate to be written.
-	wtv   []byte
-	wps   []byte
-	wtvch chan struct{}
-	wpsch chan struct{}
+	csz   int             // Cluster size
+	qn    int             // Number of nodes needed to establish quorum
+	peers map[string]*lps // Other peers in the Raft group
 
-	// For when we need to catch up as a follower.
-	catchup *catchupState
+	removed map[string]struct{}            // Peers that were removed from the group
+	acks    map[uint64]map[string]struct{} // Append entry responses/acks, map of entry index -> peer ID
+	pae     map[uint64]*appendEntry        // Pending append entries
 
-	// For leader or server catching up a follower.
-	progress map[string]*ipQueue[uint64]
+	elect  *time.Timer // Election timer, normally accessed via electTimer
+	active time.Time   // Last activity time, i.e. for heartbeats
+	llqrt  time.Time   // Last quorum lost time
+	lsut   time.Time   // Last scale-up time
 
-	// For when we have paused our applyC.
-	paused    bool
-	hcommit   uint64
-	pobserver bool
+	term    uint64 // The current vote term
+	pterm   uint64 // Previous term from the last snapshot
+	pindex  uint64 // Previous index from the last snapshot
+	commit  uint64 // Sequence number of the most recent commit
+	applied uint64 // Sequence number of the most recently applied commit
 
-	// Queues and Channels
-	prop     *ipQueue[*Entry]
-	entry    *ipQueue[*appendEntry]
-	resp     *ipQueue[*appendEntryResponse]
-	apply    *ipQueue[*CommittedEntry]
-	reqs     *ipQueue[*voteRequest]
-	votes    *ipQueue[*voteResponse]
-	stepdown *ipQueue[string]
-	leadc    chan bool
-	quit     chan struct{}
+	leader string // The ID of the leader
+	vote   string // Our current vote state
+	lxfer  bool   // Are we doing a leadership transfer?
 
-	// Account name of the asset this raft group is for
-	accName string
+	s  *Server    // Reference to top-level server
+	c  *client    // Internal client for subscriptions
+	js *jetStream // JetStream, if running, to see if we are out of resources
 
-	// Random generator, used to generate inboxes for instance
-	prand *rand.Rand
+	dflag    bool           // Debug flag
+	pleader  bool           // Has the group ever had a leader?
+	observer bool           // The node is observing, i.e. not participating in voting
+	extSt    extensionState // Extension state
+
+	psubj  string // Proposals subject
+	rpsubj string // Remove peers subject
+	vsubj  string // Vote requests subject
+	vreply string // Vote responses subject
+	asubj  string // Append entries subject
+	areply string // Append entries responses subject
+
+	sq    *sendq        // Send queue for outbound RPC messages
+	aesub *subscription // Subscription for handleAppendEntry callbacks
+
+	wtv   []byte        // Term and vote to be written
+	wps   []byte        // Peer state to be written
+	wtvch chan struct{} // Signals when a term vote was just written, to kick file writer
+	wpsch chan struct{} // Signals when a peer state was just written, to kick file writer
+
+	catchup  *catchupState               // For when we need to catch up as a follower.
+	progress map[string]*ipQueue[uint64] // For leader or server catching up a follower.
+
+	paused    bool   // Whether or not applies are paused
+	hcommit   uint64 // The commit at the time that applies were paused
+	pobserver bool   // Whether we were an observer at the time that applies were paused
+
+	prop     *ipQueue[*Entry]               // Proposals
+	entry    *ipQueue[*appendEntry]         // Append entries
+	resp     *ipQueue[*appendEntryResponse] // Append entries responses
+	apply    *ipQueue[*CommittedEntry]      // Apply queue (committed entries to be passed to upper layer)
+	reqs     *ipQueue[*voteRequest]         // Vote requests
+	votes    *ipQueue[*voteResponse]        // Vote responses
+	stepdown *ipQueue[string]               // Stepdown requests
+	leadc    chan bool                      // Leader changes
+	quit     chan struct{}                  // Raft group shutdown
+
+	prand *rand.Rand // Random generator, used to generate inboxes for instance
 }
 
 // cacthupState structure that holds our subscription, and catchup term and index
 // as well as starting term and index and how many updates we have seen.
 type catchupState struct {
-	sub    *subscription
-	cterm  uint64
-	cindex uint64
-	pterm  uint64
-	pindex uint64
-	active time.Time
+	sub    *subscription // Subscription that catchup messages will arrive on
+	cterm  uint64        // Catchup term
+	cindex uint64        // Catchup index
+	pterm  uint64        // Starting term
+	pindex uint64        // Starting index
+	active time.Time     // Last time we received a message for this catchup
 }
 
 // lps holds peer state of last time and last index replicated.
 type lps struct {
-	ts int64
-	li uint64
-	kp bool // marks as known peer.
+	ts int64  // Last timestamp
+	li uint64 // Last index replicated
+	kp bool   // Known peer
 }
 
 const (
@@ -237,7 +231,6 @@ const (
 	hbIntervalDefault              = 1 * time.Second
 	lostQuorumIntervalDefault      = hbIntervalDefault * 10 // 10 seconds
 	lostQuorumCheckIntervalDefault = hbIntervalDefault * 10 // 10 seconds
-
 )
 
 var (
@@ -343,7 +336,7 @@ func (s *Server) bootstrapRaftNode(cfg *RaftConfig, knownPeers []string, allPeer
 }
 
 // startRaftNode will start the raft node.
-func (s *Server) startRaftNode(accName string, cfg *RaftConfig) (RaftNode, error) {
+func (s *Server) startRaftNode(accName string, cfg *RaftConfig, labels pprofLabels) (RaftNode, error) {
 	if cfg == nil {
 		return nil, errNilCfg
 	}
@@ -381,10 +374,8 @@ func (s *Server) startRaftNode(accName string, cfg *RaftConfig) (RaftNode, error
 		wal:      cfg.Log,
 		wtype:    cfg.Log.Type(),
 		track:    cfg.Track,
-		state:    Follower,
 		csz:      ps.clusterSize,
 		qn:       ps.clusterSize/2 + 1,
-		hash:     hash,
 		peers:    make(map[string]*lps),
 		acks:     make(map[uint64]map[string]struct{}),
 		pae:      make(map[uint64]*appendEntry),
@@ -414,14 +405,19 @@ func (s *Server) startRaftNode(accName string, cfg *RaftConfig) (RaftNode, error
 		n.dflag = true
 	}
 
+	// Set up the highwayhash for the snapshots.
 	key := sha256.Sum256([]byte(n.group))
 	n.hh, _ = highwayhash.New64(key[:])
 
+	// If we have a term and vote file (tav.idx on the filesystem) then read in
+	// what we think the term and vote was. It's possible these are out of date
+	// so a catch-up may be required.
 	if term, vote, err := n.readTermVote(); err == nil && term > 0 {
 		n.term = term
 		n.vote = vote
 	}
 
+	// Make sure that the snapshots directory exists.
 	if err := os.MkdirAll(filepath.Join(n.sd, snapshotsDir), 0750); err != nil {
 		return nil, fmt.Errorf("could not create snapshots directory - %v", err)
 	}
@@ -434,6 +430,9 @@ func (s *Server) startRaftNode(accName string, cfg *RaftConfig) (RaftNode, error
 		n.setupLastSnapshot()
 	}
 
+	// Retrieve the stream state from the WAL. If there are pending append
+	// entries that were committed but not applied before we last shut down,
+	// we will try to replay them and process them here.
 	var state StreamState
 	n.wal.FastState(&state)
 	if state.Msgs > 0 {
@@ -445,6 +444,8 @@ func (s *Server) startRaftNode(accName string, cfg *RaftConfig) (RaftNode, error
 			}
 		}
 
+		// It looks like there are entries we have committed but not applied
+		// yet. Replay them.
 		for index := state.FirstSeq; index <= state.LastSeq; index++ {
 			ae, err := n.loadEntry(index)
 			if err != nil {
@@ -470,15 +471,18 @@ func (s *Server) startRaftNode(accName string, cfg *RaftConfig) (RaftNode, error
 
 	// Make sure to track ourselves.
 	n.peers[n.id] = &lps{time.Now().UnixNano(), 0, true}
+
 	// Track known peers
 	for _, peer := range ps.knownPeers {
-		// Set these to 0 to start but mark as known peer.
 		if peer != n.id {
+			// Set these to 0 to start but mark as known peer.
 			n.peers[peer] = &lps{0, 0, true}
 		}
 	}
 
-	// Setup our internal subscriptions.
+	// Setup our internal subscriptions for proposals, votes and append entries.
+	// If we fail to do this for some reason then this is fatal — we cannot
+	// continue setting up or the Raft node may be partially/totally isolated.
 	if err := n.createInternalSubs(); err != nil {
 		n.shutdown(true)
 		return nil, err
@@ -487,18 +491,27 @@ func (s *Server) startRaftNode(accName string, cfg *RaftConfig) (RaftNode, error
 	n.debug("Started")
 
 	// Check if we need to start in observer mode due to lame duck status.
+	// This will stop us from taking on the leader role when we're about to
+	// shutdown anyway.
 	if s.isLameDuckMode() {
 		n.debug("Will start in observer mode due to lame duck status")
 		n.SetObserver(true)
 	}
 
+	// Set the election timer and lost quorum timers to now, so that we
+	// won't accidentally trigger either state without knowing the real state
+	// of the other nodes.
 	n.Lock()
 	n.resetElectionTimeout()
 	n.llqrt = time.Now()
 	n.Unlock()
 
+	// Register the Raft group.
+	labels["group"] = n.group
 	s.registerRaftNode(n.group, n)
-	s.startGoRoutine(n.run)
+
+	// Start the goroutines for the Raft state machine and the file writer.
+	s.startGoRoutine(n.run, labels)
 	s.startGoRoutine(n.fileWriter)
 
 	return n, nil
@@ -529,7 +542,8 @@ func (s *Server) clusterNameForNode(node string) string {
 	return _EMPTY_
 }
 
-// Server will track all raft nodes.
+// Registers the Raft node with the server, as it will track all of the Raft
+// nodes.
 func (s *Server) registerRaftNode(group string, n RaftNode) {
 	s.rnMu.Lock()
 	defer s.rnMu.Unlock()
@@ -539,6 +553,7 @@ func (s *Server) registerRaftNode(group string, n RaftNode) {
 	s.raftNodes[group] = n
 }
 
+// Unregisters the Raft node from the server, i.e. at shutdown.
 func (s *Server) unregisterRaftNode(group string) {
 	s.rnMu.Lock()
 	defer s.rnMu.Unlock()
@@ -547,12 +562,15 @@ func (s *Server) unregisterRaftNode(group string) {
 	}
 }
 
+// Returns how many Raft nodes are running in this server instance.
 func (s *Server) numRaftNodes() int {
 	s.rnMu.Lock()
 	defer s.rnMu.Unlock()
 	return len(s.raftNodes)
 }
 
+// Finds the Raft node for a given Raft group, if any. If there is no Raft node
+// running for this group then it can return nil.
 func (s *Server) lookupRaftNode(group string) RaftNode {
 	s.rnMu.RLock()
 	defer s.rnMu.RUnlock()
@@ -563,6 +581,8 @@ func (s *Server) lookupRaftNode(group string) RaftNode {
 	return n
 }
 
+// Reloads the debug state for all running Raft nodes. This is necessary when
+// the configuration has been reloaded and the debug log level has changed.
 func (s *Server) reloadDebugRaftNodes(debug bool) {
 	if s == nil {
 		return
@@ -577,36 +597,46 @@ func (s *Server) reloadDebugRaftNodes(debug bool) {
 	s.rnMu.RUnlock()
 }
 
+// Requests that all Raft nodes on this server step down and place them into
+// observer mode. This is called when the server is shutting down.
 func (s *Server) stepdownRaftNodes() {
 	if s == nil {
 		return
 	}
-	var nodes []RaftNode
 	s.rnMu.RLock()
-	if len(s.raftNodes) > 0 {
-		s.Debugf("Stepping down all leader raft nodes")
+	if len(s.raftNodes) == 0 {
+		s.rnMu.RUnlock()
+		return
 	}
+	s.Debugf("Stepping down all leader raft nodes")
+	nodes := make([]RaftNode, 0, len(s.raftNodes))
 	for _, n := range s.raftNodes {
-		if n.Leader() {
-			nodes = append(nodes, n)
-		}
+		nodes = append(nodes, n)
 	}
 	s.rnMu.RUnlock()
 
 	for _, node := range nodes {
-		node.StepDown()
+		if node.Leader() {
+			node.StepDown()
+		}
+		node.SetObserver(true)
 	}
 }
 
+// Shuts down all Raft nodes on this server. This is called either when the
+// server is either entering lame duck mode, shutting down or when JetStream
+// has been disabled.
 func (s *Server) shutdownRaftNodes() {
 	if s == nil {
 		return
 	}
-	var nodes []RaftNode
 	s.rnMu.RLock()
-	if len(s.raftNodes) > 0 {
-		s.Debugf("Shutting down all raft nodes")
+	if len(s.raftNodes) == 0 {
+		s.rnMu.RUnlock()
+		return
 	}
+	nodes := make([]RaftNode, 0, len(s.raftNodes))
+	s.Debugf("Shutting down all raft nodes")
 	for _, n := range s.raftNodes {
 		nodes = append(nodes, n)
 	}
@@ -624,11 +654,12 @@ func (s *Server) transferRaftLeaders() bool {
 	if s == nil {
 		return false
 	}
-	var nodes []RaftNode
 	s.rnMu.RLock()
-	if len(s.raftNodes) > 0 {
-		s.Debugf("Transferring any raft leaders")
+	if len(s.raftNodes) == 0 {
+		s.rnMu.RUnlock()
+		return false
 	}
+	nodes := make([]RaftNode, 0, len(s.raftNodes))
 	for _, n := range s.raftNodes {
 		nodes = append(nodes, n)
 	}
@@ -650,12 +681,11 @@ func (s *Server) transferRaftLeaders() bool {
 // Propose will propose a new entry to the group.
 // This should only be called on the leader.
 func (n *raft) Propose(data []byte) error {
-	n.RLock()
-	if n.state != Leader {
-		n.RUnlock()
-		n.debug("Proposal ignored, not leader")
+	if state := n.State(); state != Leader {
+		n.debug("Proposal ignored, not leader (state: %v)", state)
 		return errNotLeader
 	}
+	n.RLock()
 	// Error if we had a previous write error.
 	if werr := n.werr; werr != nil {
 		n.RUnlock()
@@ -668,15 +698,15 @@ func (n *raft) Propose(data []byte) error {
 	return nil
 }
 
-// ProposeDirect will propose entries directly.
+// ProposeDirect will propose entries directly by skipping the Raft state
+// machine and sending them straight to the wire instead.
 // This should only be called on the leader.
 func (n *raft) ProposeDirect(entries []*Entry) error {
-	n.RLock()
-	if n.state != Leader {
-		n.RUnlock()
-		n.debug("Proposal ignored, not leader")
+	if state := n.State(); state != Leader {
+		n.debug("Direct proposal ignored, not leader (state: %v)", state)
 		return errNotLeader
 	}
+	n.RLock()
 	// Error if we had a previous write error.
 	if werr := n.werr; werr != nil {
 		n.RUnlock()
@@ -703,11 +733,10 @@ func (n *raft) ForwardProposal(entry []byte) error {
 
 // ProposeAddPeer is called to add a peer to the group.
 func (n *raft) ProposeAddPeer(peer string) error {
-	n.RLock()
-	if n.state != Leader {
-		n.RUnlock()
+	if n.State() != Leader {
 		return errNotLeader
 	}
+	n.RLock()
 	// Error if we had a previous write error.
 	if werr := n.werr; werr != nil {
 		n.RUnlock()
@@ -739,7 +768,7 @@ func (n *raft) doRemovePeerAsLeader(peer string) {
 func (n *raft) ProposeRemovePeer(peer string) error {
 	n.RLock()
 	prop, subj := n.prop, n.rpsubj
-	isLeader := n.state == Leader
+	isLeader := n.State() == Leader
 	werr := n.werr
 	n.RUnlock()
 
@@ -748,13 +777,16 @@ func (n *raft) ProposeRemovePeer(peer string) error {
 		return werr
 	}
 
+	// If we are the leader then we are responsible for processing the
+	// peer remove and then notifying the rest of the group that the
+	// peer was removed.
 	if isLeader {
 		prop.push(newEntry(EntryRemovePeer, []byte(peer)))
 		n.doRemovePeerAsLeader(peer)
 		return nil
 	}
 
-	// Need to forward.
+	// Otherwise we need to forward the proposal to the leader.
 	n.sendRPC(subj, _EMPTY_, []byte(peer))
 	return nil
 }
@@ -781,7 +813,8 @@ func (n *raft) AdjustBootClusterSize(csz int) error {
 	if csz < 2 {
 		csz = 2
 	}
-	// Adjust.
+	// Adjust the cluster size and the number of nodes needed to establish
+	// a quorum.
 	n.csz = csz
 	n.qn = n.csz/2 + 1
 
@@ -791,17 +824,17 @@ func (n *raft) AdjustBootClusterSize(csz int) error {
 // AdjustClusterSize will change the cluster set size.
 // Must be the leader.
 func (n *raft) AdjustClusterSize(csz int) error {
-	n.Lock()
-	if n.state != Leader {
-		n.Unlock()
+	if n.State() != Leader {
 		return errNotLeader
 	}
+	n.Lock()
 	// Same floor as bootstrap.
 	if csz < 2 {
 		csz = 2
 	}
 
-	// Adjust.
+	// Adjust the cluster size and the number of nodes needed to establish
+	// a quorum.
 	n.csz = csz
 	n.qn = n.csz/2 + 1
 	n.Unlock()
@@ -811,16 +844,18 @@ func (n *raft) AdjustClusterSize(csz int) error {
 }
 
 // PauseApply will allow us to pause processing of append entries onto our
-// external apply chan.
+// external apply queue. In effect this means that the upper layer will no longer
+// receive any new entries from the Raft group.
 func (n *raft) PauseApply() error {
+	if n.State() == Leader {
+		return errAlreadyLeader
+	}
+
 	n.Lock()
 	defer n.Unlock()
 
-	if n.state == Leader {
-		return errAlreadyLeader
-	}
 	// If we are currently a candidate make sure we step down.
-	if n.state == Candidate {
+	if n.State() == Candidate {
 		n.stepdown.push(noLeader)
 	}
 
@@ -834,6 +869,8 @@ func (n *raft) PauseApply() error {
 	return nil
 }
 
+// ResumeApply will resume sending applies to the external apply queue. This
+// means that we will start sending new entries to the upper layer.
 func (n *raft) ResumeApply() {
 	n.Lock()
 	defer n.Unlock()
@@ -864,8 +901,9 @@ func (n *raft) ResumeApply() {
 	}
 }
 
-// Applied is to be called when the FSM has applied the committed entries.
-// Applied will return the number of entries and an estimation of the
+// Applied is a callback that must be be called by the upper layer when it
+// has successfully applied the committed entries that it received from the
+// apply queue. It will return the number of entries and an estimation of the
 // byte size that could be removed with a snapshot/compact.
 func (n *raft) Applied(index uint64) (entries uint64, bytes uint64) {
 	n.Lock()
@@ -880,6 +918,9 @@ func (n *raft) Applied(index uint64) (entries uint64, bytes uint64) {
 	if index > n.applied {
 		n.applied = index
 	}
+
+	// Calculate the number of entries and estimate the byte size that
+	// we can now remove with a compaction/snapshot.
 	var state StreamState
 	n.wal.FastState(&state)
 	if n.applied > state.FirstSeq {
@@ -941,17 +982,20 @@ func (n *raft) SendSnapshot(data []byte) error {
 // all of the log entries up to and including index. This should not be called with
 // entries that have been applied to the FSM but have not been applied to the raft state.
 func (n *raft) InstallSnapshot(data []byte) error {
-	n.Lock()
-	if n.state == Closed {
-		n.Unlock()
+	if n.State() == Closed {
 		return errNodeClosed
 	}
 
+	n.Lock()
+
+	// If a write error has occurred already then stop here.
 	if werr := n.werr; werr != nil {
 		n.Unlock()
 		return werr
 	}
 
+	// Check that a catchup isn't already taking place. If it is then we won't
+	// allow installing snapshots until it is done.
 	if len(n.progress) > 0 {
 		n.Unlock()
 		return errCatchupsRunning
@@ -969,10 +1013,13 @@ func (n *raft) InstallSnapshot(data []byte) error {
 
 	var term uint64
 	if ae, _ := n.loadEntry(n.applied); ae != nil {
+		// Use the term from the most recently applied entry if possible.
 		term = ae.term
 	} else if ae, _ = n.loadFirstEntry(); ae != nil {
+		// Otherwise see if we can find the term from the first entry.
 		term = ae.term
 	} else {
+		// Last resort is to use the last pterm that we knew of.
 		term = n.pterm
 	}
 
@@ -1015,6 +1062,9 @@ func (n *raft) InstallSnapshot(data []byte) error {
 	return nil
 }
 
+// NeedSnapshot returns true if it is necessary to try to install a snapshot, i.e.
+// after we have finished recovering/replaying at startup, on a regular interval or
+// as a part of cleaning up when shutting down.
 func (n *raft) NeedSnapshot() bool {
 	n.RLock()
 	defer n.RUnlock()
@@ -1026,6 +1076,8 @@ const (
 	snapFileT    = "snap.%d.%d"
 )
 
+// termAndIndexFromSnapfile tries to load the snapshot file and returns the term
+// and index from that snapshot.
 func termAndIndexFromSnapFile(sn string) (term, index uint64, err error) {
 	if sn == _EMPTY_ {
 		return 0, 0, errBadSnapName
@@ -1037,6 +1089,9 @@ func termAndIndexFromSnapFile(sn string) (term, index uint64, err error) {
 	return term, index, nil
 }
 
+// setupLastSnapshot is called at startup to try and recover the last snapshot from
+// the disk if possible. We will try to recover the term, index and commit/applied
+// indices and then notify the upper layer what we found. Compacts the WAL if needed.
 func (n *raft) setupLastSnapshot() {
 	snapDir := filepath.Join(n.sd, snapshotsDir)
 	psnaps, err := os.ReadDir(snapDir)
@@ -1086,19 +1141,25 @@ func (n *raft) setupLastSnapshot() {
 	n.snapfile = latest
 	snap, err := n.loadLastSnapshot()
 	if err != nil {
+		// We failed to recover the last snapshot for some reason, so we will
+		// assume it has been corrupted and will try to delete it.
 		if n.snapfile != _EMPTY_ {
 			os.Remove(n.snapfile)
 			n.snapfile = _EMPTY_
 		}
-	} else {
-		n.pindex = snap.lastIndex
-		n.pterm = snap.lastTerm
-		n.commit = snap.lastIndex
-		n.applied = snap.lastIndex
-		n.apply.push(newCommittedEntry(n.commit, []*Entry{{EntrySnapshot, snap.data}}))
-		if _, err := n.wal.Compact(snap.lastIndex + 1); err != nil {
-			n.setWriteErrLocked(err)
-		}
+		return
+	}
+
+	// We successfully recovered the last snapshot from the disk.
+	// Recover state from the snapshot and then notify the upper layer.
+	// Compact the WAL when we're done if needed.
+	n.pindex = snap.lastIndex
+	n.pterm = snap.lastTerm
+	n.commit = snap.lastIndex
+	n.applied = snap.lastIndex
+	n.apply.push(newCommittedEntry(n.commit, []*Entry{{EntrySnapshot, snap.data}}))
+	if _, err := n.wal.Compact(snap.lastIndex + 1); err != nil {
+		n.setWriteErrLocked(err)
 	}
 }
 
@@ -1156,28 +1217,30 @@ func (n *raft) loadLastSnapshot() (*snapshot, error) {
 }
 
 // Leader returns if we are the leader for our group.
+// We use an atomic here now vs acquiring the read lock.
 func (n *raft) Leader() bool {
 	if n == nil {
 		return false
 	}
-	n.RLock()
-	isLeader := n.state == Leader
-	n.RUnlock()
-	return isLeader
+	return n.State() == Leader
 }
 
+// isCatchingUp returns true if a catchup is currently taking place.
 func (n *raft) isCatchingUp() bool {
 	n.RLock()
 	defer n.RUnlock()
 	return n.catchup != nil
 }
 
-// This function may block for up to ~10ms to check
-// forward progress in some cases.
+// isCurrent is called from the healthchecks and returns true if we believe
+// that the upper layer is current with the Raft layer, i.e. that it has applied
+// all of the commits that we have given it.
+// Optionally we can also check whether or not we're making forward progress if we
+// aren't current, in which case this function may block for up to ~10ms to find out.
 // Lock should be held.
 func (n *raft) isCurrent(includeForwardProgress bool) bool {
 	// Check if we are closed.
-	if n.state == Closed {
+	if n.State() == Closed {
 		n.debug("Not current, node is closed")
 		return false
 	}
@@ -1189,7 +1252,7 @@ func (n *raft) isCurrent(includeForwardProgress bool) bool {
 	}
 
 	// Make sure we are the leader or we know we have heard from the leader recently.
-	if n.state == Leader {
+	if n.State() == Leader {
 		return true
 	}
 
@@ -1224,7 +1287,7 @@ func (n *raft) isCurrent(includeForwardProgress bool) bool {
 	// Otherwise, wait for a short period of time and see if we are making any
 	// forward progress.
 	if startDelta := n.commit - n.applied; startDelta > 0 {
-		for i := 0; i < 10; i++ { // 5ms, in 0.5ms increments
+		for i := 0; i < 10; i++ { // 10ms, in 1ms increments
 			n.Unlock()
 			time.Sleep(time.Millisecond)
 			n.Lock()
@@ -1299,7 +1362,7 @@ func (n *raft) StepDown(preferred ...string) error {
 		return errTooManyPrefs
 	}
 
-	if n.state != Leader {
+	if n.State() != Leader {
 		n.Unlock()
 		return errNotLeader
 	}
@@ -1393,7 +1456,7 @@ func randCampaignTimeout() time.Duration {
 // Lock should be held.
 func (n *raft) campaign() error {
 	n.debug("Starting campaign")
-	if n.state == Leader {
+	if n.State() == Leader {
 		return errAlreadyLeader
 	}
 	n.resetElect(randCampaignTimeout())
@@ -1404,7 +1467,7 @@ func (n *raft) campaign() error {
 // Lock should be held.
 func (n *raft) xferCampaign() error {
 	n.debug("Starting transfer campaign")
-	if n.state == Leader {
+	if n.State() == Leader {
 		n.lxfer = false
 		return errAlreadyLeader
 	}
@@ -1414,9 +1477,7 @@ func (n *raft) xferCampaign() error {
 
 // State returns the current state for this node.
 func (n *raft) State() RaftState {
-	n.RLock()
-	defer n.RUnlock()
-	return n.state
+	return RaftState(n.state.Load())
 }
 
 // Progress returns the current index, commit and applied values.
@@ -1477,7 +1538,7 @@ func (n *raft) UpdateKnownPeers(knownPeers []string) {
 	// Process like peer state update.
 	ps := &peerState{knownPeers, len(knownPeers), n.extSt}
 	n.processPeerState(ps)
-	isLeader := n.state == Leader
+	isLeader := n.State() == Leader
 	n.Unlock()
 
 	// If we are the leader send this update out as well.
@@ -1486,9 +1547,16 @@ func (n *raft) UpdateKnownPeers(knownPeers []string) {
 	}
 }
 
+// ApplyQ returns the apply queue that new commits will be sent to for the
+// upper layer to apply.
 func (n *raft) ApplyQ() *ipQueue[*CommittedEntry] { return n.apply }
-func (n *raft) LeadChangeC() <-chan bool          { return n.leadc }
-func (n *raft) QuitC() <-chan struct{}            { return n.quit }
+
+// LeadChangeC returns the leader change channel, notifying when the Raft
+// leader role has moved.
+func (n *raft) LeadChangeC() <-chan bool { return n.leadc }
+
+// QuitC returns the quit channel, notifying when the Raft group has shut down.
+func (n *raft) QuitC() <-chan struct{} { return n.quit }
 
 func (n *raft) Created() time.Time {
 	n.RLock()
@@ -1506,7 +1574,14 @@ func (n *raft) Delete() {
 
 func (n *raft) shutdown(shouldDelete bool) {
 	n.Lock()
-	if n.state == Closed {
+
+	// Returned swap value is the previous state. It looks counter-intuitive
+	// to do this atomic operation with the lock held, but we have to do so in
+	// order to make sure that switchState() is not already running. If it is
+	// then it can potentially update the n.state back to a non-closed state,
+	// allowing shutdown() to be called again. If that happens then the below
+	// close(n.quit) will panic from trying to close an already-closed channel.
+	if n.state.Swap(int32(Closed)) == int32(Closed) {
 		n.Unlock()
 		return
 	}
@@ -1524,7 +1599,6 @@ func (n *raft) shutdown(shouldDelete bool) {
 		}
 		c.closeConnection(InternalClient)
 	}
-	n.state = Closed
 	s, g, wal := n.s, n.group, n.wal
 
 	// Delete our peer state and vote state and any snapshots.
@@ -1679,6 +1753,10 @@ func (n *raft) resetElectWithLock(et time.Duration) {
 	n.Unlock()
 }
 
+// run is the top-level runner for the Raft state machine. Depending on the
+// state of the node (leader, follower, candidate, observer), this will call
+// through to other functions. It is expected that this function will run for
+// the entire life of the Raft node once started.
 func (n *raft) run() {
 	s := n.s
 	defer s.grWG.Done()
@@ -1686,10 +1764,9 @@ func (n *raft) run() {
 	// We want to wait for some routing to be enabled, so we will wait for
 	// at least a route, leaf or gateway connection to be established before
 	// starting the run loop.
-	gw := s.gateway
-	for {
+	for gw := s.gateway; ; {
 		s.mu.Lock()
-		ready := len(s.routes)+len(s.leafs) > 0
+		ready := s.numRemotes()+len(s.leafs) > 0
 		if !ready && gw.enabled {
 			gw.RLock()
 			ready = len(gw.out)+len(gw.in) > 0
@@ -1716,9 +1793,6 @@ func (n *raft) run() {
 			n.runAsCandidate()
 		case Leader:
 			n.runAsLeader()
-		case Observer:
-			// TODO(dlc) - fix.
-			n.runAsFollower()
 		case Closed:
 			return
 		}
@@ -1766,7 +1840,8 @@ func (n *raft) setObserver(isObserver bool, extSt extensionState) {
 	n.extSt = extSt
 }
 
-// Invoked when being notified that there is something in the entryc's queue
+// processAppendEntries is called by the Raft state machine when there are
+// new append entries to be committed and sent to the upper state machine.
 func (n *raft) processAppendEntries() {
 	canProcess := true
 	if n.isClosed() {
@@ -1777,7 +1852,8 @@ func (n *raft) processAppendEntries() {
 		n.debug("AppendEntry not processing inbound, no resources")
 		canProcess = false
 	}
-	// Always pop the entries, but check if we can process them.
+	// Always pop the entries, but check if we can process them. If we can't
+	// then the entries are effectively dropped.
 	aes := n.entry.pop()
 	if canProcess {
 		for _, ae := range aes {
@@ -1787,19 +1863,25 @@ func (n *raft) processAppendEntries() {
 	n.entry.recycle(&aes)
 }
 
+// runAsFollower is called by run and will block for as long as the node is
+// running in the follower state.
 func (n *raft) runAsFollower() {
 	for {
 		elect := n.electTimer()
 
 		select {
 		case <-n.entry.ch:
+			// New append entries have arrived over the network.
 			n.processAppendEntries()
 		case <-n.s.quitCh:
+			// The server is shutting down.
 			n.shutdown(false)
 			return
 		case <-n.quit:
+			// The Raft node is shutting down.
 			return
 		case <-elect.C:
+			// The election timer has fired so we think it's time to call an election.
 			// If we are out of resources we just want to stay in this state for the moment.
 			if n.outOfResources() {
 				n.resetElectionTimeoutWithLock()
@@ -1821,17 +1903,23 @@ func (n *raft) runAsFollower() {
 				return
 			}
 		case <-n.votes.ch:
+			// We're receiving votes from the network, probably because we have only
+			// just stepped down and they were already in flight. Ignore them.
 			n.debug("Ignoring old vote response, we have stepped down")
 			n.votes.popOne()
 		case <-n.resp.ch:
-			// Ignore
+			// We're receiving append entry responses from the network, probably because
+			// we have only just stepped down and they were already in flight. Ignore them.
 			n.resp.popOne()
 		case <-n.reqs.ch:
+			// We've just received a vote request from the network.
 			// Because of drain() it is possible that we get nil from popOne().
 			if voteReq, ok := n.reqs.popOne(); ok {
 				n.processVoteRequest(voteReq)
 			}
 		case <-n.stepdown.ch:
+			// We've received a stepdown request, start following the new leader if
+			// we can.
 			if newLeader, ok := n.stepdown.popOne(); ok {
 				n.switchToFollower(newLeader)
 				return
@@ -1840,26 +1928,29 @@ func (n *raft) runAsFollower() {
 	}
 }
 
-// Pool for CommitedEntry re-use.
+// Pool for CommittedEntry re-use.
 var cePool = sync.Pool{
 	New: func() any {
 		return &CommittedEntry{}
 	},
 }
 
-// CommitEntry is handed back to the user to apply a commit to their FSM.
+// CommittedEntry is handed back to the user to apply a commit to their upper layer.
 type CommittedEntry struct {
 	Index   uint64
 	Entries []*Entry
 }
 
-// Create a new ComittedEntry.
+// Create a new CommittedEntry. When the returned entry is no longer needed, it
+// should be returned to the pool by calling ReturnToPool.
 func newCommittedEntry(index uint64, entries []*Entry) *CommittedEntry {
 	ce := cePool.Get().(*CommittedEntry)
 	ce.Index, ce.Entries = index, entries
 	return ce
 }
 
+// ReturnToPool returns the CommittedEntry to the pool, after which point it is
+// no longer safe to reuse.
 func (ce *CommittedEntry) ReturnToPool() {
 	if ce == nil {
 		return
@@ -1880,7 +1971,8 @@ var entryPool = sync.Pool{
 	},
 }
 
-// Helper to create new entries.
+// Helper to create new entries. When the returned entry is no longer needed, it
+// should be returned to the entryPool pool.
 func newEntry(t EntryType, data []byte) *Entry {
 	entry := entryPool.Get().(*Entry)
 	entry.Type, entry.Data = t, data
@@ -1896,15 +1988,15 @@ var aePool = sync.Pool{
 
 // appendEntry is the main struct that is used to sync raft peers.
 type appendEntry struct {
-	leader  string
-	term    uint64
-	commit  uint64
-	pterm   uint64
-	pindex  uint64
-	entries []*Entry
-	// internal use only.
-	reply string
-	sub   *subscription
+	leader  string   // The leader that this append entry came from.
+	term    uint64   // The current term, as the leader understands it.
+	commit  uint64   // The commit index, as the leader understands it.
+	pterm   uint64   // The previous term, for checking consistency.
+	pindex  uint64   // The previous commit index, for checking consistency.
+	entries []*Entry // Entries to process.
+	// Below fields are for internal use only:
+	reply string        // Reply subject to respond to once committed.
+	sub   *subscription // The subscription that the append entry came in on.
 	buf   []byte
 }
 
@@ -2156,23 +2248,26 @@ func (n *raft) handleForwardedProposal(sub *subscription, c *client, _ *Account,
 }
 
 func (n *raft) runAsLeader() {
-	n.RLock()
-	if n.state == Closed {
-		n.RUnlock()
+	if n.State() == Closed {
 		return
 	}
+
+	n.RLock()
 	psubj, rpsubj := n.psubj, n.rpsubj
 	n.RUnlock()
 
 	// For forwarded proposals, both normal and remove peer proposals.
 	fsub, err := n.subscribe(psubj, n.handleForwardedProposal)
 	if err != nil {
-		n.debug("Error subscribing to forwarded proposals: %v", err)
+		n.warn("Error subscribing to forwarded proposals: %v", err)
+		n.stepdown.push(noLeader)
 		return
 	}
 	rpsub, err := n.subscribe(rpsubj, n.handleForwardedRemovePeerProposal)
 	if err != nil {
-		n.debug("Error subscribing to forwarded proposals: %v", err)
+		n.warn("Error subscribing to forwarded remove peer proposals: %v", err)
+		n.unsubscribe(fsub)
+		n.stepdown.push(noLeader)
 		return
 	}
 
@@ -2193,7 +2288,7 @@ func (n *raft) runAsLeader() {
 	lq := time.NewTicker(lostQuorumCheck)
 	defer lq.Stop()
 
-	for {
+	for n.State() == Leader {
 		select {
 		case <-n.s.quitCh:
 			n.shutdown(false)
@@ -2538,10 +2633,10 @@ func (n *raft) loadEntry(index uint64) (*appendEntry, error) {
 	return n.decodeAppendEntry(sm.msg, nil, _EMPTY_)
 }
 
-// applyCommit will update our commit index and apply the entry to the apply chan.
+// applyCommit will update our commit index and apply the entry to the apply queue.
 // lock should be held.
 func (n *raft) applyCommit(index uint64) error {
-	if n.state == Closed {
+	if n.State() == Closed {
 		return errNodeClosed
 	}
 	if index <= n.commit {
@@ -2551,7 +2646,7 @@ func (n *raft) applyCommit(index uint64) error {
 	original := n.commit
 	n.commit = index
 
-	if n.state == Leader {
+	if n.State() == Leader {
 		delete(n.acks, index)
 	}
 
@@ -2568,7 +2663,7 @@ func (n *raft) applyCommit(index uint64) error {
 		if ae, err = n.loadEntry(index); err != nil {
 			if err != ErrStoreClosed && err != ErrStoreEOF {
 				n.warn("Got an error loading %d index: %v - will reset", index, err)
-				if n.state == Leader {
+				if n.State() == Leader {
 					n.stepdown.push(n.selectNextLeader())
 				}
 				// Reset and cancel any catchup.
@@ -2596,7 +2691,7 @@ func (n *raft) applyCommit(index uint64) error {
 		case EntrySnapshot:
 			committed = append(committed, e)
 		case EntryPeerState:
-			if n.state != Leader {
+			if n.State() != Leader {
 				if ps, err := decodePeerState(e.Data); err == nil {
 					n.processPeerState(ps)
 				}
@@ -2646,7 +2741,7 @@ func (n *raft) applyCommit(index uint64) error {
 			}
 
 			// If this is us and we are the leader we should attempt to stepdown.
-			if peer == n.id && n.state == Leader {
+			if peer == n.id && n.State() == Leader {
 				n.stepdown.push(n.selectNextLeader())
 			}
 
@@ -2674,11 +2769,11 @@ func (n *raft) applyCommit(index uint64) error {
 
 // Used to track a success response and apply entries.
 func (n *raft) trackResponse(ar *appendEntryResponse) {
-	n.Lock()
-	if n.state == Closed {
-		n.Unlock()
+	if n.State() == Closed {
 		return
 	}
+
+	n.Lock()
 
 	// Update peer's last index.
 	if ps := n.peers[ar.peer]; ps != nil && ar.index > ps.li {
@@ -2736,7 +2831,7 @@ func (n *raft) adjustClusterSizeAndQuorum() {
 		n.lsut = time.Now()
 	} else if ncsz < pcsz {
 		n.debug("Decreasing our clustersize: %d -> %d", pcsz, ncsz)
-		if n.state == Leader {
+		if n.State() == Leader {
 			go n.sendHeartbeat()
 		}
 	}
@@ -2749,7 +2844,7 @@ func (n *raft) trackPeer(peer string) error {
 	if n.removed != nil {
 		_, isRemoved = n.removed[peer]
 	}
-	if n.state == Leader {
+	if n.State() == Leader {
 		if lp, ok := n.peers[peer]; !ok || !lp.kp {
 			// Check if this peer had been removed previously.
 			needPeerAdd = !isRemoved
@@ -2841,16 +2936,22 @@ func (n *raft) runAsCandidate() {
 	}
 }
 
-// handleAppendEntry handles an append entry from the wire.
+// handleAppendEntry handles an append entry from the wire. This function
+// is an internal callback from the "asubj" append entry subscription.
 func (n *raft) handleAppendEntry(sub *subscription, c *client, _ *Account, subject, reply string, msg []byte) {
 	msg = copyBytes(msg)
 	if ae, err := n.decodeAppendEntry(msg, sub, reply); err == nil {
+		// Push to the new entry channel. From here one of the worker
+		// goroutines (runAsLeader, runAsFollower, runAsCandidate) will
+		// pick it up.
 		n.entry.push(ae)
 	} else {
 		n.warn("AppendEntry failed to be placed on internal channel: corrupt entry")
 	}
 }
 
+// cancelCatchup will stop an in-flight catchup by unsubscribing from the
+// catchup subscription.
 // Lock should be held.
 func (n *raft) cancelCatchup() {
 	n.debug("Canceling catchup subscription since we are now up to date")
@@ -2876,6 +2977,9 @@ func (n *raft) catchupStalled() bool {
 	return false
 }
 
+// createCatchup will create the state needed to track a catchup as it
+// runs. It then creates a unique inbox for this catchup and subscribes
+// to it. The remote side will stream entries to that subject.
 // Lock should be held.
 func (n *raft) createCatchup(ae *appendEntry) string {
 	// Cleanup any old ones.
@@ -2939,7 +3043,7 @@ func (n *raft) truncateWAL(term, index uint64) {
 	n.term, n.pterm, n.pindex = term, term, index
 }
 
-// Reset our WAL.
+// Reset our WAL. This is equivalent to truncating all data from the log.
 // Lock should be held.
 func (n *raft) resetWAL() {
 	n.truncateWAL(0, 0)
@@ -2953,7 +3057,9 @@ func (n *raft) updateLeader(newLeader string) {
 	}
 }
 
-// processAppendEntry will process an appendEntry.
+// processAppendEntry will process an appendEntry. This is called either
+// during recovery or from processAppendEntries when there are new entries
+// to be committed.
 func (n *raft) processAppendEntry(ae *appendEntry, sub *subscription) {
 	n.Lock()
 	// Don't reset here if we have been asked to assume leader position.
@@ -2962,7 +3068,7 @@ func (n *raft) processAppendEntry(ae *appendEntry, sub *subscription) {
 	}
 
 	// Just return if closed or we had previous write error.
-	if n.state == Closed || n.werr != nil {
+	if n.State() == Closed || n.werr != nil {
 		n.Unlock()
 		return
 	}
@@ -2972,7 +3078,7 @@ func (n *raft) processAppendEntry(ae *appendEntry, sub *subscription) {
 	arbuf := scratch[:]
 
 	// Are we receiving from another leader.
-	if n.state == Leader {
+	if n.State() == Leader {
 		// If we are the same we should step down to break the tie.
 		if ae.term >= n.term {
 			n.term = ae.term
@@ -2992,8 +3098,10 @@ func (n *raft) processAppendEntry(ae *appendEntry, sub *subscription) {
 		return
 	}
 
-	// If we received an append entry as a candidate we should convert to a follower.
-	if n.state == Candidate {
+	// If we received an append entry as a candidate then it would appear that
+	// another node has taken on the leader role already, so we should convert
+	// to a follower of that node instead.
+	if n.State() == Candidate {
 		n.debug("Received append entry in candidate state from %q, converting to follower", ae.leader)
 		if n.term < ae.term {
 			n.term = ae.term
@@ -3005,7 +3113,8 @@ func (n *raft) processAppendEntry(ae *appendEntry, sub *subscription) {
 
 	// Catching up state.
 	catchingUp := n.catchup != nil
-	// Is this a new entry?
+	// Is this a new entry? New entries will be delivered on the append entry
+	// sub, rather than a catch-up sub.
 	isNew := sub != nil && sub == n.aesub
 
 	// Track leader directly
@@ -3059,13 +3168,13 @@ func (n *raft) processAppendEntry(ae *appendEntry, sub *subscription) {
 		if isNew {
 			n.writeTermVote()
 		}
-		if n.state != Follower {
-			n.debug("Term higher than ours and we are not a follower: %v, stepping down to %q", n.state, ae.leader)
+		if n.State() != Follower {
+			n.debug("Term higher than ours and we are not a follower: %v, stepping down to %q", n.State(), ae.leader)
 			n.stepdown.push(ae.leader)
 		}
 	}
 
-	if isNew && n.leader != ae.leader && n.state == Follower {
+	if isNew && n.leader != ae.leader && n.State() == Follower {
 		n.debug("AppendEntry updating leader to %q", ae.leader)
 		n.updateLeader(ae.leader)
 		n.writeTermVote()
@@ -3081,7 +3190,13 @@ func (n *raft) processAppendEntry(ae *appendEntry, sub *subscription) {
 
 			var success bool
 			if eae, _ := n.loadEntry(ae.pindex); eae == nil {
-				n.resetWAL()
+				// If terms are equal, and we are not catching up, we have simply already processed this message.
+				// So we will ACK back to the leader. This can happen on server restarts based on timings of snapshots.
+				if ae.pterm == n.pterm && !catchingUp {
+					success = true
+				} else {
+					n.resetWAL()
+				}
 			} else {
 				// If terms mismatched, or we got an error loading, delete that entry and all others past it.
 				// Make sure to cancel any catchups in progress.
@@ -3205,7 +3320,7 @@ func (n *raft) processAppendEntry(ae *appendEntry, sub *subscription) {
 						n.lxfer = true
 						n.xferCampaign()
 					} else if n.paused && !n.pobserver {
-						// Here we can become a leader but need to wait for resume of the apply channel.
+						// Here we can become a leader but need to wait for resume of the apply queue.
 						n.lxfer = true
 					}
 				} else {
@@ -3255,9 +3370,12 @@ func (n *raft) processAppendEntry(ae *appendEntry, sub *subscription) {
 	}
 }
 
+// processPeerState is called when a peer state entry is received
+// over the wire or when we're updating known peers.
 // Lock should be held.
 func (n *raft) processPeerState(ps *peerState) {
-	// Update our version of peers to that of the leader.
+	// Update our version of peers to that of the leader. Calculate
+	// the number of nodes needed to establish a quorum.
 	n.csz = ps.clusterSize
 	n.qn = n.csz/2 + 1
 
@@ -3275,15 +3393,19 @@ func (n *raft) processPeerState(ps *peerState) {
 	n.writePeerState(ps)
 }
 
-// Process a response.
+// processAppendEntryResponse is called when we receive an append entry
+// response from another node. They will send a confirmation to tell us
+// whether they successfully committed the entry or not.
 func (n *raft) processAppendEntryResponse(ar *appendEntryResponse) {
 	n.trackPeer(ar.peer)
 
 	if ar.success {
+		// The remote node successfully committed the append entry.
 		n.trackResponse(ar)
 		arPool.Put(ar)
 	} else if ar.term > n.term {
-		// False here and they have a higher term.
+		// The remote node didn't commit the append entry, it looks like
+		// they are on a newer term than we are. Step down.
 		n.Lock()
 		n.term = ar.term
 		n.vote = noVote
@@ -3294,6 +3416,8 @@ func (n *raft) processAppendEntryResponse(ar *appendEntryResponse) {
 		n.Unlock()
 		arPool.Put(ar)
 	} else if ar.reply != _EMPTY_ {
+		// The remote node didn't commit the append entry and they are
+		// still on the same term, so let's try to catch them up.
 		n.catchupFollower(ar)
 	}
 }
@@ -3309,7 +3433,8 @@ func (n *raft) buildAppendEntry(entries []*Entry) *appendEntry {
 	return newAppendEntry(n.id, n.term, n.commit, n.pterm, n.pindex, entries)
 }
 
-// Determine if we should store an entry.
+// Determine if we should store an entry. This stops us from storing
+// heartbeat messages.
 func (ae *appendEntry) shouldStore() bool {
 	return ae != nil && len(ae.entries) > 0
 }
@@ -3333,7 +3458,7 @@ func (n *raft) storeToWAL(ae *appendEntry) error {
 	// Sanity checking for now.
 	if index := ae.pindex + 1; index != seq {
 		n.warn("Wrong index, ae is %+v, index stored was %d, n.pindex is %d, will reset", ae, seq, n.pindex)
-		if n.state == Leader {
+		if n.State() == Leader {
 			n.stepdown.push(n.selectNextLeader())
 		}
 		// Reset and cancel any catchup.
@@ -3564,7 +3689,7 @@ func (n *raft) readTermVote() (term uint64, voted string, err error) {
 // Lock should be held.
 func (n *raft) setWriteErrLocked(err error) {
 	// Check if we are closed already.
-	if n.state == Closed {
+	if n.State() == Closed {
 		return
 	}
 	// Ignore if already set.
@@ -3598,9 +3723,7 @@ func (n *raft) setWriteErrLocked(err error) {
 
 // Helper to check if we are closed when we do not hold a lock already.
 func (n *raft) isClosed() bool {
-	n.RLock()
-	defer n.RUnlock()
-	return n.state == Closed
+	return n.State() == Closed
 }
 
 // Capture our write error if any and hold.
@@ -3624,6 +3747,7 @@ func (n *raft) fileWriter() {
 		case <-n.quit:
 			return
 		case <-n.wtvch:
+			// We've been asked to write out the term-and-vote file.
 			var buf [termVoteLen]byte
 			n.RLock()
 			copy(buf[0:], n.wtv)
@@ -3636,6 +3760,7 @@ func (n *raft) fileWriter() {
 				n.warn("Error writing term and vote file for %q: %v", n.group, err)
 			}
 		case <-n.wpsch:
+			// We've been asked to write out the peer state file.
 			n.RLock()
 			buf := copyBytes(n.wps)
 			n.RUnlock()
@@ -3659,7 +3784,7 @@ func (n *raft) writeTermVote() {
 	copy(buf[8:], n.vote)
 	b := buf[:8+len(n.vote)]
 
-	// If same as what we have we can ignore.
+	// If the term and vote hasn't changed then don't rewrite to disk.
 	if bytes.Equal(n.wtv, b) {
 		return
 	}
@@ -3737,7 +3862,8 @@ func (n *raft) processVoteRequest(vr *voteRequest) error {
 	vresp := &voteResponse{n.term, n.id, false}
 	defer n.debug("Sending a voteResponse %+v -> %q", vresp, vr.reply)
 
-	// Ignore if we are newer.
+	// Ignore if we are newer. This is important so that we don't accidentally process
+	// votes from a previous term if they were still in flight somewhere.
 	if vr.term < n.term {
 		n.Unlock()
 		n.sendReply(vr.reply, vresp.encode())
@@ -3746,9 +3872,9 @@ func (n *raft) processVoteRequest(vr *voteRequest) error {
 
 	// If this is a higher term go ahead and stepdown.
 	if vr.term > n.term {
-		if n.state != Follower {
+		if n.State() != Follower {
 			n.debug("Stepping down from %s, detected higher term: %d vs %d",
-				strings.ToLower(n.state.String()), vr.term, n.term)
+				strings.ToLower(n.State().String()), vr.term, n.term)
 			n.stepdown.push(noLeader)
 			n.term = vr.term
 		}
@@ -3787,7 +3913,7 @@ func (n *raft) handleVoteRequest(sub *subscription, c *client, _ *Account, subje
 
 func (n *raft) requestVote() {
 	n.Lock()
-	if n.state != Candidate {
+	if n.State() != Candidate {
 		n.Unlock()
 		return
 	}
@@ -3848,25 +3974,25 @@ func (n *raft) updateLeadChange(isLeader bool) {
 
 // Lock should be held.
 func (n *raft) switchState(state RaftState) {
-	if n.state == Closed {
+	if n.State() == Closed {
 		return
 	}
 
 	// Reset the election timer.
 	n.resetElectionTimeout()
 
-	if n.state == Leader && state != Leader {
+	if n.State() == Leader && state != Leader {
 		n.updateLeadChange(false)
 		// Drain the response queue.
 		n.resp.drain()
-	} else if state == Leader && n.state != Leader {
+	} else if state == Leader && n.State() != Leader {
 		if len(n.pae) > 0 {
 			n.pae = make(map[uint64]*appendEntry)
 		}
 		n.updateLeadChange(true)
 	}
 
-	n.state = state
+	n.state.Store(int32(state))
 	n.writeTermVote()
 }
 
@@ -3876,11 +4002,13 @@ const (
 )
 
 func (n *raft) switchToFollower(leader string) {
-	n.Lock()
-	defer n.Unlock()
-	if n.state == Closed {
+	if n.State() == Closed {
 		return
 	}
+
+	n.Lock()
+	defer n.Unlock()
+
 	n.debug("Switching to follower")
 
 	n.lxfer = false
@@ -3889,17 +4017,19 @@ func (n *raft) switchToFollower(leader string) {
 }
 
 func (n *raft) switchToCandidate() {
-	n.Lock()
-	defer n.Unlock()
-	if n.state == Closed {
+	if n.State() == Closed {
 		return
 	}
+
+	n.Lock()
+	defer n.Unlock()
+
 	// If we are catching up or are in observer mode we can not switch.
 	if n.observer || n.paused {
 		return
 	}
 
-	if n.state != Candidate {
+	if n.State() != Candidate {
 		n.debug("Switching to candidate")
 	} else {
 		if n.lostQuorumLocked() && time.Since(n.llqrt) > 20*time.Second {
@@ -3916,11 +4046,12 @@ func (n *raft) switchToCandidate() {
 }
 
 func (n *raft) switchToLeader() {
-	n.Lock()
-	if n.state == Closed {
-		n.Unlock()
+	if n.State() == Closed {
 		return
 	}
+
+	n.Lock()
+
 	n.debug("Switching to leader")
 
 	var state StreamState

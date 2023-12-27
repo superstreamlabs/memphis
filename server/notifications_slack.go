@@ -93,7 +93,7 @@ func cacheDetailsSlack(keys map[string]interface{}, properties map[string]bool, 
 	}
 	if slackIntegration.Keys["auth_token"] != authToken {
 		slackIntegration.Keys["auth_token"] = authToken
-		if authToken != "" {
+		if authToken != _EMPTY_ {
 			slackIntegration.Client = slack.New(authToken)
 		}
 	}
@@ -128,7 +128,7 @@ func (it IntegrationsHandler) getSlackIntegrationDetails(body models.CreateInteg
 		}
 	}
 	uiUrl = body.UIUrl
-	if uiUrl == "" {
+	if uiUrl == _EMPTY_ {
 		return map[string]interface{}{}, map[string]bool{}, 500, errors.New("must provide UI url for slack integration")
 	}
 
@@ -145,7 +145,7 @@ func (it IntegrationsHandler) getSlackIntegrationDetails(body models.CreateInteg
 		disconnectAlert = false
 	}
 
-	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, pmAlert, svfAlert, disconnectAlert, "", "", "", "", "", "", map[string]interface{}{}, "", "", "", "")
+	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, pmAlert, svfAlert, disconnectAlert, _EMPTY_, _EMPTY_, _EMPTY_, _EMPTY_, _EMPTY_, _EMPTY_, map[string]interface{}{}, _EMPTY_, _EMPTY_, _EMPTY_, _EMPTY_)
 	return keys, properties, 0, nil
 }
 
@@ -154,7 +154,7 @@ func (it IntegrationsHandler) handleCreateSlackIntegration(tenantName string, bo
 	if err != nil {
 		return keys, properties, models.Integration{}, errorCode, err
 	}
-	if it.S.opts.UiHost == "" {
+	if it.S.opts.UiHost == _EMPTY_ {
 		EditClusterCompHost("ui_host", body.UIUrl)
 	}
 	slackIntegration, err := createSlackIntegration(tenantName, keys, properties, body.UIUrl)
@@ -238,7 +238,7 @@ func createSlackIntegration(tenantName string, keys map[string]interface{}, prop
 
 func updateSlackIntegration(tenantName string, authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, uiUrl string) (models.Integration, error) {
 	var slackIntegration models.Integration
-	if authToken == "" {
+	if authToken == _EMPTY_ {
 		exist, integrationFromDb, err := db.GetIntegration("slack", tenantName)
 		if err != nil {
 			return models.Integration{}, err
@@ -257,7 +257,7 @@ func updateSlackIntegration(tenantName string, authToken string, channelID strin
 	if err != nil {
 		return slackIntegration, err
 	}
-	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, pmAlert, svfAlert, disconnectAlert, "", "", "", "", "", "", map[string]interface{}{}, "", "", "", "")
+	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, pmAlert, svfAlert, disconnectAlert, _EMPTY_, _EMPTY_, _EMPTY_, _EMPTY_, _EMPTY_, _EMPTY_, map[string]interface{}{}, _EMPTY_, _EMPTY_, _EMPTY_, _EMPTY_)
 	stringMapKeys := GetKeysAsStringMap(keys)
 	cloneKeys := copyMaps(stringMapKeys)
 	encryptedValue, err := EncryptAES([]byte(authToken))
@@ -309,7 +309,7 @@ func testSlackIntegration(authToken string) error {
 }
 
 func hideSlackAuthToken(authToken string) string {
-	if authToken != "" {
+	if authToken != _EMPTY_ {
 		authToken = "xoxb-****"
 		return authToken
 	}

@@ -27,7 +27,7 @@ import {
     LOCAL_STORAGE_FULL_NAME,
     LOCAL_STORAGE_USER_NAME,
     LOCAL_STORAGE_SKIP_GET_STARTED,
-    USER_IMAGE
+    USER_IMAGE, LOCAL_STORAGE_DARK_MODE
 } from '../../const/localStorageConsts';
 import { ReactComponent as IntegrationColorIcon } from '../../assets/images/integrationIconColor.svg';
 import { ReactComponent as OverviewActiveIcon } from '../../assets/images/overviewIconActive.svg';
@@ -58,6 +58,7 @@ import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import Logo from '../../assets/images/logo.svg';
 import FullLogo from '../../assets/images/fullLogo.svg';
+import FullLogoWhite from '../../assets/images/white-logo.svg';
 import AuthService from '../../services/auth';
 import { sendTrace, useGetAllowedActions } from '../../services/genericServices';
 import { Context } from '../../hooks/store';
@@ -110,6 +111,7 @@ function SideBar() {
     const [bannerType, setBannerType] = useState('');
     const getAllowedActions = useGetAllowedActions();
     const [expandSidebar, setExpandSidebar] = useState(false);
+    const [darkMode, setDarkMode] = useState(false);
 
     const overlayStylesUser = {
         borderRadius: '8px',
@@ -168,6 +170,11 @@ function SideBar() {
         isCloud() && getAllowedActions();
         setAvatarImage(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID) || state?.userData?.avatar_id);
         localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true' && setOpenGetStartedModal(true);
+        const darkMode = localStorage.getItem(LOCAL_STORAGE_DARK_MODE) === 'dark';
+        if (darkMode) {
+            setDarkMode(darkMode);
+            dispatch({ type: 'SET_DARK_MODE', payload: darkMode });
+        }
     }, []);
 
     useEffect(() => {
@@ -177,6 +184,26 @@ function SideBar() {
     useEffect(() => {
         document.documentElement.style.setProperty('--main-container-sidebar-width', expandSidebar ? '205px' : '90px');
     }, [expandSidebar]);
+
+    useEffect(() => {
+        // Find the element with the class 'App'
+        const appElement = document.documentElement;
+
+        if (appElement) {
+            if (darkMode) {
+                appElement.classList.add('dark-mode');
+            } else {
+                appElement.classList.remove('dark-mode');
+            }
+        }
+
+        // Optional: Cleanup function if the component is unmounted
+        return () => {
+            if (appElement) {
+                appElement.classList.remove('dark-mode');
+            }
+        };
+    }, [darkMode]); // Depend on darkMode state
 
     const setAvatarImage = (avatarId) => {
         SetAvatarUrl(require(`../../assets/images/bots/avatar${avatarId}.svg`));
@@ -211,8 +238,8 @@ function SideBar() {
 
     const MenuItem = ({ icon, activeIcon, name, route, onClick, onMouseEnter, onMouseLeave, badge }) => {
         return (
-            <div className={'item-wrapper ' + (state.route === route ? 'ms-active' : '')} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onClick={onClick}>
-                <div className="icon">{state.route === route ? activeIcon : hoveredItem === route ? activeIcon : icon}</div>
+            <div className={'item-wrapper ' + (state.route === route ? 'ms-active ' : '') + (hoveredItem === route ? 'item-wrapper-hovered' : '')} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onClick={onClick}>
+                <div className="icon ">{state.route === route ? activeIcon : hoveredItem === route ? activeIcon : icon}</div>
                 <p className={state.route === route ? 'checked' : 'name'}>{name}</p>
                 {badge && <label className="badge">{badge}</label>}
             </div>
@@ -291,7 +318,7 @@ function SideBar() {
     );
 
     const contentSetting = (
-        <div className="menu-content">
+        <div className="menu-content bottom-sidebar-icons">
             <div className="item-wrap-header">
                 <span className="img-section">
                     <img
@@ -415,6 +442,18 @@ function SideBar() {
         </div>
     );
 
+    function handleDarkMode(mode) {
+        setDarkMode(mode);
+        localStorage.setItem(LOCAL_STORAGE_DARK_MODE, mode ? 'dark' : 'light');
+        dispatch({ type: 'SET_DARK_MODE', payload: mode });
+    }
+
+    function getCompanyLogoSrc() {
+        const darkMode = state?.darkMode || false;
+        const fullLogoSrc = darkMode ? FullLogoWhite : FullLogo;
+        return isCloud() ? state?.companyLogo || (expandSidebar ? fullLogoSrc : Logo) : expandSidebar ? fullLogoSrc : Logo;
+    }
+
     return (
         <div className={'sidebar-container ' + (expandSidebar ? 'expand' : 'collapse')}>
             <div className="upper-icons">
@@ -428,7 +467,7 @@ function SideBar() {
                 </div>
                 <span className="logo-wrapper">
                     <img
-                        src={isCloud() ? state?.companyLogo || (expandSidebar ? FullLogo : Logo) : expandSidebar ? FullLogo : Logo}
+                        src={getCompanyLogoSrc()}
                         width={expandSidebar ? 'auto' : '45'}
                         height="45"
                         className="logoimg"
@@ -559,13 +598,12 @@ function SideBar() {
 
                 <div className="item-wrapper ms-appearance-wrapper">
                     <div className="ms-appearance">
-                        <div className="ms-appearance-badge">Coming soon</div>
-                        <div className="ms-appearance-light ms-active">
+                        <div className={'ms-appearance-light ' + (!darkMode && 'ms-active')} onClick={ () => handleDarkMode(false)}>
                             <SunIcon />
                             <span className="ms-appearance-text">Light</span>
                         </div>
-                        <div className="ms-appearance-dark">
-                            <MoonIcon />
+                        <div className={'ms-appearance-dark ' + (darkMode && 'ms-active')} onClick={ () => handleDarkMode(true)}>
+                            <MoonIcon/>
                             <span className="ms-appearance-text">Dark</span>
                         </div>
                     </div>

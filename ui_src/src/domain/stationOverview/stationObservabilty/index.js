@@ -33,8 +33,14 @@ const StationObservabilty = ({ referredFunction }) => {
             <div className="thunnel-from-sub">
                 {stationState?.stationMetaData?.is_native ? (
                     <>
-                        {stationState?.stationSocketData?.connected_producers?.length === 0 && <Lottie animationData={produceEmpty} loop={true} />}
-                        {stationState?.stationSocketData?.connected_producers?.length > 0 && <Lottie animationData={produce} loop={true} />}
+                        {stationState?.stationSocketData?.connected_producers?.length === 0 &&
+                            stationState?.stationSocketData?.source_connectors?.filter((connector) => connector?.is_active)?.length === 0 && (
+                                <Lottie animationData={produceEmpty} loop={true} />
+                            )}
+                        {(stationState?.stationSocketData?.connected_producers?.length > 0 ||
+                            stationState?.stationSocketData?.source_connectors?.filter((connector) => connector?.is_active)?.length > 0) && (
+                            <Lottie animationData={produce} loop={true} />
+                        )}
                     </>
                 ) : (
                     <Lottie animationData={produceEmpty} loop={true} />
@@ -44,13 +50,16 @@ const StationObservabilty = ({ referredFunction }) => {
             <div className="thunnel-to-pub">
                 {stationState?.stationMetaData?.is_native ? (
                     <>
-                        {stationState?.stationSocketData?.connected_cgs?.length === 0 && <Lottie animationData={consumeEmpty} loop={true} />}
-                        {stationState?.stationSocketData?.connected_cgs?.length > 0 && stationState?.stationSocketData?.poison_messages?.length > 0 && (
-                            <Lottie animationData={consumePoison} loop={true} />
-                        )}
-                        {stationState?.stationSocketData?.connected_cgs?.length > 0 && stationState?.stationSocketData?.poison_messages?.length === 0 && (
-                            <Lottie animationData={consumer} loop={true} />
-                        )}
+                        {stationState?.stationSocketData?.connected_cgs?.length === 0 &&
+                            stationState?.stationSocketData?.sink_connectors?.filter((connector) => connector?.is_active)?.length === 0 && (
+                                <Lottie animationData={consumeEmpty} loop={true} />
+                            )}
+                        {(stationState?.stationSocketData?.connected_cgs?.length > 0 ||
+                            stationState?.stationSocketData?.sink_connectors?.filter((connector) => connector?.is_active)?.length > 0) &&
+                            stationState?.stationSocketData?.poison_messages?.length > 0 && <Lottie animationData={consumePoison} loop={true} />}
+                        {(stationState?.stationSocketData?.connected_cgs?.length > 0 ||
+                            stationState?.stationSocketData?.sink_connectors?.filter((connector) => connector?.is_active)?.length > 0) &&
+                            stationState?.stationSocketData?.poison_messages?.length === 0 && <Lottie animationData={consumer} loop={true} />}
                     </>
                 ) : (
                     <Lottie animationData={consumeEmpty} loop={true} />

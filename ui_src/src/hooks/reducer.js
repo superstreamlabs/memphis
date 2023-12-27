@@ -170,6 +170,11 @@ const Reducer = (state, action) => {
                 ...state,
                 allowedActions: action.payload
             };
+        case 'SET_DARK_MODE':
+            return {
+                ...state,
+                darkMode: action.payload
+            };
         default:
             return state;
     }

@@ -1,6 +1,7 @@
 //ANT design v4
 @import '~antd/dist/antd.css';
 @import '@stigg/react-sdk/dist/styles.css';
+@import 'dark-style';
 
 .App {
     text-align: center;
@@ -44,8 +45,8 @@
 }
 
 ::-webkit-scrollbar {
-    width: 3px;
-    height: 4px;
+    width: 0px;
+    height: 3px;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -259,6 +260,10 @@ pre {
 
 .cursor-pointer {
     cursor: pointer;
+}
+
+.ant-popover-title {
+    border-bottom: none;
 }
 
 @keyframes slide-in {

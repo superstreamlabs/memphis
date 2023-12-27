@@ -23,22 +23,22 @@ import { Redirect } from 'react-router-dom';
 
 import {
     LOCAL_STORAGE_ACCOUNT_ID,
+    LOCAL_STORAGE_WS_HOST,
     LOCAL_STORAGE_INTERNAL_WS_PASS,
     LOCAL_STORAGE_CONNECTION_TOKEN,
     LOCAL_STORAGE_TOKEN,
     LOCAL_STORAGE_USER_PASS_BASED_AUTH,
-    LOCAL_STORAGE_WS_PORT,
     USER_IMAGE,
     LOCAL_STORAGE_PLAN
 } from './const/localStorageConsts';
-import { CLOUD_URL, ENVIRONMENT, HANDLE_REFRESH_INTERVAL, WS_PREFIX, WS_SERVER_URL_PRODUCTION } from './config';
+import { CLOUD_URL, HANDLE_REFRESH_INTERVAL, WS_PREFIX } from './config';
 import { isCheckoutCompletedTrue, isCloud } from './services/valueConvertor';
 import { ReactComponent as InfoNotificationIcon } from './assets/images/infoNotificationIcon.svg';
 import { handleRefreshTokenRequest, httpRequest } from './services/http';
 import { ReactComponent as RedirectIcon } from './assets/images/redirectIcon.svg';
 import { ReactComponent as SuccessIcon } from './assets/images/successIcon.svg';
 import { ReactComponent as CloseIcon } from './assets/images/closeNotification.svg';
-import {showMessages, useGetAllowedActions} from './services/genericServices';
+import { showMessages, useGetAllowedActions } from './services/genericServices';
 import StationOverview from './domain/stationOverview';
 import { ReactComponent as ErrorIcon } from './assets/images/errorIcon.svg';
 import MessageJourney from './domain/messageJourney';
@@ -56,7 +56,7 @@ import Functions from './domain/functions';
 import { Context } from './hooks/store';
 import pathDomains from './router';
 import Users from './domain/users';
-import {planType} from "./const/globalConst";
+import { planType } from "./const/globalConst";
 
 let SysLogs = undefined;
 let Login = undefined;
@@ -99,14 +99,14 @@ const App = withRouter(() => {
                 AuthService.saveToLocalStorage(data);
                 dispatch({ type: 'SET_USER_DATA', payload: data });
                 try {
-                    const ws_port = data.ws_port;
-                    const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
+                    let wsHost = localStorage.getItem(LOCAL_STORAGE_WS_HOST);
+                    wsHost = `${WS_PREFIX}://${wsHost}`;
                     let conn;
                     if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
                         const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID);
                         const internal_ws_pass = localStorage.getItem(LOCAL_STORAGE_INTERNAL_WS_PASS);
                         conn = await connect({
-                            servers: [SOCKET_URL],
+                            servers: [wsHost],
                             user: '$memphis_user$' + account_id,
                             pass: internal_ws_pass,
                             timeout: '5000'
@@ -114,7 +114,7 @@ const App = withRouter(() => {
                     } else {
                         const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN);
                         conn = await connect({
-                            servers: [SOCKET_URL],
+                            servers: [wsHost],
                             token: '::' + connection_token,
                             timeout: '5000'
                         });
@@ -159,8 +159,6 @@ const App = withRouter(() => {
         if (window.location.pathname === pathDomains.login || (firebase_id_token !== null && !stateRef.current[0])) {
             return;
         } else if (localStorage.getItem(LOCAL_STORAGE_TOKEN)) {
-            const ws_port = localStorage.getItem(LOCAL_STORAGE_WS_PORT);
-            const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
             const handleRefreshData = await handleRefreshTokenRequest();
             dispatch({ type: 'SET_USER_DATA', payload: handleRefreshData });
             isCloud() && stigg.setCustomerId(handleRefreshData.account_name);
@@ -168,12 +166,14 @@ const App = withRouter(() => {
             if (handleRefreshData !== '') {
                 if (firstTime) {
                     try {
+                        let wsHost = localStorage.getItem(LOCAL_STORAGE_WS_HOST);
+                        wsHost = `${WS_PREFIX}://${wsHost}`;
                         let conn;
                         if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
                             const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID);
                             const internal_ws_pass = localStorage.getItem(LOCAL_STORAGE_INTERNAL_WS_PASS);
                             conn = await connect({
-                                servers: [SOCKET_URL],
+                                servers: [wsHost],
                                 user: '$memphis_user$' + account_id,
                                 pass: internal_ws_pass,
                                 timeout: '5000'
@@ -181,7 +181,7 @@ const App = withRouter(() => {
                         } else {
                             const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN);
                             conn = await connect({
-                                servers: [SOCKET_URL],
+                                servers: [wsHost],
                                 token: '::' + connection_token,
                                 timeout: '5000'
                             });

@@ -132,6 +132,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		ALTER TABLE users ADD COLUMN IF NOT EXISTS position VARCHAR NOT NULL DEFAULT '';
 		ALTER TABLE users ADD COLUMN IF NOT EXISTS owner VARCHAR NOT NULL DEFAULT '';
 		ALTER TABLE users ADD COLUMN IF NOT EXISTS description VARCHAR NOT NULL DEFAULT '';
+		ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMPTZ NOT NULL DEFAULT NOW();		
 		ALTER TABLE users DROP CONSTRAINT IF EXISTS users_username_key;
 		ALTER TABLE users DROP CONSTRAINT IF EXISTS users_username_tenant_name_key;
 		ALTER TABLE users ADD CONSTRAINT users_username_tenant_name_key UNIQUE(username, tenant_name);
@@ -157,6 +158,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		position VARCHAR NOT NULL DEFAULT '',
 		owner VARCHAR NOT NULL DEFAULT '',
 		description VARCHAR NOT NULL DEFAULT '',
+		last_login TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 		PRIMARY KEY (id),
 		CONSTRAINT fk_tenant_name
 			FOREIGN KEY(tenant_name)
@@ -613,7 +615,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
 
-	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterDlsMsgsTable, dlsMessagesTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterConnectionsTable, asyncTasksTable, alterAsyncTasks, testEventsTable, functionsTable, attachedFunctionsTable, sharedLocksTable, functionsEngineWorkersTable, scheduledFunctionWorkersTable, connectorsEngineWorkersTable, connectorsConnectionsTable, connectorsTable}
+	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterDlsMsgsTable, dlsMessagesTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterConnectionsTable, asyncTasksTable, alterAsyncTasks, testEventsTable, functionsTable, attachedFunctionsTable, sharedLocksTable, functionsEngineWorkersTable, scheduledFunctionWorkersTable, connectorsEngineWorkersTable, connectorsConnectionsTable, connectorsTable, alterConnectorsTable, alterConnectorsConnectionsTable}
 
 	for _, table := range tables {
 		_, err := db.Exec(ctx, table)
@@ -1093,6 +1095,26 @@ func RemoveAuditLogsByTenant(tenantName string) error {
 		return err
 	}
 	_, err = conn.Conn().Query(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func RemoveAuditLogsByTenantAndCreatedAt(tenantName string, createdAt time.Time) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	query := `DELETE FROM audit_logs WHERE tenant_name = $1 AND created_at < $2`
+	stmt, err := conn.Conn().Prepare(ctx, "remove_audit_logs_by_tenant_and_created_at", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, tenantName, createdAt)
 	if err != nil {
 		return err
 	}
@@ -2718,7 +2740,9 @@ func GetAllProducersByStationID(stationId int) ([]models.ExtendedProducer, error
     s.name,
     p.is_active,
 	COUNT(CASE WHEN p.is_active THEN 1 END) OVER (PARTITION BY p.name) AS connected_producers_count,
-	COUNT(CASE WHEN NOT p.is_active THEN 1 END) OVER (PARTITION BY p.name) AS disconnected_producers_count
+	COUNT(CASE WHEN NOT p.is_active THEN 1 END) OVER (PARTITION BY p.name) AS disconnected_producers_count,
+	p.version,
+	p.sdk
 FROM producers AS p
 LEFT JOIN stations AS s ON s.id = p.station_id
 WHERE p.station_id = $1 AND p.type = 'application'
@@ -3080,7 +3104,7 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 	}
 	defer conn.Release()
 	query := `SELECT DISTINCT ON (c.name, c.consumers_group) c.id, c.name, c.updated_at, c.is_active, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name, c.partitions,
-				COUNT (CASE WHEN c.is_active THEN 1 END) OVER (PARTITION BY c.name) AS count
+				COUNT (CASE WHEN c.is_active THEN 1 END) OVER (PARTITION BY c.name) AS count, c.version, c.sdk
 				FROM consumers AS c
 				LEFT JOIN stations AS s ON s.id = c.station_id
 				WHERE c.station_id = $1 AND c.type = 'application' ORDER BY c.name, c.consumers_group, c.updated_at DESC
@@ -4658,34 +4682,6 @@ func GetUserForLoginByUsernameAndTenant(username, tenantname string) (bool, mode
 	return true, users[0], nil
 }
 
-func GetUserByUserId(userId int) (bool, models.User, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return false, models.User{}, err
-	}
-	defer conn.Release()
-	query := `SELECT * FROM users WHERE id = $1 LIMIT 1`
-	stmt, err := conn.Conn().Prepare(ctx, "get_user_by_id", query)
-	if err != nil {
-		return false, models.User{}, err
-	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, userId)
-	if err != nil {
-		return false, models.User{}, err
-	}
-	defer rows.Close()
-	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
-	if err != nil {
-		return false, models.User{}, err
-	}
-	if len(users) == 0 {
-		return false, models.User{}, nil
-	}
-	return true, users[0], nil
-}
-
 func GetAllUsers(tenantName string) ([]models.FilteredGenericUser, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -4694,7 +4690,7 @@ func GetAllUsers(tenantName string) ([]models.FilteredGenericUser, error) {
 		return []models.FilteredGenericUser{}, err
 	}
 	defer conn.Release()
-	query := `SELECT s.id, s.username, s.type, s.created_at, s.avatar_id, s.full_name, s.pending, s.position, s.team, s.owner, s.description FROM users AS s WHERE tenant_name=$1 AND username NOT LIKE '$%'` // filter memphis internal users
+	query := `SELECT s.id, s.username, s.type, s.created_at, s.avatar_id, s.full_name, s.pending, s.position, s.team, s.owner, s.description, s.last_login FROM users AS s WHERE tenant_name=$1 AND username NOT LIKE '$%'` // filter memphis internal users
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_users", query)
 	if err != nil {
 		return []models.FilteredGenericUser{}, err
@@ -4872,6 +4868,26 @@ func UpdateUserAlreadyLoggedIn(userId int) error {
 	stmt, _ := conn.Conn().Prepare(ctx, "update_user_already_logged_in", query)
 	conn.Conn().Query(ctx, stmt.Name, userId)
 	return nil
+}
+
+func UpdateLastLoginUser(userId int) (time.Time, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return time.Time{}, err
+	}
+	defer conn.Release()
+	query := `UPDATE users SET last_login = NOW() WHERE id = $1 RETURNING last_login`
+	stmt, err := conn.Conn().Prepare(ctx, "update_last_login_in_user", query)
+	if err != nil {
+		return time.Time{}, err
+	}
+	var lastLogin time.Time
+	if err := conn.Conn().QueryRow(ctx, stmt.Name, userId).Scan(&lastLogin); err != nil {
+		return time.Time{}, err
+	}
+	return lastLogin, nil
 }
 
 func UpdateSkipGetStarted(username string, tenantName string) error {
@@ -6691,70 +6707,40 @@ func GetAllUsersInDB() (bool, []models.User, error) {
 	return true, users, nil
 }
 
-func DeleteOldProducersAndConsumers(timeInterval time.Time) ([]models.LightCG, error) {
+func DeleteOldProducersAndConsumers(timeInterval time.Time, tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return []models.LightCG{}, err
+		return err
 	}
 	defer conn.Release()
 
-	var queries []string
-	queries = append(queries, "DELETE FROM producers WHERE is_active = false AND updated_at < $1")
-	queries = append(queries, "WITH deleted AS (DELETE FROM consumers WHERE is_active = false AND updated_at < $1 RETURNING *) SELECT deleted.consumers_group, s.name as station_name, deleted.station_id , deleted.tenant_name, deleted.partitions FROM deleted INNER JOIN stations s ON deleted.station_id = s.id GROUP BY deleted.consumers_group, s.name, deleted.station_id, deleted.tenant_name, deleted.partitions")
+	queries := []string{
+		`DELETE FROM producers WHERE is_active = false AND updated_at < $1 AND tenant_name = $2`,
+		`DELETE FROM consumers
+		WHERE is_active = false AND updated_at < $1 AND tenant_name = $2
+		AND id NOT IN (
+			SELECT MIN(id)
+			FROM consumers
+			WHERE is_active = false AND updated_at < $1 AND tenant_name = $2
+			GROUP BY consumers_group
+		)`,
+	}
 
 	batch := &pgx.Batch{}
 	for _, q := range queries {
-		batch.Queue(q, timeInterval)
+		batch.Queue(q, timeInterval, tenantName)
 	}
 
 	br := conn.SendBatch(ctx, batch)
 
 	_, err = br.Exec()
 	if err != nil {
-		return []models.LightCG{}, err
+		return err
 	}
 
-	rows, err := br.Query()
-	if err != nil {
-		return []models.LightCG{}, err
-	}
-
-	cgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.LightCG])
-	if err != nil {
-		return []models.LightCG{}, err
-	}
-
-	return cgs, err
-}
-
-func GetAllDeletedConsumersFromList(consumers []string) ([]string, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return []string{}, err
-	}
-	defer conn.Release()
-	query := "SELECT consumers_group FROM consumers WHERE consumers_group = ANY($1) GROUP BY station_id, consumers_group"
-
-	rows, err := conn.Query(ctx, query, consumers)
-	if err != nil {
-		return []string{}, err
-	}
-	defer rows.Close()
-	var remainingCG []string
-	for rows.Next() {
-		var cgName string
-		err := rows.Scan(&cgName)
-		if err != nil {
-			return []string{}, err
-		}
-		remainingCG = append(remainingCG, cgName)
-	}
-
-	return remainingCG, nil
+	return nil
 }
 
 func RemovePoisonedCg(stationId int, cgName string) error {

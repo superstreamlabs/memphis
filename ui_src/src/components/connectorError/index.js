@@ -38,6 +38,7 @@ const ConnectorError = ({ open, clickOutside, connectorId }) => {
     const [logs, setLogs] = useState(null);
 
     useEffect(() => {
+        !open && setLogs(null);
         open && getConnectorErrors(connectorId);
     }, [open]);
 

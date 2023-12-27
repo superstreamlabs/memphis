@@ -51,10 +51,12 @@ var noMetricsInstalledLog bool
 var noMetricsPermissionLog bool
 
 const (
-	healthyStatus   = "healthy"
-	unhealthyStatus = "unhealthy"
-	dangerousStatus = "dangerous"
-	riskyStatus     = "risky"
+	healthyStatus                  = "healthy"
+	unhealthyStatus                = "unhealthy"
+	dangerousStatus                = "dangerous"
+	riskyStatus                    = "risky"
+	lastProducerCreationReqVersion = 3
+	lastConsumerCreationReqVersion = 3
 )
 
 func clientSetClusterConfig() error {
@@ -530,7 +532,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		functionsEnabled = false
 	}
 
-	connectedProducers, disconnectedProducers, deletedProducers := make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0)
+	connectedProducers, disconnectedProducers, deletedProducers := make([]models.ExtendedProducerResponse, 0), make([]models.ExtendedProducerResponse, 0), make([]models.ExtendedProducerResponse, 0)
 	if station.IsNative {
 		connectedProducers, disconnectedProducers, deletedProducers, err = producersHandler.GetProducersByStation(station)
 		if err != nil {
@@ -707,11 +709,10 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	
 	var response gin.H
 
 	// Check when the schema object in station is not empty, not optional for non native stations
-	if station.SchemaName != "" && station.SchemaVersionNumber != 0 {
+	if station.SchemaName != _EMPTY_ && station.SchemaVersionNumber != 0 {
 		var schemaDetails models.StationOverviewSchemaDetails
 		exist, schema, err := db.GetSchemaByName(station.SchemaName, station.TenantName)
 		if err != nil {
@@ -891,8 +892,8 @@ func (s *Server) GetSystemLogs(amount uint64,
 	cc := ConsumerConfig{
 		OptStartSeq:   startSeq,
 		DeliverPolicy: DeliverByStartSequence,
-		AckPolicy:     AckExplicit,
-		Durable:       durableName,
+		AckPolicy:     AckNone,
+		Name:          durableName,
 		Replicas:      1,
 	}
 
@@ -911,8 +912,6 @@ func (s *Server) GetSystemLogs(amount uint64,
 	req := []byte(strconv.FormatUint(amount, 10))
 	sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
-			// ack
-			s.sendInternalAccountMsg(s.MemphisGlobalAccount(), reply, []byte(_EMPTY_))
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
 
@@ -949,7 +948,6 @@ func (s *Server) GetSystemLogs(amount uint64,
 cleanup:
 	timer.Stop()
 	s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
-	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(s.MemphisGlobalAccountString(), syslogsStreamName, durableName) })
 
 	var resMsgs []models.Log
 	if uint64(len(msgs)) < amount && streamInfo.State.Msgs > amount && streamInfo.State.FirstSeq < startSeq {
@@ -1255,7 +1253,7 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 	}
 	splitted_output := strings.Split(stdout.String(), "\n")
 	parsedline := strings.Fields(splitted_output[1])
-	if stderr.String() != "" {
+	if stderr.String() != _EMPTY_ {
 		return usage, errors.New(stderr.String())
 	}
 	if len(parsedline) > 1 {
@@ -1285,7 +1283,7 @@ func (mh MonitoringHandler) GetAvailableReplicas(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	replicas := v.Routes + 1
+	replicas := len(v.Cluster.URLs)
 	replicas = GetAvailableReplicas(replicas)
 	c.IndentedJSON(200, gin.H{
 		"available_replicas": replicas})
@@ -1337,18 +1335,18 @@ func getComponentsStructByOneComp(comp models.SysComponent) models.Components {
 func getK8sClusterTimestamp() (string, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 
 	ctx := context.Background()
 	clusterInfo, err := clientset.CoreV1().Namespaces().Get(ctx, "kube-system", v1Apimachinery.GetOptions{})
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 
 	creationTime := clusterInfo.CreationTimestamp.Time
@@ -1361,7 +1359,7 @@ func getDockerMacAddress() (string, error) {
 	var macAdress string
 	ifaces, err := net.Interfaces()
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 
 	for _, iface := range ifaces {

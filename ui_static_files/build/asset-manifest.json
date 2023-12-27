@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.76219de5.css",
-    "main.js": "/static/js/main.9e0d0460.js",
+    "main.css": "/static/css/main.d7af09ae.css",
+    "main.js": "/static/js/main.6b624912.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -97,11 +97,9 @@
     "static/media/avatar7.svg": "/static/media/avatar7.74ad285f40c41b292e0a.svg",
     "static/media/avatar2.svg": "/static/media/avatar2.3888ed3399490ce77911.svg",
     "static/media/avatar5.svg": "/static/media/avatar5.e669200d2b88559aa969.svg",
-    "static/media/awsKinesis.svg": "/static/media/awsKinesis.64fe6f045454a1e653e8e2b6a2805bc9.svg",
     "static/media/avatar3.svg": "/static/media/avatar3.ac8230d938d0a52f4500.svg",
     "static/media/avatar6.svg": "/static/media/avatar6.70de23d5482748918c82.svg",
     "static/media/grafanaps.png": "/static/media/grafanaps.a1064265cbe0c53f0d01.png",
-    "static/media/logoTexeMemphis.svg": "/static/media/logoTexeMemphis.a0eb949fb855023ee3c107254cabd6b4.svg",
     "static/media/datadogMetricsps.png": "/static/media/datadogMetricsps.1499ed3dd93864f786d4.png",
     "static/media/grafanaIcon.svg": "/static/media/grafanaIcon.fab6c489e404c8b49be8da7181a654bb.svg",
     "static/media/slackLogo.svg": "/static/media/slackLogo.85c9e715c432e8d73f13b4b860378f32.svg",
@@ -129,6 +127,7 @@
     "static/media/s3LogoIcon.svg": "/static/media/s3LogoIcon.297391bd3a8ab5b6eac7da75567f995f.svg",
     "static/media/zapierBanner.webp": "/static/media/zapierBanner.70a1c6dc379accb0b0ad.webp",
     "static/media/fullLogo.svg": "/static/media/fullLogo.64576cea4e4d8598370f3e03920a2604.svg",
+    "static/media/white-logo.svg": "/static/media/white-logo.0cb9be08c523b35f6be5ce8ac7cc6a33.svg",
     "static/media/404.svg": "/static/media/404.9e16e4461a6da4e6a1562ae4ced0939f.svg",
     "static/media/debeziumBanner.webp": "/static/media/debeziumBanner.4a7864f2d7e5839b7bd4.webp",
     "static/media/s3Banner.webp": "/static/media/s3Banner.109692d273c709febfbb.webp",
@@ -158,6 +157,7 @@
     "static/media/integrationIconColor.svg": "/static/media/integrationIconColor.a55aa8f85e8499c0c2bcdc72e2dea1a2.svg",
     "static/media/proccessingIcon.svg": "/static/media/proccessingIcon.46806ab06a768f68f876a0b4bc861a1c.svg",
     "static/media/metricsIcon.svg": "/static/media/metricsIcon.c59e5910dc3e94d65bd3956770932228.svg",
+    "static/media/redisIcon.svg": "/static/media/redisIcon.07c2e97f79f665a01d986ab46ce214bf.svg",
     "static/media/DeadLetteredMessages.svg": "/static/media/DeadLetteredMessages.585f63bd9ae514421daf68c91edb41c1.svg",
     "static/media/newSchemaIcon.svg": "/static/media/newSchemaIcon.e5e9ffaa7702664cdd6f396d0b345c1e.svg",
     "static/media/Calendar.svg": "/static/media/Calendar.af439a1c292c3e762d5df5de98f89502.svg",
@@ -337,7 +337,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.76219de5.css",
-    "static/js/main.9e0d0460.js"
+    "static/css/main.d7af09ae.css",
+    "static/js/main.6b624912.js"
   ]
 }

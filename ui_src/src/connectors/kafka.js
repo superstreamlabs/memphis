@@ -251,7 +251,7 @@ export const kafka = {
         {
             name: 'memphis_max_time_wait',
             display: 'Max time to wait for a batch of messages (seconds)',
-            placeholder: 5,
+            placeholder: 2,
             type: 'string',
             required: false,
             description: 'The duration which a batch of messages is awaited till processing'

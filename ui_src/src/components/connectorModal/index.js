@@ -28,14 +28,13 @@ import { httpRequest } from '../../services/http';
 import CloudModal from '../cloudModal';
 import { isCloud } from '../../services/valueConvertor';
 import { sendTrace } from '../../services/genericServices';
-
-import { connectorTypes } from '../../connectors';
+import { connectorTypesSource } from '../../connectors';
+import { connectorTypesSink } from '../../connectors';
 
 const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [connectorForm] = Form.useForm();
     const [step, setStep] = useState(1);
-    const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);
     const [formFields, setFormFields] = useState({
         connector_type: source ? 'Source' : 'Sink'
@@ -50,14 +49,16 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
             setFormFields({
                 connector_type: source ? 'Source' : 'Sink'
             });
-            setIsEditing(false);
             setLoading(false);
             setError(null);
         }
     }, [open]);
 
     useEffect(() => {
-        let connectorType = connectorTypes.find((connector) => connector.name === formFields?.type);
+        let connectorType =
+            formFields?.connector_type === 'Source'
+                ? connectorTypesSource.find((connector) => connector.name === formFields?.type)
+                : connectorTypesSink.find((connector) => connector.name === formFields?.type);
         formFields?.type && setConnectorInputFields(connectorType?.inputs[formFields?.connector_type]);
     }, [formFields?.type, formFields?.connector_type]);
 
@@ -74,19 +75,6 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
         let settings = formFields?.settings || {};
         settings[key] = value;
         setFormFields({ ...formFields, settings });
-        isEditing && setIsEditing(false);
-    };
-
-    const handleSearch = (value, index) => {
-        let conntectorsNewFields = [...connectorInputFields];
-        if (isEditing) conntectorsNewFields[index]?.options?.splice(-1, 1);
-        else setIsEditing(true);
-        value !== '' &&
-            conntectorsNewFields[index]?.options?.push({
-                name: value?.trim(),
-                value: value?.trim()
-            });
-        setConnectorInputFields(conntectorsNewFields);
     };
 
     const connectorModalTitle =
@@ -237,24 +225,21 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
                     )}
                     {input?.type === 'multi' && (
                         <Select
-                            mode="multiple"
-                            colorType="black"
-                            backgroundColorType="none"
-                            fontFamily="Inter"
-                            borderColorType="gray"
-                            radiusType="semi-round"
-                            popupClassName="select-options"
-                            showSearch
+                            mode="tags"
                             placeholder={input?.placeholder}
-                            options={input?.options}
-                            onSearch={(e) => handleSearch(e, index)}
-                            onChange={(e) => {
-                                updateMultiFormState(input?.name, e, index);
-                                connectorForm.setFieldValue(input?.name, e);
+                            value={formFields?.settings ? formFields?.settings[input?.name] : []}
+                            onChange={(values) => {
+                                updateMultiFormState(input?.name, values, index);
+                                connectorForm.setFieldValue(input?.name, values);
                             }}
-                            autoClearSearchValue
-                            style={{ width: '100%', borderRadius: '5px', minHeight: '40px' }}
-                        />
+                            style={{ width: '100%' }}
+                            onInputValueChange={(value) => {
+                                updateMultiFormState(input?.name, value, index);
+                            }}
+                            popupClassName="select-options"
+                        >
+                            {formFields?.settings && formFields?.settings[input?.name]?.map((item) => <Select.Option key={item}>{item}</Select.Option>)}
+                        </Select>
                     )}
                 </Form.Item>
 
@@ -324,7 +309,7 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
                                 radiusType="semi-round"
                                 height="40px"
                                 popupClassName="select-options"
-                                options={connectorTypes}
+                                options={formFields?.connector_type === 'Source' ? connectorTypesSource : connectorTypesSink}
                                 value={formFields?.type}
                                 onChange={(e) => {
                                     updateFormState('type', e);

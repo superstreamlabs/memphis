@@ -211,7 +211,7 @@ func (csresp *SchemaResponse) SetError(err error) {
 	if err != nil {
 		csresp.Err = err.Error()
 	} else {
-		csresp.Err = ""
+		csresp.Err = _EMPTY_
 	}
 }
 
@@ -308,7 +308,7 @@ func detachSchemaHandler(s *Server) simplifiedMsgHandler {
 }
 
 func respondWithErr(tenantName string, s *Server, replySubject string, err error) {
-	resp := []byte("")
+	resp := []byte(_EMPTY_)
 	if err != nil {
 		resp = []byte(err.Error())
 	}

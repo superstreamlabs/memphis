@@ -41,19 +41,20 @@ var (
 
 const (
 	// VERSION is the current version for the memphis server.
-	VERSION = "1.4.1" // ** changed by Memphis
+	VERSION = "1.4.2" // ** changed by Memphis
 
 	// ** added by Memphis
-	DEFAULT_SERVER_NAME                        = "memphis-0"
-	DEFAULT_WS_PORT                            = 7770
-	DEFAULT_UI_PORT                            = 9000
-	DEFAULT_REST_GW_PORT                       = 4444
-	DEFAULT_WS_TOKEN                           = "memphis"
-	DEFAULT_CLIENTS_TOKEN                      = "memphis"
-	SHOWABLE_ERROR_STATUS_CODE                 = 666
-	DEFAULT_TIERED_STORAGE_UPLOAD_INTERVAL_SEC = 8
-	DEFAULT_DLS_RETENTION_HOURS                = 3
-	DEFAULT_ENCRYPTION_SECRET_KEY = "thisis32bitlongpassphraseimusing"
+	DEFAULT_SERVER_NAME                          = "memphis-0"
+	DEFAULT_WS_PORT                              = 7770
+	DEFAULT_UI_PORT                              = 9000
+	DEFAULT_REST_GW_PORT                         = 4444
+	DEFAULT_WS_TOKEN                             = "memphis"
+	DEFAULT_CLIENTS_TOKEN                        = "memphis"
+	SHOWABLE_ERROR_STATUS_CODE                   = 666
+	DEFAULT_TIERED_STORAGE_UPLOAD_INTERVAL_SEC   = 8
+	DEFAULT_DLS_RETENTION_HOURS                  = 3
+	DEFAULT_GC_PRODUCER_CONSUMER_RETENTION_HOURS = 2
+	DEFAULT_ENCRYPTION_SECRET_KEY                = "thisis32bitlongpassphraseimusing"
 	// COMP_WITH_NATS_VERSION is the NATS version Memphis is compatible with
 	COMP_WITH_NATS_VERSION = "2.9.22"
 	// ** added by Memphis
@@ -97,10 +98,16 @@ const (
 	// TLS_TIMEOUT is the TLS wait time.
 	TLS_TIMEOUT = 2 * time.Second
 
+	// DEFAULT_TLS_HANDSHAKE_FIRST_FALLBACK_DELAY is the default amount of
+	// time for the server to wait for the TLS handshake with a client to
+	// be initiated before falling back to sending the INFO protocol first.
+	// See TLSHandshakeFirst and TLSHandshakeFirstFallback options.
+	DEFAULT_TLS_HANDSHAKE_FIRST_FALLBACK_DELAY = 50 * time.Millisecond
+
 	// AUTH_TIMEOUT is the authorization wait time.
 	AUTH_TIMEOUT = 2 * time.Second
 
-	// DEFAULT_PING_INTERVAL is how often pings are sent to clients and routes.
+	// DEFAULT_PING_INTERVAL is how often pings are sent to clients, etc...
 	DEFAULT_PING_INTERVAL = 2 * time.Minute
 
 	// DEFAULT_PING_MAX_OUT is maximum allowed pings outstanding before disconnect.
@@ -135,6 +142,9 @@ const (
 
 	// DEFAULT_ROUTE_DIAL Route dial timeout.
 	DEFAULT_ROUTE_DIAL = 1 * time.Second
+
+	// DEFAULT_ROUTE_POOL_SIZE Route default pool size
+	DEFAULT_ROUTE_POOL_SIZE = 3
 
 	// DEFAULT_LEAF_NODE_RECONNECT LeafNode reconnect interval.
 	DEFAULT_LEAF_NODE_RECONNECT = time.Second

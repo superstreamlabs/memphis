@@ -90,7 +90,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	}
 
 	consumerGroup := strings.ToLower(cGroup)
-	if consumerGroup != "" {
+	if consumerGroup != _EMPTY_ {
 		err = validateConsumerName(consumerGroup)
 		if err != nil {
 			serv.Warnf("[tenant: %v][user: %v]createConsumerDirectCommon at validateConsumerName: Failed creating consumer %v at station %v : %v", tenantName, userName, consumerName, cStationName, err.Error())
@@ -136,7 +136,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 			return []int{}, err
 		}
 		var created bool
-		station, created, err = CreateDefaultStation(user.TenantName, s, stationName, user.ID, user.Username, "", 0)
+		station, created, err = CreateDefaultStation(user.TenantName, s, stationName, user.ID, user.Username, _EMPTY_, 0)
 		if err != nil {
 			serv.Warnf("[tenant: %v]createConsumerDirectCommon at CreateDefaultStation: Consumer %v at station %v : %v", tenantName, consumerName, cStationName, err.Error())
 			return []int{}, err
@@ -206,7 +206,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 				return []int{}, err
 			}
 			if !comparePartitionsList(consumerFromGroup.PartitionsList, newConsumer.PartitionsList) {
-				existingPartitions := ""
+				existingPartitions := _EMPTY_
 				for i, pl := range consumerFromGroup.PartitionsList {
 					existingPartitions += strconv.Itoa(pl)
 					if i < len(consumerFromGroup.PartitionsList)-1 {
@@ -339,19 +339,23 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 
 	schemaUpdate, err := getSchemaUpdateInitFromStation(sn, ccr.TenantName)
 	if err == ErrNoSchema {
-		v1Resp := createConsumerResponseV1{PartitionsUpdate: models.PartitionsUpdate{PartitionsList: partitions}, Err: ""}
+		v1Resp := createConsumerResponseV1{PartitionsUpdate: models.PartitionsUpdate{PartitionsList: partitions}, Err: _EMPTY_}
 		respondWithResp(s.MemphisGlobalAccountString(), s, reply, &v1Resp)
 		return
 	}
 	if err != nil {
-		s.Errorf("[tenant: %v][user: %v]createConsumerDirect at getSchemaUpdateInitFromStation: Consumer %v at station %v: %v", ccr.TenantName, ccr.Username, ccr.Name, ccr.StationName, err.Error())
+		if strings.Contains(err.Error(), "not exist") {
+			s.Warnf("[tenant: %v][user: %v]createConsumerDirect at getSchemaUpdateInitFromStation: Consumer %v at station %v: %v", ccr.TenantName, ccr.Username, ccr.Name, ccr.StationName, err.Error())
+		} else {
+			s.Errorf("[tenant: %v][user: %v]createConsumerDirect at getSchemaUpdateInitFromStation: Consumer %v at station %v: %v", ccr.TenantName, ccr.Username, ccr.Name, ccr.StationName, err.Error())
+		}
 		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		return
 	}
 	if len(partitions) == 0 && ccr.RequestVersion < 2 {
 		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 	} else {
-		v1Resp := createConsumerResponseV1{SchemaUpdate: *schemaUpdate, PartitionsUpdate: models.PartitionsUpdate{PartitionsList: partitions}, Err: ""}
+		v1Resp := createConsumerResponseV1{SchemaUpdate: *schemaUpdate, PartitionsUpdate: models.PartitionsUpdate{PartitionsList: partitions}, Err: _EMPTY_}
 		respondWithResp(s.MemphisGlobalAccountString(), s, reply, &v1Resp)
 	}
 }
@@ -382,12 +386,13 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 				Name:                  consumer.ConsumersGroup,
 				MaxAckTimeMs:          consumer.MaxAckTimeMs,
 				MaxMsgDeliveries:      consumer.MaxMsgDeliveries,
-				ConnectedConsumers:    []models.ExtendedConsumer{},
-				DisconnectedConsumers: []models.ExtendedConsumer{},
-				DeletedConsumers:      []models.ExtendedConsumer{},
+				ConnectedConsumers:    []models.ExtendedConsumerResponse{},
+				DisconnectedConsumers: []models.ExtendedConsumerResponse{},
+				DeletedConsumers:      []models.ExtendedConsumerResponse{},
 				IsActive:              consumer.IsActive,
 				LastStatusChangeDate:  consumer.UpdatedAt,
 				PartitionsList:        consumer.PartitionsList,
+				SdkLanguage:           consumers[0].Sdk,
 			}
 			m[consumer.ConsumersGroup] = cg
 		} else {
@@ -397,9 +402,16 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 			m[consumer.ConsumersGroup].IsActive = consumer.IsActive
 			m[consumer.ConsumersGroup].LastStatusChangeDate = consumer.UpdatedAt
 			cg = m[consumer.ConsumersGroup]
+			cg.SdkLanguage = consumers[0].Sdk
 		}
 
-		consumerRes := models.ExtendedConsumer{
+		needToUpdateVersion := false
+		if consumer.Version < lastConsumerCreationReqVersion && consumer.IsActive {
+			needToUpdateVersion = true
+			cg.UpdateAvailable = true
+		}
+
+		consumerRes := models.ExtendedConsumerResponse{
 			ID:               consumer.ID,
 			Name:             consumer.Name,
 			IsActive:         consumer.IsActive,
@@ -409,6 +421,8 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 			StationName:      consumer.StationName,
 			Count:            consumer.Count,
 			PartitionsList:   consumer.PartitionsList,
+			SdkLanguage:      consumer.Sdk,
+			UpdateAvailable:  needToUpdateVersion,
 		}
 
 		if consumer.IsActive {
@@ -475,7 +489,7 @@ func (ch ConsumersHandler) GetDelayedCgsByTenant(tenantName string, streams []*S
 	consumers := make(map[string]map[string]models.DelayedCg, 0)
 	consumerNames := []string{}
 	for _, stream := range streams {
-		if strings.HasPrefix(stream.Config.Name, "$memphis") {
+		if strings.HasPrefix(stream.Config.Name, MEMPHIS_GLOBAL_ACCOUNT) {
 			continue
 		}
 		offset := 0
@@ -496,7 +510,7 @@ func (ch ConsumersHandler) GetDelayedCgsByTenant(tenantName string, streams []*S
 			return []models.DelayedCgResp{}, err
 		}
 		for _, consumer := range resp.Consumers {
-			if strings.HasPrefix(consumer.Config.FilterSubject, "$memphis") || !strings.HasSuffix(consumer.Config.FilterSubject, ".final") { // skip consumers that are not user consumers
+			if strings.HasPrefix(consumer.Config.FilterSubject, MEMPHIS_GLOBAL_ACCOUNT) || !strings.HasSuffix(consumer.Config.FilterSubject, ".final") { // skip consumers that are not user consumers
 				continue
 			}
 			if strings.Contains(consumer.Stream, "$") {
@@ -562,7 +576,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 			return
 		}
 		dcrV0.TenantName = tenantName
-		if c.memphisInfo.connectionId == "" {
+		if c.memphisInfo.connectionId == _EMPTY_ {
 			s.destroyConsumerDirectV0(c, reply, dcrV0)
 			return
 		} else {
@@ -678,13 +692,13 @@ func (s *Server) destroyCGFromNats(c *client, reply, userName, tenantName string
 	name := strings.ToLower(consumer.Name)
 	if deleted {
 		username := c.memphisInfo.username
-		if username == "" {
+		if username == _EMPTY_ {
 			username = userName
 		}
 		_, user, err := memphis_cache.GetUser(username, consumer.TenantName, false)
 		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
 			errMsg := fmt.Sprintf("[tenant: %v]Consumer group %v at station %v: %v", tenantName, consumer.ConsumersGroup, station.Name, err.Error())
-			serv.Errorf("destroyCGFromNats at GetUserByUsername: " + errMsg)
+			serv.Errorf("destroyCGFromNats at GetUser: " + errMsg)
 			respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 			return
 		}

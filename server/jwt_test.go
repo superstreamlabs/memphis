@@ -3141,7 +3141,7 @@ func TestJWTBearerWithBadIssuerToken(t *testing.T) {
 func TestJWTExpiredUserCredentialsRenewal(t *testing.T) {
 	createTmpFile := func(t *testing.T, content []byte) string {
 		t.Helper()
-		conf := createTempFile(t, "")
+		conf := createTempFile(t, _EMPTY_)
 		fName := conf.Name()
 		conf.Close()
 		if err := os.WriteFile(fName, content, 0666); err != nil {
@@ -3936,7 +3936,7 @@ func TestJWTTimeExpiration(t *testing.T) {
 		t.Run("simple expiration "+l, func(t *testing.T) {
 			start := time.Now()
 			creds := createUserWithLimit(t, kp, doNotExpire, func(j *jwt.UserPermissionLimits) {
-				if l == "" {
+				if l == _EMPTY_ {
 					j.Times = []jwt.TimeRange{newTimeRange(start, validFor)}
 				} else {
 					loc, err := time.LoadLocation(l)
@@ -4358,6 +4358,27 @@ func TestJwtTemplates(t *testing.T) {
 
 	lim.Pub.Deny.Add("{{tag(NOT_THERE)}}")
 	_, err = processUserPermissionsTemplate(lim, uclaim, acc)
+	require_Error(t, err)
+	require_Contains(t, err.Error(), "generated invalid subject")
+}
+
+func TestJwtTemplateGoodTagAfterBadTag(t *testing.T) {
+	kp, _ := nkeys.CreateAccount()
+	aPub, _ := kp.PublicKey()
+	ukp, _ := nkeys.CreateUser()
+	upub, _ := ukp.PublicKey()
+	uclaim := newJWTTestUserClaims()
+	uclaim.Name = "myname"
+	uclaim.Subject = upub
+	uclaim.SetScoped(true)
+	uclaim.IssuerAccount = aPub
+	uclaim.Tags.Add("foo:foo1")
+
+	lim := jwt.UserPermissionLimits{}
+	lim.Pub.Deny.Add("{{tag(NOT_THERE)}}.{{tag(foo)}}")
+	acc := &Account{nameTag: "accname", tags: []string{"acc:acc1", "acc:acc2"}}
+
+	_, err := processUserPermissionsTemplate(lim, uclaim, acc)
 	require_Error(t, err)
 	require_Contains(t, err.Error(), "generated invalid subject")
 }
@@ -6591,6 +6612,60 @@ func TestServerOperatorModeNoAuthRequired(t *testing.T) {
 	defer nc.Close()
 
 	require_True(t, nc.AuthRequired())
+}
+
+func TestServerOperatorModeUserInfoExpiration(t *testing.T) {
+	_, spub := createKey(t)
+	sysClaim := jwt.NewAccountClaims(spub)
+	sysClaim.Name = "$SYS"
+	sysJwt, err := sysClaim.Encode(oKp)
+	require_NoError(t, err)
+
+	akp, apub := createKey(t)
+	accClaim := jwt.NewAccountClaims(apub)
+	accClaim.Name = "TEST"
+	accJwt, err := accClaim.Encode(oKp)
+	require_NoError(t, err)
+
+	conf := createConfFile(t, []byte(fmt.Sprintf(`
+				listen: 127.0.0.1:-1
+				operator: %s
+				system_account: %s
+				resolver: MEM
+				resolver_preload: {
+					%s: %s
+					%s: %s
+				}
+			`, ojwt, spub, apub, accJwt, spub, sysJwt)))
+	defer removeFile(t, conf)
+
+	s, _ := RunServerWithConfig(conf)
+	defer s.Shutdown()
+
+	expires := time.Now().Add(time.Minute)
+	creds := createUserWithLimit(t, akp, expires, func(j *jwt.UserPermissionLimits) {})
+
+	nc := natsConnect(t, s.ClientURL(), nats.UserCredentials(creds))
+	defer nc.Close()
+
+	resp, err := nc.Request("$SYS.REQ.USER.INFO", nil, time.Second)
+	require_NoError(t, err)
+	now := time.Now()
+
+	response := ServerAPIResponse{Data: &UserInfo{}}
+	err = json.Unmarshal(resp.Data, &response)
+	require_NoError(t, err)
+
+	userInfo := response.Data.(*UserInfo)
+	require_True(t, userInfo.Expires != 0)
+
+	// We need to round the expiration time to the second because the server
+	// will truncate the expiration time to the second.
+	expiresDurRounded := expires.Sub(now).Truncate(time.Second)
+
+	// Checking range to avoid flaky tests where the expiration time is
+	// off by a couple of seconds.
+	require_True(t, expiresDurRounded >= userInfo.Expires-2*time.Second && expiresDurRounded <= userInfo.Expires+2*time.Second)
 }
 
 func TestJWTAccountNATSResolverWrongCreds(t *testing.T) {
