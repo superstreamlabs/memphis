@@ -45,6 +45,9 @@ import Spinner from '../../../../components/spinner';
 import TooltipComponent from '../../../../components/tooltip/tooltip';
 import { isCloud } from '../../../../services/valueConvertor';
 import { sendTrace } from '../../../../services/genericServices';
+import { BiLogoGoLang, BiLogoPython } from "react-icons/bi"
+import { SiDotnet } from "react-icons/si";
+import { DiJavascript1 } from "react-icons/di";
 
 const overlayStylesConnectors = {
     borderRadius: '8px',
@@ -363,6 +366,21 @@ const ProduceConsumList = ({ producer }) => {
         return connected + disconnected;
     };
 
+    function getIconByLang(item) {
+        const lang = item?.sdk_language;
+
+        const mapping = {
+            go: <BiLogoGoLang/>,
+            js: <DiJavascript1/>,
+            python3: <BiLogoPython/>,
+            NET: <SiDotnet/>
+        };
+
+        const iconComponent = lang ? mapping[lang] : <ProducerIcon />;
+
+        return <div style={{fontSize: '17px', display: 'flex', alignItems: 'center'}}>{iconComponent}</div>;
+    }
+
     return (
         <div className="station-observabilty-side">
             <div className="pubSub-list-container">
@@ -454,12 +472,17 @@ const ProduceConsumList = ({ producer }) => {
                                                     </TooltipComponent>
                                                 ) : (
                                                     <TooltipComponent text="producer">
-                                                        <ProducerIcon />
+                                                        {getIconByLang(row)}
                                                     </TooltipComponent>
                                                 )}
                                                 <OverflowTip text={row.name} width={'80px'}>
                                                     {row.name}
                                                 </OverflowTip>
+                                                {row?.update_available && (
+                                                    <TooltipComponent text="SDK update avaliable" placement="bottom">
+                                                        <MdError size={'16px'} fill={'#FF9F38'} />
+                                                    </TooltipComponent>
+                                                )}
                                                 {row?.error_logs_exist && (
                                                     <span onClick={() => handleConnectorErr(index, row)}>
                                                         <MdError size={'16px'} fill={'#E54F4F'} />
@@ -543,12 +566,17 @@ const ProduceConsumList = ({ producer }) => {
                                                     </TooltipComponent>
                                                 ) : (
                                                     <TooltipComponent text="consumer">
-                                                        <ProducerIcon />
+                                                        {getIconByLang(row)}
                                                     </TooltipComponent>
                                                 )}
                                                 <OverflowTip text={row?.name} width={'80px'}>
                                                     {row?.name}
                                                 </OverflowTip>
+                                                {row?.update_available && (
+                                                    <TooltipComponent text="SDK update avaliable" placement="bottom">
+                                                        <MdError size={'16px'} fill={'#FF9F38'} />
+                                                    </TooltipComponent>
+                                                )}
                                                 {row?.error_logs_exist && (
                                                     <span onClick={() => handleConnectorErr(index, row)}>
                                                         <MdError size={'16px'} fill={'#E54F4F'} />
