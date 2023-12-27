@@ -14,6 +14,7 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/memphisdev/memphis/db"
 	"github.com/memphisdev/memphis/models"
 	"strings"
@@ -330,7 +331,7 @@ func sendSlackNotifications(s *Server, msgs []slackMsg) {
 func sendTenantSlackNotifications(s *Server, tenantName string, msgs []NotificationMsgWithReply) {
 	var ok bool
 	if _, ok := NotificationFunctionsMap[slackIntegrationName]; !ok {
-		s.Errorf("slack integration doesn't exist")
+		s.Errorf("[tenant: %v]slack integration doesn't exist", tenantName)
 		return
 	}
 
@@ -352,22 +353,41 @@ func sendTenantSlackNotifications(s *Server, tenantName string, msgs []Notificat
 		m := msgs[i]
 		err := sendMessageToSlackChannel(slackIntegration, m.NotificationMsg.Title, m.NotificationMsg.Message)
 		if err != nil {
-			s.Errorf("failed to send slack notification: " + err.Error())
-			var rateLimit *slack.RateLimitedError
-			if errors.As(err, &rateLimit) {
-				time.Sleep(rateLimit.RetryAfter)
-				// when we hit rate limit there's no point in trying to send further messages for this tenant
-				// instead retry them on the next run
-				return
+			if err.Error() == "channel_not_found" {
+				s.Warnf("[tenant: %v]failed to send slack notification: %v", tenantName, err.Error())
+			} else {
+				s.Errorf("[tenant: %v]failed to send slack notification: %v", tenantName, err.Error())
+				var rateLimit *slack.RateLimitedError
+				if errors.As(err, &rateLimit) {
+					err := nackMsgs(s, msgs[i:], rateLimit.RetryAfter)
+					if err != nil {
+						s.Errorf("[tenant: %v]failed to send NACK for slack notification: %v", tenantName, err.Error())
+					}
+
+					return
+				}
+				continue
 			}
-			continue
 		}
 
 		err = s.sendInternalAccountMsg(s.MemphisGlobalAccount(), m.ReplySubject, []byte(_EMPTY_))
 		if err != nil {
-			s.Errorf("failed to ack slack notification: ", err.Error())
+			s.Errorf("[tenant: %v]failed to send ACK for slack notification: %v", tenantName, err.Error())
 		}
 	}
+}
+
+func nackMsgs(s *Server, msgs []NotificationMsgWithReply, nackDuration time.Duration) error {
+	nakPayload := []byte(fmt.Sprintf("%s {\"delay\": %d}", AckNak, nackDuration.Nanoseconds()))
+	for i := 0; i < len(msgs); i++ {
+		m := msgs[i]
+		err := s.sendInternalAccountMsg(s.MemphisGlobalAccount(), m.ReplySubject, nakPayload)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func ackMsgs(s *Server, msgs []NotificationMsgWithReply) {
@@ -387,7 +407,7 @@ func groupMessagesByTenant(msgs []slackMsg, l Logger) map[string][]NotificationM
 		if err != nil {
 			// TODO: does it make sense to send ack for this message?
 			// TODO: it's malformed and won't be unmarshalled next time as well
-			l.Errorf("Failed to unmarshal slack message: %v", err)
+			l.Errorf("failed to unmarshal slack message: %v", err)
 			continue
 		}
 		nmr := NotificationMsgWithReply{
