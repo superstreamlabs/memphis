@@ -28,7 +28,8 @@ import { httpRequest } from '../../services/http';
 import CloudModal from '../cloudModal';
 import { isCloud } from '../../services/valueConvertor';
 import { sendTrace } from '../../services/genericServices';
-import { connectorTypes } from '../../connectors';
+import { connectorTypesSource } from '../../connectors';
+import { connectorTypesSink } from '../../connectors';
 
 const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -54,7 +55,10 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
     }, [open]);
 
     useEffect(() => {
-        let connectorType = connectorTypes.find((connector) => connector.name === formFields?.type);
+        let connectorType =
+            formFields?.connector_type === 'Source'
+                ? connectorTypesSource.find((connector) => connector.name === formFields?.type)
+                : connectorTypesSink.find((connector) => connector.name === formFields?.type);
         formFields?.type && setConnectorInputFields(connectorType?.inputs[formFields?.connector_type]);
     }, [formFields?.type, formFields?.connector_type]);
 
@@ -305,7 +309,7 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
                                 radiusType="semi-round"
                                 height="40px"
                                 popupClassName="select-options"
-                                options={connectorTypes}
+                                options={formFields?.connector_type === 'Source' ? connectorTypesSource : connectorTypesSink}
                                 value={formFields?.type}
                                 onChange={(e) => {
                                     updateFormState('type', e);
