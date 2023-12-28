@@ -76,6 +76,18 @@ type createProducerRequestV2 struct {
 	AppId          string `json:"app_id"`
 }
 
+type createProducerRequestV3 struct {
+	Name           string `json:"name"`
+	StationName    string `json:"station_name"`
+	ConnectionId   string `json:"connection_id"`
+	ProducerType   string `json:"producer_type"`
+	RequestVersion int    `json:"req_version"`
+	Username       string `json:"username"`
+	TenantName     string `json:"tenant_name"`
+	AppId          string `json:"app_id"`
+	SdkLang        string `json:"sdk_lang"`
+}
+
 type createConsumerResponse struct {
 	Err string `json:"error"`
 }
@@ -152,6 +164,23 @@ type createConsumerRequestV2 struct {
 	RequestVersion           int    `json:"req_version"`
 	TenantName               string `json:"tenant_name"`
 	AppId                    string `json:"app_id"`
+}
+
+type createConsumerRequestV3 struct {
+	Name                     string `json:"name"`
+	StationName              string `json:"station_name"`
+	ConnectionId             string `json:"connection_id"`
+	ConsumerType             string `json:"consumer_type"`
+	ConsumerGroup            string `json:"consumers_group"`
+	MaxAckTimeMillis         int    `json:"max_ack_time_ms"`
+	MaxMsgDeliveries         int    `json:"max_msg_deliveries"`
+	Username                 string `json:"username"`
+	StartConsumeFromSequence uint64 `json:"start_consume_from_sequence"`
+	LastMessages             int64  `json:"last_messages"`
+	RequestVersion           int    `json:"req_version"`
+	TenantName               string `json:"tenant_name"`
+	AppId                    string `json:"app_id"`
+	SdkLang                  string `json:"sdk_lang"`
 }
 
 type attachSchemaRequest struct {
