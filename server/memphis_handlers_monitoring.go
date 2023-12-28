@@ -55,8 +55,8 @@ const (
 	unhealthyStatus                = "unhealthy"
 	dangerousStatus                = "dangerous"
 	riskyStatus                    = "risky"
-	lastProducerCreationReqVersion = 3
-	lastConsumerCreationReqVersion = 3
+	lastProducerCreationReqVersion = 4
+	lastConsumerCreationReqVersion = 4
 )
 
 func clientSetClusterConfig() error {
