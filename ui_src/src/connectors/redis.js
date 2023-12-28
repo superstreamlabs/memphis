@@ -25,16 +25,36 @@ export const redis = {
             children: false
         },
         {
-            name: 'username',
-            display: 'Username',
-            type: 'string',
-            required: false
-        },
-        {
-            name: 'password',
-            display: 'Password',
-            type: 'string',
-            required: false
+            name: 'authentication',
+            display: 'Authentication',
+            type: 'select',
+            options: ['No authentication', 'Username and Password', 'Password Only'],
+            required: true,
+            description: 'No Authentication, Username and Password, Password Only',
+            children: true,
+            'Username and Password': [
+                {
+                    name: 'username',
+                    display: 'Username',
+                    type: 'string',
+                    required: true
+                },
+                {
+                    name: 'password',
+                    display: 'Password',
+                    type: 'string',
+                    required: true
+                }
+            ],
+            'Password Only': [
+                {
+                    name: 'password',
+                    display: 'Password',
+                    type: 'string',
+                    required: true
+                }
+            ],
+            'No authentication': []
         },
         {
             name: 'db',
