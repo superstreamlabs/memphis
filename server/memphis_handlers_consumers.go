@@ -181,7 +181,14 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	}
 	sdkName := sdkLang
 	if sdkLang == "" {
-		sdkName = c.opts.Lang
+		switch c.opts.Lang {
+		case "nats.js":
+			sdkName = "node.js"
+		case "python3":
+			sdkName = "python"
+		default:
+			sdkName = c.opts.Lang
+		}
 	}
 
 	var newConsumer models.Consumer
