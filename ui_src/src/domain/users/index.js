@@ -56,6 +56,7 @@ function Users() {
     const [createUserLoader, setCreateUserLoader] = useState(false);
     const [userToResend, setuserToResend] = useState('');
     const [openCloudModal, setOpenCloudModal] = useState(false);
+    const [selectedRow, setSelectedRow] = useState(null);
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'users' });
@@ -281,8 +282,11 @@ function Users() {
                             backgroundColorType={'white'}
                             fontSize="12px"
                             fontFamily="InterMedium"
-                            onClick={() => {
-                                deleteUser(record.username, record.user_type);
+                            onClick={(e) => {
+                                {
+                                    e.stopPropagation();
+                                    deleteUser(record.username, record.user_type);
+                                }
                             }}
                         />
                     )}
@@ -520,26 +524,29 @@ function Users() {
                         title={tableHeader}
                         columns={tableType.includes('Management') ? managmentColumns : clientColumns}
                         data={tableType.includes('Management') ? copyOfUserList?.management_users : copyOfUserList?.application_users}
+                        onSelectRow={(record) => setSelectedRow(record)}
                     />
                 )}
             </div>
             <Drawer
                 placement="right"
-                title="Add a new user"
+                title={selectedRow ? 'User details' : 'Add a new user'}
                 onClose={() => {
                     setCreateUserLoader(false);
                     addUserModalFlip(false);
+                    setSelectedRow(null);
                 }}
                 destroyOnClose={true}
                 width="650px"
-                open={addUserModalIsOpen}
+                open={addUserModalIsOpen || selectedRow}
             >
                 <CreateUserDetails
+                    selectedRow={selectedRow}
                     createUserRef={createUserRef}
                     userList={userList}
                     handleLoader={(e) => setCreateUserLoader(e)}
                     closeModal={(userData) => {
-                        handleAddUser(userData);
+                        selectedRow ? setSelectedRow(null) : handleAddUser(userData);
                     }}
                     isLoading={createUserLoader}
                 />
