@@ -371,9 +371,9 @@ const ProduceConsumList = ({ producer }) => {
 
         const mapping = {
             go: <BiLogoGoLang/>,
-            js: <DiJavascript1/>,
-            python3: <BiLogoPython/>,
-            NET: <SiDotnet/>
+            "node.js": <DiJavascript1/>,
+            python: <BiLogoPython/>,
+            ".NET": <SiDotnet/>
         };
 
         const iconComponent = lang ? mapping[lang] : <ProducerIcon />;
