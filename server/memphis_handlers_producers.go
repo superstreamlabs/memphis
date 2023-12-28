@@ -129,7 +129,14 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 
 	sdkName := sdkLang
 	if sdkLang == "" {
-		sdkName = c.opts.Lang
+		switch c.opts.Lang {
+		case "nats.js":
+			sdkName = "node.js"
+		case "python3":
+			sdkName = "python"
+		default:
+			sdkName = c.opts.Lang
+		}
 	}
 
 	if strings.HasPrefix(user.Username, "$") && name != "gui" {
