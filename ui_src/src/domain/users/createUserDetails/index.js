@@ -676,7 +676,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                                             showArrow
                                             mode="tags"
                                             placeholder={'*'}
-                                            value={selectedRow?.allow_read_permissions || []}
+                                            value={selectedRow?.permissions?.allow_read_permissions || []}
                                             onChange={(e) => {
                                                 updateFormState('allow_read_permissions', e);
                                                 creationForm.setFieldsValue({ allow_read_permissions: e });
@@ -736,7 +736,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                                             showArrow
                                             mode="tags"
                                             placeholder={'*'}
-                                            value={selectedRow?.allow_write_permissions || []}
+                                            value={selectedRow?.permissions?.allow_write_permissions || []}
                                             onChange={(e) => {
                                                 updateFormState('allow_write_permissions', e);
                                                 creationForm.setFieldsValue({ allow_write_permissions: e });
