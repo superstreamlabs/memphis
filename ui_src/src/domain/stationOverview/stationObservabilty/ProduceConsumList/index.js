@@ -26,6 +26,7 @@ import { ReactComponent as ConnectIcon } from '../../../../assets/images/connect
 import { IoPlayCircleOutline, IoRemoveCircleOutline, IoPause, IoWarning } from 'react-icons/io5';
 import { HiDotsVertical } from 'react-icons/hi';
 import { MdError } from 'react-icons/md';
+import { IoMdInformationCircle } from 'react-icons/io';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { ReactComponent as UnsupportedIcon } from '../../../../assets/images/unsupported.svg';
 import StatusIndication from '../../../../components/indication';
@@ -45,9 +46,10 @@ import Spinner from '../../../../components/spinner';
 import TooltipComponent from '../../../../components/tooltip/tooltip';
 import { isCloud } from '../../../../services/valueConvertor';
 import { sendTrace } from '../../../../services/genericServices';
-import { BiLogoGoLang, BiLogoPython } from "react-icons/bi"
-import { SiDotnet } from "react-icons/si";
-import { DiJavascript1 } from "react-icons/di";
+import { BiLogoGoLang, BiLogoPython } from 'react-icons/bi';
+import { SiDotnet } from 'react-icons/si';
+import { DiJavascript1 } from 'react-icons/di';
+import ConnectorInfo from '../../../../components/connectorInfo';
 
 const overlayStylesConnectors = {
     borderRadius: '8px',
@@ -93,6 +95,7 @@ const ProduceConsumList = ({ producer }) => {
     const [selectedConnector, setSelectedConnector] = useState(null);
     const [openConnectorModal, setOpenConnectorModal] = useState(false);
     const [openConnectorError, setOpenConnectorError] = useState(false);
+    const [openConnectorInfo, setOpenConnectorInfo] = useState(false);
     const [actionItem, setActionItem] = useState(null);
     const [loading, setLoader] = useState(false);
     const producerItemsList = [
@@ -370,15 +373,15 @@ const ProduceConsumList = ({ producer }) => {
         const lang = item?.sdk_language;
 
         const mapping = {
-            go: <BiLogoGoLang/>,
-            "node.js": <DiJavascript1/>,
-            python: <BiLogoPython/>,
-            ".NET": <SiDotnet/>
+            go: <BiLogoGoLang />,
+            'node.js': <DiJavascript1 />,
+            python: <BiLogoPython />,
+            '.NET': <SiDotnet />
         };
 
         const iconComponent = lang ? mapping[lang] : <ProducerIcon />;
 
-        return <div style={{fontSize: '17px', display: 'flex', alignItems: 'center'}}>{iconComponent}</div>;
+        return <div style={{ fontSize: '17px', display: 'flex', alignItems: 'center' }}>{iconComponent}</div>;
     }
 
     return (
@@ -471,9 +474,7 @@ const ProduceConsumList = ({ producer }) => {
                                                         <ConnectIcon />
                                                     </TooltipComponent>
                                                 ) : (
-                                                    <TooltipComponent text="producer">
-                                                        {getIconByLang(row)}
-                                                    </TooltipComponent>
+                                                    <TooltipComponent text="producer">{getIconByLang(row)}</TooltipComponent>
                                                 )}
                                                 <OverflowTip text={row.name} width={'80px'}>
                                                     {row.name}
@@ -531,6 +532,14 @@ const ProduceConsumList = ({ producer }) => {
                                                             loader={loading && actionItem === 1}
                                                         />
                                                         <MenuItem
+                                                            name={'Information'}
+                                                            onClick={() => {
+                                                                setOpenConnectorInfo(true);
+                                                                setOpenConnectorPopover(false);
+                                                            }}
+                                                            icon={<IoMdInformationCircle />}
+                                                        />
+                                                        <MenuItem
                                                             name={'Erros'}
                                                             onClick={() => {
                                                                 setOpenConnectorError(true);
@@ -565,9 +574,7 @@ const ProduceConsumList = ({ producer }) => {
                                                         <ConnectIcon />
                                                     </TooltipComponent>
                                                 ) : (
-                                                    <TooltipComponent text="consumer">
-                                                        {getIconByLang(row)}
-                                                    </TooltipComponent>
+                                                    <TooltipComponent text="consumer">{getIconByLang(row)}</TooltipComponent>
                                                 )}
                                                 <OverflowTip text={row?.name} width={'80px'}>
                                                     {row?.name}
@@ -625,6 +632,14 @@ const ProduceConsumList = ({ producer }) => {
                                                             }}
                                                             icon={<IoRemoveCircleOutline />}
                                                             loader={loading && actionItem === 1}
+                                                        />
+                                                        <MenuItem
+                                                            name={'Information'}
+                                                            onClick={() => {
+                                                                setOpenConnectorInfo(true);
+                                                                setOpenConnectorPopover(false);
+                                                            }}
+                                                            icon={<IoMdInformationCircle />}
                                                         />
                                                         <MenuItem
                                                             name={'Erros'}
@@ -816,6 +831,7 @@ const ProduceConsumList = ({ producer }) => {
                 <GenerateTokenModal host={restGWHost} restProducer stationName={stationState?.stationMetaData?.name} close={() => setGenerateModal(false)} />
             </Modal>
             <ConnectorError open={openConnectorError} clickOutside={() => setOpenConnectorError(false)} connectorId={selectedConnector?.id} />
+            <ConnectorInfo open={openConnectorInfo} clickOutside={() => setOpenConnectorInfo(false)} connectorId={selectedConnector?.id} />
         </div>
     );
 };
