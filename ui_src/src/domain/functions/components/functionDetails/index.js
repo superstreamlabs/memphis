@@ -77,10 +77,11 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
     const formattedMarkdownContent = (text) => text.replace((/`/g, '\\`'));
 
     useEffect(() => {
-        getFunctionDetails();
-    }, [selectedFunction, selectedVersion]);
+        !stationView && getFunctionDetails();
+    }, [selectedFunction]);
 
     useEffect(() => {
+        getFunctionDetails();
         if (path) {
             setFileContent('');
             getFileContent(path);
@@ -97,6 +98,14 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
     useEffect(() => {
         buildTree(files);
     }, [files]);
+
+    useEffect(() => {
+        if (stationView) {
+            if (versions?.includes(metaData?.installed_version)) {
+                setSelectedVersion(metaData?.installed_version);
+            }
+        }
+    }, [versions]);
 
     const getFunctionDetails = async () => {
         setLoading(true);
@@ -115,7 +124,9 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                     '&function_name=' +
                     encodeURI(selectedFunction?.function_name || selectedFunction?.name) +
                     '&version=' +
-                    encodeURI(selectedVersion === 'latest' ? '' : selectedVersion)
+                    encodeURI(selectedVersion === 'latest' ? '' : selectedVersion) +
+                    '&attached_function_id=' +
+                    encodeURI(stationView ? selectedFunction?.id : '')
             );
             setMetaData(response?.metadata_function);
             setReadme(response?.readme_content);
