@@ -59,6 +59,7 @@ export const ApiEndpoints = {
     STOP_CONNECTOR: '/stations/stopConnector',
     GET_CONNECTOR_ERRORS: '/stations/getConnectorErrors',
     PURGE_CONNECTOR_ERRORS: '/stations/purgeConnectorErrors',
+    GET_CONNECTOR_DETAILS: '/stations/getConnectorDetails',
 
     //Async Tasks
     GET_ASYNC_TASKS: '/asyncTasks/getAsyncTasks',

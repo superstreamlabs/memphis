@@ -123,17 +123,13 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                             formFields?.allow_read_permissions === null ||
                             formFields?.allow_read_permissions === undefined
                                 ? null
-                                : rbacTypeRead === 'stations'
-                                ? formFields?.allow_read_permissions
-                                : [formFields?.allow_read_permissions];
+                                : formFields?.allow_read_permissions;
                         bodyRequest['allow_write_permissions'] =
                             formFields?.allow_write_permissions?.length === 0 ||
                             formFields?.allow_write_permissions === null ||
                             formFields?.allow_write_permissions === undefined
                                 ? null
-                                : rbacTypeWrite === 'stations'
-                                ? formFields?.allow_write_permissions
-                                : [formFields?.allow_write_permissions];
+                                : formFields?.allow_write_permissions;
                     }
                     const data = await httpRequest('POST', ApiEndpoints.ADD_USER, bodyRequest);
                     if (data) {
