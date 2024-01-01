@@ -51,6 +51,7 @@ import { SiDotnet } from 'react-icons/si';
 import { DiJavascript1 } from 'react-icons/di';
 import ConnectorInfo from '../../../../components/connectorInfo';
 import RunBenchmarkModal from '../../../../components/runBenchmarkModal';
+import { connectorTypesSource, connectorTypesSink } from '../../../../connectors';
 
 const overlayStylesConnectors = {
     borderRadius: '8px',
@@ -400,6 +401,13 @@ const ProduceConsumList = ({ producer }) => {
         return <div style={{ fontSize: '17px', display: 'flex', alignItems: 'center' }}>{iconComponent}</div>;
     }
 
+    const getIconByConnector = (item, connectorType) => {
+        let connector;
+        if (connectorType === 'source') connector = connectorTypesSource.find((connector) => connector?.name?.toLowerCase() === item?.type);
+        else connector = connectorTypesSink.find((connector) => connector?.name?.toLowerCase() === item?.type);
+        return <img src={connector?.icon} height="16px" width="16px" alt={item?.type} /> || <ConnectIcon />;
+    };
+
     return (
         <div className="station-observabilty-side">
             <div className="pubSub-list-container">
@@ -486,9 +494,7 @@ const ProduceConsumList = ({ producer }) => {
                                         <div className={returnClassName(index, row?.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'producer')}>
                                             <span className="connector-name">
                                                 {row?.connector_connection_id ? (
-                                                    <TooltipComponent text="connector">
-                                                        <ConnectIcon />
-                                                    </TooltipComponent>
+                                                    <TooltipComponent text="connector">{getIconByConnector(row, 'source')}</TooltipComponent>
                                                 ) : (
                                                     <TooltipComponent text="producer">{getIconByLang(row)}</TooltipComponent>
                                                 )}
@@ -586,9 +592,7 @@ const ProduceConsumList = ({ producer }) => {
                                         <div className={returnClassName(index, row?.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'consumer')}>
                                             <span className="connector-name">
                                                 {row?.connector_connection_id ? (
-                                                    <TooltipComponent text="connector">
-                                                        <ConnectIcon />
-                                                    </TooltipComponent>
+                                                    <TooltipComponent text="connector">{getIconByConnector(row, 'sink')}</TooltipComponent>
                                                 ) : (
                                                     <TooltipComponent text="consumer">{getIconByLang(row)}</TooltipComponent>
                                                 )}
