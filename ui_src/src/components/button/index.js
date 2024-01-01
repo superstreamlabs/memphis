@@ -15,8 +15,8 @@ import './style.scss';
 import { Button as ButtonDesign } from 'antd';
 import React from 'react';
 
-import { getBorderRadius, getFontColor, getBackgroundColor, getBoxShadows, getBorderColor } from '../../utils/styleTemplates';
-import TooltipComponent from '../tooltip/tooltip';
+import { getBorderRadius, getFontColor, getBackgroundColor, getBoxShadows, getBorderColor } from 'utils/styleTemplates';
+import TooltipComponent from 'components/tooltip/tooltip';
 
 const Button = ({
     width,

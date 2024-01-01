@@ -24,28 +24,28 @@ import {
     partitionsValidator,
     replicasConvertor,
     showUpgradePlan
-} from '../../services/valueConvertor';
-import S3Integration from '../../domain/administration/integrations/components/s3Integration';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { httpRequest } from '../../services/http';
-import { useGetAllowedActions } from '../../services/genericServices';
-import InputNumberComponent from '../InputNumber';
-import OverflowTip from '../tooltip/overflowtip';
-import TitleComponent from '../titleComponent';
-import SelectCheckBox from '../selectCheckBox';
-import { Context } from '../../hooks/store';
-import UpgradePlans from '../upgradePlans';
-import CustomSelect from '../customSelect';
-import RadioButton from '../radioButton';
-import LockFeature from '../lockFeature';
-import SelectComponent from '../select';
-import pathDomains from '../../router';
-import Switcher from '../switcher';
-import CustomTabs from '../Tabs';
-import Button from '../button';
-import Input from '../Input';
-import Modal from '../modal';
-import { entitlementChecker } from '../../utils/plan';
+} from 'services/valueConvertor';
+import S3Integration from 'domain/administration/integrations/components/s3Integration';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import { useGetAllowedActions } from 'services/genericServices';
+import InputNumberComponent from 'components/InputNumber';
+import OverflowTip from 'components/tooltip/overflowtip';
+import TitleComponent from 'components/titleComponent';
+import SelectCheckBox from 'components/selectCheckBox';
+import { Context } from 'hooks/store';
+import UpgradePlans from 'components/upgradePlans';
+import CustomSelect from 'components/customSelect';
+import RadioButton from 'components/radioButton';
+import LockFeature from 'components/lockFeature';
+import SelectComponent from 'components/select';
+import pathDomains from 'router';
+import Switcher from 'components/switcher';
+import CustomTabs from 'components/Tabs';
+import Button from 'components/button';
+import Input from 'components/Input';
+import Modal from 'components/modal';
+import { entitlementChecker } from 'utils/plan';
 
 const retanionOptions = [
     {

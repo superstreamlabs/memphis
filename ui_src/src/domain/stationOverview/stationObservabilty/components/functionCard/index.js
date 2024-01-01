@@ -14,17 +14,17 @@ import './style.scss';
 import React, { useState, useEffect, useContext } from 'react';
 import { Popover } from 'antd';
 import { HiEllipsisVertical } from 'react-icons/hi2';
-import { ReactComponent as FunctionBoxTitleIcon } from '../../../../../assets/images/functionCardIcon.svg';
-import { ReactComponent as FunctionProcessingIcon } from '../../../../../assets/images/proccessingIcon.svg';
-import { ReactComponent as FunctionProcessingWarningIcon } from '../../../../../assets/images/processingWarningIcon.svg';
+import { ReactComponent as FunctionBoxTitleIcon } from 'assets/images/functionCardIcon.svg';
+import { ReactComponent as FunctionProcessingIcon } from 'assets/images/proccessingIcon.svg';
+import { ReactComponent as FunctionProcessingWarningIcon } from 'assets/images/processingWarningIcon.svg';
 import { IoClose } from 'react-icons/io5';
-import { ApiEndpoints } from '../../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../../services/http';
-import { convertLongNumbers } from '../../../../../services/valueConvertor';
-import { StationStoreContext } from '../../../';
-import FunctionDetails from '../../../../functions/components/functionDetails';
-import { Drawer } from 'antd';
-import Tooltip from '../../../../../components/tooltip/tooltip';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import { convertLongNumbers } from 'services/valueConvertor';
+import { StationStoreContext } from 'domain/stationOverview';
+import FunctionDetails from 'domain/functions/components/functionDetails';
+import Drawer from "components/drawer";
+import Tooltip from 'components/tooltip/tooltip';
 
 export default function FunctionCard({
     onClick,
@@ -42,7 +42,7 @@ export default function FunctionCard({
     const [popoverFunctionContextMenu, setPopoverFunctionContextMenu] = useState(false);
     const [openFunctionDetails, setOpenFunctionDetails] = useState(false);
     const [selectedFunction, setSelectedFunction] = useState();
-    const [averageProcessingTime, setAverageProcessingTime] = useState(null);
+
     useEffect(() => {
         setIsActive(!isDeactive);
     }, [isDeactive]);
@@ -53,7 +53,6 @@ export default function FunctionCard({
         func.rates = Math.floor(Math.random() * (80 - 50 + 1)) + 50;
         func.forks = Math.floor(Math.random() * (100 - 80 + 1)) + 80;
         setSelectedFunction(func);
-        getFunctionDetails();
     }, [functionItem]);
 
     const functionContextMenuStyles = {
@@ -62,15 +61,6 @@ export default function FunctionCard({
         paddingBottom: '5px',
         marginBottom: '10px',
         width: '150px'
-    };
-
-    const getFunctionDetails = async () => {
-        try {
-            const response = await httpRequest('GET', `${ApiEndpoints.GET_FUNCTION_DETAILS}?function_id=${functionItem?.id}`);
-            setAverageProcessingTime(response?.metrics?.average_processing_time);
-        } catch (e) {
-            return;
-        }
     };
 
     const getFunctionsOverview = async () => {
@@ -212,10 +202,8 @@ export default function FunctionCard({
                     </div>
 
                     <div className={`ms-function-card-title ${!selectedFunction?.activated ? 'deactivated-function' : undefined}`}>
-                        <div className="function-name">
-                            <FunctionBoxTitleIcon /> <span>{selectedFunction?.name}</span>
-                        </div>
-                        <span className="processing">avg processing: {averageProcessingTime}/ms</span>
+                        <FunctionBoxTitleIcon />
+                        <span>{selectedFunction?.name}</span>
                     </div>
                 </div>
                 <Tooltip text="Dead-letter">

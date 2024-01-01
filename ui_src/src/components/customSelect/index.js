@@ -18,13 +18,13 @@ import { BsPlus } from 'react-icons/bs';
 import { Select } from 'antd';
 import React from 'react';
 
-import SchemaIconSelect from '../../assets/images/schemaIconSelect.svg';
-import stationsIconActive from '../../assets/images/stationsIconActive.svg';
-import usersIconActive from '../../assets/images/usersIconActive.svg';
-import { parsingDate } from '../../services/valueConvertor';
+import SchemaIconSelect from 'assets/images/schemaIconSelect.svg';
+import stationsIconActive from 'assets/images/stationsIconActive.svg';
+import usersIconActive from 'assets/images/usersIconActive.svg';
+import { parsingDate } from 'services/valueConvertor';
 
-import Button from '../button';
-import pathDomains from '../../router';
+import Button from 'components/button';
+import pathDomains from 'router';
 
 const { Option } = Select;
 

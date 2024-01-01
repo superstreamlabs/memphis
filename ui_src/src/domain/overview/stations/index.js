@@ -17,18 +17,18 @@ import { useHistory } from 'react-router-dom';
 import { KeyboardArrowRightRounded } from '@material-ui/icons';
 import Lottie from 'lottie-react';
 
-import noActiveAndUnhealthy from '../../../assets/lotties/noActiveAndUnhealthy.json';
-import { isCloud, parsingDate } from '../../../services/valueConvertor';
-import noActiveAndHealthy from '../../../assets/lotties/noActiveAndHealthy.json';
-import activeAndUnhealthy from '../../../assets/lotties/activeAndUnhealthy.json';
-import activeAndHealthy from '../../../assets/lotties/activeAndHealthy.json';
-import OverflowTip from '../../../components/tooltip/overflowtip';
-import { ReactComponent as NoStationsIcon } from '../../../assets/images/noStations.svg';
-import Button from '../../../components/button';
-import CloudModal from '../../../components/cloudModal';
+import noActiveAndUnhealthy from 'assets/lotties/noActiveAndUnhealthy.json';
+import { isCloud, parsingDate } from 'services/valueConvertor';
+import noActiveAndHealthy from 'assets/lotties/noActiveAndHealthy.json';
+import activeAndUnhealthy from 'assets/lotties/activeAndUnhealthy.json';
+import activeAndHealthy from 'assets/lotties/activeAndHealthy.json';
+import OverflowTip from 'components/tooltip/overflowtip';
+import { ReactComponent as NoStationsIcon } from 'assets/images/noStations.svg';
+import Button from 'components/button';
+import CloudModal from 'components/cloudModal';
 import { FaArrowCircleUp } from 'react-icons/fa';
-import { Context } from '../../../hooks/store';
-import pathDomains from '../../../router';
+import { Context } from 'hooks/store';
+import pathDomains from 'router';
 import { Virtuoso } from 'react-virtuoso';
 
 const Stations = ({ createStationTrigger }) => {

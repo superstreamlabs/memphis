@@ -14,19 +14,19 @@ import './style.scss';
 
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 
-import { DOCKER_UPGRADE_URL, K8S_UPGRADE_URL, LATEST_RELEASE_URL, RELEASE_DOCS_URL, RELEASE_NOTES_URL } from '../../../config';
-import { GithubRequest } from '../../../services/githubRequests';
-import { LOCAL_STORAGE_ENV } from '../../../const/localStorageConsts';
-import { ReactComponent as UpgradeBannerIcon } from '../../../assets/images/upgradeBanner.svg';
-import { ReactComponent as UpdateIcon } from '../../../assets/images/uptodateIcon.svg';
-import { ReactComponent as FullLogoIcon } from '../../../assets/images/fullLogo.svg';
-import Button from '../../../components/button';
-import { Context } from '../../../hooks/store';
+import { DOCKER_UPGRADE_URL, K8S_UPGRADE_URL, LATEST_RELEASE_URL, RELEASE_DOCS_URL, RELEASE_NOTES_URL } from 'config';
+import { GithubRequest } from 'services/githubRequests';
+import { LOCAL_STORAGE_ENV } from 'const/localStorageConsts';
+import { ReactComponent as UpgradeBannerIcon } from 'assets/images/upgradeBanner.svg';
+import { ReactComponent as UpdateIcon } from 'assets/images/uptodateIcon.svg';
+import { ReactComponent as FullLogoIcon } from 'assets/images/fullLogo.svg';
+import Button from 'components/button';
+import { Context } from 'hooks/store';
 import NoteItem from './components/noteItem';
-import Loader from '../../../components/loader';
-import { httpRequest } from '../../../services/http';
-import { ApiEndpoints } from '../../../const/apiEndpoints';
-import { compareVersions } from '../../../services/valueConvertor';
+import Loader from 'components/loader';
+import { httpRequest } from 'services/http';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { compareVersions } from 'services/valueConvertor';
 import { Update } from '@material-ui/icons';
 
 function VersionUpgrade() {

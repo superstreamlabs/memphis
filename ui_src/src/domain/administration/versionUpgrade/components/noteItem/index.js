@@ -14,7 +14,7 @@ import './style.scss';
 
 import React, { useEffect, useState } from 'react';
 
-import { ReactComponent as StarIcon } from '../../../../../assets/images/star.svg';
+import { ReactComponent as StarIcon } from 'assets/images/star.svg';
 import ReactMarkdown from 'react-markdown';
 
 const NoteItem = ({ feature }) => {

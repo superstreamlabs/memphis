@@ -12,14 +12,14 @@
 
 import './style.scss';
 import React, { useContext, useState } from 'react';
-import { Context } from '../../../../hooks/store';
-import { LOCAL_STORAGE_COMPANY_LOGO } from '../../../../const/localStorageConsts';
+import { Context } from 'hooks/store';
+import { LOCAL_STORAGE_COMPANY_LOGO } from 'const/localStorageConsts';
 import { Upload } from 'antd';
-import Button from '../../../../components/button';
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../services/http';
-import { showMessages } from '../../../../services/genericServices';
-import Logo from '../../../../assets/images/logo.svg';
+import Button from 'components/button';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import { showMessages } from 'services/genericServices';
+import Logo from 'assets/images/logo.svg';
 
 function ImgUploader() {
     const [state, dispatch] = useContext(Context);

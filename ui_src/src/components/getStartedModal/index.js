@@ -13,20 +13,20 @@
 import './style.scss';
 import { useState, useEffect } from 'react';
 import { BiSolidTimeFive } from 'react-icons/bi';
-import VideoPlayer from '../videoPlayer';
-import Button from '../button';
-import Input from '../Input';
-import { WELCOME_VIDEO } from '../../config';
-import WelcomeImage from '../../assets/images/welcomeModalImage.webp';
+import VideoPlayer from 'components/videoPlayer';
+import Button from 'components/button';
+import Input from 'components/Input';
+import { WELCOME_VIDEO } from 'config';
+import WelcomeImage from 'assets/images/welcomeModalImage.webp';
 import { BsGithub } from 'react-icons/bs';
-import { ReactComponent as CloneModalIcon } from '../../assets/images/cloneModalIcon.svg';
-import Modal from '../modal';
-import CloneModal from '../cloneModal';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { httpRequest } from '../../services/http';
-import { sendTrace } from '../../services/genericServices';
-import { capitalizeFirst } from '../../services/valueConvertor';
-import { LOCAL_STORAGE_SKIP_GET_STARTED, LOCAL_STORAGE_USER_NAME } from '../../const/localStorageConsts';
+import { ReactComponent as CloneModalIcon } from 'assets/images/cloneModalIcon.svg';
+import Modal from 'components/modal';
+import CloneModal from 'components/cloneModal';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import { sendTrace } from 'services/genericServices';
+import { capitalizeFirst } from 'services/valueConvertor';
+import { LOCAL_STORAGE_SKIP_GET_STARTED, LOCAL_STORAGE_USER_NAME } from 'const/localStorageConsts';
 
 const useCases = ['Microservices communication', 'Change data Capture', 'Real-time pipeline', 'Stream processing'];
 const codeList = [

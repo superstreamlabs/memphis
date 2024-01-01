@@ -13,9 +13,9 @@
 import './style.scss';
 
 import React, { useEffect, useState } from 'react';
-import { ApiEndpoints } from '../../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../../services/http';
-import Spinner from '../../../../../components/spinner';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import Spinner from 'components/spinner';
 
 const FunctionLogs = ({ functionId }) => {
     const [logs, setLogs] = useState([]);

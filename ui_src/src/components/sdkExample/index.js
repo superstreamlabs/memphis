@@ -18,7 +18,7 @@ import Editor, { loader } from '@monaco-editor/react';
 import { Divider, Form, Collapse } from 'antd';
 import * as monaco from 'monaco-editor';
 
-import { REST_CODE_EXAMPLE, SDK_CODE_EXAMPLE, sdkLangOptions, restLangOptions } from '../../const/codeExample';
+import { REST_CODE_EXAMPLE, SDK_CODE_EXAMPLE, sdkLangOptions, restLangOptions } from 'const/codeExample';
 import {
     LOCAL_STORAGE_ACCOUNT_ID,
     LOCAL_STORAGE_BROKER_HOST,
@@ -30,24 +30,24 @@ import {
     LOCAL_STORAGE_PRODUCER_PROGRAMMING_LANGUAGE,
     LOCAL_STORAGE_CONSUMER_COMMUNICATION_TYPE,
     LOCAL_STORAGE_CONSUMER_PROGRAMMING_LANGUAGE,
-} from '../../const/localStorageConsts';
-import GenerateTokenModal from '../../domain/stationOverview/components/generateTokenModal';
-import { ReactComponent as NoCodeExampleIcon } from '../../assets/images/noCodeExample.svg';
-import { ReactComponent as RefreshIcon } from '../../assets/images/refresh.svg';
-import { ReactComponent as CodeIcon } from '../../assets/images/codeIcon.svg';
-import CreateUserDetails from '../../domain/users/createUserDetails';
-import CollapseArrow from '../../assets/images/collapseArrow.svg';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import TitleComponent from '../titleComponent/index';
-import { httpRequest } from '../../services/http';
-import SegmentButton from '../segmentButton';
-import CustomSelect from '../customSelect';
-import SelectComponent from '../select';
-import Switcher from '../switcher';
-import Modal from '../modal';
-import Input from '../Input';
-import Copy from '../copy';
-import { Drawer } from 'antd';
+} from 'const/localStorageConsts';
+import GenerateTokenModal from 'domain/stationOverview/components/generateTokenModal';
+import { ReactComponent as NoCodeExampleIcon } from 'assets/images/noCodeExample.svg';
+import { ReactComponent as RefreshIcon } from 'assets/images/refresh.svg';
+import { ReactComponent as CodeIcon } from 'assets/images/codeIcon.svg';
+import CreateUserDetails from 'domain/users/createUserDetails';
+import CollapseArrow from 'assets/images/collapseArrow.svg';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import TitleComponent from 'components/titleComponent/index';
+import { httpRequest } from 'services/http';
+import SegmentButton from 'components/segmentButton';
+import CustomSelect from 'components/customSelect';
+import SelectComponent from 'components/select';
+import Switcher from 'components/switcher';
+import Modal from 'components/modal';
+import Input from 'components/Input';
+import Copy from 'components/copy';
+import Drawer from "components/drawer";
 
 loader.init();
 loader.config({ monaco });

@@ -12,11 +12,11 @@
 
 import './style.scss';
 import React, { useState } from 'react';
-import Button from '../button';
+import Button from 'components/button';
 import { FiDownload } from 'react-icons/fi';
-import Copy from '../copy';
-import CustomTabs from '../Tabs';
-import { githubUrls } from '../../const/globalConst';
+import Copy from 'components/copy';
+import CustomTabs from 'components/Tabs';
+import { githubUrls } from 'const/globalConst';
 import { SiLinux, SiApple, SiWindows11 } from 'react-icons/si';
 
 const CloneModal = ({ type }) => {
@@ -66,18 +66,13 @@ const CloneModal = ({ type }) => {
             )}
             {type === 'cli' && (
                 <>
-                    <p className="create-func-cli">
-                        <label>Step 1:</label>Install Memphis CLI
-                    </p>
                     <div className="url-wrapper">
                         <p className="url-text"> {githubUrls[type][tabValue]}</p>
                         <div className="icon">
                             <Copy width="18" data={githubUrls[type][tabValue]} />
                         </div>
                     </div>
-                    <p className="create-func-cli">
-                        <label>Step 2:</label>Create a basic Memphis function template
-                    </p>
+                    <p className="create-func-cli">Create a basic Memphis function template</p>
                     <div className="url-wrapper">
                         <p className="url-text"> {githubUrls[type]?.code}</p>
                         <div className="icon">

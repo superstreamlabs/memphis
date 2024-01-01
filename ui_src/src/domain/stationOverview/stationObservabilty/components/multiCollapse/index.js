@@ -13,8 +13,8 @@ import './style.scss';
 
 import React, { useEffect, useState } from 'react';
 import { Collapse } from 'antd';
-import { ReactComponent as CollapseArrowIcon } from '../../../../../assets/images/collapseArrow.svg';
-import StatusIndication from '../../../../../components/indication';
+import { ReactComponent as CollapseArrowIcon } from 'assets/images/collapseArrow.svg';
+import StatusIndication from 'components/indication';
 
 const { Panel } = Collapse;
 

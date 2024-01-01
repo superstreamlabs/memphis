@@ -13,12 +13,12 @@
 import './style.scss';
 
 import React, { useEffect, useState } from 'react';
-import Modal from '../modal';
-import Spinner from '../spinner';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { httpRequest } from '../../services/http';
-import { sendTrace } from '../../services/genericServices';
-import { connectorTypesSource, connectorTypesSink } from '../../connectors';
+import Modal from 'components/modal';
+import Spinner from 'components/spinner';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import { sendTrace } from 'services/genericServices';
+import { connectorTypesSource, connectorTypesSink } from 'connectors';
 
 const ConnectorInfo = ({ open, clickOutside, connectorId }) => {
     const [loading, setLoading] = useState(false);

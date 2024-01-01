@@ -13,7 +13,7 @@ import './style.scss';
 
 import { Switch } from 'antd';
 import React from 'react';
-import TooltipComponent from '../tooltip/tooltip';
+import TooltipComponent from 'components/tooltip/tooltip';
 
 const Switcher = ({ checkedChildren, unCheckedChildren, onChange, checked, disabled, tooltip, loading }) => {
     return (

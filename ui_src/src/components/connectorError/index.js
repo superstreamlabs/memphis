@@ -13,13 +13,13 @@
 import './style.scss';
 
 import React, { useEffect, useState } from 'react';
-import Modal from '../modal';
-import Spinner from '../spinner';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { httpRequest } from '../../services/http';
-import { parsingDate } from '../../services/valueConvertor';
-import OverflowTip from '../tooltip/overflowtip';
-import { sendTrace } from '../../services/genericServices';
+import Modal from 'components/modal';
+import Spinner from 'components/spinner';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import { parsingDate } from 'services/valueConvertor';
+import OverflowTip from 'components/tooltip/overflowtip';
+import { sendTrace } from 'services/genericServices';
 const logsColumns = [
     {
         key: '1',

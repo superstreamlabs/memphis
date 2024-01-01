@@ -12,7 +12,7 @@
 
 import './style.scss';
 import { useHistory } from 'react-router-dom';
-import pathDomains from '../../../../router';
+import pathDomains from 'router';
 import { CheckCircleOutlineRounded, ErrorOutlineRounded } from '@material-ui/icons';
 import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
@@ -27,22 +27,22 @@ import Ajv2019 from 'ajv/dist/2019';
 import Ajv2020 from 'ajv/dist/2020';
 import { Form } from 'antd';
 
-import { generateName, getUnique } from '../../../../services/valueConvertor';
-import { ReactComponent as SchemaTypeIcon } from '../../../../assets/images/schemaTypeIcon.svg';
-import { ReactComponent as StationsActiveIcon } from '../../../../assets/images/stationsIconActive.svg';
-import { ReactComponent as ErrorModalIcon } from '../../../../assets/images/errorModal.svg';
-import { ReactComponent as BackIcon } from '../../../../assets/images/backIcon.svg';
-import { ReactComponent as TagsIcon } from '../../../../assets/images/tagsIcon.svg';
-import { ReactComponent as PurpleQuestionMark } from '../../../../assets/images/purpleQuestionMark.svg';
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import RadioButton from '../../../../components/radioButton';
-import SelectComponent from '../../../../components/select';
-import { httpRequest } from '../../../../services/http';
-import TagsList from '../../../../components/tagList';
-import Button from '../../../../components/button';
-import { Context } from '../../../../hooks/store';
-import Input from '../../../../components/Input';
-import Modal from '../../../../components/modal';
+import { generateName, getUnique } from 'services/valueConvertor';
+import { ReactComponent as SchemaTypeIcon } from 'assets/images/schemaTypeIcon.svg';
+import { ReactComponent as StationsActiveIcon } from 'assets/images/stationsIconActive.svg';
+import { ReactComponent as ErrorModalIcon } from 'assets/images/errorModal.svg';
+import { ReactComponent as BackIcon } from 'assets/images/backIcon.svg';
+import { ReactComponent as TagsIcon } from 'assets/images/tagsIcon.svg';
+import { ReactComponent as PurpleQuestionMark } from 'assets/images/purpleQuestionMark.svg';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import RadioButton from 'components/radioButton';
+import SelectComponent from 'components/select';
+import { httpRequest } from 'services/http';
+import TagsList from 'components/tagList';
+import Button from 'components/button';
+import { Context } from 'hooks/store';
+import Input from 'components/Input';
+import Modal from 'components/modal';
 import AttachStationModal from '../attachStationModal';
 const avro = require('avro-js');
 

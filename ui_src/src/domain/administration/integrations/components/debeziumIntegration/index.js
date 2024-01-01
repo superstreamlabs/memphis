@@ -14,14 +14,14 @@ import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Collapse } from 'antd';
 
-import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationList';
-import { ReactComponent as CollapseArrowIcon } from '../../../../../assets/images/collapseArrow.svg';
-import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
-import Button from '../../../../../components/button';
-import Loader from '../../../../../components/loader';
-import Copy from '../../../../../components/copy';
-import pathDomains from '../../../../../router';
-import CustomTabs from '../../../../../components/Tabs';
+import { INTEGRATION_LIST, getTabList } from 'const/integrationList';
+import { ReactComponent as CollapseArrowIcon } from 'assets/images/collapseArrow.svg';
+import { ReactComponent as PurpleQuestionMark } from 'assets/images/purpleQuestionMark.svg';
+import Button from 'components/button';
+import Loader from 'components/loader';
+import Copy from 'components/copy';
+import pathDomains from 'router';
+import CustomTabs from 'components/Tabs';
 import IntegrationDetails from '../integrationItem/integrationDetails';
 
 const { Panel } = Collapse;

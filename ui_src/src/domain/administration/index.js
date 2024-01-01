@@ -14,7 +14,7 @@ import './style.scss';
 
 import React, { useContext, useState, useEffect } from 'react';
 
-import { Context } from '../../hooks/store';
+import { Context } from 'hooks/store';
 import Integrations from './integrations';
 import AccountMenu from './accountMenu';
 import BillingMenu from './billing/billingMenu';
@@ -25,9 +25,9 @@ import Profile from '../profile';
 import ClusterConfiguration from './clusterConfiguration';
 import SoftwareUpates from './softwareUpdates';
 import { useHistory } from 'react-router-dom';
-import pathDomains from '../../router';
+import pathDomains from 'router';
 import VersionUpgrade from './versionUpgrade';
-import { isCloud } from '../../services/valueConvertor';
+import { isCloud } from 'services/valueConvertor';
 import { useLocation } from 'react-router-dom/cjs/react-router-dom.min';
 
 function Administration({ step }) {

@@ -16,22 +16,22 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Form } from 'antd';
 import { HiLockClosed } from 'react-icons/hi';
 import { ArrowDropDownRounded } from '@material-ui/icons';
-import Input from '../../../components/Input';
-import Button from '../../../components/button';
-import SelectComponent from '../../../components/select';
+import Input from 'components/Input';
+import Button from 'components/button';
+import SelectComponent from 'components/select';
 import { Select } from 'antd';
-import { httpRequest } from '../../../services/http';
-import { useGetAllowedActions } from '../../../services/genericServices';
-import { ApiEndpoints } from '../../../const/apiEndpoints';
-import SelectCheckBox from '../../../components/selectCheckBox';
-import RadioButton from '../../../components/radioButton';
-import { generator } from '../../../services/generator';
-import { ReactComponent as RefreshIcon } from '../../../assets/images/refresh.svg';
+import { httpRequest } from 'services/http';
+import { useGetAllowedActions } from 'services/genericServices';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import SelectCheckBox from 'components/selectCheckBox';
+import RadioButton from 'components/radioButton';
+import { generator } from 'services/generator';
+import { ReactComponent as RefreshIcon } from 'assets/images/refresh.svg';
 
-import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../../const/localStorageConsts';
-import { isCloud, showUpgradePlan } from '../../../services/valueConvertor';
-import { Context } from '../../../hooks/store';
-import UpgradePlans from '../../../components/upgradePlans';
+import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from 'const/localStorageConsts';
+import { isCloud, showUpgradePlan } from 'services/valueConvertor';
+import { Context } from 'hooks/store';
+import UpgradePlans from 'components/upgradePlans';
 
 const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, isLoading, clientType = false, selectedRow }) => {
     const [state, dispatch] = useContext(Context);
@@ -650,7 +650,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                                     rules={
                                         rbacTypeRead === 'pattern' && [
                                             {
-                                                pattern: /^[a-zA-Z0-9_\-., ]+(\..*)?$/,
+                                                pattern: /^[a-zA-Z0-9_\-., ]+(\..*)?|\*$/,
                                                 message: `Only alphanumeric and the '_', '-', '.', '*' characters are allowed`
                                             }
                                         ]
@@ -710,7 +710,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                                     rules={
                                         rbacTypeWrite === 'pattern' && [
                                             {
-                                                pattern: /^[a-zA-Z0-9_\-., ]+(\..*)?$/,
+                                                pattern: /^[a-zA-Z0-9_\-., ]+(\..*)?|\*$/,
                                                 message: `Only alphanumeric and the '_', '-', '.', '*' characters are allowed`
                                             }
                                         ]

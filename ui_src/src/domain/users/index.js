@@ -15,28 +15,29 @@ import './style.scss';
 import React, { useEffect, useContext, useState, useRef } from 'react';
 import { AccountCircleRounded } from '@material-ui/icons';
 
-import { LOCAL_STORAGE_USER_PASS_BASED_AUTH, LOCAL_STORAGE_FULL_NAME, USER_IMAGE } from '../../const/localStorageConsts';
-import { isCloud, parsingDate } from '../../services/valueConvertor';
-import { ReactComponent as DeleteWrapperIcon } from '../../assets/images/deleteWrapperIcon.svg';
-import { ReactComponent as MailIcon } from '../../assets/images/mailIcon.svg';
-import { ReactComponent as DeleteIcon } from '../../assets/images/deleteIcon.svg';
-import { ReactComponent as SearchIcon } from '../../assets/images/searchIcon.svg';
+import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from 'const/localStorageConsts';
+import { isCloud, parsingDate } from 'services/valueConvertor';
+import { ReactComponent as AddUserIcon } from 'assets/images/addUserIcon.svg';
+import { ReactComponent as DeleteWrapperIcon } from 'assets/images/deleteWrapperIcon.svg';
+import { ReactComponent as MailIcon } from 'assets/images/mailIcon.svg';
+import { ReactComponent as DeleteIcon } from 'assets/images/deleteIcon.svg';
+import { ReactComponent as SearchIcon } from 'assets/images/searchIcon.svg';
 import { FaArrowCircleUp } from 'react-icons/fa';
-import SegmentButton from '../../components/segmentButton';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import SearchInput from '../../components/searchInput';
-import ActiveBadge from '../../components/activeBadge';
+import SegmentButton from 'components/segmentButton';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import SearchInput from 'components/searchInput';
+import ActiveBadge from 'components/activeBadge';
 import CreateUserDetails from './createUserDetails';
-import { httpRequest } from '../../services/http';
-import Loader from '../../components/loader';
-import Button from '../../components/button';
-import { Context } from '../../hooks/store';
-import Modal from '../../components/modal';
-import Table from '../../components/table';
-import DeleteItemsModal from '../../components/deleteItemsModal';
-import CloudModal from '../../components/cloudModal';
-import { isCurrentUser } from '../../utils/user';
-import { Drawer } from 'antd';
+import { httpRequest } from 'services/http';
+import Loader from 'components/loader';
+import Button from 'components/button';
+import { Context } from 'hooks/store';
+import Modal from 'components/modal';
+import Table from 'components/table';
+import DeleteItemsModal from 'components/deleteItemsModal';
+import CloudModal from 'components/cloudModal';
+import { isCurrentUser } from 'utils/user';
+import Drawer from "components/drawer";
 
 function Users() {
     const [state, dispatch] = useContext(Context);
@@ -151,10 +152,8 @@ function Users() {
         }
     };
 
-    const getAvatarSrc = (avatarId, full_name) => {
-        return (
-            (localStorage.getItem(LOCAL_STORAGE_FULL_NAME) === full_name && localStorage.getItem(USER_IMAGE)) || require(`../../assets/images/bots/avatar${avatarId}.svg`)
-        );
+    const getAvatarSrc = (avatarId) => {
+        return require(`assets/images/bots/avatar${avatarId}.svg`);
     };
 
     const handleRemoveUser = async (name, type) => {
@@ -304,7 +303,7 @@ function Users() {
             render: (text, record) => (
                 <div className="user-name">
                     <div className="user-avatar">
-                        <img src={getAvatarSrc(record.avatar_id, record?.full_name)} width={25} height={25} alt="avatar" />
+                        <img src={getAvatarSrc(record.avatar_id)} width={25} height={25} alt="avatar" />
                     </div>
                     <p>{text}</p>
                 </div>
@@ -361,12 +360,12 @@ function Users() {
             )
         },
         {
-            title: 'Last login',
-            key: 'last_login',
-            dataIndex: 'last_login',
-            render: (last_login) => (
+            title: 'Creation date',
+            key: 'created_at',
+            dataIndex: 'created_at',
+            render: (created_at) => (
                 <div className="created-column">
-                    <p>{parsingDate(last_login)}</p>
+                    <p>{parsingDate(created_at)}</p>
                 </div>
             )
         },

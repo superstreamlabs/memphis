@@ -13,45 +13,44 @@
 import './style.scss';
 
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_REST_GW_HOST, LOCAL_STORAGE_REST_GW_PORT } from '../../../../const/localStorageConsts';
+import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_REST_GW_HOST, LOCAL_STORAGE_REST_GW_PORT } from 'const/localStorageConsts';
 import { Space, Popover } from 'antd';
 import { Virtuoso } from 'react-virtuoso';
 import { FiPlayCircle } from 'react-icons/fi';
-import { ReactComponent as WaitingProducerIcon } from '../../../../assets/images/waitingProducer.svg';
-import { ReactComponent as WaitingConsumerIcon } from '../../../../assets/images/waitingConsumer.svg';
-import { ReactComponent as PlayVideoIcon } from '../../../../assets/images/playVideoIcon.svg';
-import { ReactComponent as PurplePlus } from '../../../../assets/images/purplePlus.svg';
-import { ReactComponent as ProducerIcon } from '../../../../assets/images/producerIcon.svg';
-import { ReactComponent as ConnectIcon } from '../../../../assets/images/connectIcon.svg';
+import { ReactComponent as WaitingProducerIcon } from 'assets/images/waitingProducer.svg';
+import { ReactComponent as WaitingConsumerIcon } from 'assets/images/waitingConsumer.svg';
+import { ReactComponent as PlayVideoIcon } from 'assets/images/playVideoIcon.svg';
+import { ReactComponent as PurplePlus } from 'assets/images/purplePlus.svg';
+import { ReactComponent as ProducerIcon } from 'assets/images/producerIcon.svg';
+import { ReactComponent as ConnectIcon } from 'assets/images/connectIcon.svg';
 import { IoPlayCircleOutline, IoRemoveCircleOutline, IoPause, IoWarning } from 'react-icons/io5';
 import { HiDotsVertical } from 'react-icons/hi';
 import { MdError } from 'react-icons/md';
 import { IoMdInformationCircle } from 'react-icons/io';
-import OverflowTip from '../../../../components/tooltip/overflowtip';
-import { ReactComponent as UnsupportedIcon } from '../../../../assets/images/unsupported.svg';
-import StatusIndication from '../../../../components/indication';
-import SdkExample from '../../../../components/sdkExample';
+import OverflowTip from 'components/tooltip/overflowtip';
+import { ReactComponent as UnsupportedIcon } from 'assets/images/unsupported.svg';
+import StatusIndication from 'components/indication';
+import SdkExample from 'components/sdkExample';
 import CustomCollapse from '../components/customCollapse';
-import Button from '../../../../components/button';
-import Modal from '../../../../components/modal';
-import GenerateTokenModal from '../../../stationOverview/components/generateTokenModal';
-import { StationStoreContext } from '../..';
-import ProduceMessages from '../../../../components/produceMessages';
-import ConnectorModal from '../../../../components/connectorModal';
-import ConnectorError from '../../../../components/connectorError';
-import { ReactComponent as ErrorModalIcon } from '../../../../assets/images/errorModal.svg';
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../services/http';
-import Spinner from '../../../../components/spinner';
-import TooltipComponent from '../../../../components/tooltip/tooltip';
-import { isCloud } from '../../../../services/valueConvertor';
-import { sendTrace } from '../../../../services/genericServices';
+import Button from 'components/button';
+import Modal from 'components/modal';
+import GenerateTokenModal from 'domain/stationOverview/components/generateTokenModal';
+import { StationStoreContext } from 'domain/stationOverview';
+import ProduceMessages from 'components/produceMessages';
+import ConnectorModal from 'components/connectorModal';
+import ConnectorError from 'components/connectorError';
+import { ReactComponent as ErrorModalIcon } from 'assets/images/errorModal.svg';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import Spinner from 'components/spinner';
+import TooltipComponent from 'components/tooltip/tooltip';
+import { isCloud } from 'services/valueConvertor';
+import { sendTrace } from 'services/genericServices';
 import { BiLogoGoLang, BiLogoPython } from 'react-icons/bi';
 import { SiDotnet } from 'react-icons/si';
 import { DiJavascript1 } from 'react-icons/di';
-import ConnectorInfo from '../../../../components/connectorInfo';
-import RunBenchmarkModal from '../../../../components/runBenchmarkModal';
-import { connectorTypesSource, connectorTypesSink } from '../../../../connectors';
+import ConnectorInfo from 'components/connectorInfo';
+import RunBenchmarkModal from 'components/runBenchmarkModal';
 
 const overlayStylesConnectors = {
     borderRadius: '8px',
@@ -103,21 +102,21 @@ const ProduceConsumList = ({ producer }) => {
     const [loading, setLoader] = useState(false);
     const producerItemsList = [
         {
-            action: 'Produce synthetic data',
+            action: 'Produce Synthetic Data',
             onClick: () => {
                 setOpenProduceMessages(true);
                 setOpenProducerPopover(false);
             }
         },
         {
-            action: 'Develop a producer',
+            action: 'Develop a Producer',
             onClick: () => {
                 setOpenCreateProducer(true);
                 setOpenProducerPopover(false);
             }
         },
         {
-            action: 'Produce using REST',
+            action: 'Produce using REST protocol',
             onClick: () => {
                 setGenerateModal(true);
                 setOpenProducerPopover(false);
@@ -131,7 +130,7 @@ const ProduceConsumList = ({ producer }) => {
             }
         },
         {
-            action: 'Add a source',
+            action: 'Add a Source',
             onClick: () => {
                 setOpenConnectorModal(true);
                 setOpenProducerPopover(false);
@@ -141,14 +140,14 @@ const ProduceConsumList = ({ producer }) => {
 
     const consumeItemsList = [
         {
-            action: 'Develop a consumer',
+            action: 'Develop a Consumer',
             onClick: () => {
                 setOpenCreateConsumer(true);
                 setOpenProducerPopover(false);
             }
         },
         {
-            action: 'Consume using REST',
+            action: 'Consume using REST protocol',
             onClick: () => {
                 setGenerateModal(true);
                 setOpenProducerPopover(false);
@@ -162,7 +161,7 @@ const ProduceConsumList = ({ producer }) => {
             }
         },
         {
-            action: 'Add a sink',
+            action: 'Add a Sink',
             onClick: () => {
                 setOpenConnectorModal(true);
                 setOpenProducerPopover(false);
@@ -401,13 +400,6 @@ const ProduceConsumList = ({ producer }) => {
         return <div style={{ fontSize: '17px', display: 'flex', alignItems: 'center' }}>{iconComponent}</div>;
     }
 
-    const getIconByConnector = (item, connectorType) => {
-        let connector;
-        if (connectorType === 'source') connector = connectorTypesSource.find((connector) => connector?.name?.toLowerCase() === item?.type);
-        else connector = connectorTypesSink.find((connector) => connector?.name?.toLowerCase() === item?.type);
-        return <img src={connector?.icon} height="16px" width="16px" alt={item?.type} /> || <ConnectIcon />;
-    };
-
     return (
         <div className="station-observabilty-side">
             <div className="pubSub-list-container">
@@ -494,7 +486,9 @@ const ProduceConsumList = ({ producer }) => {
                                         <div className={returnClassName(index, row?.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'producer')}>
                                             <span className="connector-name">
                                                 {row?.connector_connection_id ? (
-                                                    <TooltipComponent text="connector">{getIconByConnector(row, 'source')}</TooltipComponent>
+                                                    <TooltipComponent text="connector">
+                                                        <ConnectIcon />
+                                                    </TooltipComponent>
                                                 ) : (
                                                     <TooltipComponent text="producer">{getIconByLang(row)}</TooltipComponent>
                                                 )}
@@ -592,7 +586,9 @@ const ProduceConsumList = ({ producer }) => {
                                         <div className={returnClassName(index, row?.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'consumer')}>
                                             <span className="connector-name">
                                                 {row?.connector_connection_id ? (
-                                                    <TooltipComponent text="connector">{getIconByConnector(row, 'sink')}</TooltipComponent>
+                                                    <TooltipComponent text="connector">
+                                                        <ConnectIcon />
+                                                    </TooltipComponent>
                                                 ) : (
                                                     <TooltipComponent text="consumer">{getIconByLang(row)}</TooltipComponent>
                                                 )}
@@ -764,7 +760,8 @@ const ProduceConsumList = ({ producer }) => {
                         <div className="header-img-container">
                             <PlayVideoIcon className="headerImage" alt="stationImg" />
                         </div>
-                        <p>Produce synthetic data</p>
+                        <p>Produce a message</p>
+                        <label>Produce a message through the Console.</label>
                     </div>
                 }
                 className={'modal-wrapper produce-modal'}

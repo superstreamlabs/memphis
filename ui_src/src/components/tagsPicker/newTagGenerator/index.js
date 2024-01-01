@@ -12,14 +12,14 @@
 
 import './style.scss';
 import React, { useEffect, useState } from 'react';
-import { Form, message, Divider } from 'antd';
-import Button from '../../button';
-import Input from '../../Input';
-import { httpRequest } from '../../../services/http';
-import { ApiEndpoints } from '../../../const/apiEndpoints';
-import ColorPicker from '../../colorPicker';
-import { ColorPalette } from '../../../const/globalConst';
-import { showMessages } from '../../../services/genericServices';
+import { Form, Divider } from 'antd';
+import Button from 'components/button';
+import Input from 'components/Input';
+import { httpRequest } from 'services/http';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import ColorPicker from 'components/colorPicker';
+import { ColorPalette } from 'const/globalConst';
+import { showMessages } from 'services/genericServices';
 
 const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => {
     const [creationForm] = Form.useForm();

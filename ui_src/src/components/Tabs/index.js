@@ -19,10 +19,10 @@ import './style.scss';
 import { Tabs } from 'antd';
 import React from 'react';
 
-import TooltipComponent from '../tooltip/tooltip';
-import CheckboxComponent from '../checkBox';
+import TooltipComponent from 'components/tooltip/tooltip';
+import CheckboxComponent from 'components/checkBox';
 import { PriorityHighRounded } from '@material-ui/icons';
-import CloudOnly from '../cloudOnly';
+import CloudOnly from 'components/cloudOnly';
 
 const CustomTabs = ({ tabs, onChange, value, disabled, length, tooltip, icon = false, checkbox = false, defaultActiveKey, tabsCounter, icons }) => {
     return (

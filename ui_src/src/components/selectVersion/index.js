@@ -16,8 +16,8 @@ import { Select } from 'antd';
 import React from 'react';
 
 import { ArrowDropDownRounded, FiberManualRecord } from '@material-ui/icons';
-import ActiveBadge from '../activeBadge';
-import { parsingDateWithotTime } from '../../services/valueConvertor';
+import ActiveBadge from 'components/activeBadge';
+import { parsingDateWithotTime } from 'services/valueConvertor';
 
 const { Option } = Select;
 
