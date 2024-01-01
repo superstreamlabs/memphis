@@ -17,6 +17,7 @@ import { AccountCircleRounded } from '@material-ui/icons';
 
 import { LOCAL_STORAGE_USER_PASS_BASED_AUTH, LOCAL_STORAGE_FULL_NAME, USER_IMAGE } from 'const/localStorageConsts';
 import { isCloud, parsingDate } from 'services/valueConvertor';
+import { ReactComponent as AddUserIcon } from 'assets/images/addUserIcon.svg';
 import { ReactComponent as DeleteWrapperIcon } from 'assets/images/deleteWrapperIcon.svg';
 import { ReactComponent as MailIcon } from 'assets/images/mailIcon.svg';
 import { ReactComponent as DeleteIcon } from 'assets/images/deleteIcon.svg';
@@ -302,7 +303,7 @@ function Users() {
             render: (text, record) => (
                 <div className="user-name">
                     <div className="user-avatar">
-                        <img src={getAvatarSrc(record.avatar_id)} width={25} height={25} alt="avatar" />
+                        <img src={getAvatarSrc(record.avatar_id, record?.full_name)} width={25} height={25} alt="avatar" />
                     </div>
                     <p>{text}</p>
                 </div>
@@ -359,12 +360,12 @@ function Users() {
             )
         },
         {
-            title: 'Creation date',
-            key: 'created_at',
-            dataIndex: 'created_at',
-            render: (created_at) => (
+            title: 'Last login',
+            key: 'last_login',
+            dataIndex: 'last_login',
+            render: (last_login) => (
                 <div className="created-column">
-                    <p>{parsingDate(created_at)}</p>
+                    <p>{parsingDate(last_login)}</p>
                 </div>
             )
         },
