@@ -83,14 +83,26 @@
         font-weight: 600;
         line-height: normal;
         display: flex;
-        gap: 6px;
-        align-items: center;
-        padding-left: 7px;
-        span {
+        flex-direction: column;
+
+        .function-name {
+            display: flex;
+            align-items: center;
+            gap: 6px;
             width: 95px;
+        }
+        span {
             text-overflow: ellipsis;
             overflow: hidden;
             white-space: nowrap;
+        }
+        .processing {
+            display: flex;
+            justify-content: center;
+            text-align: center;
+            color: #737373 !important;
+            font-size: 10px;
+            margin-top: 5px;
         }
         .deactivated {
             color: #737373 !important;
