@@ -2009,7 +2009,7 @@ func DeleteStationsByNames(stationNames []string, tenantName string) error {
 	if tenantName != conf.GlobalAccount {
 		tenantName = strings.ToLower(tenantName)
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, stationNames, tenantName)
+	_, err = conn.Conn().Exec(ctx, stmt.Name, stationNames, tenantName)
 	if err != nil {
 		return err
 	}
