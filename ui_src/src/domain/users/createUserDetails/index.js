@@ -25,9 +25,9 @@ import { useGetAllowedActions } from 'services/genericServices';
 import { ApiEndpoints } from 'const/apiEndpoints';
 import SelectCheckBox from 'components/selectCheckBox';
 import RadioButton from 'components/radioButton';
+import LearnMore from 'components/learnMore';
 import { generator } from 'services/generator';
 import { ReactComponent as RefreshIcon } from 'assets/images/refresh.svg';
-
 import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from 'const/localStorageConsts';
 import { isCloud, showUpgradePlan } from 'services/valueConvertor';
 import { Context } from 'hooks/store';
@@ -54,7 +54,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
             id: 2,
             value: 'application',
             label: 'Client',
-            desc: 'For client-based authentication with the broker',
+            desc: 'For clients and applications',
             disabled: false
         }
     ];
@@ -203,7 +203,9 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                                         }
                                     ]}
                                 >
-                                    <p className="field-title">Email*</p>
+                                    <p className="field-title">
+                                        Email <label className="required">*</label>
+                                    </p>
                                     <Input
                                         placeholder="Type email"
                                         type="text"
@@ -237,7 +239,9 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                                         }
                                     ]}
                                 >
-                                    <p className="field-title">Full name*</p>
+                                    <p className="field-title">
+                                        Full name<label className="required">*</label>
+                                    </p>
                                     <Input
                                         placeholder="Type full name"
                                         type="text"
@@ -323,7 +327,9 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                                         }
                                     ]}
                                 >
-                                    <p className="field-title">Username*</p>
+                                    <p className="field-title">
+                                        Username<label className="required">*</label>
+                                    </p>
                                     <Input
                                         placeholder={'Type username'}
                                         type="text"
@@ -359,10 +365,11 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                                     ]}
                                 >
                                     <div className="password-title">
-                                        <p className="field-title">Set password or generate one*</p>
+                                        <p className="field-title">
+                                            Set a password<label className="required">*</label>
+                                        </p>
                                         <span className="generate-btn" onClick={generateNewPassword}>
                                             <RefreshIcon width={14} />
-                                            <p className="generate-password-button field-title">Generate</p>
                                         </span>
                                     </div>
                                     <Input
@@ -479,7 +486,9 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                                         }
                                     ]}
                                 >
-                                    <p className="field-title">Username*</p>
+                                    <p className="field-title">
+                                        Username<label className="required">*</label>
+                                    </p>
                                     <Input
                                         placeholder={'Type username'}
                                         type="text"
@@ -516,10 +525,11 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                                         ]}
                                     >
                                         <div className="password-title">
-                                            <p className="field-title">Set password or generate one*</p>
+                                            <p className="field-title">
+                                                Set a password<label className="required">*</label>
+                                            </p>
                                             <span className="generate-btn" onClick={generateNewPassword}>
                                                 <RefreshIcon width={14} />
-                                                <p className="generate-password-button field-title">Generate</p>
                                             </span>
                                         </div>
                                         <Input
@@ -633,14 +643,21 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                     {userType === 'application' && (
                         <div className="form-section">
                             <span className="fields-title-container">
-                                <p className="fields-title">Can read from (R)</p>
+                                <span>
+                                    <p className="fields-title">Can read from (R)</p>
+                                    <LearnMore url="https://docs.memphis.dev/memphis/memphis-broker/concepts/security#role-based-access-control-rbac" />
+                                </span>
                                 <RadioButton
                                     className="radio-button"
                                     options={rbacTypeOptions}
                                     radioValue={rbacTypeRead}
                                     fontFamily="InterSemiBold"
                                     style={{ marginRight: '20px', content: '' }}
-                                    onChange={(e) => setRbacTypeRead(e.target.value)}
+                                    onChange={(e) => {
+                                        setRbacTypeRead(e.target.value);
+                                        updateFormState('allow_read_permissions', []);
+                                        creationForm.setFieldsValue({ allow_read_permissions: [] });
+                                    }}
                                     disabled={isDisabled}
                                 />
                             </span>
@@ -693,14 +710,21 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                     {userType === 'application' && (
                         <div className="form-section">
                             <span className="fields-title-container">
-                                <p className="fields-title">Can write to (W)</p>
+                                <span>
+                                    <p className="fields-title">Can write to (W)</p>
+                                    <LearnMore url="https://docs.memphis.dev/memphis/memphis-broker/concepts/security#role-based-access-control-rbac" />
+                                </span>
                                 <RadioButton
                                     className="radio-button"
                                     options={rbacTypeOptions}
                                     radioValue={rbacTypeWrite}
                                     fontFamily="InterSemiBold"
                                     style={{ marginRight: '20px', content: '' }}
-                                    onChange={(e) => setRbacTypeWrite(e.target.value)}
+                                    onChange={(e) => {
+                                        setRbacTypeWrite(e.target.value);
+                                        updateFormState('allow_write_permissions', []);
+                                        creationForm.setFieldsValue({ allow_write_permissions: [] });
+                                    }}
                                     disabled={isDisabled}
                                 />
                             </span>
