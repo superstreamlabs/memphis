@@ -124,7 +124,7 @@ const ProduceConsumList = ({ producer }) => {
             }
         },
         {
-            action: 'Run benchmark',
+            action: 'Run a benchmark',
             onClick: () => {
                 setOpenRunBenchmark(true);
                 setOpenProducerPopover(false);
@@ -155,7 +155,7 @@ const ProduceConsumList = ({ producer }) => {
             }
         },
         {
-            action: 'Run benchmark',
+            action: 'Run a benchmark',
             onClick: () => {
                 setOpenRunBenchmark(true);
                 setOpenProducerPopover(false);

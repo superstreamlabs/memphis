@@ -54,6 +54,11 @@
         align-items: center;
         width: 100%;
         margin-bottom: 10px;
+        span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
         .coming-soon {
             color: #f4f4f4;
             background-color: var(--purple);
@@ -75,6 +80,9 @@
         font-family: 'Inter';
         font-weight: 400;
         margin-top: 5px;
+        .required {
+            color: red;
+        }
     }
     .field {
         margin-bottom: 10px;

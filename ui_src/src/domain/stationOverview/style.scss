@@ -1,6 +1,6 @@
 .station-overview-container {
     width: calc(100% - var(--main-container-sidebar-width));
-    transition: .3s ease-in-out;
+    transition: 0.3s ease-in-out;
     position: absolute;
     padding: 1vw;
     overflow: auto;
@@ -12,7 +12,8 @@
         min-width: 1370px;
     }
     .station-observability {
-        min-width: 1280px;
+        min-width: 900px;
+        width: calc(100% - 2vw - var(--main-container-sidebar-width));
         height: 100%;
         display: flex;
         flex-direction: column;

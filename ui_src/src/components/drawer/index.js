@@ -11,8 +11,8 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import './style.scss';
-import React from "react";
-import { Drawer } from "antd";
+import React from 'react';
+import { Drawer } from 'antd';
 
 /**
  * MSDrawer Component
@@ -37,43 +37,27 @@ import { Drawer } from "antd";
  * @returns {ReactNode} - A React component representing the custom drawer.
  */
 
-const MSDrawer =
-    ({
-         title,
-         placement,
-         size,
-         width,
-         height,
-         className,
-         onClose,
-         destroyOnClose,
-         open,
-         maskStyle,
-         headerStyle,
-         bodyStyle,
-         closeIcon,
-         children
-     }) => {
-
-        return (
-            <Drawer
-                title={title}
-                placement={placement}
-                size={size}
-                width={width}
-                height={height}
-                className={className}
-                onClose={onClose}
-                destroyOnClose={destroyOnClose}
-                open={open}
-                maskStyle={maskStyle}
-                headerStyle={headerStyle}
-                bodyStyle={bodyStyle}
-                closeIcon={closeIcon}
-            >
-                {children}
-            </Drawer>
-        );
-    };
+const MSDrawer = ({ title, placement, size, width, height, className, onClose, destroyOnClose, open, maskStyle, headerStyle, bodyStyle, closeIcon, children, mask }) => {
+    return (
+        <Drawer
+            title={title}
+            placement={placement}
+            size={size}
+            width={width}
+            height={height}
+            className={className}
+            onClose={onClose}
+            destroyOnClose={destroyOnClose}
+            open={open}
+            maskStyle={maskStyle}
+            headerStyle={headerStyle}
+            bodyStyle={bodyStyle}
+            closeIcon={closeIcon}
+            mask={mask}
+        >
+            {children}
+        </Drawer>
+    );
+};
 
 export default MSDrawer;

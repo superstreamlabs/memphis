@@ -5,7 +5,7 @@ export const memphis = {
             display: 'Connector name',
             type: 'string',
             required: true,
-            description: 'Note that the sink connector name is also consumer group name'
+            description: 'Note that the name of the sink connector is also used as the name of the consumer group'
         },
         {
             name: 'route_strategy',
@@ -29,7 +29,8 @@ export const memphis = {
                     display: 'Header Name',
                     type: 'string',
                     required: true,
-                    description: 'The name of the header in Memphis message, to take the station name from. for multiple stations use comma separated values ex. station1,station2'
+                    description:
+                        'The header name in the Memphis message for extracting the station name, with multiple stations indicated by comma-separated values (e.g., station1, station2)'
                 }
             ]
         },
@@ -51,14 +52,14 @@ export const memphis = {
                     description: 'The number of partitions in the station'
                 },
                 {
-                    name : 'retention_policy',
-                    display : 'Retention Policy',
-                    type : 'select',
-                    options : ['Time', 'Size', 'Messages', 'Ack'],
-                    required : true,
-                    description : 'choose retention policy',
-                    children : true,
-                    Time : [
+                    name: 'retention_policy',
+                    display: 'Retention Policy',
+                    type: 'select',
+                    options: ['Time', 'Size', 'Messages', 'Ack'],
+                    required: true,
+                    description: 'choose retention policy',
+                    children: true,
+                    Time: [
                         {
                             name: 'retention_value',
                             display: 'Value',
@@ -68,7 +69,7 @@ export const memphis = {
                             placeholder: 0
                         }
                     ],
-                    Size : [
+                    Size: [
                         {
                             name: 'retention_value',
                             display: 'Value',
@@ -78,7 +79,7 @@ export const memphis = {
                             placeholder: 0
                         }
                     ],
-                    Messages : [
+                    Messages: [
                         {
                             name: 'retention_value',
                             display: 'Value',
@@ -89,7 +90,7 @@ export const memphis = {
                         }
                     ],
                     Ack: []
-                }                
+                }
             ]
         }
     ]

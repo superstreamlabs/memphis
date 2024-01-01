@@ -28,7 +28,7 @@ import Editor, { loader } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import MultiCollapse from '../multiCollapse';
 import { StationStoreContext } from 'domain/stationOverview';
-import Drawer from "components/drawer";
+import Drawer from 'components/drawer';
 
 loader.init();
 loader.config({ monaco });
@@ -39,7 +39,7 @@ const MessageDetails = ({ open, isDls, unselect, isFailedSchemaMessage = false, 
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [messageDetails, setMessageDetails] = useState({});
     const [loadMessageData, setLoadMessageData] = useState(false);
-    const [payloadType, setPayloadType] = useState('string');
+    const [payloadType, setPayloadType] = useState('json');
 
     const history = useHistory();
 
@@ -221,7 +221,7 @@ const MessageDetails = ({ open, isDls, unselect, isFailedSchemaMessage = false, 
                 {payload && (
                     <>
                         <SegmentButton
-                            value={payloadType || 'string'}
+                            value={payloadType || 'json'}
                             options={['string', 'bytes', 'json', 'protobuf']}
                             onChange={(e) => {
                                 setPayloadType(e);
