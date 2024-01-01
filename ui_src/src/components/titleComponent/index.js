@@ -1,8 +1,8 @@
 import React from 'react';
 import './style.scss';
 import Lottie from 'lottie-react';
-import CloudOnly from '../cloudOnly';
-import { isCloud } from '../../services/valueConvertor';
+import CloudOnly from 'components/cloudOnly';
+import { isCloud } from 'services/valueConvertor';
 
 const TitleComponent = (props) => {
     const { headerTitle, spanHeader, typeTitle = 'header', headerDescription, style, img, finish, required, learnMore = false, link, cloudOnly = false } = props;

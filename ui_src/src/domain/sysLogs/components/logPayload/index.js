@@ -14,9 +14,9 @@ import './style.scss';
 
 import React from 'react';
 
-import { parsingDate } from '../../../../services/valueConvertor';
-import { ReactComponent as SourceIcon } from '../../../../assets/images/sourceIcon.svg';
-import LogBadge from '../../../../components/logBadge';
+import { parsingDate } from 'services/valueConvertor';
+import { ReactComponent as SourceIcon } from 'assets/images/sourceIcon.svg';
+import LogBadge from 'components/logBadge';
 
 const LogPayload = ({ value, onSelected, selectedRow }) => {
     return (

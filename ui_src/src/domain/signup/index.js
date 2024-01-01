@@ -25,21 +25,21 @@ import {
     LOCAL_STORAGE_CONNECTION_TOKEN,
     LOCAL_STORAGE_TOKEN,
     LOCAL_STORAGE_USER_PASS_BASED_AUTH
-} from '../../const/localStorageConsts';
-import { ReactComponent as FullLogo } from '../../assets/images/fullLogo.svg';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { ReactComponent as SignupIcon } from '../../assets/images/signup.svg';
-import { httpRequest } from '../../services/http';
-import Switcher from '../../components/switcher';
-import AuthService from '../../services/auth';
-import Button from '../../components/button';
-import Loader from '../../components/loader';
-import { Context } from '../../hooks/store';
-import Input from '../../components/Input';
-import Tooltip from '../../components/tooltip/tooltip';
-import pathDomains from '../../router';
+} from 'const/localStorageConsts';
+import { ReactComponent as FullLogo } from 'assets/images/fullLogo.svg';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { ReactComponent as SignupIcon } from 'assets/images/signup.svg';
+import { httpRequest } from 'services/http';
+import Switcher from 'components/switcher';
+import AuthService from 'services/auth';
+import Button from 'components/button';
+import Loader from 'components/loader';
+import { Context } from 'hooks/store';
+import Input from 'components/Input';
+import Tooltip from 'components/tooltip/tooltip';
+import pathDomains from 'router';
 import { connect } from 'nats.ws';
-import { WS_PREFIX } from '../../config';
+import { WS_PREFIX } from 'config';
 
 const Signup = (props) => {
     const [state, dispatch] = useContext(Context);

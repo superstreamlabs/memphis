@@ -14,7 +14,7 @@ import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
 
-import { Context } from '../../hooks/store';
+import { Context } from 'hooks/store';
 import SchemaList from './components/schemaList';
 import CreateSchema from './components/createSchema';
 

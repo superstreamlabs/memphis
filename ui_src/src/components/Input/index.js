@@ -15,7 +15,7 @@ import './style.scss';
 import { Input as InputDesign } from 'antd';
 import React from 'react';
 
-import { getBorderRadius, getFontColor, getBackgroundColor, getBorderColor, getBoxShadows } from '../../utils/styleTemplates';
+import { getBorderRadius, getFontColor, getBackgroundColor, getBorderColor, getBoxShadows } from 'utils/styleTemplates';
 
 const Input = (props) => {
     const {

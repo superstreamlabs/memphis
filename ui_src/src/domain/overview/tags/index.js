@@ -13,10 +13,10 @@
 import './style.scss';
 
 import React, { useContext } from 'react';
-import Tag from '../../../components/tag';
+import Tag from 'components/tag';
 import { Divider } from 'antd';
-import { Context } from '../../../hooks/store';
-import { ReactComponent as NoTagsFoundIcon } from '../../../assets/images/noTagsFound.svg';
+import { Context } from 'hooks/store';
+import { ReactComponent as NoTagsFoundIcon } from 'assets/images/noTagsFound.svg';
 
 const Tags = () => {
     const [state, dispatch] = useContext(Context);

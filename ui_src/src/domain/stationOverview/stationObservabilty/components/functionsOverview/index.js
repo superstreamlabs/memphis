@@ -13,25 +13,24 @@
 import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
-import { ApiEndpoints } from '../../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../../services/http';
-import { Context } from '../../../../../hooks/store';
-import { StationStoreContext } from '../../../';
-import { ReactComponent as AddFunctionIcon } from '../../../../../assets/images/addFunction.svg';
-import { ReactComponent as PlusIcon } from '../../../../../assets/images/plusIcon.svg';
-import { ReactComponent as ProcessedIcon } from '../../../../../assets/images/processIcon.svg';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import { Context } from 'hooks/store';
+import { StationStoreContext } from 'domain/stationOverview';
+import { ReactComponent as AddFunctionIcon } from 'assets/images/addFunction.svg';
+import { ReactComponent as PlusIcon } from 'assets/images/plusIcon.svg';
+import { ReactComponent as ProcessedIcon } from 'assets/images/processIcon.svg';
 import { IoClose } from 'react-icons/io5';
-import { Drawer } from 'antd';
-import dataPassLineLottie from '../../../../../assets/lotties/dataPassLine.json';
-import dataPassLineEmptyLottie from '../../../../../assets/lotties/dataPassLineEmpty.json';
+import Drawer from "components/drawer";
+import dataPassLineLottie from 'assets/lotties/dataPassLine.json';
+import dataPassLineEmptyLottie from 'assets/lotties/dataPassLineEmpty.json';
 import Lottie from 'lottie-react';
 import FunctionCard from '../functionCard';
 import FunctionsModal from '../functionsModal';
 import FunctionData from '../functionData';
-import FunctionDetails from '../../../../functions/components/functionDetails';
-import OverflowTip from '../../../../../components/tooltip/overflowtip';
+import FunctionDetails from 'domain/functions/components/functionDetails';
 import { StringCodec, JSONCodec } from 'nats.ws';
-import Spinner from '../../../../../components/spinner';
+import Spinner from 'components/spinner';
 
 let sub;
 

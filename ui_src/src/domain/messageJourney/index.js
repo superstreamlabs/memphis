@@ -16,18 +16,18 @@ import React, { useEffect, useContext, useState } from 'react';
 import { StringCodec, JSONCodec } from 'nats.ws';
 import { useHistory } from 'react-router-dom';
 
-import { convertBytes, extractValueFromURL, parsingDate } from '../../services/valueConvertor';
+import { convertBytes, extractValueFromURL, parsingDate } from 'services/valueConvertor';
 import PoisonMessage from './components/poisonMessage';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { ReactComponent as BackIcon } from '../../assets/images/backIcon.svg';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { ReactComponent as BackIcon } from 'assets/images/backIcon.svg';
 import ConsumerGroup from './components/consumerGroup';
 import { Canvas, Node, Edge, Label } from 'reaflow';
-import { httpRequest } from '../../services/http';
+import { httpRequest } from 'services/http';
 import Producer from './components/producer';
-import Loader from '../../components/loader';
-import { Context } from '../../hooks/store';
-import pathDomains from '../../router';
-import { showMessages } from '../../services/genericServices';
+import Loader from 'components/loader';
+import { Context } from 'hooks/store';
+import pathDomains from 'router';
+import { showMessages } from 'services/genericServices';
 
 const MessageJourney = () => {
     const [state, dispatch] = useContext(Context);

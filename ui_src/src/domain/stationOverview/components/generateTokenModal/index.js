@@ -14,18 +14,18 @@ import './style.scss';
 
 import React, { useEffect, useState, useRef } from 'react';
 
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import CustomSelect from '../../../../components/customSelect';
-import { ReactComponent as RefreshIcon } from '../../../../assets/images/refresh.svg';
-import { httpRequest } from '../../../../services/http';
-import Button from '../../../../components/button';
-import Input from '../../../../components/Input';
-import Copy from '../../../../components/copy';
-import CreateUserDetails from '../../../users/createUserDetails';
-import { Drawer } from 'antd';
-import { LOCAL_STORAGE_ACCOUNT_ID, LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../../../const/localStorageConsts';
-import { isCloud } from '../../../../services/valueConvertor';
-import { sendTrace } from '../../../../services/genericServices';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import CustomSelect from 'components/customSelect';
+import { ReactComponent as RefreshIcon } from 'assets/images/refresh.svg';
+import { httpRequest } from 'services/http';
+import Button from 'components/button';
+import Input from 'components/Input';
+import Copy from 'components/copy';
+import CreateUserDetails from 'domain/users/createUserDetails';
+import Drawer from "components/drawer";
+import { LOCAL_STORAGE_ACCOUNT_ID, LOCAL_STORAGE_USER_PASS_BASED_AUTH } from 'const/localStorageConsts';
+import { isCloud } from 'services/valueConvertor';
+import { sendTrace } from 'services/genericServices';
 
 const GenerateTokenModal = ({ host, close, returnToken, restProducer, stationName }) => {
     const [isLoading, setIsLoading] = useState(true);

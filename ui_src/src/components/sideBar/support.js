@@ -14,18 +14,18 @@ import './style.scss';
 
 import React, { useState } from 'react';
 
-import { ReactComponent as SupportColorIcon } from '../../assets/images/supportIconColor.svg';
-import { ReactComponent as DocumentIcon } from '../../assets/images/documentIcon.svg';
-import { ReactComponent as MailsendIcon } from '../../assets/images/mailsendIcon.svg';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { httpRequest } from '../../services/http';
-import SelectComponent from '../select';
-import { DOC_URL } from '../../config';
-import EmailLink from '../emailLink';
-import Button from '../button';
-import Input from '../Input';
+import { ReactComponent as SupportColorIcon } from 'assets/images/supportIconColor.svg';
+import { ReactComponent as DocumentIcon } from 'assets/images/documentIcon.svg';
+import { ReactComponent as MailsendIcon } from 'assets/images/mailsendIcon.svg';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import SelectComponent from 'components/select';
+import { DOC_URL } from 'config';
+import EmailLink from 'components/emailLink';
+import Button from 'components/button';
+import Input from 'components/Input';
 import { message } from 'antd';
-import { showMessages } from '../../services/genericServices';
+import { showMessages } from 'services/genericServices';
 
 const Support = ({ closeModal }) => {
     const [severity, setSeverity] = useState('Critical (Cannot produce or consume data)');

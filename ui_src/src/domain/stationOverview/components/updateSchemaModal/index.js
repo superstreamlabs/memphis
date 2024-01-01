@@ -14,19 +14,19 @@ import './style.scss';
 
 import React, { useEffect, useState } from 'react';
 
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import { ReactComponent as TypeIcon } from '../../../../assets/images/typeIcon.svg';
-import { ReactComponent as CreatedByIcon } from '../../../../assets/images/createdByIcon.svg';
-import { ReactComponent as SchemaItemIcon } from '../../../../assets/images/schemaItemIcon.svg';
-import { httpRequest } from '../../../../services/http';
-import { useGetAllowedActions } from '../../../../services/genericServices';
-import { isCloud } from '../../../../services/valueConvertor';
-import Button from '../../../../components/button';
-import Copy from '../../../../components/copy';
-import SelectComponent from '../../../../components/select';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { ReactComponent as TypeIcon } from 'assets/images/typeIcon.svg';
+import { ReactComponent as CreatedByIcon } from 'assets/images/createdByIcon.svg';
+import { ReactComponent as SchemaItemIcon } from 'assets/images/schemaItemIcon.svg';
+import { httpRequest } from 'services/http';
+import { useGetAllowedActions } from 'services/genericServices';
+import { isCloud } from 'services/valueConvertor';
+import Button from 'components/button';
+import Copy from 'components/copy';
+import SelectComponent from 'components/select';
 import Editor, { DiffEditor, loader } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
-import SegmentButton from '../../../../components/segmentButton';
+import SegmentButton from 'components/segmentButton';
 
 loader.init();
 loader.config({ monaco });

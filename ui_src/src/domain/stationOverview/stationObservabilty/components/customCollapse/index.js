@@ -14,15 +14,15 @@ import './style.scss';
 import React, { useEffect, useState } from 'react';
 import { Collapse } from 'antd';
 
-import { ReactComponent as CollapseArrowIcon } from '../../../../../assets/images/collapseArrow.svg';
-import { ReactComponent as WarningCircleIcon } from '../../../../../assets/images/warningCircle.svg';
-import OverflowTip from '../../../../../components/tooltip/overflowtip';
-import Copy from '../../../../../components/copy';
-import { messageParser } from '../../../../../services/valueConvertor';
-import SegmentButton from '../../../../../components/segmentButton';
-import TooltipComponent from '../../../../../components/tooltip/tooltip';
-import { LOCAL_STORAGE_MSG_PARSER } from '../../../../../const/localStorageConsts';
-import ConsumerWithStatus from '../../../../../components/consumerWithStatus';
+import { ReactComponent as CollapseArrowIcon } from 'assets/images/collapseArrow.svg';
+import { ReactComponent as WarningCircleIcon } from 'assets/images/warningCircle.svg';
+import OverflowTip from 'components/tooltip/overflowtip';
+import Copy from 'components/copy';
+import { messageParser } from 'services/valueConvertor';
+import SegmentButton from 'components/segmentButton';
+import TooltipComponent from 'components/tooltip/tooltip';
+import { LOCAL_STORAGE_MSG_PARSER } from 'const/localStorageConsts';
+import ConsumerWithStatus from 'components/consumerWithStatus';
 
 const { Panel } = Collapse;
 

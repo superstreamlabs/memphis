@@ -14,8 +14,8 @@ import './style.scss';
 
 import { Radio } from 'antd';
 import React from 'react';
-import TooltipComponent from '../tooltip/tooltip';
-import CloudOnly from '../cloudOnly';
+import TooltipComponent from 'components/tooltip/tooltip';
+import CloudOnly from 'components/cloudOnly';
 
 const RadioButton = ({ options = [], radioValue, onChange, optionType, disabled, vertical, fontFamily, radioWrapper, labelType, height, radioStyle }) => {
     const handleChange = (e) => {

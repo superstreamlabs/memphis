@@ -13,13 +13,13 @@
 import './style.scss';
 
 import React, { useEffect, useState } from 'react';
-import Modal from '../modal';
+import Modal from 'components/modal';
 import { IoRocket } from 'react-icons/io5';
-import Copy from '../copy';
-import CustomTabs from '../Tabs';
-import { githubUrls } from '../../const/globalConst';
+import Copy from 'components/copy';
+import CustomTabs from 'components/Tabs';
+import { githubUrls } from 'const/globalConst';
 import { SiLinux, SiApple, SiWindows11 } from 'react-icons/si';
-import { LOCAL_STORAGE_BROKER_HOST, LOCAL_STORAGE_ENV, LOCAL_STORAGE_ACCOUNT_ID } from '../../const/localStorageConsts';
+import { LOCAL_STORAGE_BROKER_HOST, LOCAL_STORAGE_ENV, LOCAL_STORAGE_ACCOUNT_ID } from 'const/localStorageConsts';
 
 let write =
     'mem bench producer --message-size 128 --count 1000 --concurrency 1 --host <host> --account-id <account-id(not needed for open-source)> --user <client type user> --password <password>';

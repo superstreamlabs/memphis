@@ -12,7 +12,7 @@
 
 import './style.scss';
 
-import { ReactComponent as FunctionIntegrateIcon } from '../../../../assets/images/functionIntegrate.svg';
+import { ReactComponent as FunctionIntegrateIcon } from 'assets/images/functionIntegrate.svg';
 
 const IntegrateFunction = ({ onClick }) => {
     return (

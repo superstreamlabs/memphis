@@ -17,8 +17,8 @@ import { useHistory } from 'react-router-dom';
 import React, { useState } from 'react';
 import { Badge, Divider } from 'antd';
 
-import { ReactComponent as StationsActiveIcon } from '../../../assets/images/stationsIconActive.svg';
-import { ReactComponent as RedirectIcon } from '../../../assets/images/redirectIcon.svg';
+import { ReactComponent as StationsActiveIcon } from 'assets/images/stationsIconActive.svg';
+import { ReactComponent as RedirectIcon } from 'assets/images/redirectIcon.svg';
 
 const ExpandIcon = ({ isActive }) => <KeyboardArrowUpRounded className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} />;
 

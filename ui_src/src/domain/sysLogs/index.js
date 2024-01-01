@@ -14,11 +14,11 @@ import './style.scss';
 
 import React, { useEffect, useContext } from 'react';
 
-import Button from '../../components/button';
-import { Context } from '../../hooks/store';
+import Button from 'components/button';
+import { Context } from 'hooks/store';
 import LogsWrapper from './components/logsWrapper';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { httpRequest } from '../../services/http';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
 
 const SysLogs = () => {
     const [state, dispatch] = useContext(Context);

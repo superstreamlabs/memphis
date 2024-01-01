@@ -16,10 +16,10 @@ import './style.scss';
 import React from 'react';
 import { Divider } from 'antd';
 import { Progress } from 'antd';
-import { ReactComponent as SysContainerIcon } from '../../../assets/images/sysContainer.svg';
-import { ReactComponent as ErrorIndicationIcon } from '../../../assets/images/errorindication.svg';
-import TooltipComponent from '../../../components/tooltip/tooltip';
-import { convertBytes } from '../../../services/valueConvertor';
+import { ReactComponent as SysContainerIcon } from 'assets/images/sysContainer.svg';
+import { ReactComponent as ErrorIndicationIcon } from 'assets/images/errorindication.svg';
+import TooltipComponent from 'components/tooltip/tooltip';
+import { convertBytes } from 'services/valueConvertor';
 
 const SysContainers = ({ component, k8sEnv, metricsEnabled, index }) => {
     const getColor = (percentage) => {

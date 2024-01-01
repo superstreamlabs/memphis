@@ -15,9 +15,9 @@ import './style.scss';
 import React, { useState } from 'react';
 import ReactPlayer from 'react-player';
 
-import { ReactComponent as PlayVideoIcon } from '../../assets/images/playVideoIcon.svg';
-import { ReactComponent as Img404Icon } from '../../assets/images/404.svg';
-import { sendTrace } from '../../services/genericServices';
+import { ReactComponent as PlayVideoIcon } from 'assets/images/playVideoIcon.svg';
+import { ReactComponent as Img404Icon } from 'assets/images/404.svg';
+import { sendTrace } from 'services/genericServices';
 
 const VideoPlayer = ({ url, bgImg, width, height, tracePlay }) => {
     const [playState, setPlayState] = useState(false);

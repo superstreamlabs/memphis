@@ -14,9 +14,9 @@ import './style.scss';
 
 import React, { useContext, useState } from 'react';
 import { Divider, Popover } from 'antd';
-import { ReactComponent as PartitionIcon } from '../../assets/images/partitionIcon.svg';
-import { ReactComponent as CollapseArrowIcon } from '../../assets/images/collapseArrow.svg';
-import { StationStoreContext } from '../../domain/stationOverview';
+import { ReactComponent as PartitionIcon } from 'assets/images/partitionIcon.svg';
+import { ReactComponent as CollapseArrowIcon } from 'assets/images/collapseArrow.svg';
+import { StationStoreContext } from 'domain/stationOverview';
 
 const PartitionsFilter = ({ partitions_number }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
