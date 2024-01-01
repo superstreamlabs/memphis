@@ -15,7 +15,7 @@ import './style.scss';
 import React, { useEffect, useContext, useState, useRef } from 'react';
 import { AccountCircleRounded } from '@material-ui/icons';
 
-import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from 'const/localStorageConsts';
+import { LOCAL_STORAGE_USER_PASS_BASED_AUTH, LOCAL_STORAGE_FULL_NAME, USER_IMAGE } from 'const/localStorageConsts';
 import { isCloud, parsingDate } from 'services/valueConvertor';
 import { ReactComponent as AddUserIcon } from 'assets/images/addUserIcon.svg';
 import { ReactComponent as DeleteWrapperIcon } from 'assets/images/deleteWrapperIcon.svg';
@@ -37,7 +37,7 @@ import Table from 'components/table';
 import DeleteItemsModal from 'components/deleteItemsModal';
 import CloudModal from 'components/cloudModal';
 import { isCurrentUser } from 'utils/user';
-import Drawer from "components/drawer";
+import Drawer from 'components/drawer';
 
 function Users() {
     const [state, dispatch] = useContext(Context);
@@ -153,9 +153,7 @@ function Users() {
     };
 
     const getAvatarSrc = (avatarId, full_name) => {
-        return (
-            (localStorage.getItem(LOCAL_STORAGE_FULL_NAME) === full_name && localStorage.getItem(USER_IMAGE)) || require(`assets/images/bots/avatar${avatarId}.svg`)
-        );
+        return (localStorage.getItem(LOCAL_STORAGE_FULL_NAME) === full_name && localStorage.getItem(USER_IMAGE)) || require(`assets/images/bots/avatar${avatarId}.svg`);
     };
 
     const handleRemoveUser = async (name, type) => {
