@@ -50,6 +50,8 @@ import { BiLogoGoLang, BiLogoPython } from 'react-icons/bi';
 import { SiDotnet } from 'react-icons/si';
 import { DiJavascript1 } from 'react-icons/di';
 import ConnectorInfo from '../../../../components/connectorInfo';
+import RunBenchmarkModal from '../../../../components/runBenchmarkModal';
+import { connectorTypesSource, connectorTypesSink } from '../../../../connectors';
 
 const overlayStylesConnectors = {
     borderRadius: '8px',
@@ -81,6 +83,7 @@ const ProduceConsumList = ({ producer }) => {
     const [connectorsSinkList, setConnectorsSinkList] = useState([]);
     const [cgsList, setCgsList] = useState([]);
     const [openProduceMessages, setOpenProduceMessages] = useState(false);
+    const [openRunBenchmark, setOpenRunBenchmark] = useState(false);
     const [cgDetails, setCgDetails] = useState([]);
     const [openCreateProducer, setOpenCreateProducer] = useState(false);
     const [openCreateConsumer, setOpenCreateConsumer] = useState(false);
@@ -100,14 +103,14 @@ const ProduceConsumList = ({ producer }) => {
     const [loading, setLoader] = useState(false);
     const producerItemsList = [
         {
-            action: 'Produce Synthetic Data',
+            action: 'Produce synthetic data',
             onClick: () => {
                 setOpenProduceMessages(true);
                 setOpenProducerPopover(false);
             }
         },
         {
-            action: 'Develop a Producer',
+            action: 'Develop a producer',
             onClick: () => {
                 setOpenCreateProducer(true);
                 setOpenProducerPopover(false);
@@ -121,7 +124,14 @@ const ProduceConsumList = ({ producer }) => {
             }
         },
         {
-            action: 'Add a Source',
+            action: 'Run benchmark',
+            onClick: () => {
+                setOpenRunBenchmark(true);
+                setOpenProducerPopover(false);
+            }
+        },
+        {
+            action: 'Add a source',
             onClick: () => {
                 setOpenConnectorModal(true);
                 setOpenProducerPopover(false);
@@ -131,7 +141,7 @@ const ProduceConsumList = ({ producer }) => {
 
     const consumeItemsList = [
         {
-            action: 'Develop a Consumer',
+            action: 'Develop a consumer',
             onClick: () => {
                 setOpenCreateConsumer(true);
                 setOpenProducerPopover(false);
@@ -145,7 +155,14 @@ const ProduceConsumList = ({ producer }) => {
             }
         },
         {
-            action: 'Add a Sink',
+            action: 'Run benchmark',
+            onClick: () => {
+                setOpenRunBenchmark(true);
+                setOpenProducerPopover(false);
+            }
+        },
+        {
+            action: 'Add a sink',
             onClick: () => {
                 setOpenConnectorModal(true);
                 setOpenProducerPopover(false);
@@ -384,6 +401,13 @@ const ProduceConsumList = ({ producer }) => {
         return <div style={{ fontSize: '17px', display: 'flex', alignItems: 'center' }}>{iconComponent}</div>;
     }
 
+    const getIconByConnector = (item, connectorType) => {
+        let connector;
+        if (connectorType === 'source') connector = connectorTypesSource.find((connector) => connector?.name?.toLowerCase() === item?.type);
+        else connector = connectorTypesSink.find((connector) => connector?.name?.toLowerCase() === item?.type);
+        return <img src={connector?.icon} height="16px" width="16px" alt={item?.type} /> || <ConnectIcon />;
+    };
+
     return (
         <div className="station-observabilty-side">
             <div className="pubSub-list-container">
@@ -393,7 +417,7 @@ const ProduceConsumList = ({ producer }) => {
                             <p className="title">
                                 <TooltipComponent text="max allowed producers" placement="right">
                                     <>
-                                        Sources ({(producersList?.length > 0 && countProducers(producersList).toLocaleString()) || 0}
+                                        Producers ({(producersList?.length > 0 && countProducers(producersList).toLocaleString()) || 0}
                                         {isCloud() && '/' + stationState?.stationSocketData?.max_amount_of_allowed_producers?.toLocaleString()})
                                     </>
                                 </TooltipComponent>
@@ -470,9 +494,7 @@ const ProduceConsumList = ({ producer }) => {
                                         <div className={returnClassName(index, row?.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'producer')}>
                                             <span className="connector-name">
                                                 {row?.connector_connection_id ? (
-                                                    <TooltipComponent text="connector">
-                                                        <ConnectIcon />
-                                                    </TooltipComponent>
+                                                    <TooltipComponent text="connector">{getIconByConnector(row, 'source')}</TooltipComponent>
                                                 ) : (
                                                     <TooltipComponent text="producer">{getIconByLang(row)}</TooltipComponent>
                                                 )}
@@ -570,9 +592,7 @@ const ProduceConsumList = ({ producer }) => {
                                         <div className={returnClassName(index, row?.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'consumer')}>
                                             <span className="connector-name">
                                                 {row?.connector_connection_id ? (
-                                                    <TooltipComponent text="connector">
-                                                        <ConnectIcon />
-                                                    </TooltipComponent>
+                                                    <TooltipComponent text="connector">{getIconByConnector(row, 'sink')}</TooltipComponent>
                                                 ) : (
                                                     <TooltipComponent text="consumer">{getIconByLang(row)}</TooltipComponent>
                                                 )}
@@ -744,8 +764,7 @@ const ProduceConsumList = ({ producer }) => {
                         <div className="header-img-container">
                             <PlayVideoIcon className="headerImage" alt="stationImg" />
                         </div>
-                        <p>Produce a message</p>
-                        <label>Produce a message through the Console.</label>
+                        <p>Produce synthetic data</p>
                     </div>
                 }
                 className={'modal-wrapper produce-modal'}
@@ -832,6 +851,7 @@ const ProduceConsumList = ({ producer }) => {
             </Modal>
             <ConnectorError open={openConnectorError} clickOutside={() => setOpenConnectorError(false)} connectorId={selectedConnector?.id} />
             <ConnectorInfo open={openConnectorInfo} clickOutside={() => setOpenConnectorInfo(false)} connectorId={selectedConnector?.id} />
+            <RunBenchmarkModal open={openRunBenchmark} clickOutside={() => setOpenRunBenchmark(false)} />
         </div>
     );
 };
