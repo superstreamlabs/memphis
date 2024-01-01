@@ -136,7 +136,7 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                     <p className="field-title">JSON-based value</p>
                     <div className="generate-action" onClick={() => generateMessage()}>
                         <RefreshIcon width={14} />
-                        <span>Re-generate</span>
+                        <span>Generate example</span>
                     </div>
                 </div>
                 <div className="message-example">
@@ -179,8 +179,8 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                                                     backgroundColorType="none"
                                                     borderColorType="gray"
                                                     height="40px"
-                                                    onBlur={(e) => creationForm.setFieldsValue({ [name]: e.target.value })}
-                                                    onChange={(e) => creationForm.setFieldsValue({ [name]: e.target.value })}
+                                                    onBlur={(e) => creationForm.setFieldsValue({[name]: e.target.value})}
+                                                    onChange={(e) => creationForm.setFieldsValue({[name]: e.target.value})}
                                                     value={formFields.key}
                                                 />
                                             </Form.Item>
@@ -202,8 +202,8 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                                                     backgroundColorType="none"
                                                     borderColorType="gray"
                                                     height="40px"
-                                                    onBlur={(e) => creationForm.setFieldsValue({ [name]: e.target.value })}
-                                                    onChange={(e) => creationForm.setFieldsValue({ [name]: e.target.value })}
+                                                    onBlur={(e) => creationForm.setFieldsValue({[name]: e.target.value})}
+                                                    onChange={(e) => creationForm.setFieldsValue({[name]: e.target.value})}
                                                     value={formFields.header}
                                                 />
                                             </Form.Item>
@@ -223,17 +223,13 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                     <Divider className="seperator" />
                     <div className="by-pass-switcher">
                         <TitleComponent
-                            headerTitle="Ignore enforced schema"
+                            headerTitle="Bypass schema enforcement"
                             cloudOnly={isCloud() ? false : true}
                             typeTitle="sub-header"
                             headerDescription="Check this box to avoid schema validation"
                         />
                         <Form.Item className="form-input" name="bypass_schema" initialValue={isCloud() ? false : true}>
-                            <Switcher
-                                disabled={!isCloud()}
-                                onChange={(e) => creationForm.setFieldsValue({ bypass_schema: e })}
-                                checked={isCloud() ? formFields.bypass_schema : true}
-                            />
+                            <Switcher disabled={!isCloud()} onChange={(e) => creationForm.setFieldsValue({'bypass_schema': e})} checked={isCloud() ? formFields.bypass_schema : true} />
                         </Form.Item>
                     </div>
                     <Divider className="seperator" />
@@ -252,7 +248,7 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                                 height="45px"
                                 width="100%"
                                 options={partitons}
-                                onChange={(e) => creationForm.setFieldsValue({ partition_number: e.target.value })}
+                                onChange={(e) => creationForm.setFieldsValue({'partition_number': e.target.value})}
                                 popupClassName="select-options"
                                 disabled={!isCloud()}
                             />
@@ -266,7 +262,7 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                             <InputNumberComponent
                                 min={1}
                                 max={isCloud() ? 1000 : 1}
-                                onChange={(e) => creationForm.setFieldsValue({ amount: e })}
+                                onChange={(e) => creationForm.setFieldsValue({'amount': e})}
                                 value={formFields.amount}
                                 placeholder={formFields.amount || 1}
                                 disabled={!isCloud()}

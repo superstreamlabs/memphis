@@ -40,6 +40,7 @@ const IntegrationLogs = ({ integrationName }) => {
     return (
         <div className="integration-body">
             <div className="integrate-description logs-header">
+                <p>Logs Details</p>
                 <Copy data={JSON.stringify(logsList)} />
             </div>
             <div className="generic-list-wrapper">
