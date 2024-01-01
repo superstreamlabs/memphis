@@ -35,8 +35,8 @@ import { Checkbox } from 'antd';
 import ImgUploader from './imgUploader';
 import { LOCAL_STORAGE_USER_TYPE, LOCAL_STORAGE_ACCOUNT_ID } from 'const/localStorageConsts';
 import Support from 'components/sideBar/support';
-import FullLogoWhite from "assets/images/white-logo.svg";
-import FullLogo from "assets/images/fullLogo.svg";
+import FullLogoWhite from 'assets/images/white-logo.svg';
+import FullLogo from 'assets/images/fullLogo.svg';
 
 function SoftwareUpates({}) {
     const [state, dispatch] = useContext(Context);
@@ -152,26 +152,22 @@ function SoftwareUpates({}) {
             <div className="rows">
                 <div className="item-component">
                     <div className="title-component">
-                        <div className="versions"
-                             onClick={() => !isCloud() && isUpdateAvailable && window.open(latestVersionUrl, '_blank')}>
+                        <div className="versions" onClick={() => !isCloud() && isUpdateAvailable && window.open(latestVersionUrl, '_blank')}>
                             <span className="logo-wrapper">
-                                <img
-                                    src={getCompanyLogoSrc() || ''}
-                                    height="40"
-                                    className="logoimg"
-                                    alt="logo"
-                                />
+                                <img src={getCompanyLogoSrc() || ''} height="40" className="logoimg" alt="logo" />
                             </span>
                             {isCloud() ? (
                                 <div className="hostname">
                                     <p>Account ID : </p>
                                     <span>{localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)}</span>
-                                    <Copy width="12" data={localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)}/>
+                                    <Copy width="12" data={localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)} />
                                 </div>
                             ) : (
-                                <label className="curr-version">{version}</label>
+                                <>
+                                    <label className="curr-version">{version}</label>
+                                    {isUpdateAvailable && <div className="red-dot" />}
+                                </>
                             )}
-                            {isUpdateAvailable && <div className="red-dot"/>}
                         </div>
                         <Button
                             width="200px"
@@ -179,7 +175,7 @@ function SoftwareUpates({}) {
                             placeholder={
                                 <span className="change-log">
                                     <label>View Change log</label>
-                                    <RedirectWhiteIcon alt="redirect"/>
+                                    <RedirectWhiteIcon alt="redirect" />
                                 </span>
                             }
                             colorType="white"
