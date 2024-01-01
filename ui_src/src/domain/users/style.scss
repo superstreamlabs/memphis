@@ -54,6 +54,9 @@
                     svg {
                         color: var(--purple);
                     }
+                    img {
+                        border-radius: 50%;
+                    }
                 }
                 .badgeOrange {
                     min-width: unset !important;

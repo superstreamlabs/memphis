@@ -42,7 +42,7 @@ export default function FunctionCard({
     const [popoverFunctionContextMenu, setPopoverFunctionContextMenu] = useState(false);
     const [openFunctionDetails, setOpenFunctionDetails] = useState(false);
     const [selectedFunction, setSelectedFunction] = useState();
-
+    const [averageProcessingTime, setAverageProcessingTime] = useState(null);
     useEffect(() => {
         setIsActive(!isDeactive);
     }, [isDeactive]);
@@ -53,6 +53,7 @@ export default function FunctionCard({
         func.rates = Math.floor(Math.random() * (80 - 50 + 1)) + 50;
         func.forks = Math.floor(Math.random() * (100 - 80 + 1)) + 80;
         setSelectedFunction(func);
+        getFunctionDetails();
     }, [functionItem]);
 
     const functionContextMenuStyles = {
@@ -61,6 +62,15 @@ export default function FunctionCard({
         paddingBottom: '5px',
         marginBottom: '10px',
         width: '150px'
+    };
+
+    const getFunctionDetails = async () => {
+        try {
+            const response = await httpRequest('GET', `${ApiEndpoints.GET_FUNCTION_DETAILS}?function_id=${functionItem?.id}`);
+            setAverageProcessingTime(response?.metrics?.average_processing_time);
+        } catch (e) {
+            return;
+        }
     };
 
     const getFunctionsOverview = async () => {
@@ -202,8 +212,10 @@ export default function FunctionCard({
                     </div>
 
                     <div className={`ms-function-card-title ${!selectedFunction?.activated ? 'deactivated-function' : undefined}`}>
-                        <FunctionBoxTitleIcon />
-                        <span>{selectedFunction?.name}</span>
+                        <div className="function-name">
+                            <FunctionBoxTitleIcon /> <span>{selectedFunction?.name}</span>
+                        </div>
+                        <span className="processing">avg processing: {averageProcessingTime}/ms</span>
                     </div>
                 </div>
                 <Tooltip text="Dead-letter">
