@@ -17,14 +17,6 @@ import { AccountCircleRounded } from '@material-ui/icons';
 
 import { LOCAL_STORAGE_USER_PASS_BASED_AUTH, LOCAL_STORAGE_FULL_NAME, USER_IMAGE } from 'const/localStorageConsts';
 import { isCloud, parsingDate } from 'services/valueConvertor';
-import { ReactComponent as AddUserIcon } from 'assets/images/addUserIcon.svg';
-import { ReactComponent as DeleteWrapperIcon } from 'assets/images/deleteWrapperIcon.svg';
-import { ReactComponent as MailIcon } from 'assets/images/mailIcon.svg';
-import { ReactComponent as DeleteIcon } from 'assets/images/deleteIcon.svg';
-import { ReactComponent as SearchIcon } from 'assets/images/searchIcon.svg';
-import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from 'const/localStorageConsts';
-import { isCloud, parsingDate } from 'services/valueConvertor';
-import { ReactComponent as AddUserIcon } from 'assets/images/addUserIcon.svg';
 import { ReactComponent as DeleteWrapperIcon } from 'assets/images/deleteWrapperIcon.svg';
 import { ReactComponent as MailIcon } from 'assets/images/mailIcon.svg';
 import { ReactComponent as DeleteIcon } from 'assets/images/deleteIcon.svg';
