@@ -15,20 +15,20 @@ import { Form, Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 
 import { FiPlus } from 'react-icons/fi';
-import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationList';
-import { ApiEndpoints } from '../../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../../services/http';
-import Button from '../../../../../components/button';
-import { Context } from '../../../../../hooks/store';
-import CustomTabs from '../../../../../components/Tabs';
-import Loader from '../../../../../components/loader';
-import CloudMoadl from '../../../../../components/cloudModal';
+import { INTEGRATION_LIST, getTabList } from 'const/integrationList';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import Button from 'components/button';
+import { Context } from 'hooks/store';
+import CustomTabs from 'components/Tabs';
+import Loader from 'components/loader';
+import CloudMoadl from 'components/cloudModal';
 import IntegrationItem from './integratedItem';
-import { showMessages } from '../../../../../services/genericServices';
+import { showMessages } from 'services/genericServices';
 import IntegrationDetails from '../integrationItem/integrationDetails';
 import IntegrationLogs from '../integrationItem/integrationLogs';
-import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
-import { isCloud } from '../../../../../services/valueConvertor';
+import { ReactComponent as PurpleQuestionMark } from 'assets/images/purpleQuestionMark.svg';
+import { isCloud } from 'services/valueConvertor';
 
 const GitHubIntegration = ({ close, value }) => {
     const githubConfiguration = INTEGRATION_LIST['GitHub'];

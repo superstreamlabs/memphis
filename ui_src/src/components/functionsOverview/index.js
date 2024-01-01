@@ -12,15 +12,11 @@
 
 import './style.scss';
 
-import ArrowRightAltSharpIcon from '@material-ui/icons/ArrowRightAltSharp';
-import CircularProgress from '@material-ui/core/CircularProgress';
-import React, { useState, useContext, useEffect } from 'react';
+import React from 'react';
 
-import removeFunctionIcon from '../../assets/images/removeFunctionIcon.svg';
-import { ReactComponent as RemoveFunctionIcon } from '../../assets/images/removeFunctionIcon.svg';
-import arrowFunction from '../../assets/images/arrowFunction.svg';
-import { ReactComponent as ArrowFunctionIcon } from '../../assets/images/arrowFunction.svg';
-import OverflowTip from '../tooltip/overflowtip';
+import { ReactComponent as RemoveFunctionIcon } from 'assets/images/removeFunctionIcon.svg';
+import { ReactComponent as ArrowFunctionIcon } from 'assets/images/arrowFunction.svg';
+import OverflowTip from 'components/tooltip/overflowtip';
 
 const FunctionsOverview = (props) => {
     const { functions, horizontal, editable } = props;
@@ -44,12 +40,6 @@ const FunctionsOverview = (props) => {
                                 onClick={() => handleEditFunction(index + 1, func)}
                             >
                                 <div className="function-name">
-                                    {/* {removing === index ? (
-                                    <CircularProgress
-                                        size={20}
-                                        className="circular-progress"
-                                    />
-                                    ) : ( */}
                                     <OverflowTip text={func.name} width={'7vw'} cursor="pointer">
                                         {func.name}
                                     </OverflowTip>

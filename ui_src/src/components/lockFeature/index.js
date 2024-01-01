@@ -14,7 +14,7 @@ import './style.scss';
 
 import React, { useState } from 'react';
 import { FaArrowCircleUp } from 'react-icons/fa';
-import CloudModal from '../cloudModal/';
+import CloudModal from 'components/cloudModal/';
 
 const LockFeature = ({}) => {
     const [openCloudModal, setOpenCloudModal] = useState(false);

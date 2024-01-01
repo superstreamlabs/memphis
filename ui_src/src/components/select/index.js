@@ -15,7 +15,7 @@ import './style.scss';
 import { Select } from 'antd';
 import React from 'react';
 
-import { getFontColor, getBackgroundColor, getBorderColor, getBoxShadows, getBorderRadius } from '../../utils/styleTemplates';
+import { getFontColor, getBackgroundColor, getBorderColor, getBoxShadows, getBorderRadius } from 'utils/styleTemplates';
 import ArrowDropDownRounded from '@material-ui/icons/ArrowDropDownRounded';
 
 const { Option } = Select;

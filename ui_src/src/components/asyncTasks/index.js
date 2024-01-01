@@ -15,14 +15,14 @@ import './style.scss';
 import React, { useContext, useEffect, useState } from 'react';
 import { StringCodec, JSONCodec } from 'nats.ws';
 import { Divider, Popover } from 'antd';
-import { parsingDate } from '../../services/valueConvertor';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { ReactComponent as AsyncIcon } from '../../assets/images/asyncIcon.svg';
-import { ReactComponent as TaskIcon } from '../../assets/images/task.svg';
-import { httpRequest } from '../../services/http';
-import { ReactComponent as CollapseArrowIcon } from '../../assets/images/collapseArrow.svg';
-import { Context } from '../../hooks/store';
-import OverflowTip from '../tooltip/overflowtip';
+import { parsingDate } from 'services/valueConvertor';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { ReactComponent as AsyncIcon } from 'assets/images/asyncIcon.svg';
+import { ReactComponent as TaskIcon } from 'assets/images/task.svg';
+import { httpRequest } from 'services/http';
+import { ReactComponent as CollapseArrowIcon } from 'assets/images/collapseArrow.svg';
+import { Context } from 'hooks/store';
+import OverflowTip from 'components/tooltip/overflowtip';
 
 const AsyncTasks = ({ height, overView }) => {
     const [state, dispatch] = useContext(Context);

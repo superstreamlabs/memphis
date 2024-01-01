@@ -15,7 +15,7 @@ import './style.scss';
 import React from 'react';
 import Lottie from 'lottie-react';
 
-import animationData from '../../assets/lotties/MemphisGif.json';
+import animationData from 'assets/lotties/MemphisGif.json';
 
 const Loader = ({ background = true, auto = true }) => {
     return (

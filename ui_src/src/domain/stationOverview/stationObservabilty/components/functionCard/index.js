@@ -14,17 +14,17 @@ import './style.scss';
 import React, { useState, useEffect, useContext } from 'react';
 import { Popover } from 'antd';
 import { HiEllipsisVertical } from 'react-icons/hi2';
-import { ReactComponent as FunctionBoxTitleIcon } from '../../../../../assets/images/functionCardIcon.svg';
-import { ReactComponent as FunctionProcessingIcon } from '../../../../../assets/images/proccessingIcon.svg';
-import { ReactComponent as FunctionProcessingWarningIcon } from '../../../../../assets/images/processingWarningIcon.svg';
+import { ReactComponent as FunctionBoxTitleIcon } from 'assets/images/functionCardIcon.svg';
+import { ReactComponent as FunctionProcessingIcon } from 'assets/images/proccessingIcon.svg';
+import { ReactComponent as FunctionProcessingWarningIcon } from 'assets/images/processingWarningIcon.svg';
 import { IoClose } from 'react-icons/io5';
-import { ApiEndpoints } from '../../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../../services/http';
-import { convertLongNumbers } from '../../../../../services/valueConvertor';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import { convertLongNumbers } from 'services/valueConvertor';
 import { StationStoreContext } from '../../../';
 import FunctionDetails from '../../../../functions/components/functionDetails';
-import { Drawer } from 'antd';
-import Tooltip from '../../../../../components/tooltip/tooltip';
+import Drawer from "components/drawer";
+import Tooltip from 'components/tooltip/tooltip';
 
 export default function FunctionCard({
     onClick,

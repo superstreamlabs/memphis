@@ -14,14 +14,14 @@ import './style.scss';
 
 import React, { useEffect, useContext, useState, createContext, useReducer } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
-import { extractValueFromURL, parsingDate } from '../../services/valueConvertor';
+import { extractValueFromURL, parsingDate } from 'services/valueConvertor';
 import StationOverviewHeader from './stationOverviewHeader';
 import StationObservabilty from './stationObservabilty';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { httpRequest } from '../../services/http';
-import Loader from '../../components/loader';
-import { Context } from '../../hooks/store';
-import pathDomains from '../../router';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import Loader from 'components/loader';
+import { Context } from 'hooks/store';
+import pathDomains from 'router';
 import Reducer from './hooks/reducer';
 import { StringCodec, JSONCodec } from 'nats.ws';
 

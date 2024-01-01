@@ -15,13 +15,13 @@ import './style.scss';
 import React, { useContext } from 'react';
 import Lottie from 'lottie-react';
 
-import consumePoison from '../../../assets/lotties/consume_poison.json';
-import consumeEmpty from '../../../assets/lotties/consume_empty.json';
-import produceEmpty from '../../../assets/lotties/produce_empty.json';
-import produce from '../../../assets/lotties/produce-many.json';
-import consumer from '../../../assets/lotties/consume.json';
+import consumePoison from 'assets/lotties/consume_poison.json';
+import consumeEmpty from 'assets/lotties/consume_empty.json';
+import produceEmpty from 'assets/lotties/produce_empty.json';
+import produce from 'assets/lotties/produce-many.json';
+import consumer from 'assets/lotties/consume.json';
 import ProduceConsumList from './ProduceConsumList';
-import { StationStoreContext } from '..';
+import { StationStoreContext } from 'domain/stationOverview';
 import Messages from './messages';
 
 const StationObservabilty = ({ referredFunction }) => {

@@ -16,16 +16,16 @@ import React, { createContext, useContext, useEffect, useReducer, useState } fro
 import { StringCodec, JSONCodec } from 'nats.ws';
 import { Popover } from 'antd';
 
-import { filterType, labelType, CircleLetterColor } from '../../const/globalConst';
-import { ReactComponent as SearchIcon } from '../../assets/images/searchIcon.svg';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { ReactComponent as FilterImgIcon } from '../../assets/images/filter.svg';
-import { httpRequest } from '../../services/http';
+import { filterType, labelType, CircleLetterColor } from 'const/globalConst';
+import { ReactComponent as SearchIcon } from 'assets/images/searchIcon.svg';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { ReactComponent as FilterImgIcon } from 'assets/images/filter.svg';
+import { httpRequest } from 'services/http';
 import CustomCollapse from './customCollapse';
-import { Context } from '../../hooks/store';
-import SearchInput from '../searchInput';
+import { Context } from 'hooks/store';
+import SearchInput from 'components/searchInput';
 import Reducer from './hooks/reducer';
-import Button from '../button';
+import Button from 'components/button';
 
 const initialState = {
     isOpen: false,

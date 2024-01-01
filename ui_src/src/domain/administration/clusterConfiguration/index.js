@@ -14,17 +14,17 @@ import './style.scss';
 
 import React, { useEffect, useState } from 'react';
 
-import { compareObjects, isCloud } from '../../../services/valueConvertor';
-import BrokerHostname from '../../../assets/images/BrokerHostname.svg';
-import UIHostname from '../../../assets/images/UIHostname.svg';
-import DeadLetterInHours from '../../../assets/images/DeadLetterInHours.svg';
-import LogsRetentionInDays from '../../../assets/images/LogsRetentionInDays.svg';
-import RestHostname from '../../../assets/images/RestHostname.svg';
-import TieredStorageInterval from '../../../assets/images/TieredStorageInterval.svg';
+import { compareObjects, isCloud } from 'services/valueConvertor';
+import BrokerHostname from 'assets/images/BrokerHostname.svg';
+import UIHostname from 'assets/images/UIHostname.svg';
+import DeadLetterInHours from 'assets/images/DeadLetterInHours.svg';
+import LogsRetentionInDays from 'assets/images/LogsRetentionInDays.svg';
+import RestHostname from 'assets/images/RestHostname.svg';
+import TieredStorageInterval from 'assets/images/TieredStorageInterval.svg';
 
-import { ApiEndpoints } from '../../../const/apiEndpoints';
-import { httpRequest } from '../../../services/http';
-import Button from '../../../components/button';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import Button from 'components/button';
 import SliderRow from './components/sliderRow';
 import InputRow from './components/inputRow';
 import TieredInputRow from './components/tieredInputRow';
@@ -38,9 +38,9 @@ import {
     DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS,
     TIERED_STORAGE_UPLOAD_INTERVAL,
     LOGS_RETENTION_IN_DAYS
-} from '../../../const/localStorageConsts';
-import Loader from '../../../components/loader';
-import { showMessages } from '../../../services/genericServices';
+} from 'const/localStorageConsts';
+import Loader from 'components/loader';
+import { showMessages } from 'services/genericServices';
 
 function ClusterConfiguration() {
     const [formFields, setFormFields] = useState({});

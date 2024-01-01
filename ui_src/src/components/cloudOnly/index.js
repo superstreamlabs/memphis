@@ -13,8 +13,8 @@
 import './style.scss';
 
 import React, { useState } from 'react';
-import { ReactComponent as CloudOnlyIcon } from '../../assets/images/cloudOnlyIcon.svg';
-import CloudModal from '../cloudModal/';
+import { ReactComponent as CloudOnlyIcon } from 'assets/images/cloudOnlyIcon.svg';
+import CloudModal from 'components/cloudModal/';
 
 const CloudOnly = () => {
     const [openCloudModal, setOpenCloudModal] = useState(false);

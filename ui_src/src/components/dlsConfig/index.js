@@ -11,10 +11,10 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 import './style.scss';
 import React, { useState, useEffect, useContext } from 'react';
-import { StationStoreContext } from '../../domain/stationOverview';
-import Switcher from '../switcher';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { httpRequest } from '../../services/http';
+import { StationStoreContext } from 'domain/stationOverview';
+import Switcher from 'components/switcher';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
 
 const DlsConfig = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);

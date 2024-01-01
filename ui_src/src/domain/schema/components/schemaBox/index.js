@@ -13,21 +13,21 @@
 import './style.scss';
 
 import { CloseRounded } from '@material-ui/icons';
-import { Drawer } from 'antd';
+import Drawer from "components/drawer";
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 
-import { ReactComponent as CreatedDateIcon } from '../../../../assets/images/createdDateIcon.svg';
-import { ReactComponent as NotUsedIcond } from '../../../../assets/images/notUsedIcon.svg';
-import { capitalizeFirst, parsingDate } from '../../../../services/valueConvertor';
-import CheckboxComponent from '../../../../components/checkBox';
-import { ReactComponent as UsedIcond } from '../../../../assets/images/usedIcon.svg';
-import TagsList from '../../../../components/tagList';
+import { ReactComponent as CreatedDateIcon } from 'assets/images/createdDateIcon.svg';
+import { ReactComponent as NotUsedIcond } from 'assets/images/notUsedIcon.svg';
+import { capitalizeFirst, parsingDate } from 'services/valueConvertor';
+import CheckboxComponent from 'components/checkBox';
+import { ReactComponent as UsedIcond } from 'assets/images/usedIcon.svg';
+import TagsList from 'components/tagList';
 import SchemaDetails from '../schemaDetails';
-import OverflowTip from '../../../../components/tooltip/overflowtip';
-import pathDomains from '../../../../router';
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../services/http';
+import OverflowTip from 'components/tooltip/overflowtip';
+import pathDomains from 'router';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
 
 function SchemaBox({ schemaBox, handleCheckedClick, isCheck }) {
     const history = useHistory();

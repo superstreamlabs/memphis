@@ -15,7 +15,7 @@ import './style.scss';
 import React, { useEffect } from 'react';
 import { Modal } from 'antd';
 
-import Button from '../button';
+import Button from 'components/button';
 
 const TransitionsModal = ({
     height,

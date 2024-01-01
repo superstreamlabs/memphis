@@ -14,7 +14,7 @@ import './style.scss';
 import React from 'react';
 import { Spin, Badge } from 'antd';
 import { SyncOutlined } from '@ant-design/icons';
-import { ReactComponent as RefreshIcon } from '../../assets/images/refresh.svg';
+import { ReactComponent as RefreshIcon } from 'assets/images/refresh.svg';
 
 const RefreshButton = ({ refreshIndeicator, onClick, isLoading }) => {
     return (

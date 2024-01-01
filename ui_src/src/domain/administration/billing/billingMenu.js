@@ -11,10 +11,10 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import React from 'react';
-import { ReactComponent as RequestsColorIcon } from '../../../assets/images/setting/requestsColor.svg';
-import { ReactComponent as RequestsGrayIcon } from '../../../assets/images/setting/requestsGray.svg';
-import { ReactComponent as PaymentsColorIcon } from '../../../assets/images/setting/paymentsColor.svg';
-import { ReactComponent as PaymentsGrayIcon } from '../../../assets/images/setting/paymentsGray.svg';
+import { ReactComponent as RequestsColorIcon } from 'assets/images/setting/requestsColor.svg';
+import { ReactComponent as RequestsGrayIcon } from 'assets/images/setting/requestsGray.svg';
+import { ReactComponent as PaymentsColorIcon } from 'assets/images/setting/paymentsColor.svg';
+import { ReactComponent as PaymentsGrayIcon } from 'assets/images/setting/paymentsGray.svg';
 
 import '../style.scss';
 

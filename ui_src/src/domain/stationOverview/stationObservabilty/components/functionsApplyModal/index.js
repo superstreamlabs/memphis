@@ -13,9 +13,9 @@
 import './style.scss';
 
 import { useState, useEffect } from 'react';
-import Button from '../../../../../components/button';
+import Button from 'components/button';
 
-import { ReactComponent as CheckIcon } from '../../../../../assets/images/checkIcon.svg';
+import { ReactComponent as CheckIcon } from 'assets/images/checkIcon.svg';
 
 const FunctionsApplyModal = ({ onCancel, onApply, successText }) => {
     const [selected, setSelected] = useState(0);

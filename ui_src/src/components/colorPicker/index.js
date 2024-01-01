@@ -12,7 +12,7 @@
 
 import './style.scss';
 import React from 'react';
-import { ColorPalette } from '../../const/globalConst';
+import { ColorPalette } from 'const/globalConst';
 
 const ColorPicker = ({ onChange, value }) => {
     return (

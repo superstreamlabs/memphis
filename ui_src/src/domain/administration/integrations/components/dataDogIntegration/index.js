@@ -15,15 +15,15 @@ import './style.scss';
 import React, { useEffect, useState } from 'react';
 import { Collapse } from 'antd';
 
-import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationList';
-import { ReactComponent as CollapseArrowIcon } from '../../../../../assets/images/collapseArrow.svg';
-import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
-import datadogMetricsps from '../../../../../assets/images/datadogMetricsps.png';
-import CustomTabs from '../../../../../components/Tabs';
-import Copy from '../../../../../components/copy';
-import Modal from '../../../../../components/modal';
+import { INTEGRATION_LIST, getTabList } from 'const/integrationList';
+import { ReactComponent as CollapseArrowIcon } from 'assets/images/collapseArrow.svg';
+import { ReactComponent as PurpleQuestionMark } from 'assets/images/purpleQuestionMark.svg';
+import datadogMetricsps from 'assets/images/datadogMetricsps.png';
+import CustomTabs from 'components/Tabs';
+import Copy from 'components/copy';
+import Modal from 'components/modal';
 import { ZoomInRounded } from '@material-ui/icons';
-import Loader from '../../../../../components/loader';
+import Loader from 'components/loader';
 import IntegrationDetails from '../integrationItem/integrationDetails';
 
 const { Panel } = Collapse;

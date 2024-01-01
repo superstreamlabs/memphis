@@ -15,7 +15,7 @@ import './style.scss';
 import React, { Fragment } from 'react';
 import HelpIcon from '@material-ui/icons/Help';
 
-import TooltipComponent from '../tooltip/tooltip';
+import TooltipComponent from 'components/tooltip/tooltip';
 const Helper = ({ text }) => {
     return (
         <Fragment>

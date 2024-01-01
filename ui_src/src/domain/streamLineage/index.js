@@ -19,18 +19,18 @@ import { IoRefresh } from 'react-icons/io5';
 import { MdZoomOutMap } from 'react-icons/md';
 import { IoClose } from 'react-icons/io5';
 import { Divider } from 'antd';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { ReactComponent as GraphPlaceholder } from '../../assets/images/graphPlaceholder.svg';
-import BackIcon from '../../assets/images/backIcon.svg';
-import { httpRequest } from '../../services/http';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { ReactComponent as GraphPlaceholder } from 'assets/images/graphPlaceholder.svg';
+import BackIcon from 'assets/images/backIcon.svg';
+import { httpRequest } from 'services/http';
 import Connection from './components/connection';
-import Button from '../../components/button';
-import Loader from '../../components/loader';
-import CloudModal from '../../components/cloudModal';
+import Button from 'components/button';
+import Loader from 'components/loader';
+import CloudModal from 'components/cloudModal';
 import { FaArrowCircleUp } from 'react-icons/fa';
-import { Context } from '../../hooks/store';
+import { Context } from 'hooks/store';
 import Station from './components/station';
-import {entitlementChecker} from "../../utils/plan";
+import {entitlementChecker} from "utils/plan";
 
 const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
     const [state, dispatch] = useContext(Context);

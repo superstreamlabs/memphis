@@ -12,14 +12,14 @@
 
 import './style.scss';
 import React, { useEffect, useState } from 'react';
-import { ReactComponent as StatusIcon } from '../../../../../../assets/images/statusIcon.svg';
-import Tag from '../../../../../../components/tag';
-import RadioButton from '../../../../../../components/radioButton';
-import Spinner from '../../../../../../components/spinner';
-import Copy from '../../../../../../components/copy';
-import Tooltip from '../../../../../../components/tooltip/tooltip';
+import { ReactComponent as StatusIcon } from 'assets/images/statusIcon.svg';
+import Tag from 'components/tag';
+import RadioButton from 'components/radioButton';
+import Spinner from 'components/spinner';
+import Copy from 'components/copy';
+import Tooltip from 'components/tooltip/tooltip';
 
-import { ColorPalette } from '../../../../../../const/globalConst';
+import { ColorPalette } from 'const/globalConst';
 
 const options = [
     {

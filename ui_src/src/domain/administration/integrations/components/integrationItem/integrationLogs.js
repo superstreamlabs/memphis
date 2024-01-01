@@ -13,12 +13,12 @@
 import './style.scss';
 
 import React, { useState, useEffect } from 'react';
-import { ApiEndpoints } from '../../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../../services/http';
-import Copy from '../../../../../components/copy';
-import { parsingDate } from '../../../../../services/valueConvertor';
-import OverflowTip from '../../../../../components/tooltip/overflowtip';
-import Spinner from '../../../../../components/spinner';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import Copy from 'components/copy';
+import { parsingDate } from 'services/valueConvertor';
+import OverflowTip from 'components/tooltip/overflowtip';
+import Spinner from 'components/spinner';
 const IntegrationLogs = ({ integrationName }) => {
     const [logsList, setLogsList] = useState([]);
     const [loading, setLoading] = useState(true);

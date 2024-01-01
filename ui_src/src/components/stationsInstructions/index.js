@@ -1,7 +1,7 @@
-import Button from '../../components/button';
+import Button from 'components/button';
 import React from 'react';
-import { isCloud } from '../../services/valueConvertor';
-import LockFeature from '../lockFeature';
+import { isCloud } from 'services/valueConvertor';
+import LockFeature from 'components/lockFeature';
 import './style.scss';
 
 const StationsInstructions = ({ upgrade, header, button, image, newStation, des }) => {

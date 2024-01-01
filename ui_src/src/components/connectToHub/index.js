@@ -17,10 +17,10 @@ import { makeStyles } from '@material-ui/core/styles';
 import Dialog from '@material-ui/core/Dialog';
 import React, { useState } from 'react';
 
-import { ReactComponent as CloseIcon } from '../../assets/images/close.svg';
-import Input from '../Input';
-import Button from '../button';
-import CheckboxComponent from '../checkBox';
+import { ReactComponent as CloseIcon } from 'assets/images/close.svg';
+import Input from 'components/Input';
+import Button from 'components/button';
+import CheckboxComponent from 'components/checkBox';
 
 const useStyles = makeStyles((theme) => ({
     root: {

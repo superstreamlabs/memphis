@@ -13,7 +13,7 @@
 import './style.scss';
 
 import React from 'react';
-import OverflowTip from '../../../../../components/tooltip/overflowtip';
+import OverflowTip from 'components/tooltip/overflowtip';
 
 const inputsColumns = [
     {

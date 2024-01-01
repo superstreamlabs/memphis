@@ -12,11 +12,11 @@
 
 import './style.scss';
 import React, { useState } from 'react';
-import Button from '../button';
+import Button from 'components/button';
 import { FiDownload } from 'react-icons/fi';
-import Copy from '../copy';
-import CustomTabs from '../Tabs';
-import { githubUrls } from '../../const/globalConst';
+import Copy from 'components/copy';
+import CustomTabs from 'components/Tabs';
+import { githubUrls } from 'const/globalConst';
 import { SiLinux, SiApple, SiWindows11 } from 'react-icons/si';
 
 const CloneModal = ({ type }) => {

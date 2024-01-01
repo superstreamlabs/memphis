@@ -13,8 +13,8 @@
 import './style.scss';
 
 import React, { useEffect, useState } from 'react';
-import Button from '../button';
-import Input from '../Input';
+import Button from 'components/button';
+import Input from 'components/Input';
 
 const DeleteItemsModal = ({ title, desc, handleDeleteSelected, buttontxt, textToConfirm, loader = false }) => {
     const [confirm, setConfirm] = useState('');
