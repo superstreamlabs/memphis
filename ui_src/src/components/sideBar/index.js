@@ -19,7 +19,7 @@ import PersonOutlinedIcon from '@material-ui/icons/PersonOutlined';
 import { BsFillChatSquareTextFill } from 'react-icons/bs';
 import { useHistory } from 'react-router-dom';
 import { Divider, Popover } from 'antd';
-import Drawer from "components/drawer";
+import Drawer from 'components/drawer';
 import CloudModal from 'components/cloudModal';
 import {
     LOCAL_STORAGE_ACCOUNT_NAME,
@@ -28,7 +28,8 @@ import {
     LOCAL_STORAGE_FULL_NAME,
     LOCAL_STORAGE_USER_NAME,
     LOCAL_STORAGE_SKIP_GET_STARTED,
-    USER_IMAGE, LOCAL_STORAGE_DARK_MODE
+    USER_IMAGE,
+    LOCAL_STORAGE_DARK_MODE
 } from 'const/localStorageConsts';
 import { ReactComponent as IntegrationColorIcon } from 'assets/images/integrationIconColor.svg';
 import { ReactComponent as OverviewActiveIcon } from 'assets/images/overviewIconActive.svg';
@@ -239,7 +240,12 @@ function SideBar() {
 
     const MenuItem = ({ icon, activeIcon, name, route, onClick, onMouseEnter, onMouseLeave, badge }) => {
         return (
-            <div className={'item-wrapper ' + (state.route === route ? 'ms-active ' : '') + (hoveredItem === route ? 'item-wrapper-hovered' : '')} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onClick={onClick}>
+            <div
+                className={'item-wrapper ' + (state.route === route ? 'ms-active ' : '') + (hoveredItem === route ? 'item-wrapper-hovered' : '')}
+                onMouseEnter={onMouseEnter}
+                onMouseLeave={onMouseLeave}
+                onClick={onClick}
+            >
                 <div className="icon ">{state.route === route ? activeIcon : hoveredItem === route ? activeIcon : icon}</div>
                 <p className={state.route === route ? 'checked' : 'name'}>{name}</p>
                 {badge && <label className="badge">{badge}</label>}
@@ -553,7 +559,7 @@ function SideBar() {
                     onMouseEnter={() => setHoveredItem('functions')}
                     onMouseLeave={() => setHoveredItem('')}
                     route="functions"
-                    badge={'Alpha'}
+                    badge={'Beta'}
                 />
                 <MenuItem
                     icon={<IntegrationIcon alt="IntegrationIcon" width={20} height={20} />}
@@ -599,12 +605,12 @@ function SideBar() {
 
                 <div className="item-wrapper ms-appearance-wrapper">
                     <div className="ms-appearance">
-                        <div className={'ms-appearance-light ' + (!darkMode && 'ms-active')} onClick={ () => handleDarkMode(false)}>
+                        <div className={'ms-appearance-light ' + (!darkMode && 'ms-active')} onClick={() => handleDarkMode(false)}>
                             <SunIcon />
                             <span className="ms-appearance-text">Light</span>
                         </div>
-                        <div className={'ms-appearance-dark ' + (darkMode && 'ms-active')} onClick={ () => handleDarkMode(true)}>
-                            <MoonIcon/>
+                        <div className={'ms-appearance-dark ' + (darkMode && 'ms-active')} onClick={() => handleDarkMode(true)}>
+                            <MoonIcon />
                             <span className="ms-appearance-text">Dark</span>
                         </div>
                     </div>

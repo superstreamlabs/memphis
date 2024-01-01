@@ -232,12 +232,18 @@ const Messages = ({ referredFunction }) => {
                     dls_message_ids: isCheck,
                     station_name: stationName
                 });
-                messages = subTabValue === subTabs[0]?.name ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
+                messages =
+                    subTabValue === subTabs[0]?.name
+                        ? stationState?.stationSocketData?.poison_messages
+                        : subTabValue === subTabs[1]?.name
+                        ? stationState?.stationSocketData?.schema_failed_messages
+                        : stationState?.stationSocketData?.functions_failed_messages;
                 isCheck.map((messageId, index) => {
                     messages = messages?.filter((item) => {
                         return item.id !== messageId;
                     });
                 });
+                console.log(messages);
             }
             setTimeout(() => {
                 setIgnoreProcced(false);
@@ -245,7 +251,9 @@ const Messages = ({ referredFunction }) => {
                     ? stationDispatch({ type: 'SET_MESSAGES', payload: messages })
                     : subTabValue === subTabs[0]?.name
                     ? stationDispatch({ type: 'SET_POISON_MESSAGES', payload: messages })
-                    : stationDispatch({ type: 'SET_FAILED_MESSAGES', payload: messages });
+                    : subTabValue === subTabs[1]?.name
+                    ? stationDispatch({ type: 'SET_FAILED_MESSAGES', payload: messages })
+                    : stationDispatch({ type: 'SET_FUNCTION_FAILED_MESSAGES', payload: messages });
                 stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
                 stationDispatch({ type: 'SET_SELECTED_ROW_PARTITION', payload: null });
                 setSelectedRowIndex(null);
@@ -415,7 +423,7 @@ const Messages = ({ referredFunction }) => {
                                 {stationState?.stationSocketData?.functions_enabled ? (
                                     <>
                                         <label>Functions</label>
-                                        <label className="badge">Alpha</label>
+                                        <label className="badge">Beta</label>
                                     </>
                                 ) : (
                                     <TooltipComponent text="Supported for new stations" minWidth="35px">
