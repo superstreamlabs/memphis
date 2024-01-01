@@ -66,18 +66,13 @@ const CloneModal = ({ type }) => {
             )}
             {type === 'cli' && (
                 <>
-                    <p className="create-func-cli">
-                        <label>Step 1:</label>Install Memphis CLI
-                    </p>
                     <div className="url-wrapper">
                         <p className="url-text"> {githubUrls[type][tabValue]}</p>
                         <div className="icon">
                             <Copy width="18" data={githubUrls[type][tabValue]} />
                         </div>
                     </div>
-                    <p className="create-func-cli">
-                        <label>Step 2:</label>Create a basic Memphis function template
-                    </p>
+                    <p className="create-func-cli">Create a basic Memphis function template</p>
                     <div className="url-wrapper">
                         <p className="url-text"> {githubUrls[type]?.code}</p>
                         <div className="icon">

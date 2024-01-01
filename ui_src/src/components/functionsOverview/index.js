@@ -13,7 +13,6 @@
 import './style.scss';
 
 import React from 'react';
-
 import { ReactComponent as RemoveFunctionIcon } from 'assets/images/removeFunctionIcon.svg';
 import { ReactComponent as ArrowFunctionIcon } from 'assets/images/arrowFunction.svg';
 import OverflowTip from 'components/tooltip/overflowtip';
@@ -26,7 +25,7 @@ const FunctionsOverview = (props) => {
 
     return (
         <div className={horizontal ? 'function-overview-container horizontal' : 'function-overview-container'}>
-            {functions.map((func, index) => {
+            {functions?.map((func, index) => {
                 return (
                     <div className={horizontal ? 'function-list-container horizontal' : 'function-list-container'} key={index}>
                         <div className="func-wrapper">

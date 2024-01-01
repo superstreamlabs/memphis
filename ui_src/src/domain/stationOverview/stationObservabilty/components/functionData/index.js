@@ -17,7 +17,7 @@ import { ApiEndpoints } from 'const/apiEndpoints';
 import { httpRequest } from 'services/http';
 import Editor, { loader } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
-import { StationStoreContext } from '../../../';
+import { StationStoreContext } from 'domain/stationOverview';
 import CustomTabs from 'components/Tabs';
 import FunctionLogs from '../functionLogs';
 import FunctionInformation from '../functionInformation';

@@ -21,7 +21,7 @@ import produceEmpty from 'assets/lotties/produce_empty.json';
 import produce from 'assets/lotties/produce-many.json';
 import consumer from 'assets/lotties/consume.json';
 import ProduceConsumList from './ProduceConsumList';
-import { StationStoreContext } from 'domain/stationOverview';
+import { StationStoreContext } from '..';
 import Messages from './messages';
 
 const StationObservabilty = ({ referredFunction }) => {

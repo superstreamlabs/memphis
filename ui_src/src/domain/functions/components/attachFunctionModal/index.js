@@ -24,7 +24,7 @@ import Button from 'components/button';
 import Modal from 'components/modal';
 import Loader from 'components/loader';
 import LearnMore from 'components/learnMore';
-import SchemaItem from '../../../stationOverview/components/useSchemaModal/schemaItem';
+import SchemaItem from 'domain/stationOverview/components/useSchemaModal/schemaItem';
 import { ReactComponent as StationIcon } from 'assets/images/stationsIconActive.svg';
 import CreateStationForm from 'components/createStationForm';
 import { isCloud } from 'services/valueConvertor';

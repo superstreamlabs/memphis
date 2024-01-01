@@ -12,13 +12,13 @@
 
 import axios from 'axios';
 
-import { SERVER_URL, SHOWABLE_ERROR_STATUS_CODE, AUTHENTICATION_ERROR_STATUS_CODE, CLOUD_URL } from '../config';
-import { LOCAL_STORAGE_TOKEN } from '../const/localStorageConsts.js';
-import { ApiEndpoints } from '../const/apiEndpoints';
-import pathDomains from '../router';
+import { SERVER_URL, SHOWABLE_ERROR_STATUS_CODE, AUTHENTICATION_ERROR_STATUS_CODE, CLOUD_URL } from 'config';
+import { LOCAL_STORAGE_TOKEN } from 'const/localStorageConsts.js';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import pathDomains from 'router';
 import AuthService from './auth';
 import { isCloud } from './valueConvertor';
-import EmailLink from '../components/emailLink';
+import EmailLink from 'components/emailLink';
 import { showMessages } from './genericServices';
 
 export async function httpRequest(method, endPointUrl, data = {}, headers = {}, queryParams = {}, authNeeded = true, timeout = 0, serverUrl = null, displayMsg = true) {

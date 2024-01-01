@@ -14,7 +14,7 @@ import './style.scss';
 
 import React, { useState } from 'react';
 import Button from 'components/button';
-import CustomCollapse from '../../../stationOverview/stationObservabilty/components/customCollapse';
+import CustomCollapse from 'domain/stationOverview/stationObservabilty/components/customCollapse';
 import { Space } from 'antd';
 import { httpRequest } from 'services/http';
 import { ApiEndpoints } from 'const/apiEndpoints';

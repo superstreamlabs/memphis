@@ -28,7 +28,7 @@ import pathDomains from 'router';
 
 const { Option } = Select;
 
-const CustomSelect = ({ options, onChange, value, placeholder, type = 'schema', handleCreateNew }) => {
+const CustomSelect = ({ options, onChange, value, placeholder, type = 'schema', handleCreateNew, showCreatedBy = true }) => {
     const history = useHistory();
 
     const handleChange = (e) => {
@@ -107,10 +107,12 @@ const CustomSelect = ({ options, onChange, value, placeholder, type = 'schema', 
                                     />
                                     <p className="schema-name">{schema?.name || schema}</p>
                                 </div>
-                                <p className="created-by">
-                                    {type === 'schema' ? <>{schema?.type} &#8226; </> : null}
-                                    {parsingDate(schema?.created_at)}
-                                </p>
+                                {showCreatedBy &&
+                                    <p className="created-by">
+                                        {type === 'schema' ? <>{schema?.type} &#8226; </> : null}
+                                        {parsingDate(schema?.created_at)}
+                                    </p>
+                                }
                             </>
                         </Option>
                     );

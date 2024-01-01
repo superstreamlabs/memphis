@@ -16,7 +16,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { ApiEndpoints } from 'const/apiEndpoints';
 import { httpRequest } from 'services/http';
 import { Context } from 'hooks/store';
-import { StationStoreContext } from '../../../';
+import { StationStoreContext } from 'domain/stationOverview';
 import { ReactComponent as AddFunctionIcon } from 'assets/images/addFunction.svg';
 import { ReactComponent as PlusIcon } from 'assets/images/plusIcon.svg';
 import { ReactComponent as ProcessedIcon } from 'assets/images/processIcon.svg';
@@ -28,7 +28,7 @@ import Lottie from 'lottie-react';
 import FunctionCard from '../functionCard';
 import FunctionsModal from '../functionsModal';
 import FunctionData from '../functionData';
-import FunctionDetails from '../../../../functions/components/functionDetails';
+import FunctionDetails from 'domain/functions/components/functionDetails';
 import { StringCodec, JSONCodec } from 'nats.ws';
 import Spinner from 'components/spinner';
 

@@ -21,7 +21,7 @@ import { httpRequest } from 'services/http';
 import Button from 'components/button';
 import Input from 'components/Input';
 import Copy from 'components/copy';
-import CreateUserDetails from '../../../users/createUserDetails';
+import CreateUserDetails from 'domain/users/createUserDetails';
 import Drawer from "components/drawer";
 import { LOCAL_STORAGE_ACCOUNT_ID, LOCAL_STORAGE_USER_PASS_BASED_AUTH } from 'const/localStorageConsts';
 import { isCloud } from 'services/valueConvertor';
@@ -118,7 +118,7 @@ const GenerateTokenModal = ({ host, close, returnToken, restProducer, stationNam
                 <>
                     {restProducer ? (
                         <p className="desc">
-                            Produce and consume data using the REST protocol. Great for webhooks ingestion and connecting your Memphis with other platforms
+                            Produce and consume data using the REST protocol. Great for webhooks ingestion and connecting your Memphis with 3rd parties
                         </p>
                     ) : (
                         <p className="desc">
@@ -224,15 +224,15 @@ const GenerateTokenModal = ({ host, close, returnToken, restProducer, stationNam
                             <div className="api-token">
                                 <p className="field-title">Produce</p>
                                 <div className="input-and-copy" onClick={() => produceConsumeRest('produce')}>
-                                    <span className="url-span">{`${host}.restgw.cloud.memphis.dev/stations/${stationName}/produce/single?authorization=${userToken?.jwt_refresh_token}`}</span>
-                                    <Copy data={userToken?.jwt_refresh_token} width={20} />
+                                    <span className="url-span">{`${host}/stations/${stationName}/produce/single?authorization=${userToken?.jwt_refresh_token}`}</span>
+                                    <Copy data={`${host}/stations/${stationName}/produce/single?authorization=${userToken?.jwt_refresh_token}`} width={20} />
                                 </div>
                             </div>
                             <div className="api-token">
                                 <p className="field-title">Consume</p>
                                 <div className="input-and-copy" onClick={() => produceConsumeRest('consume')}>
-                                    <span className="url-span">{`${host}.restgw.cloud.memphis.dev/stations/${stationName}/consume/batch?authorization=${userToken?.jwt_refresh_token}`}</span>
-                                    <Copy data={userToken?.jwt_refresh_token} width={20} />
+                                    <span className="url-span">{`${host}/stations/${stationName}/consume/batch?authorization=${userToken?.jwt_refresh_token}`}</span>
+                                    <Copy data={`${host}/stations/${stationName}/consume/batch?authorization=${userToken?.jwt_refresh_token}`} width={20} />
                                 </div>
                             </div>
                         </div>

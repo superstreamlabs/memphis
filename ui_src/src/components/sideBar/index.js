@@ -20,7 +20,7 @@ import { BsFillChatSquareTextFill } from 'react-icons/bs';
 import { useHistory } from 'react-router-dom';
 import { Divider, Popover } from 'antd';
 import Drawer from "components/drawer";
-import CloudMoadl from 'components/cloudModal';
+import CloudModal from 'components/cloudModal';
 import {
     LOCAL_STORAGE_ACCOUNT_NAME,
     LOCAL_STORAGE_AVATAR_ID,
@@ -565,7 +565,7 @@ function SideBar() {
                     route="administration"
                 />
             </div>
-            <CloudMoadl type={bannerType} open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
+            <CloudModal type={bannerType} open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
             <div className="bottom-icons">
                 {!isCloud() && (
                     <MenuItem

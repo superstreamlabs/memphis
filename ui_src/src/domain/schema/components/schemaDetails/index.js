@@ -451,7 +451,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                 fontFamily: 'Inter'
                             }}
                             language={schemaDetails?.type === 'protobuf' ? 'proto' : schemaDetails?.type === 'avro' ? 'json' : schemaDetails?.type}
-                            height="calc(100% - 55px)"
+                            height="calc(100% - 104px)"
                             defaultValue={versionSelected?.schema_content}
                             value={newVersion}
                             onChange={(value) => {

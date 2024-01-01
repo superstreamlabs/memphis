@@ -13,7 +13,6 @@
 import './style.scss';
 
 import { CloseRounded } from '@material-ui/icons';
-import Drawer from "components/drawer";
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 
@@ -28,6 +27,7 @@ import OverflowTip from 'components/tooltip/overflowtip';
 import pathDomains from 'router';
 import { ApiEndpoints } from 'const/apiEndpoints';
 import { httpRequest } from 'services/http';
+import Drawer from "components/drawer";
 
 function SchemaBox({ schemaBox, handleCheckedClick, isCheck }) {
     const history = useHistory();

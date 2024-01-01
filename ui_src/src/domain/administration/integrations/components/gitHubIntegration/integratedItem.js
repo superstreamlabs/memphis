@@ -84,7 +84,6 @@ const IntegrationItem = ({ isNew, index, disabled, repo, reposList, updateIntegr
                             updateRepo(e);
                         }}
                         options={Object?.keys(reposList)}
-                        placeholder={'Choose a repository'}
                     />
                 </Form.Item>
 
@@ -103,7 +102,6 @@ const IntegrationItem = ({ isNew, index, disabled, repo, reposList, updateIntegr
                         onChange={(e) => {
                             updateBranch(e);
                         }}
-                        placeholder={'Branch to sync with'}
                     />
                 </Form.Item>
 

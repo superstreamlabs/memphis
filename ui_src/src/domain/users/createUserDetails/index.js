@@ -650,7 +650,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                                     rules={
                                         rbacTypeRead === 'pattern' && [
                                             {
-                                                pattern: /^[a-zA-Z0-9_\-., ]+(\..*)?$/,
+                                                pattern: /^[a-zA-Z0-9_\-., ]+(\..*)?|\*$/,
                                                 message: `Only alphanumeric and the '_', '-', '.', '*' characters are allowed`
                                             }
                                         ]
@@ -710,7 +710,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                                     rules={
                                         rbacTypeWrite === 'pattern' && [
                                             {
-                                                pattern: /^[a-zA-Z0-9_\-., ]+(\..*)?$/,
+                                                pattern: /^[a-zA-Z0-9_\-., ]+(\..*)?|\*$/,
                                                 message: `Only alphanumeric and the '_', '-', '.', '*' characters are allowed`
                                             }
                                         ]
