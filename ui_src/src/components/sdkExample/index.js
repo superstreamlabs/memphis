@@ -95,9 +95,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
     };
 
     useEffect(() => {
-        if (!consumer) {
-            getAllUsers();
-        }
+        getAllUsers();
     }, []);
 
     useEffect(() => {
@@ -151,9 +149,10 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
         setFormFields({ ...formFields, headersList });
     };
 
-    const handleAddUser = (userData) => {
+    const handleAddUser = async (userData) => {
         setCreateUserLoader(false);
         addUserModalFlip(false);
+        await getAllUsers();
         updateFormFields('userName', userData.username);
     };
 
@@ -562,7 +561,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                         placeholder={'Select user'}
                                                         value={formFields.userName}
                                                         options={users}
-                                                        onChange={(e) => updateFormFields('userName', e)}
+                                                        onChange={(e) => {updateFormFields('userName', e)}}
                                                         type="user"
                                                         handleCreateNew={() => addUserModalFlip(true)}
                                                         showCreatedBy={false}

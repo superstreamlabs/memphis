@@ -6,6 +6,11 @@
     padding: 1vw;
     min-width: 700px;
     height: 100%;
+
+    .button-container.uninstall-btn button {
+        opacity: 1!important;
+    }
+
     .ant-btn > .ant-btn-loading-icon .anticon {
         padding-right: 0px !important;
         color: var(--purple);
