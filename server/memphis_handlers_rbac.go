@@ -8,6 +8,10 @@ import (
 	"github.com/memphisdev/memphis/models"
 )
 
+const (
+	inboxSubject = "_INBOX.>"
+)
+
 // the function returns a bool for is allowd to create and a bool for if a reload is needed
 func ValidateStationPermissions(rolesId []int, stationName, tenantName string) (bool, bool, error) {
 	// if the user dosent have a role len rolesId is 0 then he allowd to create
@@ -128,18 +132,18 @@ func GetAllMemphisAndNatsInternalSubjects() []string {
 	subjects = append(subjects, SCHEMAVERSE_DLS_SUBJ)
 	subjects = append(subjects, sdkClientsUpdatesSubject)
 	subjects = append(subjects, PM_RESEND_ACK_SUBJ)
-	subjects = append(subjects, "$memphis_schema_detachments")
-	subjects = append(subjects, "$memphis_consumer_creations")
-	subjects = append(subjects, "$memphis_consumer_destructions")
-	subjects = append(subjects, "$memphis_notifications")
-	subjects = append(subjects, "$memphis_producer_creations")
-	subjects = append(subjects, "$memphis_producer_destructions")
-	subjects = append(subjects, "$memphis_schema_creations")
-	subjects = append(subjects, "$memphis_station_creations")
-	subjects = append(subjects, "$memphis_station_destructions")
+	subjects = append(subjects, memphisSchemaDetachments)
+	subjects = append(subjects, memphisConsumerCreations)
+	subjects = append(subjects, memphisConsumerDestructions)
+	subjects = append(subjects, memphisNotifications)
+	subjects = append(subjects, memphisProducerCreations)
+	subjects = append(subjects, memphisProducerDestructions)
+	subjects = append(subjects, memphisSchemaCreations)
+	subjects = append(subjects, memphisStationCreations)
+	subjects = append(subjects, memphisStationDestructions)
 
 	// Nats subjects
-	subjects = append(subjects, "_INBOX.>")
+	subjects = append(subjects, inboxSubject)
 	subjects = append(subjects, JSApiStreams)
 
 	return subjects
@@ -153,7 +157,7 @@ func GetAllMemphisStationInternalSubjects(stationName string) []string {
 	subjects = append(subjects, fmt.Sprintf(connectConfigUpdatesSubjectTemplate, replaceDelimiters(stationName)))
 	subjects = append(subjects, fmt.Sprintf(schemaUpdatesSubjectTemplate, replaceDelimiters(stationName)))
 	subjects = append(subjects, fmt.Sprintf(memphisWS_TemplSubj_Publish, replaceDelimiters(stationName)))
-	subjects = append(subjects, fmt.Sprintf("$memphis_dls_%v.>", replaceDelimiters(stationName)))
+	subjects = append(subjects, fmt.Sprintf(dlsResendMessagesStreamNew, replaceDelimiters(stationName), ">"))
 
 	return subjects
 }
@@ -174,14 +178,10 @@ func GetAllowReadPublishInternalSbjects(partitionStream string) []string {
 	subjects = append(subjects, fmt.Sprintf(JSApiStreamInfoT, partitionStream))
 	subjects = append(subjects, fmt.Sprintf(JSApiMsgGetT, partitionStream))
 
-	// JSApiRequestNextT = "$JS.API.CONSUMER.MSG.NEXT.%s.%s"
-	subjects = append(subjects, fmt.Sprintf("$JS.API.CONSUMER.MSG.NEXT.%s", partitionStream))
-	// JSApiConsumerDeleteT = "$JS.API.CONSUMER.DELETE.%s.%s"
-	subjects = append(subjects, fmt.Sprintf("$JS.API.CONSUMER.DELETE.%s", partitionStream))
-	// JSApiDurableCreateT = "$JS.API.CONSUMER.DURABLE.CREATE.%s.%s"
-	subjects = append(subjects, fmt.Sprintf("$JS.API.CONSUMER.DURABLE.CREATE.%s", partitionStream))
-	// JSApiConsumerInfoT = "$JS.API.CONSUMER.INFO.%s.%s"
-	subjects = append(subjects, fmt.Sprintf("$JS.API.CONSUMER.INFO.%s", partitionStream))
+	subjects = append(subjects, fmt.Sprintf(JSApiRequestNextTMemphis, partitionStream))
+	subjects = append(subjects, fmt.Sprintf(JSApiConsumerDeleteTMemphis, partitionStream))
+	subjects = append(subjects, fmt.Sprintf(JSApiDurableCreateTMemphis, partitionStream))
+	subjects = append(subjects, fmt.Sprintf(JSApiConsumerInfoTMemphis, partitionStream))
 
 	return subjects
 }

@@ -990,19 +990,19 @@ func (umh UserMgmtHandler) SendTrace(c *gin.Context) {
 func ExternalPermissions(permissions models.Permissions) models.Permissions {
 	allowReadPermissionsExternal := []string{}
 	for _, permission := range permissions.AllowReadPermissions {
-		allowReadPermissionsExternal = append(allowReadPermissionsExternal, revertDelimiters(permission))
+		allowReadPermissionsExternal = append(allowReadPermissionsExternal, strings.ReplaceAll(permission, "\\", ""))
 	}
 	allowWritePermissionsExternal := []string{}
 	for _, permission := range permissions.AllowWritePermissions {
-		allowWritePermissionsExternal = append(allowWritePermissionsExternal, revertDelimiters(permission))
+		allowWritePermissionsExternal = append(allowWritePermissionsExternal, strings.ReplaceAll(permission, "\\", ""))
 	}
 	denyReadPermissionsExternal := []string{}
 	for _, permission := range permissions.DenyReadPermissions {
-		denyReadPermissionsExternal = append(denyReadPermissionsExternal, revertDelimiters(permission))
+		denyReadPermissionsExternal = append(denyReadPermissionsExternal, strings.ReplaceAll(permission, "\\", ""))
 	}
 	denyWritePermissionsExternal := []string{}
 	for _, permission := range permissions.DenyWritePermissions {
-		denyWritePermissionsExternal = append(denyWritePermissionsExternal, revertDelimiters(permission))
+		denyWritePermissionsExternal = append(denyWritePermissionsExternal, strings.ReplaceAll(permission, "\\", ""))
 	}
 	return models.Permissions{
 		AllowReadPermissions:  allowReadPermissionsExternal,

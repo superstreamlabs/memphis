@@ -187,6 +187,11 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 		return err
 	}
 
+	err = db.DeleteScheduledFunctionWorkersByStationId(station.ID, station.TenantName)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -1743,12 +1748,12 @@ func (s *Server) ResendUnackedMsg(dlsMsg models.DlsMessage, user models.User, st
 			return cgName, err
 		}
 		//resend to both old and new subject convention
-		err = s.ResendPoisonMessage(user.TenantName, "$memphis_dls_"+replaceDelimiters(stationName)+"."+replaceDelimiters(cgName), []byte(data), headers)
+		err = s.ResendPoisonMessage(user.TenantName, fmt.Sprintf(dlsResendMessagesStreamNew, replaceDelimiters(stationName), replaceDelimiters(cgName)), []byte(data), headers)
 		if err != nil {
 			err = fmt.Errorf("Failed ResendUnackedMsg at ResendPoisonMessage: Poisoned consumer group: %v: %v", cgName, err.Error())
 			return cgName, err
 		}
-		err = s.ResendPoisonMessage(user.TenantName, "$memphis_dls_"+replaceDelimiters(stationName)+"_"+replaceDelimiters(cgName), []byte(data), headers)
+		err = s.ResendPoisonMessage(user.TenantName, fmt.Sprintf(dlsResendMessagesStreamOld, replaceDelimiters(stationName), replaceDelimiters(cgName)), []byte(data), headers)
 		if err != nil {
 			err = fmt.Errorf("Failed ResendUnackedMsg at ResendPoisonMessage: Poisoned consumer group: %v: %v", cgName, err.Error())
 			return cgName, err

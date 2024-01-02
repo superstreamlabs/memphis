@@ -1427,6 +1427,21 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		password = string(hashedPwd)
 	}
 
+	var internalPermissions models.Permissions
+	if body.AllowReadPermissions != nil || body.AllowWritePermissions != nil || body.DenyReadPermissions != nil || body.DenyWritePermissions != nil {
+		internalPermissions, err = InternalPermissions(models.Permissions{
+			AllowReadPermissions:  body.AllowReadPermissions,
+			AllowWritePermissions: body.AllowWritePermissions,
+			DenyReadPermissions:   body.DenyReadPermissions,
+			DenyWritePermissions:  body.DenyWritePermissions,
+		})
+		if err != nil {
+			serv.Warnf("[tenant: %v][user: %v]AddUser at InternalPermissions: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			return
+		}
+	}
+
 	var brokerConnectionCreds string
 	if userType == "application" {
 		fullName = _EMPTY_
@@ -1462,17 +1477,6 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 
 	roleID := 0
 	if body.AllowReadPermissions != nil || body.AllowWritePermissions != nil || body.DenyReadPermissions != nil || body.DenyWritePermissions != nil {
-		internalPermissions, err := InternalPermissions(models.Permissions{
-			AllowReadPermissions:  body.AllowReadPermissions,
-			AllowWritePermissions: body.AllowWritePermissions,
-			DenyReadPermissions:   body.DenyReadPermissions,
-			DenyWritePermissions:  body.DenyWritePermissions,
-		})
-		if err != nil {
-			serv.Warnf("[tenant: %v][user: %v]AddUser at InternalPermissions: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-			return
-		}
 		role, _, err := db.CreateNewRole(newUser.Username, user.TenantName, userType, internalPermissions.AllowReadPermissions, internalPermissions.AllowWritePermissions, internalPermissions.DenyReadPermissions, internalPermissions.DenyWritePermissions)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]AddUser at CreateNewRole: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())

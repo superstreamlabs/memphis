@@ -55,6 +55,8 @@ const (
 	dlsUnackedStream            = "$memphis_dls_unacked"
 	dlsSchemaverseStream        = "$memphis_dls_schemaverse"
 	dlsFunctionsStream          = "$memphis_dls_functions"
+	dlsResendMessagesStreamNew  = "$memphis_dls_%v.%v"
+	dlsResendMessagesStreamOld  = "$memphis_dls_%v_%v"
 	tieredStorageStream         = "$memphis_tiered_storage"
 	throughputStreamName        = "$memphis-throughput"
 	throughputStreamNameV1      = "$memphis-throughput-v1"
@@ -62,6 +64,15 @@ const (
 	integrationsAuditLogsStream = "$memphis_integrations_audit_logs"
 	systemTasksStreamName       = "$memphis_system_tasks"
 	connectorsLogsStream        = "$memphis_connectors_logs"
+	memphisSchemaDetachments    = "$memphis_schema_detachments"
+	memphisConsumerCreations    = "$memphis_consumer_creations"
+	memphisConsumerDestructions = "$memphis_consumer_destructions"
+	memphisNotifications        = "$memphis_notifications"
+	memphisProducerCreations    = "$memphis_producer_creations"
+	memphisProducerDestructions = "$memphis_producer_destructions"
+	memphisSchemaCreations      = "$memphis_schema_creations"
+	memphisStationCreations     = "$memphis_station_creations"
+	memphisStationDestructions  = "$memphis_station_destructions"
 )
 
 var noLimit = -1

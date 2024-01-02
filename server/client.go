@@ -4814,12 +4814,12 @@ func (c *client) checkLeafClientInfoHeader(msg []byte) (dmsg []byte, setHdr bool
 }
 
 func (c *client) pubPermissionViolation(subject []byte) {
-	c.sendErr(fmt.Sprintf("Permissions Violation for Publish to %q", subject))
-	c.Warnf("Publish Violation - %s, Subject %q", c.getAuthUser(), subject) //** changed to warnf by memphis
+	c.sendErr("Permissions Violation - cant access the requested station, please contact your Memphis administrator") //** log changed by memphis
+	c.Warnf("Publish Violation - %s, Subject %q", c.getAuthUser(), subject)                                           //** changed to warnf by memphis
 }
 
 func (c *client) subPermissionViolation(sub *subscription) {
-	errTxt := fmt.Sprintf("Permissions Violation for Subscription to %q", sub.subject)
+	errTxt := "Permissions Violation - cant access the requested station, please contact your Memphis administrator" //** log changed by memphis
 	logTxt := fmt.Sprintf("Subscription Violation - %s, Subject %q, SID %s",
 		c.getAuthUser(), sub.subject, sub.sid)
 
@@ -4834,8 +4834,8 @@ func (c *client) subPermissionViolation(sub *subscription) {
 }
 
 func (c *client) replySubjectViolation(reply []byte) {
-	c.sendErr(fmt.Sprintf("Permissions Violation for Publish with Reply of %q", reply))
-	c.Warnf("Publish Violation - %s, Reply %q", c.getAuthUser(), reply) //** changed to warnf by memphis
+	c.sendErr("Permissions Violation - cant access the requested station, please contact your Memphis administrator") //** log changed by memphis
+	c.Warnf("Publish Violation - %s, Reply %q", c.getAuthUser(), reply)                                               //** changed to warnf by memphis
 }
 
 func (c *client) maxTokensViolation(sub *subscription) {
