@@ -28,6 +28,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/memphisdev/memphis/db"
 	"github.com/memphisdev/memphis/server"
 	"github.com/nats-io/nats.go"
 )
@@ -96,52 +97,88 @@ func sizedString(sz int) string {
 var psub = "a"
 
 func Benchmark______Pub0b_Payload(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	benchPub(b, psub, "")
 }
 
 func Benchmark______Pub8b_Payload(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	b.StopTimer()
 	s := sizedString(8)
 	benchPub(b, psub, s)
 }
 
 func Benchmark_____Pub32b_Payload(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	b.StopTimer()
 	s := sizedString(32)
 	benchPub(b, psub, s)
 }
 
 func Benchmark____Pub128B_Payload(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	b.StopTimer()
 	s := sizedString(128)
 	benchPub(b, psub, s)
 }
 
 func Benchmark____Pub256B_Payload(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	b.StopTimer()
 	s := sizedString(256)
 	benchPub(b, psub, s)
 }
 
 func Benchmark______Pub1K_Payload(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	b.StopTimer()
 	s := sizedString(1024)
 	benchPub(b, psub, s)
 }
 
 func Benchmark______Pub4K_Payload(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	b.StopTimer()
 	s := sizedString(4 * 1024)
 	benchPub(b, psub, s)
 }
 
 func Benchmark______Pub8K_Payload(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	b.StopTimer()
 	s := sizedString(8 * 1024)
 	benchPub(b, psub, s)
 }
 
 func Benchmark_____Pub32K_Payload(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	b.StopTimer()
 	s := sizedString(32 * 1024)
 	benchPub(b, psub, s)
@@ -171,6 +208,10 @@ func drainConnection(b *testing.B, c net.Conn, ch chan bool, expected int) {
 
 // Benchmark the authorization code path.
 func Benchmark__AuthPub0b_Payload(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	b.StopTimer()
 
 	srv, opts := RunServerWithConfig("./configs/authorization.conf")
@@ -181,7 +222,7 @@ func Benchmark__AuthPub0b_Payload(b *testing.B) {
 	defer c.Close()
 	expectAuthRequired(b, c)
 
-	cs := fmt.Sprintf("CONNECT {\"verbose\":false,\"user\":\"%s\",\"pass\":\"%s\"}\r\n", "bench", DefaultPass)
+	cs := fmt.Sprintf("CONNECT {\"verbose\":false,\"user\":\"%s\",\"pass\":\"%s\", \"name\": \"MEMPHIS UNIT TESTS\"}\r\n", "bench", DefaultPass) // ** name added by memphis
 	sendProto(b, c, cs)
 
 	bw := bufio.NewWriterSize(c, defaultSendBufSize)
@@ -197,6 +238,10 @@ func Benchmark__AuthPub0b_Payload(b *testing.B) {
 }
 
 func Benchmark_____________PubSub(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	b.StopTimer()
 	s := runBenchServer()
 	c := createClientConn(b, "127.0.0.1", PERF_PORT)
@@ -229,6 +274,10 @@ func Benchmark_____________PubSub(b *testing.B) {
 }
 
 func Benchmark_____PubSubTwoConns(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	b.StopTimer()
 	s := runBenchServer()
 	c := createClientConn(b, "127.0.0.1", PERF_PORT)
@@ -334,6 +383,10 @@ func addServiceImports(b *testing.B, s *server.Server) {
 }
 
 func Benchmark__PubServiceImports(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	o := benchOptionsForServiceImports()
 	s := RunServer(o)
 	defer s.Shutdown()
@@ -358,6 +411,10 @@ func Benchmark__PubServiceImports(b *testing.B) {
 }
 
 func Benchmark___PubSubAccsImport(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	o := benchDefaultOptionsForAccounts()
 	s := RunServer(o)
 	defer s.Shutdown()
@@ -392,6 +449,10 @@ func Benchmark___PubSubAccsImport(b *testing.B) {
 }
 
 func Benchmark_____PubTwoQueueSub(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	b.StopTimer()
 	s := runBenchServer()
 	c := createClientConn(b, "127.0.0.1", PERF_PORT)
@@ -425,6 +486,10 @@ func Benchmark_____PubTwoQueueSub(b *testing.B) {
 }
 
 func Benchmark____PubFourQueueSub(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	b.StopTimer()
 	s := runBenchServer()
 	c := createClientConn(b, "127.0.0.1", PERF_PORT)
@@ -460,6 +525,10 @@ func Benchmark____PubFourQueueSub(b *testing.B) {
 }
 
 func Benchmark___PubEightQueueSub(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	b.StopTimer()
 	s := runBenchServer()
 	c := createClientConn(b, "127.0.0.1", PERF_PORT)
@@ -499,6 +568,10 @@ func Benchmark___PubEightQueueSub(b *testing.B) {
 }
 
 func Benchmark_PubSub512kTwoConns(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	b.StopTimer()
 	s := runBenchServer()
 	c := createClientConn(b, "127.0.0.1", PERF_PORT)
@@ -538,6 +611,10 @@ func Benchmark_PubSub512kTwoConns(b *testing.B) {
 }
 
 func Benchmark__DenyMsgNoWCPubSub(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	s, opts := RunServerWithConfig("./configs/authorization.conf")
 	opts.DisableShortFirstPing = true
 	defer s.Shutdown()
@@ -576,6 +653,10 @@ func Benchmark__DenyMsgNoWCPubSub(b *testing.B) {
 }
 
 func Benchmark_DenyMsgYesWCPubSub(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	s, opts := RunServerWithConfig("./configs/authorization.conf")
 	opts.DisableShortFirstPing = true
 	defer s.Shutdown()
@@ -661,14 +742,26 @@ func routePubSub(b *testing.B, size int) {
 }
 
 func Benchmark____RoutedPubSub_0b(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	routePubSub(b, 2)
 }
 
 func Benchmark____RoutedPubSub_1K(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	routePubSub(b, 1024)
 }
 
 func Benchmark__RoutedPubSub_100K(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	routePubSub(b, 100*1024)
 }
 
@@ -721,6 +814,10 @@ func routeQueue(b *testing.B, numQueueSubs, size int) {
 }
 
 func Benchmark____Routed2QueueSub(b *testing.B) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	routeQueue(b, 2, 2)
 }
 

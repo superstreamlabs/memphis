@@ -21,10 +21,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/memphisdev/memphis/db"
 	"github.com/nats-io/nats.go"
 )
 
 func TestServerRestartReSliceIssue(t *testing.T) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	srvA, srvB, optsA, optsB := runServers(t)
 	defer srvA.Shutdown()
 

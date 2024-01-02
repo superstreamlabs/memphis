@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/memphisdev/memphis/db"
 	"github.com/memphisdev/memphis/server"
 	"github.com/nats-io/nats.go"
 )
@@ -27,14 +28,14 @@ import (
 func TestAccountCycleService(t *testing.T) {
 	conf := createConfFile(t, []byte(`
 		accounts {
-		  A {
-		    exports [ { service: help } ]
-			imports [ { service { subject: help, account: B } } ]
-		  }
-		  B {
-		    exports [ { service: help } ]
-			imports [ { service { subject: help, account: A } } ]
-		  }
+			A {
+				exports [ { service: help } ]
+				imports [ { service { subject: help, account: B } } ]
+		  	}
+		  	B {
+				exports [ { service: help } ]
+				imports [ { service { subject: help, account: A } } ]
+		  	}
 		}
 	`))
 
@@ -208,6 +209,10 @@ func TestAccountCycleServiceNonCycleChain(t *testing.T) {
 
 // bug: https://github.com/nats-io/nats-server/issues/1769
 func TestServiceImportReplyMatchCycle(t *testing.T) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	conf := createConfFile(t, []byte(`
 		port: -1
 		accounts {
@@ -247,6 +252,10 @@ func TestServiceImportReplyMatchCycle(t *testing.T) {
 }
 
 func TestServiceImportReplyMatchCycleMultiHops(t *testing.T) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	conf := createConfFile(t, []byte(`
 		port: -1
 		accounts {
@@ -291,6 +300,10 @@ func TestServiceImportReplyMatchCycleMultiHops(t *testing.T) {
 
 // Go's stack are infinite sans memory, but not call depth. However its good to limit.
 func TestAccountCycleDepthLimit(t *testing.T) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	var last *server.Account
 	chainLen := server.MaxAccountCycleSearchDepth + 1
 
@@ -343,6 +356,10 @@ func TestAccountCycleDepthLimit(t *testing.T) {
 
 // Test token and partition subject mapping within an account
 func TestAccountSubjectMapping(t *testing.T) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	conf := createConfFile(t, []byte(`
 		port: -1
 		mappings = {
@@ -424,6 +441,10 @@ func TestAccountSubjectMapping(t *testing.T) {
 // test token subject mapping within an account
 // Alice imports from Bob with subject mapping
 func TestAccountImportSubjectMapping(t *testing.T) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	conf := createConfFile(t, []byte(`
                 port: -1
                 accounts {
@@ -492,7 +513,7 @@ func TestAccountImportSubjectMapping(t *testing.T) {
 func clientConnectToServer(t *testing.T, s *server.Server) *nats.Conn {
 	t.Helper()
 	nc, err := nats.Connect(s.ClientURL(),
-		nats.Name("JS-TEST"),
+		nats.Name("MEMPHIS UNIT TESTS"), // ** name changed by Memphis
 		nats.ReconnectWait(5*time.Millisecond),
 		nats.MaxReconnects(-1))
 	if err != nil {
@@ -503,7 +524,7 @@ func clientConnectToServer(t *testing.T, s *server.Server) *nats.Conn {
 
 func clientConnectToServerWithUP(t *testing.T, opts *server.Options, user, pass string) *nats.Conn {
 	curl := fmt.Sprintf("nats://%s:%s@%s:%d", user, pass, opts.Host, opts.Port)
-	nc, err := nats.Connect(curl, nats.Name("JS-UP-TEST"), nats.ReconnectWait(5*time.Millisecond), nats.MaxReconnects(-1))
+	nc, err := nats.Connect(curl, nats.Name("MEMPHIS UNIT TESTS"), nats.ReconnectWait(5*time.Millisecond), nats.MaxReconnects(-1)) // ** name changed by Memphis
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}

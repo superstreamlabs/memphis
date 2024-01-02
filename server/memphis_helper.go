@@ -271,9 +271,10 @@ func (s *Server) CreateInternalJetStreamResources() {
 
 	if s.memphis.activateSysLogsPubFunc == nil {
 		s.Fatalf("internal error: sys logs publish activation func is not initialized")
+	} else {
+		s.memphis.activateSysLogsPubFunc()
+		s.popFallbackLogs()
 	}
-	s.memphis.activateSysLogsPubFunc()
-	s.popFallbackLogs()
 }
 
 func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, successCh chan error, isCluster bool) {

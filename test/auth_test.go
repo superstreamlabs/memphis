@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/memphisdev/memphis/db"
 	"github.com/memphisdev/memphis/server"
 )
 
@@ -60,6 +61,10 @@ func runAuthServerWithToken() *server.Server {
 }
 
 func TestNoAuthClient(t *testing.T) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	s := runAuthServerWithToken()
 	defer s.Shutdown()
 	c := createClientConn(t, "127.0.0.1", AUTH_PORT)
@@ -70,6 +75,10 @@ func TestNoAuthClient(t *testing.T) {
 }
 
 func TestAuthClientBadToken(t *testing.T) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	s := runAuthServerWithToken()
 	defer s.Shutdown()
 	c := createClientConn(t, "127.0.0.1", AUTH_PORT)
@@ -80,6 +89,10 @@ func TestAuthClientBadToken(t *testing.T) {
 }
 
 func TestAuthClientNoConnect(t *testing.T) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	s := runAuthServerWithToken()
 	defer s.Shutdown()
 	c := createClientConn(t, "127.0.0.1", AUTH_PORT)
@@ -91,16 +104,24 @@ func TestAuthClientNoConnect(t *testing.T) {
 }
 
 func TestAuthClientGoodConnect(t *testing.T) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	s := runAuthServerWithToken()
 	defer s.Shutdown()
 	c := createClientConn(t, "127.0.0.1", AUTH_PORT)
 	defer c.Close()
 	expectAuthRequired(t, c)
-	doAuthConnect(t, c, AUTH_TOKEN, "", "")
+	doAuthConnect(t, c, "::"+AUTH_TOKEN, "", "") // :: added by memphis
 	expectResult(t, c, okRe)
 }
 
 func TestAuthClientFailOnEverythingElse(t *testing.T) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	s := runAuthServerWithToken()
 	defer s.Shutdown()
 	c := createClientConn(t, "127.0.0.1", AUTH_PORT)
@@ -126,6 +147,10 @@ func runAuthServerWithUserPass() *server.Server {
 }
 
 func TestNoUserOrPasswordClient(t *testing.T) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	s := runAuthServerWithUserPass()
 	defer s.Shutdown()
 	c := createClientConn(t, "127.0.0.1", AUTH_PORT)
@@ -136,6 +161,10 @@ func TestNoUserOrPasswordClient(t *testing.T) {
 }
 
 func TestBadUserClient(t *testing.T) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	s := runAuthServerWithUserPass()
 	defer s.Shutdown()
 	c := createClientConn(t, "127.0.0.1", AUTH_PORT)
@@ -146,6 +175,10 @@ func TestBadUserClient(t *testing.T) {
 }
 
 func TestBadPasswordClient(t *testing.T) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	s := runAuthServerWithUserPass()
 	defer s.Shutdown()
 	c := createClientConn(t, "127.0.0.1", AUTH_PORT)
@@ -156,6 +189,10 @@ func TestBadPasswordClient(t *testing.T) {
 }
 
 func TestPasswordClientGoodConnect(t *testing.T) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	s := runAuthServerWithUserPass()
 	defer s.Shutdown()
 	c := createClientConn(t, "127.0.0.1", AUTH_PORT)
@@ -182,6 +219,10 @@ func runAuthServerWithBcryptUserPass() *server.Server {
 }
 
 func TestBadBcryptPassword(t *testing.T) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	s := runAuthServerWithBcryptUserPass()
 	defer s.Shutdown()
 	c := createClientConn(t, "127.0.0.1", AUTH_PORT)
@@ -192,6 +233,10 @@ func TestBadBcryptPassword(t *testing.T) {
 }
 
 func TestGoodBcryptPassword(t *testing.T) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	s := runAuthServerWithBcryptUserPass()
 	defer s.Shutdown()
 	c := createClientConn(t, "127.0.0.1", AUTH_PORT)
@@ -216,6 +261,10 @@ func runAuthServerWithBcryptToken() *server.Server {
 }
 
 func TestBadBcryptToken(t *testing.T) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	s := runAuthServerWithBcryptToken()
 	defer s.Shutdown()
 	c := createClientConn(t, "127.0.0.1", AUTH_PORT)
@@ -226,11 +275,15 @@ func TestBadBcryptToken(t *testing.T) {
 }
 
 func TestGoodBcryptToken(t *testing.T) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	s := runAuthServerWithBcryptToken()
 	defer s.Shutdown()
 	c := createClientConn(t, "127.0.0.1", AUTH_PORT)
 	defer c.Close()
 	expectAuthRequired(t, c)
-	doAuthConnect(t, c, BCRYPT_AUTH_TOKEN, "", "")
+	doAuthConnect(t, c, "::"+BCRYPT_AUTH_TOKEN, "", "") // :: added by memphis
 	expectResult(t, c, okRe)
 }

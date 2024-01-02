@@ -157,7 +157,7 @@ func DecryptAES(key []byte, encryptedValue string) (string, error) {
 
 func getAESKey() []byte {
 	var key []byte
-	if configuration.DOCKER_ENV == "true" || configuration.LOCAL_CLUSTER_ENV {
+	if configuration.DOCKER_ENV == "true" || configuration.LOCAL_CLUSTER_ENV || configuration.ENCRYPTION_SECRET_KEY == _EMPTY_ {
 		key = []byte(DEFAULT_ENCRYPTION_SECRET_KEY)
 	} else {
 		key = []byte(configuration.ENCRYPTION_SECRET_KEY)

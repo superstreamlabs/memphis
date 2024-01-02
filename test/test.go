@@ -648,3 +648,21 @@ func createTempFile(t testing.TB, prefix string) *os.File {
 	}
 	return file
 }
+
+func initalizeMemphis() {
+	_, rootUserCreated, err := server.InitializeMetadataStorage()
+	if err != nil {
+		panic(err)
+	}
+
+	err = server.InitializeCloudComponents()
+	if err != nil {
+		panic(err)
+	}
+
+	if rootUserCreated {
+		_, _ = server.CreateUsersFromConfigOnFirstSystemLoad()
+	}
+}
+
+// ** added by memphis

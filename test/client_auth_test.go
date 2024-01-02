@@ -18,10 +18,15 @@ import (
 	"os"
 	"testing"
 
+	"github.com/memphisdev/memphis/db"
 	"github.com/nats-io/nats.go"
 )
 
 func TestMultipleUserAuth(t *testing.T) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	srv, opts := RunServerWithConfig("./configs/multi_user.conf")
 	defer srv.Shutdown()
 
@@ -38,7 +43,7 @@ func TestMultipleUserAuth(t *testing.T) {
 		opts.Users[0].Password,
 		opts.Host, opts.Port)
 
-	nc, err := nats.Connect(url)
+	nc, err := nats.Connect(url, nats.Name("MEMPHIS UNIT TESTS")) // ** name added by Memphis
 	if err != nil {
 		t.Fatalf("Expected a successful connect, got %v\n", err)
 	}
@@ -54,7 +59,7 @@ func TestMultipleUserAuth(t *testing.T) {
 		opts.Users[1].Password,
 		opts.Host, opts.Port)
 
-	nc, err = nats.Connect(url)
+	nc, err = nats.Connect(url, nats.Name("MEMPHIS UNIT TESTS")) // ** name added by Memphis
 	if err != nil {
 		t.Fatalf("Expected a successful connect, got %v\n", err)
 	}
@@ -65,6 +70,10 @@ func TestMultipleUserAuth(t *testing.T) {
 const testToken = "$2a$05$3sSWEVA1eMCbV0hWavDjXOx.ClBjI6u1CuUdLqf22cbJjXsnzz8/."
 
 func TestTokenInConfig(t *testing.T) {
+	// ** added by Memphis
+	initalizeMemphis()
+	defer db.DropDb()
+	// ** added by Memphis
 	content := `
 	listen: 127.0.0.1:4567
 	authorization={
@@ -78,8 +87,8 @@ func TestTokenInConfig(t *testing.T) {
 	s, opts := RunServerWithConfig(confFile)
 	defer s.Shutdown()
 
-	url := fmt.Sprintf("nats://test@%s:%d/", opts.Host, opts.Port)
-	nc, err := nats.Connect(url)
+	url := fmt.Sprintf("nats://%s:%d/", opts.Host, opts.Port)// ** test: deleted by Memphis 
+	nc, err := nats.Connect(url, nats.Token("::test"), nats.Name("MEMPHIS UNIT TESTS")) // ** name/token added by Memphis
 	if err != nil {
 		t.Fatalf("Expected a successful connect, got %v\n", err)
 	}

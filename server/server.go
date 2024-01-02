@@ -3342,6 +3342,14 @@ func (s *Server) saveClosedClient(c *client, nc net.Conn, reason ClosedState) {
 		s.closed.append(cc)
 	}
 	s.mu.Unlock()
+	
+	// ** added by Memphis
+	if c.kind == CLIENT {
+		if err := c.memphisInfo.updateDisconnection(c.acc.GetName()); err != nil {
+			c.srv.Errorf("Disconnection update error: " + err.Error())
+		}
+	}
+	// ** added by Memphis
 }
 
 // Adds to the list of client and websocket clients connect URLs.

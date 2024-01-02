@@ -1809,13 +1809,6 @@ func (c *client) markConnAsClosed(reason ClosedState) {
 			// TODO: May want to send events to single go routine instead
 			// of creating a new go routine for each save.
 			go c.srv.saveClosedClient(c, nc, reason)
-			// ** added by Memphis
-			if c.kind == CLIENT {
-				if err := c.memphisInfo.updateDisconnection(c.acc.GetName()); err != nil {
-					c.srv.Errorf("Disconnection update error: " + err.Error())
-				}
-			}
-			// ** added by Memphis
 		}
 	}
 	// If writeLoop exists, let it do the final flush, close and teardown.

@@ -7449,3 +7449,32 @@ func GetMemphisFunctionsByMemphis() ([]models.Function, error) {
 	}
 	return functions, nil
 }
+
+func DropDb() error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	queries := []string{
+		`DROP SCHEMA public CASCADE;`,
+		`CREATE SCHEMA public;`,
+	}
+
+	batch := &pgx.Batch{}
+	for _, q := range queries {
+		batch.Queue(q)
+	}
+
+	br := conn.SendBatch(ctx, batch)
+
+	_, err = br.Exec()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
