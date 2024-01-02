@@ -258,10 +258,6 @@ html.dark-mode {
     background: #E4E8E6;
   }
 
-  .code-example-details-container .code-generator-container .code-builder .parameters-section, {
-    background: darken(#E6EAE8, 2%);
-  }
-
   .code-builder .ant-collapse-header {
     background: darken(#E6EAE8, 1%);
   }
@@ -306,6 +302,10 @@ html.dark-mode {
   .schema-container .action-section .button-container:first-child, .schema-container .action-section .button-container:nth-child(n-1),
   .right-side .button-container {
     filter: $color-invert-filter !important;
+  }
+
+  .right-side .button-container:last-child {
+    filter: initial!important;
   }
 
   .video-player {
@@ -516,11 +516,15 @@ html.dark-mode {
       background: darken(#E6EAE8, 2%);
     }
     label {
-      color: $color-border-medium;
+      color: lighten($color-text-dark, 25%);
     }
     .content label:last-child {
       color: $color-border-medium!important;
     }
+  }
+
+  .message-wrapper .message-detail-item .content {
+    color: lighten($color-text-dark, 25%);
   }
 
   .message-journey-container {
@@ -542,6 +546,14 @@ html.dark-mode {
     .consumer-group header {
       background: #f18e85;
     }
+  }
+
+  .connector-name svg, .connector-options svg, .connector-options-selected svg {
+    filter: initial!important;
+  }
+
+  .ant-select-dropdown .ant-select-item-option-content .Memphis img {
+    filter: $color-invert-filter-reverse!important;
   }
 
 }

@@ -212,7 +212,7 @@ const StationOverviewHeader = ({ refresh }) => {
                         />
                     </div>
                     <div className="created-by">
-                        Created by <b>{stationState?.stationMetaData?.created_by_username}</b> at {stationState?.stationMetaData?.created_at}{' '}
+                        Created by <b>{stationState?.stationMetaData?.created_by_username.startsWith('$') ? 'system' : stationState?.stationMetaData?.created_by_username}</b> at {stationState?.stationMetaData?.created_at}{' '}
                         {!stationState?.stationMetaData?.is_native && '(NATS-Compatible)'}
                         {isCloud() && (
                             <span className="hostname">

@@ -205,16 +205,14 @@ const MessageDetails = ({ open, isDls, unselect, isFailedSchemaMessage = false, 
                     keysArray &&
                     keysArray.map((item) => (
                         <span key={item} className="content">
-                            <label>{item}</label>
-                            <label className="val">{value[item]}</label>
+                            <label>{item}: <span className="val">{value[item]}</span></label>
                             <Copy data={value[item]} />
                         </span>
                     ))}
                 {details &&
                     value?.map((item) => (
                         <span key={item.name} className="content">
-                            <label>{item.name}</label>
-                            <label className="val">{item.value}</label>
+                            <label>{item.name}: <span className="val">{item.value}</span></label>
                             <Copy data={`${item.name} ${item.value}`} />
                         </span>
                     ))}

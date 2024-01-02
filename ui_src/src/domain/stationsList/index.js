@@ -116,7 +116,6 @@ const StationsList = () => {
                                 radiusType="circle"
                                 backgroundColorType="purple"
                                 fontSize="16px"
-                                fontWeight="bold"
                                 onClick={() => (!isCloud() || state?.allowedActions?.can_create_stations ? modalFlip(true) : setOpenCloudModal(true))}
                             />
                         </div>
