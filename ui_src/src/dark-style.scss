@@ -68,7 +68,7 @@ html.dark-mode {
   }
 
   .ant-popover-inner, .stream-lineage-container .title-wrapper .refresh-wrapper, .stream-lineage-container .title-wrapper .actions-wrapper .close-wrapper,
-  .ant-picker-panel-container, .softwate-updates-container .item-component, .function-box-wrapper, .MuiMenu-paper {
+  .ant-picker-panel-container, .softwate-updates-container .item-component, .function-box-wrapper, .MuiMenu-paper, .async-btn-container, .update-refresh .refresh-btn {
     box-shadow: none;
   }
 
@@ -258,10 +258,6 @@ html.dark-mode {
     background: #E4E8E6;
   }
 
-  .code-example-details-container .code-generator-container .code-builder .parameters-section, {
-    background: darken(#E6EAE8, 2%);
-  }
-
   .code-builder .ant-collapse-header {
     background: darken(#E6EAE8, 1%);
   }
@@ -306,6 +302,10 @@ html.dark-mode {
   .schema-container .action-section .button-container:first-child, .schema-container .action-section .button-container:nth-child(n-1),
   .right-side .button-container {
     filter: $color-invert-filter !important;
+  }
+
+  .right-side .button-container:last-child {
+    filter: initial!important;
   }
 
   .video-player {
@@ -454,7 +454,7 @@ html.dark-mode {
     filter: $color-invert-filter-reverse;
   }
 
-  .anticon.anticon-close svg, .overview-wrapper .btn-section svg, .logs-wrapper .loader svg, .logs-wrapper .logs-loader svg {
+  .anticon.anticon-close svg, .logs-wrapper .loader svg, .logs-wrapper .logs-loader svg {
     filter: $color-invert-filter-reverse;
   }
 
@@ -516,11 +516,15 @@ html.dark-mode {
       background: darken(#E6EAE8, 2%);
     }
     label {
-      color: $color-border-medium;
+      color: lighten($color-text-dark, 25%);
     }
     .content label:last-child {
       color: $color-border-medium!important;
     }
+  }
+
+  .message-wrapper .message-detail-item .content {
+    color: lighten($color-text-dark, 25%);
   }
 
   .message-journey-container {
@@ -541,6 +545,41 @@ html.dark-mode {
     }
     .consumer-group header {
       background: #f18e85;
+    }
+  }
+
+  .connector-name svg, .connector-options svg, .connector-options-selected svg {
+    filter: initial!important;
+  }
+
+  .ant-select-dropdown .ant-select-item-option-content .Memphis img {
+    filter: $color-invert-filter-reverse!important;
+  }
+
+  .overview-container .overview-components-wrapper .stations-row .lottie-cloud svg {
+    filter: $color-invert-filter-reverse;
+  }
+
+  .scrollable-wrapper .used-stations .button-container button svg {
+    filter: $color-invert-filter-reverse!important;
+  }
+
+  .setting-container .setting-items .tab-container.active .tab, .requests-container .usage-details .panel-container .requests-item .lavander {
+    background: rgb(101, 87, 255, .2)!important;
+  }
+
+  .ant-input::placeholder, .ant-picker input::placeholder, .ant-select-selection-placeholder {
+    color: #939595;
+  }
+
+  .customSelect-add-user-button .button-container {
+    filter: $color-invert-filter-reverse!important;
+  }
+
+  .ant-picker {
+    box-shadow: none!important;
+    input::placeholder {
+
     }
   }
 

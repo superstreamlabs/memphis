@@ -562,7 +562,7 @@ const ProduceConsumList = ({ producer }) => {
                                                             icon={<IoMdInformationCircle />}
                                                         />
                                                         <MenuItem
-                                                            name={'Erros'}
+                                                            name={'Logs'}
                                                             onClick={() => {
                                                                 setOpenConnectorError(true);
                                                                 setOpenConnectorPopover(false);
@@ -662,7 +662,7 @@ const ProduceConsumList = ({ producer }) => {
                                                             icon={<IoMdInformationCircle />}
                                                         />
                                                         <MenuItem
-                                                            name={'Erros'}
+                                                            name={'Logs'}
                                                             onClick={() => {
                                                                 setOpenConnectorError(true);
                                                                 setOpenConnectorPopover(false);
