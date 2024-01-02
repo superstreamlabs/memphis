@@ -356,9 +356,9 @@ func sendTenantSlackNotifications(s *Server, tenantName string, msgs []Notificat
 			if err.Error() == "channel_not_found" {
 				s.Warnf("[tenant: %v]failed to send slack notification: %v", tenantName, err.Error())
 			} else {
-				s.Errorf("[tenant: %v]failed to send slack notification: %v", tenantName, err.Error())
 				var rateLimit *slack.RateLimitedError
 				if errors.As(err, &rateLimit) {
+					s.Warnf("[tenant: %v]failed to send slack notification: %v", tenantName, err.Error())
 					err := nackMsgs(s, msgs[i:], rateLimit.RetryAfter)
 					if err != nil {
 						s.Errorf("[tenant: %v]failed to send NACK for slack notification: %v", tenantName, err.Error())
@@ -366,6 +366,8 @@ func sendTenantSlackNotifications(s *Server, tenantName string, msgs []Notificat
 
 					return
 				}
+
+				s.Errorf("[tenant: %v]failed to send slack notification: %v", tenantName, err.Error())
 				continue
 			}
 		}
