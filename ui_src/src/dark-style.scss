@@ -68,7 +68,7 @@ html.dark-mode {
   }
 
   .ant-popover-inner, .stream-lineage-container .title-wrapper .refresh-wrapper, .stream-lineage-container .title-wrapper .actions-wrapper .close-wrapper,
-  .ant-picker-panel-container, .softwate-updates-container .item-component, .function-box-wrapper, .MuiMenu-paper {
+  .ant-picker-panel-container, .softwate-updates-container .item-component, .function-box-wrapper, .MuiMenu-paper, .async-btn-container, .update-refresh .refresh-btn {
     box-shadow: none;
   }
 
@@ -454,7 +454,7 @@ html.dark-mode {
     filter: $color-invert-filter-reverse;
   }
 
-  .anticon.anticon-close svg, .overview-wrapper .btn-section svg, .logs-wrapper .loader svg, .logs-wrapper .logs-loader svg {
+  .anticon.anticon-close svg, .logs-wrapper .loader svg, .logs-wrapper .logs-loader svg {
     filter: $color-invert-filter-reverse;
   }
 
@@ -554,6 +554,33 @@ html.dark-mode {
 
   .ant-select-dropdown .ant-select-item-option-content .Memphis img {
     filter: $color-invert-filter-reverse!important;
+  }
+
+  .overview-container .overview-components-wrapper .stations-row .lottie-cloud svg {
+    filter: $color-invert-filter-reverse;
+  }
+
+  .scrollable-wrapper .used-stations .button-container button svg {
+    filter: $color-invert-filter-reverse!important;
+  }
+
+  .setting-container .setting-items .tab-container.active .tab, .requests-container .usage-details .panel-container .requests-item .lavander {
+    background: rgb(101, 87, 255, .2)!important;
+  }
+
+  .ant-input::placeholder, .ant-picker input::placeholder, .ant-select-selection-placeholder {
+    color: #939595;
+  }
+
+  .customSelect-add-user-button .button-container {
+    filter: $color-invert-filter-reverse!important;
+  }
+
+  .ant-picker {
+    box-shadow: none!important;
+    input::placeholder {
+
+    }
   }
 
 }
