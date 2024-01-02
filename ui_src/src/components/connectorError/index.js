@@ -72,7 +72,7 @@ const ConnectorError = ({ open, clickOutside, connectorId }) => {
 
     return (
         <Modal
-            header={'Connector Logs'}
+            header={'Connector Errors'}
             className={'modal-wrapper produce-modal'}
             width="550px"
             height="50vh"
