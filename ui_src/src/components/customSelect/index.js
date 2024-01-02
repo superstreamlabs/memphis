@@ -100,6 +100,7 @@ const CustomSelect = ({ options, onChange, value, placeholder, type = 'schema', 
                                     style={{
                                         padding: '0 20px 4px',
                                     }}
+                                    className="customSelect-add-user-button"
                                 >
                                     <Button
                                         placeholder={
