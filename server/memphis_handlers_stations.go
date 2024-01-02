@@ -268,6 +268,41 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
+	exist, user, err := memphis_cache.GetUser(username, csr.TenantName, false)
+	if err != nil {
+		serv.Warnf("[tenant: %v][user:%v]createStationDirect at memphis_cache.GetUser: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+		return
+	}
+	if !exist {
+		serv.Warnf("[tenant: %v][user:%v]createStationDirect at memphis_cache.GetUser: user %v is not exists", csr.TenantName, csr.Username, csr.Username)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+		return
+	}
+
+	allowd, ReloadNeeded, err := ValidateStationPermissions(user.Roles, stationName.Ext(), csr.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user:%v]createStationDirect at ValidateStationPermissions: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+		return
+	}
+	if !allowd {
+		errMsg := fmt.Sprintf("user %v is not allowed to create station %v", csr.Username, csr.StationName)
+		serv.Warnf("[tenant: %v][user:%v]createStationDirect: %v", csr.TenantName, csr.Username, errMsg)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, errors.New(errMsg))
+		return
+	}
+	if ReloadNeeded {
+		defer func() {
+			err = serv.SendReloadSignal()
+			if err != nil {
+				serv.Errorf("[tenant: %v][user:%v]createStationDirect at SendReloadSignal: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
+				respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+				return
+			}
+		}()
+	}
+
 	stationsCount, err := db.CountStationsByTenant(csr.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]CreateStation at CountStationsByTenant: %v", csr.TenantName, csr.Username, err.Error())
@@ -429,18 +464,6 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	exist, user, err := memphis_cache.GetUser(username, csr.TenantName, false)
-	if err != nil {
-		serv.Warnf("[tenant: %v][user:%v]createStationDirect at memphis_cache.GetUser: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
-		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
-		return
-	}
-	if !exist {
-		serv.Warnf("[tenant: %v][user:%v]createStationDirect at memphis_cache.GetUser: user %v is not exists", csr.TenantName, csr.Username, csr.Username)
-		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
-		return
-	}
-
 	dlsStationNameToLower := strings.ToLower(csr.DlsStation)
 	if csr.DlsStation != _EMPTY_ {
 		DlsStation, err := StationNameFromStr(dlsStationNameToLower)
@@ -464,7 +487,7 @@ func (s *Server) createStationDirectIntern(c *client,
 				respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 				return
 			}
-			_, created, err = CreateDefaultStation(user.TenantName, s, dlsStationName, user.ID, user.Username, _EMPTY_, 0)
+			_, created, err = CreateDefaultStation(user.TenantName, s, dlsStationName, user, _EMPTY_, 0)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user:%v]createStationDirect at DLS CreateDefaultStation: %v", csr.TenantName, csr.Username, err.Error())
 				respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
@@ -909,6 +932,34 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
+	stationName, err := StationNameFromStr(body.Name)
+	if err != nil {
+		serv.Warnf("[tenant: %v][user: %v]CreateStation at StationNameFromStr: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
+
+	allowd, ReloadNeeded, err := ValidateStationPermissions(user.Roles, stationName.Ext(), user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]CreateStation at ValidateStationPermissions: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !allowd {
+		errMsg := fmt.Sprintf("user %v is not allowed to create station %v", user.Username, body.Name)
+		serv.Warnf("[tenant: %v][user: %v]CreateStation: %v", user.TenantName, user.Username, errMsg)
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+	}
+	if ReloadNeeded {
+		defer func() {
+			err = serv.SendReloadSignal()
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]CreateStation at SendReloadSignal: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			}
+		}()
+	}
+
 	stationsCount, err := db.CountStationsByTenant(user.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]CreateStation at CountStationsByTenant: %v", user.TenantName, user.Username, err.Error())
@@ -952,13 +1003,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 	partitionsList := make([]int, 0)
-
-	stationName, err := StationNameFromStr(body.Name)
-	if err != nil {
-		serv.Warnf("[tenant: %v][user: %v]CreateStation at StationNameFromStr: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-		return
-	}
 
 	exist, _, err := db.GetStationByName(stationName.Ext(), tenantName)
 	if err != nil {
@@ -1090,7 +1134,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		}
 		if !exist {
 			var created bool
-			_, created, err = CreateDefaultStation(user.TenantName, sh.S, dlsStationName, user.ID, user.Username, _EMPTY_, 0)
+			_, created, err = CreateDefaultStation(user.TenantName, sh.S, dlsStationName, user, _EMPTY_, 0)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user:%v]CreateStation at DLS CreateDefaultStation: %v", user.TenantName, user.Username, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1255,7 +1299,7 @@ func (sh StationsHandler) AttachDlsStation(c *gin.Context) {
 			return
 		}
 
-		station, _, err = CreateDefaultStation(tenantName, sh.S, stationName, user.ID, user.Username, _EMPTY_, 0)
+		station, _, err = CreateDefaultStation(tenantName, sh.S, stationName, user, _EMPTY_, 0)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]AttachDlsStation at CreateDefaultStation: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1425,6 +1469,40 @@ func (s *Server) removeStationDirectIntern(c *client,
 	jsApiResp := JSApiStreamDeleteResponse{ApiResponse: ApiResponse{Type: JSApiStreamDeleteResponseType}}
 	memphisGlobalAcc := s.MemphisGlobalAccount()
 
+	_, user, err := memphis_cache.GetUser(dsr.Username, dsr.TenantName, false)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]removeStationDirectIntern at memphis_cache.GetUser: Station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+		return
+	}
+
+	stationName, err := StationNameFromStr(dsr.StationName)
+	if err != nil {
+		serv.Warnf("[tenant: %v][user: %v]removeStationDirectIntern at StationNameFromStr: Station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
+		jsApiResp.Error = NewJSStreamDeleteError(err)
+		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+		return
+	}
+
+	allowd, ReloadNeeded, err := ValidateStationPermissions(user.Roles, stationName.Ext(), user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]CreateStation at ValidateStationPermissions: Station %v: %v", user.TenantName, user.Username, stationName.Ext(), err.Error())
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+		return
+	}
+	if !allowd {
+		errMsg := fmt.Sprintf("user %v is not allowed to remove station %v", user.Username, stationName.Ext())
+		serv.Warnf("[tenant: %v][user: %v]CreateStation: %v", user.TenantName, user.Username, errMsg)
+	}
+	if ReloadNeeded {
+		defer func() {
+			err = serv.SendReloadSignal()
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]CreateStation at SendReloadSignal: Station %v: %v", user.TenantName, user.Username, stationName.Ext(), err.Error())
+			}
+		}()
+	}
+
 	// for NATS compatibility
 	username, tenantId, err := getUserAndTenantIdFromString(dsr.Username)
 	if err != nil {
@@ -1451,14 +1529,6 @@ func (s *Server) removeStationDirectIntern(c *client,
 		}
 		dsr.TenantName = t.Name
 		dsr.Username = username
-	}
-
-	stationName, err := StationNameFromStr(dsr.StationName)
-	if err != nil {
-		serv.Warnf("[tenant: %v][user: %v]removeStationDirectIntern at StationNameFromStr: Station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
-		jsApiResp.Error = NewJSStreamDeleteError(err)
-		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
-		return
 	}
 
 	exist, station, err := db.GetStationByName(stationName.Ext(), dsr.TenantName)
@@ -1491,12 +1561,6 @@ func (s *Server) removeStationDirectIntern(c *client,
 		return
 	}
 
-	_, user, err := memphis_cache.GetUser(dsr.Username, dsr.TenantName, false)
-	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]removeStationDirectIntern at memphis_cache.GetUser: Station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
-		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
-		return
-	}
 	message := "Station " + stationName.Ext() + " has been deleted by user " + dsr.Username
 	serv.Noticef("[tenant: %v][user: %v] %v ", user.TenantName, user.Username, message)
 	if isNative {
@@ -1683,7 +1747,13 @@ func (s *Server) ResendUnackedMsg(dlsMsg models.DlsMessage, user models.User, st
 			err = fmt.Errorf("Failed ResendUnackedMsg at DecodeString: Poisoned consumer group: %v: %v", cgName, err.Error())
 			return cgName, err
 		}
-		err = s.ResendPoisonMessage(user.TenantName, "$memphis_dls_"+replaceDelimiters(stationName)+"_"+replaceDelimiters(cgName), []byte(data), headers)
+		//resend to both old and new subject convention
+		err = s.ResendPoisonMessage(user.TenantName, fmt.Sprintf(dlsResendMessagesStreamNew, replaceDelimiters(stationName), replaceDelimiters(cgName)), []byte(data), headers)
+		if err != nil {
+			err = fmt.Errorf("Failed ResendUnackedMsg at ResendPoisonMessage: Poisoned consumer group: %v: %v", cgName, err.Error())
+			return cgName, err
+		}
+		err = s.ResendPoisonMessage(user.TenantName, fmt.Sprintf(dlsResendMessagesStreamOld, replaceDelimiters(stationName), replaceDelimiters(cgName)), []byte(data), headers)
 		if err != nil {
 			err = fmt.Errorf("Failed ResendUnackedMsg at ResendPoisonMessage: Poisoned consumer group: %v: %v", cgName, err.Error())
 			return cgName, err
