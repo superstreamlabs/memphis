@@ -4815,7 +4815,7 @@ func (c *client) checkLeafClientInfoHeader(msg []byte) (dmsg []byte, setHdr bool
 
 func (c *client) pubPermissionViolation(subject []byte) {
 	c.sendErr(fmt.Sprintf("Permissions Violation for Publish to %q", subject))
-	c.Errorf("Publish Violation - %s, Subject %q", c.getAuthUser(), subject)
+	c.Warnf("Publish Violation - %s, Subject %q", c.getAuthUser(), subject) //** changed to warnf by memphis
 }
 
 func (c *client) subPermissionViolation(sub *subscription) {
@@ -4830,12 +4830,12 @@ func (c *client) subPermissionViolation(sub *subscription) {
 	}
 
 	c.sendErr(errTxt)
-	c.Errorf(logTxt)
+	c.Warnf(logTxt) //** changed to warnf by memphis
 }
 
 func (c *client) replySubjectViolation(reply []byte) {
 	c.sendErr(fmt.Sprintf("Permissions Violation for Publish with Reply of %q", reply))
-	c.Errorf("Publish Violation - %s, Reply %q", c.getAuthUser(), reply)
+	c.Warnf("Publish Violation - %s, Reply %q", c.getAuthUser(), reply) //** changed to warnf by memphis
 }
 
 func (c *client) maxTokensViolation(sub *subscription) {

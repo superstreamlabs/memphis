@@ -52,6 +52,7 @@ import (
 const shouldCreateRootUserforGlobalAcc = true
 const TENANT_SEQUENCE_START_ID = 2
 const MAX_PARTITIONS = 10000
+const FUNCTIONS_UPDATE_SUBJ = "$memphis_functions_updates_%s"
 
 type BillingHandler struct{ S *Server }
 type TenantHandler struct{ S *Server }
@@ -1459,6 +1460,38 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 
+	roleID := 0
+	if body.AllowReadPermissions != nil || body.AllowWritePermissions != nil || body.DenyReadPermissions != nil || body.DenyWritePermissions != nil {
+		internalPermissions, err := InternalPermissions(models.Permissions{
+			AllowReadPermissions:  body.AllowReadPermissions,
+			AllowWritePermissions: body.AllowWritePermissions,
+			DenyReadPermissions:   body.DenyReadPermissions,
+			DenyWritePermissions:  body.DenyWritePermissions,
+		})
+		if err != nil {
+			serv.Warnf("[tenant: %v][user: %v]AddUser at InternalPermissions: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			return
+		}
+		role, _, err := db.CreateNewRole(newUser.Username, user.TenantName, userType, internalPermissions.AllowReadPermissions, internalPermissions.AllowWritePermissions, internalPermissions.DenyReadPermissions, internalPermissions.DenyWritePermissions)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]AddUser at CreateNewRole: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		roleID = role.ID
+	}
+
+	if roleID > 0 {
+		err = db.UpdateUserRole(user.TenantName, newUser.Username, []int{roleID})
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]AddUser at UpdateUserRole: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		newUser.Roles = []int{roleID}
+	}
+
 	err = memphis_cache.SetUser(newUser)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]AddUser at writing to the user cache error: %v", user.TenantName, user.Username, err)
@@ -2223,7 +2256,7 @@ func (s *Server) CreateDefaultEntitiesOnMemphisAccount() error {
 		return err
 	}
 
-	_, _, err = CreateDefaultStation(serv.MemphisGlobalAccountString(), serv, stationName, user.ID, user.Username, schemaName, 1)
+	_, _, err = CreateDefaultStation(serv.MemphisGlobalAccountString(), serv, stationName, user, schemaName, 1)
 	if err != nil {
 		return err
 	}

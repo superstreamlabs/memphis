@@ -1576,8 +1576,19 @@ func generateRandomPassword(length int) string {
 }
 
 type UserConfig struct {
-	User     string `json:"user"`
-	Password string `json:"password"`
+	User        string          `json:"user"`
+	Password    string          `json:"password"`
+	Permissions NatsPermissions `json:"permissions,omitempty"`
+}
+
+type NatsPermissions struct {
+	Publish   NatsAuthorization `json:"publish,omitempty"`
+	Subscribe NatsAuthorization `json:"subscribe,omitempty"`
+}
+
+type NatsAuthorization struct {
+	Allow []string `json:"allow,omitempty"`
+	Deny  []string `json:"deny,omitempty"`
 }
 
 type AccountConfig struct {
@@ -1620,6 +1631,7 @@ func getAccountsAndUsersString() (string, error) {
 	if err != nil {
 		return _EMPTY_, err
 	}
+
 	tenants, err := db.GetAllTenantsWithoutGlobal()
 	if err != nil {
 		return _EMPTY_, err
@@ -1655,10 +1667,38 @@ func getAccountsAndUsersString() (string, error) {
 			globalUsers = append(globalUsers, UserConfig{User: user.Username + "$1", Password: decryptedUserPassword})
 			continue
 		}
-		if usrMap, ok := tenantsToUsers[tName]; !ok {
-			tenantsToUsers[tName] = []UserConfig{{User: user.Username, Password: decryptedUserPassword}}
+		if len(user.Roles) > 0 {
+			allowReadSubjects, allowWriteSubjects, err := GetAllowedSubjectsFromRoleIds(user.Roles, tName)
+			if err != nil {
+				//return _EMPTY_, err
+				fmt.Printf("user: %v, err: %v\n", user.Username, err)
+			}
+
+			if usrMap, ok := tenantsToUsers[tName]; !ok {
+				tenantsToUsers[tName] = []UserConfig{{
+					User:     user.Username,
+					Password: decryptedUserPassword,
+					Permissions: NatsPermissions{
+						Publish:   NatsAuthorization{Allow: allowWriteSubjects},
+						Subscribe: NatsAuthorization{Allow: allowReadSubjects},
+					},
+				}}
+			} else {
+				tenantsToUsers[tName] = append(usrMap, UserConfig{
+					User:     user.Username,
+					Password: decryptedUserPassword,
+					Permissions: NatsPermissions{
+						Publish:   NatsAuthorization{Allow: allowWriteSubjects},
+						Subscribe: NatsAuthorization{Allow: allowReadSubjects},
+					},
+				})
+			}
 		} else {
-			tenantsToUsers[tName] = append(usrMap, UserConfig{User: user.Username, Password: decryptedUserPassword})
+			if usrMap, ok := tenantsToUsers[tName]; !ok {
+				tenantsToUsers[tName] = []UserConfig{{User: user.Username, Password: decryptedUserPassword}}
+			} else {
+				tenantsToUsers[tName] = append(usrMap, UserConfig{User: user.Username, Password: decryptedUserPassword})
+			}
 		}
 	}
 	for _, t := range tenants {
@@ -1669,8 +1709,9 @@ func getAccountsAndUsersString() (string, error) {
 		internalAppUser := fmt.Sprintf("$%s$%v", t.Name, t.ID) // for internal use
 		usrsList := []UserConfig{{User: "$" + t.Name, Password: getInternalUserPassword()}, {User: internalAppUser, Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}, {User: MEMPHIS_USERNAME + "$" + strconv.Itoa(t.ID), Password: decryptedUserPassword}}
 		if usrMap, ok := tenantsToUsers[t.Name]; ok {
+			var usrChangeName UserConfig
 			for _, usr := range usrMap {
-				usrChangeName := UserConfig{User: usr.User + "$" + strconv.Itoa(t.ID), Password: usr.Password}
+				usrChangeName = UserConfig{User: usr.User + "$" + strconv.Itoa(t.ID), Password: usr.Password, Permissions: usr.Permissions}
 				usrsList = append(usrsList, usrChangeName)
 			}
 		}
@@ -1687,6 +1728,7 @@ func getAccountsAndUsersString() (string, error) {
 	}
 	jsonString = strings.ReplaceAll(jsonString, `"replaceImports"`, memphisImportString)
 	jsonString = strings.ReplaceAll(jsonString, `"replaceExports"`, memphisExportString)
+	jsonString = strings.ReplaceAll(jsonString, "\\u003e", ">")
 	return jsonString, nil
 }
 
