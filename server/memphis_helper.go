@@ -1675,7 +1675,24 @@ func getAccountsAndUsersString() (string, error) {
 			return _EMPTY_, err
 		}
 		if tName == MEMPHIS_GLOBAL_ACCOUNT {
-			globalUsers = append(globalUsers, UserConfig{User: user.Username + "$1", Password: decryptedUserPassword})
+			if len(user.Roles) > 0 {
+				allowReadSubjects, allowWriteSubjects, err := GetAllowedSubjectsFromRoleIds(user.Roles, tName)
+				if err != nil {
+					//return _EMPTY_, err
+					fmt.Printf("user: %v, err: %v\n", user.Username, err)
+				}
+
+				globalUsers = append(globalUsers, UserConfig{
+					User:     user.Username + "$1",
+					Password: decryptedUserPassword,
+					Permissions: NatsPermissions{
+						Publish:   NatsAuthorization{Allow: allowWriteSubjects},
+						Subscribe: NatsAuthorization{Allow: allowReadSubjects},
+					},
+				})
+			} else {
+				globalUsers = append(globalUsers, UserConfig{User: user.Username + "$1", Password: decryptedUserPassword})
+			}
 			continue
 		}
 		if len(user.Roles) > 0 {
