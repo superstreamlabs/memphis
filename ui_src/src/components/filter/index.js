@@ -476,7 +476,7 @@ const Filter = ({ filterComponent, height, applyFilter, hideElement }) => {
                     colorType="black"
                     radiusType="circle"
                     backgroundColorType="white"
-                    fontSize="14px"
+                    fontSize="12px"
                     fontWeight="bold"
                     boxShadowStyle="float"
                     onClick={() => {}}

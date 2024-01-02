@@ -183,7 +183,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                         </div>
                         <div className="meta-container">
                             <UserIcon />
-                            <label className="data-labels date">Created by: {station?.station?.created_by_username}</label>
+                            <label className="data-labels date">Created by: {station?.station?.created_by_username.startsWith('$') ? 'system' : station?.station?.created_by_username}</label>
                         </div>
 
                         <div className="tags-list">

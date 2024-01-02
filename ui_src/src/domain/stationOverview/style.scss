@@ -13,11 +13,14 @@
     }
     .station-observability {
         min-width: 900px;
-        width: calc(100% - 2vw - var(--main-container-sidebar-width));
         height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: center;
+        width: 100%;
+        @media (max-width: 1200px) {
+            width: calc(100% - 2vw - var(--main-container-sidebar-width));
+        }
     }
     .overview-top {
         display: flex;
