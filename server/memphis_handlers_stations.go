@@ -187,6 +187,11 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 		return err
 	}
 
+	err = db.DeleteScheduledFunctionWorkersByStationId(station.ID, station.TenantName)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
