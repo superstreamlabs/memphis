@@ -71,14 +71,17 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
         }
     ];
     const [stationsList, setStationsList] = useState([]);
-    const [rbacTypeWrite, setRbacTypeWrite] = useState('pattern');
-    const [rbacTypeRead, setRbacTypeRead] = useState('pattern');
+    const [rbacTypeWrite, setRbacTypeWrite] = useState(selectedRow ? null : 'pattern');
+    const [rbacTypeRead, setRbacTypeRead] = useState(selectedRow ? null : 'pattern');
     const [isDisabled, setIsDisabled] = useState(false);
 
     const getAllowedActions = useGetAllowedActions();
 
     useEffect(() => {
-        getAllStations();
+        if (selectedRow) {
+            creationForm.setFieldsValue({ allow_read_permissions: selectedRow?.permissions?.allow_read_permissions });
+            creationForm.setFieldsValue({ allow_write_permissions: selectedRow?.permissions?.allow_write_permissions });
+        } else getAllStations();
         createUserRef.current = onFinish;
     }, []);
 
@@ -103,7 +106,6 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
     const onFinish = async () => {
         try {
             let canCreate = isCloud() ? false : true;
-            console.log('formFields', creationForm.getFieldsValue());
             const fieldsValue = await creationForm.validateFields();
             if (fieldsValue?.errorFields) {
                 handleLoader(false);
@@ -693,7 +695,6 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                                             showArrow
                                             mode="tags"
                                             placeholder={'*'}
-                                            value={selectedRow?.permissions?.allow_read_permissions || []}
                                             onChange={(e) => {
                                                 updateFormState('allow_read_permissions', e);
                                                 creationForm.setFieldsValue({ allow_read_permissions: e });
@@ -701,6 +702,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                                             style={{ width: '100%' }}
                                             popupClassName="select-options"
                                             disabled={isDisabled}
+                                            notFoundContent={null}
                                         ></Select>
                                     )}
                                 </Form.Item>
@@ -768,6 +770,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                                             style={{ width: '100%', backgroundColor: 'none' }}
                                             popupClassName="select-options"
                                             disabled={isDisabled}
+                                            notFoundContent={null}
                                         ></Select>
                                     )}
                                 </Form.Item>
