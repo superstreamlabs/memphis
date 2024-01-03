@@ -55,11 +55,9 @@ func GetUserAllowedStations(userRoles []int, tenantName string) ([]models.Statio
 	for _, permission := range permissions {
 		if permission.RestrictionType == "allow" {
 			if permission.Type == "read" {
-				// permissionsAllowReadPattern = append(permissionsAllowReadPattern, GetPatternWithDots(permission.Pattern))
 				permissionsAllowReadPattern = append(permissionsAllowReadPattern, permission.Pattern)
 
 			} else if permission.Type == "write" {
-				// permissionsAllowWritePattern = append(permissionsAllowWritePattern, GetPatternWithDots(permission.Pattern))
 				permissionsAllowWritePattern = append(permissionsAllowWritePattern, permission.Pattern)
 			}
 		}
@@ -145,6 +143,7 @@ func GetAllMemphisAndNatsInternalSubjects() []string {
 	// Nats subjects
 	subjects = append(subjects, inboxSubject)
 	subjects = append(subjects, JSApiStreams)
+	subjects = append(subjects, JSApiAccountInfo)
 
 	return subjects
 }
