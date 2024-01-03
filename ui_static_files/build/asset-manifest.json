@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.ab07ab74.css",
-    "main.js": "/static/js/main.2f19ccc5.js",
+    "main.css": "/static/css/main.53d16f01.css",
+    "main.js": "/static/js/main.56932a09.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -103,9 +103,10 @@
     "static/media/datadogMetricsps.png": "/static/media/datadogMetricsps.1499ed3dd93864f786d4.png",
     "static/media/grafanaIcon.svg": "/static/media/grafanaIcon.fab6c489e404c8b49be8da7181a654bb.svg",
     "static/media/slackLogo.svg": "/static/media/slackLogo.85c9e715c432e8d73f13b4b860378f32.svg",
+    "static/media/darkGraphOverview.png": "/static/media/darkGraphOverview.92261654ef8738c3981a.png",
+    "static/media/lightGraphOverview.png": "/static/media/lightGraphOverview.d152ddd09fab00abad55.png",
     "static/media/kafkaIcon.svg": "/static/media/kafkaIcon.55141e9dac5efc55c985e2db1c6a421f.svg",
     "static/media/codicon.ttf": "/static/media/codicon.b797181c93b3755f4fa1.ttf",
-    "static/media/graphOverview.svg": "/static/media/graphOverview.625afdb73bbf4040996811a8face93ac.svg",
     "static/media/datadogIcon.svg": "/static/media/datadogIcon.50af3f4d4c0af10fbedefe809eebd0e1.svg",
     "static/media/influxDBIcon.svg": "/static/media/influxDBIcon.2e7bbdf6ca01a76a16d98ed6158fc316.svg",
     "static/media/zapierBannerPopup.webp": "/static/media/zapierBannerPopup.115aeaa642deb09097a9.webp",
@@ -338,7 +339,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.ab07ab74.css",
-    "static/js/main.2f19ccc5.js"
+    "static/css/main.53d16f01.css",
+    "static/js/main.56932a09.js"
   ]
 }
