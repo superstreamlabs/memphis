@@ -800,15 +800,16 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                 <Button
                     placeholder={'Add'}
                     colorType={'white'}
-                    onClick={() => (selectedRow ? closeModal() : onFinish())}
+                    onClick={onFinish}
                     fontSize={'14px'}
                     fontWeight={500}
+                    width="300px"
                     border="none"
                     backgroundColorType={'purple'}
                     height="40px"
-                    width="50%"
                     radiusType="circle"
                     isLoading={isLoading}
+                    disabled={isDisabled}
                 />
             </Form>
         </div>

@@ -22,7 +22,7 @@ import Button from 'components/button';
 import Input from 'components/Input';
 import Copy from 'components/copy';
 import CreateUserDetails from 'domain/users/createUserDetails';
-import Drawer from "components/drawer";
+import Drawer from 'components/drawer';
 import { LOCAL_STORAGE_ACCOUNT_ID, LOCAL_STORAGE_USER_PASS_BASED_AUTH } from 'const/localStorageConsts';
 import { isCloud } from 'services/valueConvertor';
 import { sendTrace } from 'services/genericServices';
@@ -244,7 +244,7 @@ const GenerateTokenModal = ({ host, close, returnToken, restProducer, stationNam
                             height="36px"
                             placeholder={Object.keys(userToken).length !== 0 && restProducer ? 'Regenerate' : 'Generate'}
                             colorType="white"
-                            radiusType="semi-round"
+                            radiusType="circle"
                             backgroundColorType={'purple'}
                             fontSize="14px"
                             fontWeight="bold"
@@ -258,7 +258,7 @@ const GenerateTokenModal = ({ host, close, returnToken, restProducer, stationNam
                             height="36px"
                             placeholder="Close"
                             colorType="white"
-                            radiusType="semi-round"
+                            radiusType="circle"
                             backgroundColorType={'purple'}
                             fontSize="14px"
                             fontWeight="bold"

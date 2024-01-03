@@ -65,6 +65,8 @@
 }
 .ant-select-selection-item {
     .throughput-details {
+        display: flex;
+        align-items: center;
         svg {
             display: none;
         }

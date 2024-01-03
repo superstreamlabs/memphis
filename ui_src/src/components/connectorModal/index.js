@@ -147,7 +147,7 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
             });
             newConnecor(data?.connector, formFields?.connector_type?.toLocaleLowerCase());
         } catch (error) {
-            setError(JSON.stringify(error));
+            setError(JSON.stringify(error?.data?.message || error?.data));
         } finally {
             setLoading(false);
         }
