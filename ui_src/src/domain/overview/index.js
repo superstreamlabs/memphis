@@ -26,7 +26,8 @@ import {
     USER_IMAGE
 } from 'const/localStorageConsts';
 import { ReactComponent as StationIcon } from 'assets/images/stationsIconActive.svg';
-import { ReactComponent as GraphOverview } from 'assets/images/graphOverview.svg';
+import GraphOverviewLight from 'assets/images/lightGraphOverview.png';
+import GraphOverviewDark from 'assets/images/darkGraphOverview.png';
 import { ReactComponent as CloudTeaser } from 'assets/images/cloudTeaser.svg';
 import { ReactComponent as PlusElement } from 'assets/images/plusElement.svg';
 import { ReactComponent as EditIcon } from 'assets/images/editIcon.svg';
@@ -334,7 +335,7 @@ function OverView() {
                                                         setCloudModalOpen(true);
                                                     }}
                                                 >
-                                                    <GraphOverview alt="Graph view" className="graphview-img" />
+                                                    <img className="graphview-img" src={(state?.darkMode ? GraphOverviewDark : GraphOverviewLight) || null} alt=""/>
                                                 </div>
                                             </div>
                                         </div>
