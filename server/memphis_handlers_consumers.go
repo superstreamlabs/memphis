@@ -757,6 +757,63 @@ func (s *Server) destroyCGFromNats(c *client, reply, userName, tenantName string
 
 }
 
+func (s *Server) destroyCGFromNatsInternal(username, tenantName string, stationName StationName, consumer models.Consumer, station models.Station) error {
+	// ensure not part of an active consumer group
+	count, err := db.CountActiveConsumersInCG(consumer.ConsumersGroup, station.ID)
+	if err != nil {
+		return err
+	}
+
+	deleted := false
+	if count == 0 { // no other members in this group
+		err = s.RemoveConsumer(station.TenantName, stationName, consumer.ConsumersGroup, consumer.PartitionsList)
+		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
+			return err
+		}
+		if err == nil {
+			deleted = true
+		}
+
+		err = db.RemovePoisonedCg(station.ID, consumer.ConsumersGroup)
+		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
+			return err
+		}
+	}
+
+	name := strings.ToLower(consumer.Name)
+	if deleted {
+		_, user, err := memphis_cache.GetUser(username, consumer.TenantName, false)
+		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
+			return err
+		}
+		message := fmt.Sprintf("Consumer %v has been destroyed", name)
+		serv.Noticef("[tenant: %v][user: %v]: %v", user.TenantName, user.Username, message)
+		var auditLogs []interface{}
+		newAuditLog := models.AuditLog{
+			StationName:       stationName.Ext(),
+			Message:           message,
+			CreatedBy:         user.ID,
+			CreatedByUsername: user.Username,
+			CreatedAt:         time.Now(),
+			TenantName:        user.TenantName,
+		}
+		auditLogs = append(auditLogs, newAuditLog)
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			serv.Errorf("[tenant: %v]destroyCGFromNats at CreateAuditLogs: Consumer %v at station %v: %v", user.TenantName, consumer.Name, station.Name, err.Error())
+		}
+
+		shouldSendAnalytics, _ := shouldSendAnalytics()
+		if shouldSendAnalytics {
+			analyticsParams := make(map[string]interface{})
+			analytics.SendEvent(user.TenantName, username, analyticsParams, "user-remove-consumer-sdk")
+		}
+	}
+
+	return nil
+
+}
+
 func comparePartitionsList(pList1, pList2 []int) bool {
 	if len(pList1) != len(pList2) {
 		return false
