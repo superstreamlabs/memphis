@@ -8225,3 +8225,48 @@ func GetStationsByPattern(patterns []string, tenantName string) ([]models.Statio
 		return stationsList, nil
 	}
 }
+
+func RemoveRoleAndPermissions(roleID []int, tenantName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	tenantName = strings.ToLower(tenantName)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	tx, err := conn.Conn().Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback(ctx)
+		} else {
+			tx.Commit(ctx)
+		}
+	}()
+
+	query := `DELETE FROM permissions WHERE role_id = ANY($1) AND tenant_name = $2`
+	stmt, err := tx.Prepare(ctx, "remove_permissions_by_role_id", query)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(ctx, stmt.Name, roleID, tenantName)
+	if err != nil {
+		return err
+	}
+
+	query = `DELETE FROM roles WHERE id = ANY($1) AND tenant_name = $2`
+	stmt, err = tx.Prepare(ctx, "remove_role_by_id", query)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(ctx, stmt.Name, roleID, tenantName)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

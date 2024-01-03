@@ -1589,6 +1589,14 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 
+	//TODO - at the future, do not remove the role and permissions from the DB, just remove the role from the user
+	err = db.RemoveRoleAndPermissions(userToRemove.Roles, userToRemove.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]RemoveUser error with deleting role and permissions from the DB: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	SendUserDeleteCacheUpdate([]string{username}, user.TenantName)
 
 	if userToRemove.UserType == "application" && configuration.USER_PASS_BASED_AUTH {
