@@ -1519,6 +1519,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	}
 
 	serv.Noticef("[tenant: %v][user: %v]User %v has been created", user.TenantName, user.Username, username)
+	permissions := ExternalPermissions(internalPermissions)
 	c.IndentedJSON(200, gin.H{
 		"id":                      newUser.ID,
 		"username":                username,
@@ -1533,6 +1534,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		"pending":                 newUser.Pending,
 		"owner":                   newUser.Owner,
 		"description":             newUser.Description,
+		"permissions":             permissions,
 	})
 }
 

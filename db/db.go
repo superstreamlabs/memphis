@@ -8072,7 +8072,15 @@ func CheckUserStationPermissions(rolesId []int, stationName string) (bool, error
 		return false, err
 	}
 	defer conn.Release()
-	query := `SELECT COUNT(*) FROM permissions WHERE role_id = ANY($1) AND type = 'write' AND restriction_type = 'allow' AND $2 ~ pattern`
+	query := `SELECT COUNT(*)
+	FROM permissions
+	WHERE role_id = ANY($1)
+	  AND type = 'write'
+	  AND restriction_type = 'allow'
+	  AND (
+		(position('*' in pattern) > 0 AND $2 ~ pattern) OR
+		(position('*' in pattern) = 0 AND $2 = pattern)
+	  );`
 	stmt, err := conn.Conn().Prepare(ctx, "check_user_station_permissions", query)
 	if err != nil {
 		return false, err
