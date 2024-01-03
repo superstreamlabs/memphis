@@ -2824,6 +2824,26 @@ func DeleteProducerByNameAndStationID(name string, stationId int) (bool, error) 
 	return true, nil
 }
 
+func DeleteConnectorProducerByNameAndStationID(name string, stationId int) (bool, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer conn.Release()
+	query := `DELETE FROM producers WHERE name = $1 AND station_id = $2 AND type = 'connector' LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "delete_producer_by_name_and_station_id", query)
+	if err != nil {
+		return false, err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, name, stationId)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 func DeleteProducerByNameStationIDAndConnID(name string, stationId int, connId string) (bool, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -3209,6 +3229,34 @@ func DeleteConsumerByNameStationIDAndConnID(connectionId, name string, stationId
 		return false, models.Consumer{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, deleteStmt.Name, connectionId, name, stationId)
+	if err != nil {
+		return false, models.Consumer{}, err
+	}
+	defer rows.Close()
+	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Consumer])
+	if err != nil {
+		return false, models.Consumer{}, err
+	}
+	if len(consumers) == 0 {
+		return false, models.Consumer{}, err
+	}
+	return true, consumers[0], nil
+}
+
+func DeleteConsumerByNameStationIDAndType(consumerType, name string, stationId int) (bool, models.Consumer, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, models.Consumer{}, err
+	}
+	defer conn.Release()
+	query := ` DELETE FROM consumers WHERE ctid = ( SELECT ctid FROM consumers WHERE type = $1 AND name = $2 AND station_id = $3 LIMIT 1) RETURNING *`
+	deleteStmt, err := conn.Conn().Prepare(ctx, "delete_consumers", query)
+	if err != nil {
+		return false, models.Consumer{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, deleteStmt.Name, consumerType, name, stationId)
 	if err != nil {
 		return false, models.Consumer{}, err
 	}
