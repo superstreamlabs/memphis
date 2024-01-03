@@ -8149,31 +8149,71 @@ func GetStationsByPattern(patterns []string, tenantName string) ([]models.Statio
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	tenantName = strings.ToLower(tenantName)
+
+	var stationsList []models.Station
+	var plainNames []string
+	var regexPatterns []string
+	for _, pattern := range patterns {
+		if strings.Contains(pattern, "*") {
+			regexPatterns = append(regexPatterns, pattern)
+		} else {
+			plainNames = append(plainNames, pattern)
+		}
+	}
+
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return []models.Station{}, err
 	}
 	defer conn.Release()
 
-	query := `SELECT * FROM stations WHERE name ~ ANY($1) AND tenant_name = $2`
-	stmt, err := conn.Conn().Prepare(ctx, "get_stations_by_pattern", query)
-	if err != nil {
-		return []models.Station{}, err
+	if len(regexPatterns) > 0 {
+		query := `SELECT * FROM stations WHERE name ~ ANY($1) AND tenant_name = $2`
+		stmt, err := conn.Conn().Prepare(ctx, "get_stations_by_pattern", query)
+		if err != nil {
+			return []models.Station{}, err
+		}
+
+		rows, err := conn.Conn().Query(ctx, stmt.Name, regexPatterns, tenantName)
+		if err != nil {
+			return []models.Station{}, err
+		}
+		defer rows.Close()
+
+		stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Station])
+		if err != nil {
+			return []models.Station{}, err
+		}
+		if len(stations) != 0 {
+			stationsList = append(stationsList, stations...)
+		}
 	}
 
-	rows, err := conn.Conn().Query(ctx, stmt.Name, patterns, tenantName)
-	if err != nil {
-		return []models.Station{}, err
-	}
-	defer rows.Close()
+	if len(plainNames) > 0 {
+		query := `SELECT * FROM stations WHERE name = ANY($1) AND tenant_name = $2`
+		stmt, err := conn.Conn().Prepare(ctx, "get_stations_by_plain_names", query)
+		if err != nil {
+			return []models.Station{}, err
+		}
 
-	stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Station])
-	if err != nil {
-		return []models.Station{}, err
+		rows, err := conn.Conn().Query(ctx, stmt.Name, plainNames, tenantName)
+		if err != nil {
+			return []models.Station{}, err
+		}
+		defer rows.Close()
+
+		stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Station])
+		if err != nil {
+			return []models.Station{}, err
+		}
+		if len(stations) != 0 {
+			stationsList = append(stationsList, stations...)
+		}
 	}
-	if len(stations) == 0 {
+
+	if len(stationsList) == 0 {
 		return []models.Station{}, nil
+	} else {
+		return stationsList, nil
 	}
-	return stations, nil
-
 }
