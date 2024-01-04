@@ -186,6 +186,7 @@ func (s *Server) ListenForNotificationEvents() error {
 			}
 			err = SendNotification(tenantName, notification.Title, notificationMsg, notification.Type)
 			if err != nil {
+				s.Errorf("[tenant: %v]ListenForNotificationEvents at SendNotification: %v", tenantName, err.Error())
 				return
 			}
 		}(copyBytes(msg))
