@@ -353,7 +353,7 @@ func sendTenantSlackNotifications(s *Server, tenantName string, msgs []Notificat
 		m := msgs[i]
 		err := sendMessageToSlackChannel(slackIntegration, m.NotificationMsg.Title, m.NotificationMsg.Message)
 		if err != nil {
-			if err.Error() == "channel_not_found" {
+			if err.Error() == "channel_not_found" || err.Error() == "not_in_channel" {
 				s.Warnf("[tenant: %v]failed to send slack notification: %v", tenantName, err.Error())
 			} else {
 				var rateLimit *slack.RateLimitedError
