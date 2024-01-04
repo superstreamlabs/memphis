@@ -41,7 +41,7 @@ var (
 
 const (
 	// VERSION is the current version for the memphis server.
-	VERSION = "1.4.2" // ** changed by Memphis
+	VERSION = "1.4.3" // ** changed by Memphis
 
 	// ** added by Memphis
 	DEFAULT_SERVER_NAME                          = "memphis-0"
