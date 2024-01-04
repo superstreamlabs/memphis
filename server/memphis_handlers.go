@@ -111,11 +111,11 @@ func CreateDefaultStation(tenantName string, s *Server, sn StationName, user mod
 		return models.Station{}, false, err
 	}
 
-	allowd, ReloadNeeded, err := ValidateStationPermissions(user.Roles, sn.Ext(), user.TenantName)
+	allowed, ReloadNeeded, err := ValidateStationPermissions(user.Roles, sn.Ext(), user.TenantName)
 	if err != nil {
 		return models.Station{}, false, err
 	}
-	if !allowd {
+	if !allowed {
 		errMsg := fmt.Sprintf("user %v is not allowed to create station %v", user.Username, sn.Ext())
 		return models.Station{}, false, errors.New(errMsg)
 	}

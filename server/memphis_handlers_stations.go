@@ -280,13 +280,13 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	allowd, ReloadNeeded, err := ValidateStationPermissions(user.Roles, stationName.Ext(), csr.TenantName)
+	allowed, ReloadNeeded, err := ValidateStationPermissions(user.Roles, stationName.Ext(), csr.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user:%v]createStationDirect at ValidateStationPermissions: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
-	if !allowd {
+	if !allowed {
 		errMsg := fmt.Sprintf("user %v is not allowed to create station %v", csr.Username, csr.StationName)
 		serv.Warnf("[tenant: %v][user:%v]createStationDirect: %v", csr.TenantName, csr.Username, errMsg)
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, errors.New(errMsg))
@@ -939,13 +939,13 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	allowd, ReloadNeeded, err := ValidateStationPermissions(user.Roles, stationName.Ext(), user.TenantName)
+	allowed, ReloadNeeded, err := ValidateStationPermissions(user.Roles, stationName.Ext(), user.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]CreateStation at ValidateStationPermissions: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	if !allowd {
+	if !allowed {
 		errMsg := fmt.Sprintf("user %v is not allowed to create station %v", user.Username, body.Name)
 		serv.Warnf("[tenant: %v][user: %v]CreateStation: %v", user.TenantName, user.Username, errMsg)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
@@ -1484,13 +1484,13 @@ func (s *Server) removeStationDirectIntern(c *client,
 		return
 	}
 
-	allowd, ReloadNeeded, err := ValidateStationPermissions(user.Roles, stationName.Ext(), user.TenantName)
+	allowed, ReloadNeeded, err := ValidateStationPermissions(user.Roles, stationName.Ext(), user.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]CreateStation at ValidateStationPermissions: Station %v: %v", user.TenantName, user.Username, stationName.Ext(), err.Error())
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
-	if !allowd {
+	if !allowed {
 		errMsg := fmt.Sprintf("user %v is not allowed to remove station %v", user.Username, stationName.Ext())
 		serv.Warnf("[tenant: %v][user: %v]CreateStation: %v", user.TenantName, user.Username, errMsg)
 	}

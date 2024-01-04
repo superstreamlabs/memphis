@@ -119,6 +119,16 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 			serv.Warnf("[tenant: %v]createProducerDirectCommon : Producer %v at station %v : %v", user.TenantName, pName, pStationName, err.Error())
 			return false, false, err, models.Station{}
 		}
+		allowed, _, err := ValidateStationPermissions(user.Roles, pStationName.Ext(), user.TenantName)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user:%v]createProducerDirectCommon at ValidateStationPermissions: Station %v: %v", user.TenantName, user.Username, pStationName.Ext(), err.Error())
+			return false, false, err, models.Station{}
+		}
+		if !allowed {
+			errMsg := fmt.Sprintf("user %v is not allowed to access station %v", user.Username, pStationName.Ext())
+			serv.Warnf("[tenant: %v][user:%v]createProducerDirectCommon: %v", user.TenantName, user.Username, errMsg)
+			return false, false, errors.New(errMsg), models.Station{}
+		}
 	}
 
 	err = validateProducersCount(station.ID, user.TenantName)
