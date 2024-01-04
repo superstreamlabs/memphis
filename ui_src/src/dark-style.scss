@@ -1,0 +1,593 @@
+$color-invert-filter: invert(1) hue-rotate(185deg);
+$color-invert-filter-reverse: invert(1) hue-rotate(-185deg);
+$color-background-dark: #151719;
+$color-text-light: #f1f1f1;
+$color-background-light: #DEDCDA;
+$color-background-medium: #CDCBC9;
+$color-border-light: #c5c5c4;
+$color-border-medium: #afafad;
+$color-text-dark: #151719;
+$color-text-grey: #868686;
+
+html.dark-mode {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  * {
+    box-sizing: inherit;
+  }
+
+  img {
+    filter: $color-invert-filter;
+  }
+
+  .menu-item, .schema-name > *, .station-name-overlow, p {
+    color: initial;
+  }
+
+  body {
+    filter: $color-invert-filter;
+    background-color: $color-background-dark;
+    color: $color-text-light;
+
+    button, .upgrade-button-wrapper, .integration-name svg, .memphis-gif svg, .data-box svg,
+    .canvas-wrapper svg, .circle-img svg, .versions svg, .logo-wrapper svg, .schema-box-wrapper .is-used svg,
+    .station-meta svg, .details-wrapper svg, .item-wrap .icons svg, .loader-uploading svg,
+    svg.lock-feature-icon, .ant-modal-content button svg, svg.icons-sidebar, .station-overview-container svg,
+    .header-icon svg, .header-img-container svg, .integrate-header svg, deatils downloads svg,
+    .git-repos-item .repo-item-icon-memphis, .ant-drawer-header-title svg {
+      filter: $color-invert-filter-reverse;
+      background-color: initial;
+      color: initial;
+    }
+
+    svg.collapse-arrow-icon, .collapse-arrow, .messages-amount svg, actions svg, .ant-drawer-close svg {
+      filter: initial;
+    }
+
+    .bottom-sidebar-icons .item-wrap svg path, {
+      fill: $color-text-dark !important;
+      filter: $color-invert-filter !important;
+    }
+
+    .cloud-modal .header .cloud-gradient, .get-started-modal .title-wrapper .title span,
+    .new-function-modal .title-wrapper .title span {
+      background: -webkit-linear-gradient(249deg, #6557ff 39.68%, #6557ff 60.07%);
+      background-clip: text;
+    }
+
+    button svg.lock-feature-icon {
+      filter: initial;
+    }
+
+    .schema-box-wrapper .is-used .not-used, actions button span svg {
+      filter: $color-invert-filter-reverse;
+    }
+  }
+
+  .ant-popover-inner, .stream-lineage-container .title-wrapper .refresh-wrapper, .stream-lineage-container .title-wrapper .actions-wrapper .close-wrapper,
+  .ant-picker-panel-container, .softwate-updates-container .item-component, .function-box-wrapper, .MuiMenu-paper, .async-btn-container, .update-refresh .refresh-btn {
+    box-shadow: none;
+  }
+
+  .sidebar-container {
+    background-color: $color-background-light;
+    border-color: #CDCBC9;
+  }
+
+  .app-container {
+    background-color: $color-background-light;
+  }
+
+  .overview-container .overview-wrapper .overview-components-wrapper, .station-box-container, .pubSub-list-container, .messages-container,
+  .station-overview-header .details .main-details, .station-overview-header .details .icons-wrapper, .station-overview-header .details .info-buttons {
+    background-color: $color-background-medium;
+    border: none;
+    box-shadow: none;
+  }
+
+  .schema-container {
+    .schema-list {
+      .schema-box-wrapper {
+        background-color: $color-background-medium;
+        border: none;
+        box-shadow: none;
+
+        & date {
+          border: none;
+        }
+
+        header, type, tags {
+          border-color: $color-border-light;
+        }
+
+        .field-wrapper div, .field-wrapper span {
+          color: $color-text-dark;
+        }
+      }
+    }
+  }
+
+  .station-overview-container .pubSub-list-container .header, .ant-tabs-top > .ant-tabs-nav::before, .ant-tabs-bottom > .ant-tabs-nav::before, .ant-tabs-top > div > .ant-tabs-nav::before, .ant-tabs-bottom > div > .ant-tabs-nav::before,
+  .pubSub-list-container .coulmns-table, .station-overview-header .details .info-buttons .audit, {
+    border-color: $color-border-medium !important;
+  }
+
+  .configuration-list-container {
+    background-color: $color-background-light !important;
+  }
+
+  .min-box span, {
+    color: $color-text-dark;
+  }
+
+  .station-overview-container .waiting-placeholder .des {
+    color: $color-text-grey;
+  }
+
+  .station-overview-container .waiting-placeholder .button-container span, {
+    color: $color-background-light !important;
+  }
+
+  .station-function-overview .statistics-box-title, .main-header-h1 .length-list, {
+    color: $color-text-dark;
+  }
+
+  .data-box span {
+    color: $color-text-dark !important;
+  }
+
+  .messages-container .top-switcher-btn, .schema-box-wrapper, .ant-tooltip-inner, .ant-drawer-right > .ant-drawer-content-wrapper,
+  .function-container connectedRepos, .select-options, .ant-btn.ant-btn-primary {
+    box-shadow: none !important;
+  }
+
+  .create-schema-wrapper {
+    .header span, .title-icon-img p.desc, .schema-type .des span {
+      color: $color-text-grey !important;
+    }
+  }
+
+  .generic-details-container .data-box svg circle {
+    fill: transparent;
+  }
+
+  .station-overview-header .bottomRow .average-title {
+    color: $color-text-grey !important;
+  }
+
+  svg.icons-sidebar {
+    fill: #fff !important;
+  }
+
+  .tags-list-wrapper .edit-tags {
+    background-color: $color-border-medium !important;
+  }
+
+  .function-container {
+    svg.attach-btn {
+      filter: $color-invert-filter-reverse;
+    }
+
+    label {
+      color: $color-text-dark;
+    }
+
+    .ant-collapse-item {
+      background: transparent !important;
+    }
+  }
+
+  .stream-lineage-container .title-wrapper .refresh-wrapper svg, .stream-lineage-container .title-wrapper .close-wrapper svg, {
+    color: $color-text-dark;
+  }
+
+  .stations-container .err-stations-list .coulmns-table, .statistics-box, functions-header, .station-overview-container .details-wrapper.middle {
+    border-color: $color-border-medium !important;
+  }
+
+  .overview-container .overview-wrapper .overview-components-wrapper .overview-components-header label,
+  .softwate-updates-container .item-component span, .sub-header-dls, .coulmns-table span, .created-by,
+  .retention-storage-box .description, .overview-components-header label, .logs-container, {
+    color: $color-text-grey !important;
+  }
+
+  .external-monitoring label, {
+    color: $color-text-grey;
+  }
+
+  .loader-container .gif-wrapper {
+    background: transparent !important;
+  }
+
+  .ant-modal-content, .ant-modal-header, .search-input-container .ant-input-affix-wrapper, .ant-popover-content .ant-popover-inner,
+  .ant-drawer-content, .setting-items, .softwate-updates-container .item-component, .ant-popover-arrow-content, .ant-collapse-item,
+  .messages-container .top-switcher-btn.ms-active {
+    background-color: #E6EAE8 !important;
+    --antd-arrow-background-color: #E6EAE8 !important;
+  }
+
+  .ant-drawer-body .type-created .capitalize, .ant-drawer-body .type-created .wrapper div, .ant-drawer-body .type-created .wrapper span {
+    color: $color-text-dark !important;
+  }
+
+  .function-container {
+    .code-btn {
+      label {
+        color: #fff;
+      }
+
+      img {
+        filter: brightness(100) invert(0);
+      }
+    }
+
+  }
+
+  .update-refresh .refresh-btn {
+    .refresh-icon-spin svg {
+      fill: #fff;
+    }
+
+    svg {
+      filter: $color-invert-filter-reverse;
+
+      path {
+        stroke: #fff;
+      }
+    }
+  }
+
+  .overview-container {
+    .stream-lineage-container {
+      background-color: $color-background-medium;
+
+      .refresh-wrapper, .close-wrapper {
+        background: #E4E8E6;
+      }
+    }
+
+    .play-pause-btn, .segment-button-wrapper, .overview-usage-container .usage-body .usageLeft-side .totalContainer {
+      background: #E4E8E6;
+    }
+  }
+
+  .create-schema-wrapper .create-schema-form .right-side, .functions-empty, .ant-table {
+    background: #E4E8E6;
+  }
+
+  .code-builder .ant-collapse-header {
+    background: darken(#E6EAE8, 1%);
+  }
+
+  .function-box-wrapper {
+    background: $color-background-medium !important;
+    border-color: transparent;
+
+    .button-container.uninstall-btn {
+      filter: $color-invert-filter-reverse;
+    }
+
+    footer {
+      border-color: $color-border-medium;
+    }
+
+    .function-name > * {
+      color: $color-text-dark !important;
+    }
+  }
+
+  .cloud-modal-btns > * {
+    filter: $color-invert-filter !important;
+  }
+
+  .softwate-updates-container .change-log label, .softwate-updates-container .delete-account-section button span {
+    color: #fff !important;
+  }
+
+  .softwate-updates-container button.ant-btn.ant-btn-primary span {
+    color: #fff !important;
+  }
+
+  .ant-modal-body .buttons .button-container:first-child, .new-function-modal .footer .button-container:first-child {
+    filter: $color-invert-filter !important;
+  }
+
+  .station-box-container .data-labels {
+    color: lighten($color-text-dark, 30%);
+  }
+
+  .schema-container .action-section .button-container:first-child, .schema-container .action-section .button-container:nth-child(n-1),
+  .right-side .button-container {
+    filter: $color-invert-filter !important;
+  }
+
+  .right-side .button-container:last-child {
+    filter: initial!important;
+  }
+
+  .video-player {
+    filter: $color-invert-filter-reverse !important;
+  }
+
+  integ-item {
+    background: #D1CFCD;
+  }
+
+  .stations-container .err-stations-list .rows-wrapper .even, .messages-container .list-wrapper .list .even .row-message,
+  .generic-list-wrapper .list .rows-wrapper .pubSub-row:nth-child(even), .messages-container .list-wrapper .even .row-message {
+    background: #D1CFCD;
+  }
+
+  .stigg-plan-offering-container {
+    //background: lighten($color-background-dark, 80%);
+  }
+
+  .message-wrapper .info-box {
+    background: #E4E8E6;
+    color: #000c17;
+  }
+
+  .retention-storage-box {
+    .header {
+      background: darken(#E6EAE8, 1%);
+    }
+
+    .content {
+      background: darken(#E6EAE8, 2%);
+    }
+
+    .selecte-check-box-wrapper .option-wrapper {
+      background: darken(#E6EAE8, 3%);
+      border: none;
+    }
+
+    .ant-radio-button-wrapper, .ant-input-number-handler-wrap {
+      background: darken(#E6EAE8, 1%);
+    }
+  }
+
+  .result-wrapper .result-container .result {
+    background: darken(#E6EAE8, 2%);
+  }
+
+  .integration-guid-stepper .steps-content, .integration-guid-stepper .ant-collapse {
+    background: darken(#E6EAE8, 2%);
+  }
+
+  .stream-lineage-container .title-wrapper .actions-wrapper {
+    z-index: 9;
+  }
+
+  .overview-components-header img {
+    filter: initial;
+  }
+
+  .ms-function-card-inner, .station-function-overview functions-list .tab-functions-inner-add {
+    background: $color-background-light;
+  }
+
+  .connector-modal-wrapper .ant-select-selector {
+    img {
+      filter: initial;
+    }
+  }
+
+  .select-options {
+    img {
+      filter: initial;
+    }
+
+    background: darken(#E6EAE8, 2%);
+  }
+
+  .badgeGreen {
+    background: #86e1ac;
+  }
+
+  .badgeOrange {
+    background: #f5cfab;
+  }
+
+  .function-drawer-container {
+    .ant-tree {
+      background: transparent !important;
+    }
+
+    .drawer-header svg {
+      filter: $color-invert-filter-reverse;
+    }
+
+    .action-section-btn .header-flex:nth-child(1), .action-section-btn .button-container:nth-child(2) button {
+      filter: none;
+    }
+  }
+
+  .users-container .user-action .button-container button {
+    filter: initial;
+  }
+
+  .ant-table-cell.ant-table-cell-row-hover {
+    background: darken(#E6EAE8, 3%) !important;
+  }
+
+  .requests-container .usage-details .segment-data .tab-container, .stigg-customer-portal-subscriptions-overview, .stigg-payment-details-section-layout,
+  .stigg-invoices-section-layout {
+    background: darken(#E6EAE8, 2%) !important;
+  }
+
+  .stigg-plan-offering-container, .stigg-period-picker-container {
+    background: darken(#E6EAE8, 2%);
+  }
+
+  .pricing-plans-modal .emcdfp60 .stigg-plan-offering-container .stigg-plan-entitlements-container .stigg-plan-entitlements-title {
+    background: transparent !important;
+  }
+
+  .pricing-plans-modal .emcdfp60 .stigg-plan-offering-container .stigg-header-wrapper .stigg-paywall-plan-button-layout button[disabled] {
+    filter: initial;
+  }
+
+  .stream-lineage-container .title-wrapper .actions-wrapper .zoom-wrapper {
+    background: #E4E8E6;
+    box-shadow: none;
+  }
+
+  .overview-integrations-container .integrations-list .integration-item {
+    border-color: $color-border-medium;
+  }
+
+  .ms-function-card-inner, .tab-functions-inner-add {
+    border-color: $color-border-light !important;
+  }
+
+  .ant-form-item {
+    .ant-select-selector, input {
+      background-color: transparent !important;
+    }
+  }
+
+  schema-details .footer .left-side .button-container:first-child, schema-details .header .button-container, .form-button .button-container:first-child,
+  .support-container .close-button .button-container:first-child {
+    filter: $color-invert-filter-reverse;
+  }
+
+  .anticon.anticon-close svg, .logs-wrapper .loader svg, .logs-wrapper .logs-loader svg {
+    filter: $color-invert-filter-reverse;
+  }
+
+  .users-container .users-list-container .ant-table-thead .ant-table-cell {
+    background: #E6EAE8;
+  }
+
+  .logs-wrapper .placeholder p {
+    color: $color-text-grey !important;
+  }
+
+  .log-content-wrapper log-header, .log-content-wrapper log-content {
+    border-color: $color-border-light !important;
+  }
+
+  .logs-wrapper logs, .log-content-wrapper {
+    background: #D1CFCD;
+    box-shadow: none;
+  }
+
+  .logs-wrapper .header-title-wrapper .button-container button, .collapse-footer .button-container:first-child button {
+    filter: none;
+  }
+
+  .ant-form-item-control-input-content .button-container {
+    display: none;
+  }
+
+  .logs-wrapper logs .logsl .even .log-payload {
+    background: $color-background-light;
+  }
+
+  .log-badge-container .badge.warn {
+    background-color: rgb(160 128 22);
+  }
+
+  .log-badge-container .badge.info {
+    background-color: #939595;
+  }
+
+  .log-badge-container .error {
+    background-color: rgb(228 128 102);
+  }
+
+  input[type="text"], .ant-input-password, .ant-select.select, .install-copy {
+    border-color: $color-border-medium !important;
+  }
+
+  .ant-form-item-control-input-content .button-container:first-child button {
+    filter: none;
+  }
+
+  .item-wrapper.ms-active .icon svg, .item-wrapper.item-wrapper-hovered .icon svg, {
+    filter: $color-invert-filter-reverse !important;
+  }
+
+  .message-detail-item {
+    .ant-collapse-content-box {
+      background: darken(#E6EAE8, 2%);
+    }
+    label {
+      color: lighten($color-text-dark, 25%);
+    }
+    .content label:last-child {
+      color: $color-border-medium!important;
+    }
+  }
+
+  .message-wrapper .message-detail-item .content {
+    color: lighten($color-text-dark, 25%);
+  }
+
+  .message-journey-container {
+    .canvas-wrapper svg {
+      filter: initial!important;
+    }
+    .poison-producer, .poison-message, .consumer-group {
+      background: $color-background-medium;
+    }
+    .consumer-group .content-wrapper .details, .consumer-group .content-wrapper .consumers {
+      background: darken(#E6EAE8, 2%);
+    }
+    .canvas-wrapper .producer {
+      stroke: rgba(101, 87, 255, 0.4);
+    }
+    .canvas-wrapper .consumer {
+      stroke: rgba(255, 54, 36, 0.4);
+    }
+    .consumer-group header {
+      background: #f18e85;
+    }
+  }
+
+  .connector-name svg, .connector-options svg, .connector-options-selected svg, .ant-select-selection-item svg {
+    filter: initial!important;
+  }
+
+  .ant-select-dropdown .ant-select-item-option-content .Memphis img {
+    filter: $color-invert-filter-reverse!important;
+  }
+
+  .overview-container .overview-components-wrapper .stations-row .lottie-cloud svg {
+    filter: $color-invert-filter-reverse;
+  }
+
+  .scrollable-wrapper .used-stations .button-container button svg {
+    filter: $color-invert-filter-reverse!important;
+  }
+
+  .setting-container .setting-items .tab-container.active .tab, .requests-container .usage-details .panel-container .requests-item .lavander {
+    background: rgb(101, 87, 255, .2)!important;
+  }
+
+  .ant-input::placeholder, .ant-picker input::placeholder, .ant-select-selection-placeholder {
+    color: #939595;
+  }
+
+  .customSelect-add-user-button .button-container, .ant-picker-header {
+    filter: $color-invert-filter-reverse!important;
+  }
+
+  .ant-picker-header {
+    border-color: $color-text-grey!important;
+  }
+
+  .ant-picker {
+    box-shadow: none!important;
+    input::placeholder {
+    }
+  }
+
+  .overview-container .graphview-section svg, .cloud-teaser {
+    filter: $color-invert-filter-reverse!important;
+  }
+
+}

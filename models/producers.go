@@ -40,6 +40,22 @@ type ExtendedProducer struct {
 	IsActive                   bool      `json:"is_active"`
 	ConnectedProducersCount    int       `json:"connected_producers_count"`
 	DisconnedtedProducersCount int       `json:"disconnected_producers_count"`
+	Version                    int       `json:"version"`
+	Sdk                        string    `json:"sdk"`
+}
+
+type ExtendedProducerResponse struct {
+	ID                         int       `json:"id"`
+	Name                       string    `json:"name"`
+	Type                       string    `json:"type,omitempty"`
+	ConnectionId               string    `json:"connection_id,omitempty"`
+	UpdatedAt                  time.Time `json:"updated_at"`
+	StationName                string    `json:"station_name"`
+	IsActive                   bool      `json:"is_active"`
+	ConnectedProducersCount    int       `json:"connected_producers_count"`
+	DisconnedtedProducersCount int       `json:"disconnected_producers_count"`
+	SdkLanguage                string    `json:"sdk_language"`
+	UpdateAvailable            bool      `json:"update_available"`
 }
 
 type LightProducer struct {

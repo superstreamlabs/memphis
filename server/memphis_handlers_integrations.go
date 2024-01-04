@@ -377,7 +377,7 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-		err = sendDeleteAllFunctionsReqToMS(user, user.TenantName, integrationType, "", "", "aws_lambda", "", false)
+		err = sendDeleteAllFunctionsReqToMS(user, user.TenantName, integrationType, _EMPTY_, _EMPTY_, "aws_lambda", _EMPTY_, false)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]DisconnectIntegration at deleteAllFunctionMs: Repo %v: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -503,15 +503,15 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 		}
 	}
 
-	if integration.Name == "slack" && integration.Keys["auth_token"] != "" {
+	if integration.Name == "slack" && integration.Keys["auth_token"] != _EMPTY_ {
 		integration.Keys["auth_token"] = "xoxb-****"
 	}
 
-	if integration.Name == "discord" && integration.Keys["webhook_url"] != "" {
+	if integration.Name == "discord" && integration.Keys["webhook_url"] != _EMPTY_ {
 		integration.Keys["webhook_url"] = hideDiscordWebhookUrl(integration.Keys["webhook_url"].(string))
 	}
 
-	if integration.Name == "s3" && integration.Keys["secret_key"] != "" {
+	if integration.Name == "s3" && integration.Keys["secret_key"] != _EMPTY_ {
 		integration.Keys["secret_key"] = hideIntegrationSecretKey(integration.Keys["secret_key"].(string))
 	}
 
@@ -567,16 +567,16 @@ func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
 	}
 
 	for i := 0; i < len(integrations); i++ {
-		if integrations[i].Name == "slack" && integrations[i].Keys["auth_token"] != "" {
+		if integrations[i].Name == "slack" && integrations[i].Keys["auth_token"] != _EMPTY_ {
 			integrations[i].Keys["auth_token"] = "xoxb-****"
 		}
-		if integrations[i].Name == "discord" && integrations[i].Keys["webhook_url"] != "" {
+		if integrations[i].Name == "discord" && integrations[i].Keys["webhook_url"] != _EMPTY_ {
 			integrations[i].Keys["webhook_url"] = hideDiscordWebhookUrl(integrations[i].Keys["webhook_url"].(string))
 		}
-		if integrations[i].Name == "s3" && integrations[i].Keys["secret_key"] != "" {
+		if integrations[i].Name == "s3" && integrations[i].Keys["secret_key"] != _EMPTY_ {
 			integrations[i].Keys["secret_key"] = hideIntegrationSecretKey(integrations[i].Keys["secret_key"].(string))
 		}
-		if integrations[i].Name == "github" && integrations[i].Keys["installation_id"] != "" {
+		if integrations[i].Name == "github" && integrations[i].Keys["installation_id"] != _EMPTY_ {
 			memphisFuncs, err := db.GetMemphisFunctionsByMemphis()
 			if err != nil {
 				serv.Errorf("[tenant: %v][user: %v]GetAllIntegrations at GetMemphisFunctionsByMemphis: %v", user.TenantName, user.Username, err.Error())
@@ -664,8 +664,8 @@ func (s *Server) getIntegrationAuditLogs(integrationType, tenantName string) ([]
 	durableName := INTEGRATIONS_AUDIT_LOGS_CONSUMER + "_" + uid
 	cc := ConsumerConfig{
 		DeliverPolicy: DeliverAll,
-		AckPolicy:     AckExplicit,
-		Durable:       durableName,
+		AckPolicy:     AckNone,
+		Name:          durableName,
 		Replicas:      1,
 		FilterSubject: filterSubject,
 	}
@@ -681,8 +681,6 @@ func (s *Server) getIntegrationAuditLogs(integrationType, tenantName string) ([]
 	req := []byte(strconv.FormatUint(amount, 10))
 	sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
-			// ack
-			s.sendInternalAccountMsg(s.MemphisGlobalAccount(), reply, []byte(_EMPTY_))
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
 
@@ -719,9 +717,6 @@ func (s *Server) getIntegrationAuditLogs(integrationType, tenantName string) ([]
 cleanup:
 	timer.Stop()
 	s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
-	time.AfterFunc(500*time.Millisecond, func() {
-		serv.memphisRemoveConsumer(s.MemphisGlobalAccountString(), integrationsAuditLogsStream, durableName)
-	})
 
 	resMsgs := []models.IntegrationsAuditLog{}
 	for _, msg := range msgs {
@@ -804,7 +799,7 @@ func containsRepo(repos []interface{}, target interface{}) bool {
 			if targetRepoVal, ok := target["repo_name"].(string); ok {
 				targetRepo = targetRepoVal
 			}
-			if mapBranch == "" && targetBranch == "" && mapRepo == "" && targetRepo == "" {
+			if mapBranch == _EMPTY_ && targetBranch == _EMPTY_ && mapRepo == _EMPTY_ && targetRepo == _EMPTY_ {
 				return false
 			}
 			if mapBranch == targetBranch && mapRepo == targetRepo {

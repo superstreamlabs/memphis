@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"math/rand"
 	"net/http"
@@ -52,6 +51,7 @@ import (
 const shouldCreateRootUserforGlobalAcc = true
 const TENANT_SEQUENCE_START_ID = 2
 const MAX_PARTITIONS = 10000
+const FUNCTIONS_UPDATE_SUBJ = "$memphis_functions_updates_%s"
 
 type BillingHandler struct{ S *Server }
 type TenantHandler struct{ S *Server }
@@ -164,7 +164,7 @@ func CreateRootUserOnFirstSystemLoad() (bool, error) {
 	}
 	hashedPwdString := string(hashedPwd)
 
-	created, err := db.UpsertUserUpdatePassword(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, serv.MemphisGlobalAccountString())
+	created, err := db.UpsertUserUpdatePassword(ROOT_USERNAME, "root", hashedPwdString, _EMPTY_, false, 1, serv.MemphisGlobalAccountString())
 	if err != nil {
 		return false, err
 	}
@@ -194,10 +194,10 @@ func CreateRootUserOnFirstSystemLoad() (bool, error) {
 
 			ip := serv.getIp()
 			analyticsParams := map[string]interface{}{"installation-type": installationType, "device-id": deviceIdValue, "source": configuration.INSTALLATION_SOURCE, "ip": ip}
-			analytics.SendEvent("", "", analyticsParams, "installation")
+			analytics.SendEvent(_EMPTY_, _EMPTY_, analyticsParams, "installation")
 
 			if configuration.EXPORTER {
-				analytics.SendEvent("", "", analyticsParams, "enable-exporter")
+				analytics.SendEvent(_EMPTY_, _EMPTY_, analyticsParams, "enable-exporter")
 			}
 		})
 	}
@@ -735,8 +735,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					}
 				}
 			}
-			mountpath := ""
-			containerForExec := ""
+			mountpath := _EMPTY_
+			containerForExec := _EMPTY_
 			for _, container := range pod.Spec.Containers {
 				for _, port := range container.Ports {
 					if int(port.ContainerPort) != 0 {
@@ -774,7 +774,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					}
 					storageUsage = shortenFloat(float64(v.JetStream.Stats.Store))
 				}
-			} else if containerForExec != "" && mountpath != "" {
+			} else if containerForExec != _EMPTY_ && mountpath != _EMPTY_ {
 				storageUsage, err = getContainerStorageUsage(config, mountpath, containerForExec, pod.Name, mh.S.opts.K8sNamespace)
 				if err != nil {
 					return components, metricsEnabled, err
@@ -833,16 +833,16 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				}
 			}
 			if d.Name == "memphis-rest-gateway" {
-				if mh.S.opts.RestGwHost != "" {
+				if mh.S.opts.RestGwHost != _EMPTY_ {
 					hosts = []string{mh.S.opts.RestGwHost}
 				}
 			} else if d.Name == "memphis" {
-				if mh.S.opts.BrokerHost == "" {
+				if mh.S.opts.BrokerHost == _EMPTY_ {
 					hosts = []string{}
 				} else {
 					hosts = []string{mh.S.opts.BrokerHost}
 				}
-				if mh.S.opts.UiHost != "" {
+				if mh.S.opts.UiHost != _EMPTY_ {
 					hosts = append(hosts, mh.S.opts.UiHost)
 				}
 			} else if strings.Contains(d.Name, "metadata") {
@@ -888,16 +888,16 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				}
 			}
 			if s.Name == "memphis-rest-gateway" {
-				if mh.S.opts.RestGwHost != "" {
+				if mh.S.opts.RestGwHost != _EMPTY_ {
 					hosts = []string{mh.S.opts.RestGwHost}
 				}
 			} else if s.Name == "memphis" {
-				if mh.S.opts.BrokerHost == "" {
+				if mh.S.opts.BrokerHost == _EMPTY_ {
 					hosts = []string{}
 				} else {
 					hosts = []string{mh.S.opts.BrokerHost}
 				}
-				if mh.S.opts.UiHost != "" {
+				if mh.S.opts.UiHost != _EMPTY_ {
 					hosts = append(hosts, mh.S.opts.UiHost)
 				}
 			} else if strings.Contains(s.Name, "metadata") {
@@ -949,7 +949,7 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 
 	logSource := request.LogSource
 	if filterSubjectSuffix != _EMPTY_ {
-		if request.LogSource == "empty" || request.LogSource == "" {
+		if request.LogSource == "empty" || request.LogSource == _EMPTY_ {
 			filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, "*", filterSubjectSuffix)
 		} else if request.LogSource != "empty" && request.LogType != "external" {
 			filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, logSource, filterSubjectSuffix)
@@ -998,7 +998,7 @@ func (mh MonitoringHandler) DownloadSystemLogs(c *gin.Context) {
 func memphisWSGetSystemLogs(h *Handlers, logLevel, logSource string) (models.SystemLogsResponse, error) {
 	const amount = 100
 	const timeout = 3 * time.Second
-	filterSubjectSuffix := ""
+	filterSubjectSuffix := _EMPTY_
 	switch logLevel {
 	case "err":
 		filterSubjectSuffix = syslogsErrSubject
@@ -1039,6 +1039,17 @@ func (s *Server) UploadTenantUsageToDB() error {
 func IncrementEventCounter(tenantName string, eventType string, size int64, amount int64, subj string, msg []byte, hdr []byte) {
 }
 
+type EditClusterConfigSchema struct {
+	DlsRetention                       int    `json:"dls_retention" binding:"required"`
+	LogsRetention                      int    `json:"logs_retention" binding:"required"`
+	BrokerHost                         string `json:"broker_host"`
+	UiHost                             string `json:"ui_host"`
+	RestGWHost                         string `json:"rest_gw_host"`
+	TSTimeSec                          int    `json:"tiered_storage_time_sec"`
+	MaxMsgSizeMb                       int    `json:"max_msg_size_mb"`
+	GCProducersConsumersRetentionHours int    `json:"gc_producer_consumer_retention_hours" binding:"required"`
+}
+
 func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
@@ -1047,7 +1058,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 		return
 	}
 
-	var body models.EditClusterConfigSchema
+	var body EditClusterConfigSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
@@ -1060,7 +1071,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 			return
 		}
 	}
-	if ch.S.opts.GCProducersConsumersRetentionHours != body.GCProducersConsumersRetentionHours {
+	if ch.S.opts.GCProducersConsumersRetentionHours[user.TenantName] != body.GCProducersConsumersRetentionHours {
 		err := changeGCProducersConsumersRetentionHours(body.GCProducersConsumersRetentionHours, user.TenantName)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]EditConfigurations at changeGCProducersConsumersRetentionHours: %v", user.TenantName, user.Username, err.Error())
@@ -1080,6 +1091,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 		if body.TSTimeSec > 3600 || body.TSTimeSec < 5 {
 			serv.Errorf("[tenant: %v][user: %v]EditConfigurations: Tiered storage time can't be less than 5 seconds or more than 60 minutes", user.TenantName, user.Username)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Tiered storage time can't be less than 5 seconds or more than 60 minutes"})
+			return
 		} else {
 			err := changeTSTime(body.TSTimeSec)
 			if err != nil {
@@ -1177,7 +1189,7 @@ func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 		"rest_gw_host":                         ch.S.opts.RestGwHost,
 		"tiered_storage_time_sec":              ch.S.opts.TieredStorageUploadIntervalSec,
 		"max_msg_size_mb":                      ch.S.opts.MaxPayload / 1024 / 1024,
-		"gc_producer_consumer_retention_hours": ch.S.opts.GCProducersConsumersRetentionHours,
+		"gc_producer_consumer_retention_hours": ch.S.opts.GCProducersConsumersRetentionHours[user.TenantName],
 	})
 }
 
@@ -1237,7 +1249,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	}
 
 	env := "K8S"
-	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
+	if configuration.DOCKER_ENV != _EMPTY_ || configuration.LOCAL_CLUSTER_ENV {
 		env = "docker"
 	}
 	exist, tenant, err := db.GetTenantByName(user.TenantName)
@@ -1260,13 +1272,21 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	}
 
 	serv.Noticef("[tenant: %v][user: %v] has logged in", user.TenantName, user.Username)
+
+	lastLogin, err := db.UpdateLastLoginUser(user.ID)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]Login at UpdateLastLoginUser: User %v: %v", user.TenantName, user.Username, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		analyticsParams := make(map[string]interface{})
 		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-login")
 	}
 
-	domain := ""
+	domain := _EMPTY_
 	secure := false
 	c.SetCookie("memphis-jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 	c.IndentedJSON(200, gin.H{
@@ -1278,6 +1298,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"created_at":              user.CreatedAt,
 		"already_logged_in":       user.AlreadyLoggedIn,
 		"avatar_id":               user.AvatarId,
+		"last_login":              lastLogin,
 		"send_analytics":          shouldSendAnalytics,
 		"env":                     env,
 		"full_name":               user.FullName,
@@ -1286,13 +1307,13 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"rest_gw_host":            serv.opts.RestGwHost,
 		"ui_host":                 serv.opts.UiHost,
 		"tiered_storage_time_sec": serv.opts.TieredStorageUploadIntervalSec,
-		"ws_port":                 serv.opts.Websocket.Port,
 		"http_port":               serv.opts.UiPort,
 		"clients_port":            serv.opts.Port,
 		"rest_gw_port":            serv.opts.RestGwPort,
 		"user_pass_based_auth":    configuration.USER_PASS_BASED_AUTH,
 		"connection_token":        configuration.CONNECTION_TOKEN,
 		"account_id":              tenant.ID,
+		"ws_host":                 configuration.WS_HOST,
 		"internal_ws_pass":        decryptedUserPassword,
 		"dls_retention":           serv.opts.DlsRetentionHours[user.TenantName],
 		"logs_retention":          serv.opts.LogsRetentionDays,
@@ -1357,7 +1378,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	}
 	exist, _, err := memphis_cache.GetUser(username, user.TenantName, true)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]AddUser at GetUserByUsername: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]AddUser at GetUser: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1381,7 +1402,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		avatarId = body.AvatarId
 	}
 
-	if body.Password == "" {
+	if body.Password == _EMPTY_ {
 		serv.Warnf("[tenant: %v][user: %v]AddUser: Password was not provided for user %v", user.TenantName, user.Username, username)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
 		return
@@ -1405,13 +1426,28 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		password = string(hashedPwd)
 	}
 
+	var internalPermissions models.Permissions
+	if body.AllowReadPermissions != nil || body.AllowWritePermissions != nil || body.DenyReadPermissions != nil || body.DenyWritePermissions != nil {
+		internalPermissions, err = InternalPermissions(models.Permissions{
+			AllowReadPermissions:  body.AllowReadPermissions,
+			AllowWritePermissions: body.AllowWritePermissions,
+			DenyReadPermissions:   body.DenyReadPermissions,
+			DenyWritePermissions:  body.DenyWritePermissions,
+		})
+		if err != nil {
+			serv.Warnf("[tenant: %v][user: %v]AddUser at InternalPermissions: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			return
+		}
+	}
+
 	var brokerConnectionCreds string
 	if userType == "application" {
-		fullName = ""
+		fullName = _EMPTY_
 		subscription = false
 		pending = false
 		if configuration.USER_PASS_BASED_AUTH {
-			if body.Password == "" {
+			if body.Password == _EMPTY_ {
 				serv.Warnf("[tenant: %v][user: %v]AddUser: Password was not provided for user %v", user.TenantName, user.Username, username)
 				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
 				return
@@ -1438,6 +1474,27 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 
+	roleID := 0
+	if body.AllowReadPermissions != nil || body.AllowWritePermissions != nil || body.DenyReadPermissions != nil || body.DenyWritePermissions != nil {
+		role, _, err := db.CreateNewRole(newUser.Username, user.TenantName, userType, internalPermissions.AllowReadPermissions, internalPermissions.AllowWritePermissions, internalPermissions.DenyReadPermissions, internalPermissions.DenyWritePermissions)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]AddUser at CreateNewRole: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		roleID = role.ID
+	}
+
+	if roleID > 0 {
+		err = db.UpdateUserRole(user.TenantName, newUser.Username, []int{roleID})
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]AddUser at UpdateUserRole: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		newUser.Roles = []int{roleID}
+	}
+
 	err = memphis_cache.SetUser(newUser)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]AddUser at writing to the user cache error: %v", user.TenantName, user.Username, err)
@@ -1462,6 +1519,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	}
 
 	serv.Noticef("[tenant: %v][user: %v]User %v has been created", user.TenantName, user.Username, username)
+	permissions := ExternalPermissions(internalPermissions)
 	c.IndentedJSON(200, gin.H{
 		"id":                      newUser.ID,
 		"username":                username,
@@ -1476,6 +1534,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		"pending":                 newUser.Pending,
 		"owner":                   newUser.Owner,
 		"description":             newUser.Description,
+		"permissions":             permissions,
 	})
 }
 
@@ -1526,6 +1585,14 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	err = db.DeleteUser(username, userToRemove.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]RemoveUser at DeleteUser: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	//TODO - at the future, do not remove the role and permissions from the DB, just remove the role from the user
+	err = db.RemoveRoleAndPermissions(userToRemove.Roles, userToRemove.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]RemoveUser error with deleting role and permissions from the DB: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1630,7 +1697,7 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 }
 
 func (s *Server) GetCustomDeploymentId() string {
-	return ""
+	return _EMPTY_
 }
 
 func (s *Server) sendLogToAnalytics(label string, log []byte) {
@@ -1641,7 +1708,7 @@ func (s *Server) sendLogToAnalytics(label string, log []byte) {
 			return
 		}
 		analyticsParams := map[string]interface{}{"err_source": s.getLogSource(), "err_log": string(log)}
-		analytics.SendEvent("", "", analyticsParams, "error")
+		analytics.SendEvent(_EMPTY_, _EMPTY_, analyticsParams, "error")
 	default:
 		return
 	}
@@ -1764,7 +1831,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 	}
 
 	env := "K8S"
-	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
+	if configuration.DOCKER_ENV != _EMPTY_ || configuration.LOCAL_CLUSTER_ENV {
 		env = "docker"
 	}
 
@@ -1787,8 +1854,16 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	domain := ""
+	domain := _EMPTY_
 	secure := true
+
+	lastLogin, err := db.UpdateLastLoginUser(user.ID)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]RefreshToken at UpdateLastLoginUser: User %v: %v", user.TenantName, user.Username, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	c.SetCookie("memphis-jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 	c.IndentedJSON(200, gin.H{
 		"jwt":                     token,
@@ -1804,17 +1879,18 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"namespace":               serv.opts.K8sNamespace,
 		"full_name":               user.FullName,
 		"skip_get_started":        user.SkipGetStarted,
+		"last_login":              lastLogin,
 		"broker_host":             serv.opts.BrokerHost,
 		"rest_gw_host":            serv.opts.RestGwHost,
 		"ui_host":                 serv.opts.UiHost,
 		"tiered_storage_time_sec": serv.opts.TieredStorageUploadIntervalSec,
-		"ws_port":                 serv.opts.Websocket.Port,
 		"http_port":               serv.opts.UiPort,
 		"clients_port":            serv.opts.Port,
 		"rest_gw_port":            serv.opts.RestGwPort,
 		"user_pass_based_auth":    configuration.USER_PASS_BASED_AUTH,
 		"connection_token":        configuration.CONNECTION_TOKEN,
 		"account_id":              tenant.ID,
+		"ws_host":                 configuration.WS_HOST,
 		"internal_ws_pass":        decryptedUserPassword,
 		"dls_retention":           serv.opts.DlsRetentionHours[user.TenantName],
 		"logs_retention":          serv.opts.LogsRetentionDays,
@@ -1844,8 +1920,8 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 	cc := ConsumerConfig{
 		OptStartSeq:   startSeq,
 		DeliverPolicy: DeliverByStartSequence,
-		AckPolicy:     AckExplicit,
-		Durable:       durableName,
+		AckPolicy:     AckNone,
+		Name:          durableName,
 		Replicas:      1,
 	}
 	err = serv.memphisAddConsumer(serv.MemphisGlobalAccountString(), throughputStreamNameV1, &cc)
@@ -1860,8 +1936,6 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 
 	sub, err := serv.subscribeOnAcc(serv.MemphisGlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
-			// ack
-			serv.sendInternalAccountMsg(serv.MemphisGlobalAccount(), reply, []byte(_EMPTY_))
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
 
@@ -1897,9 +1971,6 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 cleanup:
 	timer.Stop()
 	serv.unsubscribeOnAcc(serv.MemphisGlobalAccount(), sub)
-	time.AfterFunc(500*time.Millisecond, func() {
-		serv.memphisRemoveConsumer(serv.MemphisGlobalAccountString(), throughputStreamNameV1, durableName)
-	})
 
 	sort.Slice(msgs, func(i, j int) bool { // old to new
 		return msgs[i].Time.Before(msgs[j].Time)
@@ -2049,7 +2120,7 @@ func updateSystemLiveness() {
 	shouldSend, _ := shouldSendAnalytics()
 	if shouldSend {
 		stationsHandler := StationsHandler{S: serv}
-		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetailsLight(false, "", nil)
+		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetailsLight(false, _EMPTY_, nil)
 		if err != nil {
 			serv.Warnf("updateSystemLiveness: %v", err.Error())
 			return
@@ -2068,7 +2139,7 @@ func updateSystemLiveness() {
 		}
 
 		analyticsParams := map[string]interface{}{"total-messages": strconv.Itoa(int(totalMessages)), "total-dls-messages": strconv.Itoa(int(totalDlsMsgs)), "total-stations": strconv.Itoa(len(stations)), "active-producers": strconv.Itoa(int(producersCount)), "active-consumers": strconv.Itoa(int(consumersCount))}
-		analytics.SendEvent("", "", analyticsParams, "system-is-up")
+		analytics.SendEvent(_EMPTY_, _EMPTY_, analyticsParams, "system-is-up")
 	}
 }
 
@@ -2135,7 +2206,7 @@ func (sh StationsHandler) Produce(c *gin.Context) {
 		return
 	}
 
-	subject := ""
+	subject := _EMPTY_
 	shouldRoundRobin := false
 	if station.Version == 0 {
 		subject = fmt.Sprintf("%s.final", stationName.Intern())
@@ -2193,7 +2264,7 @@ func (s *Server) CreateDefaultEntitiesOnMemphisAccount() error {
 		return err
 	}
 
-	_, _, err = CreateDefaultStation(serv.MemphisGlobalAccountString(), serv, stationName, user.ID, user.Username, schemaName, 1)
+	_, _, err = CreateDefaultStation(serv.MemphisGlobalAccountString(), serv, stationName, user, schemaName, 1)
 	if err != nil {
 		return err
 	}
@@ -2378,7 +2449,7 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetails(messageId int, dlsType str
 		Message:         dlsMsg.Message,
 		UpdatedAt:       dlsMsg.UpdatedAt,
 		ValidationError: dlsMsg.ValidationError,
-		FunctionName:    "",
+		FunctionName:    _EMPTY_,
 	}
 
 	return dlsMsgResponse, nil
@@ -2402,7 +2473,7 @@ func createUser(userName, userType, password string) error {
 	}
 
 	avatarId := 1
-	if password == "" {
+	if password == _EMPTY_ {
 		return fmt.Errorf("Password was not provided for user %s", username)
 	}
 	passwordErr := validatePassword(password)
@@ -2418,17 +2489,17 @@ func createUser(userName, userType, password string) error {
 		password = string(hashedPwd)
 	}
 
-	fullName := ""
+	fullName := _EMPTY_
 	subscription := false
 	pending := false
-	team := ""
-	position := ""
-	owner := ""
-	description := ""
+	team := _EMPTY_
+	position := _EMPTY_
+	owner := _EMPTY_
+	description := _EMPTY_
 	var err error
 	if userType == "application" {
 		if configuration.USER_PASS_BASED_AUTH {
-			if password == "" {
+			if password == _EMPTY_ {
 				return fmt.Errorf("Password was not provided for user for user %v", username)
 			}
 			password, err = EncryptAES([]byte(password))
@@ -2457,8 +2528,8 @@ func convertToUsers(usersData []interface{}) []userDetails {
 	for _, userData := range usersData {
 		userMap, ok := userData.(map[interface{}]interface{})
 		if ok {
-			userVal := ""
-			passwordVal := ""
+			userVal := _EMPTY_
+			passwordVal := _EMPTY_
 			_, okUser := userMap["user"].(string)
 			if okUser {
 				userVal = userMap["user"].(string)
@@ -2541,8 +2612,8 @@ func CreateUsersFromConfigOnFirstSystemLoad() (int, error) {
 
 	if configuration.DEV_ENV == "true" && !k8sEnv || configuration.DOCKER_ENV == "true" {
 		initialConfigFile = os.Getenv("INITIAL_CONFIG_FILE")
-		if initialConfigFile == "" {
-			return 0, fmt.Errorf("INITIAL_CONFIG_FILE environment variable is not set.")
+		if initialConfigFile == _EMPTY_ {
+			return 0, nil
 		}
 	}
 
@@ -2560,9 +2631,12 @@ func CreateUsersFromConfigOnFirstSystemLoad() (int, error) {
 		}
 	} else {
 		yamlFilePath := "/etc/nats-config/initial.conf"
-		yamlData, err := ioutil.ReadFile(yamlFilePath)
+		yamlData, err := os.ReadFile(yamlFilePath)
 		if err != nil {
-			return 0, err
+			if !os.IsNotExist(err) {
+				return 0, err
+			}
+			return 0, nil
 		}
 
 		confUsers, err = parseYamlFile(string(yamlData))

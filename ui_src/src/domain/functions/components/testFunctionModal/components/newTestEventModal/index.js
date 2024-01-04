@@ -13,11 +13,11 @@
 import './style.scss';
 import { useState, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
-import Input from '../../../../../../components/Input';
-import Button from '../../../../../../components/button';
+import Input from 'components/Input';
+import Button from 'components/button';
 import { FaPlay } from 'react-icons/fa';
-import { ApiEndpoints } from '../../../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../../../services/http';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
 
 import TestResult from '../testResult';
 const TEMPLATE_CARDS = [

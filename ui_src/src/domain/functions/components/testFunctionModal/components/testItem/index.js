@@ -13,12 +13,12 @@
 import './style.scss';
 
 import { useState, useEffect } from 'react';
-import CheckboxComponent from '../../../../../../components/checkBox';
+import CheckboxComponent from 'components/checkBox';
 import { FiEdit } from 'react-icons/fi';
-import { ReactComponent as BinIcon } from '../../../../../../assets/images/binIcon.svg';
-import { ReactComponent as TestEventModalIcon } from '../../../../../../assets/images/testEventModalcon.svg';
+import { ReactComponent as BinIcon } from 'assets/images/binIcon.svg';
+import { ReactComponent as TestEventModalIcon } from 'assets/images/testEventModalcon.svg';
 
-import Modal from '../../../../../../components/modal';
+import Modal from 'components/modal';
 import EditTestEventModal from '../editTestEventModal';
 const TestItem = ({ data, handleCheckedClick, isCheck, handleDelete, handleEdit }) => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);

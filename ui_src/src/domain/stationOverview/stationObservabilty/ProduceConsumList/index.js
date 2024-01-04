@@ -13,37 +13,45 @@
 import './style.scss';
 
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_REST_GW_HOST, LOCAL_STORAGE_REST_GW_PORT } from '../../../../const/localStorageConsts';
+import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_REST_GW_HOST, LOCAL_STORAGE_REST_GW_PORT } from 'const/localStorageConsts';
 import { Space, Popover } from 'antd';
 import { Virtuoso } from 'react-virtuoso';
 import { FiPlayCircle } from 'react-icons/fi';
-import { ReactComponent as WaitingProducerIcon } from '../../../../assets/images/waitingProducer.svg';
-import { ReactComponent as WaitingConsumerIcon } from '../../../../assets/images/waitingConsumer.svg';
-import { ReactComponent as PlayVideoIcon } from '../../../../assets/images/playVideoIcon.svg';
-import { ReactComponent as PurplePlus } from '../../../../assets/images/purplePlus.svg';
-import { ReactComponent as ProducerIcon } from '../../../../assets/images/producerIcon.svg';
-import { ReactComponent as ConnectIcon } from '../../../../assets/images/connectIcon.svg';
+import { ReactComponent as WaitingProducerIcon } from 'assets/images/waitingProducer.svg';
+import { ReactComponent as WaitingConsumerIcon } from 'assets/images/waitingConsumer.svg';
+import { ReactComponent as PlayVideoIcon } from 'assets/images/playVideoIcon.svg';
+import { ReactComponent as PurplePlus } from 'assets/images/purplePlus.svg';
+import { ReactComponent as ProducerIcon } from 'assets/images/producerIcon.svg';
+import { ReactComponent as ConnectIcon } from 'assets/images/connectIcon.svg';
 import { IoPlayCircleOutline, IoRemoveCircleOutline, IoPause, IoWarning } from 'react-icons/io5';
 import { HiDotsVertical } from 'react-icons/hi';
-import OverflowTip from '../../../../components/tooltip/overflowtip';
-import { ReactComponent as UnsupportedIcon } from '../../../../assets/images/unsupported.svg';
-import StatusIndication from '../../../../components/indication';
-import SdkExample from '../../../../components/sdkExample';
+import { MdError } from 'react-icons/md';
+import { IoMdInformationCircle } from 'react-icons/io';
+import OverflowTip from 'components/tooltip/overflowtip';
+import { ReactComponent as UnsupportedIcon } from 'assets/images/unsupported.svg';
+import StatusIndication from 'components/indication';
+import SdkExample from 'components/sdkExample';
 import CustomCollapse from '../components/customCollapse';
-import Button from '../../../../components/button';
-import Modal from '../../../../components/modal';
-import GenerateTokenModal from '../../../stationOverview/components/generateTokenModal';
-import { StationStoreContext } from '../..';
-import ProduceMessages from '../../../../components/produceMessages';
-import ConnectorModal from '../../../../components/connectorModal';
-import ConnectorError from '../../../../components/connectorError';
-import { ReactComponent as ErrorModalIcon } from '../../../../assets/images/errorModal.svg';
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../services/http';
-import Spinner from '../../../../components/spinner';
-import TooltipComponent from '../../../../components/tooltip/tooltip';
-import { isCloud } from '../../../../services/valueConvertor';
-import { sendTrace } from '../../../../services/genericServices';
+import Button from 'components/button';
+import Modal from 'components/modal';
+import GenerateTokenModal from 'domain/stationOverview/components/generateTokenModal';
+import { StationStoreContext } from 'domain/stationOverview';
+import ProduceMessages from 'components/produceMessages';
+import ConnectorModal from 'components/connectorModal';
+import ConnectorError from 'components/connectorError';
+import { ReactComponent as ErrorModalIcon } from 'assets/images/errorModal.svg';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import Spinner from 'components/spinner';
+import TooltipComponent from 'components/tooltip/tooltip';
+import { isCloud } from 'services/valueConvertor';
+import { sendTrace } from 'services/genericServices';
+import { BiLogoGoLang, BiLogoPython } from 'react-icons/bi';
+import { SiDotnet } from 'react-icons/si';
+import { DiJavascript1 } from 'react-icons/di';
+import ConnectorInfo from '../../../../components/connectorInfo';
+import RunBenchmarkModal from '../../../../components/runBenchmarkModal';
+import { connectorTypesSource, connectorTypesSink } from '../../../../connectors';
 
 const overlayStylesConnectors = {
     borderRadius: '8px',
@@ -75,6 +83,7 @@ const ProduceConsumList = ({ producer }) => {
     const [connectorsSinkList, setConnectorsSinkList] = useState([]);
     const [cgsList, setCgsList] = useState([]);
     const [openProduceMessages, setOpenProduceMessages] = useState(false);
+    const [openRunBenchmark, setOpenRunBenchmark] = useState(false);
     const [cgDetails, setCgDetails] = useState([]);
     const [openCreateProducer, setOpenCreateProducer] = useState(false);
     const [openCreateConsumer, setOpenCreateConsumer] = useState(false);
@@ -89,32 +98,40 @@ const ProduceConsumList = ({ producer }) => {
     const [selectedConnector, setSelectedConnector] = useState(null);
     const [openConnectorModal, setOpenConnectorModal] = useState(false);
     const [openConnectorError, setOpenConnectorError] = useState(false);
+    const [openConnectorInfo, setOpenConnectorInfo] = useState(false);
+    const [actionItem, setActionItem] = useState(null);
     const [loading, setLoader] = useState(false);
-
     const producerItemsList = [
         {
-            action: 'Produce Synthetic Data',
+            action: 'Produce synthetic data',
             onClick: () => {
                 setOpenProduceMessages(true);
                 setOpenProducerPopover(false);
             }
         },
         {
-            action: 'Develop a Producer',
+            action: 'Develop a producer',
             onClick: () => {
                 setOpenCreateProducer(true);
                 setOpenProducerPopover(false);
             }
         },
         {
-            action: 'Produce using REST',
+            action: 'Produce using REST protocol',
             onClick: () => {
                 setGenerateModal(true);
                 setOpenProducerPopover(false);
             }
         },
         {
-            action: 'Add a Source',
+            action: 'Run a benchmark',
+            onClick: () => {
+                setOpenRunBenchmark(true);
+                setOpenProducerPopover(false);
+            }
+        },
+        {
+            action: 'Add a source',
             onClick: () => {
                 setOpenConnectorModal(true);
                 setOpenProducerPopover(false);
@@ -124,21 +141,28 @@ const ProduceConsumList = ({ producer }) => {
 
     const consumeItemsList = [
         {
-            action: 'Develop a Consumer',
+            action: 'Develop a consumer',
             onClick: () => {
                 setOpenCreateConsumer(true);
                 setOpenProducerPopover(false);
             }
         },
         {
-            action: 'Consume using REST',
+            action: 'Consume using REST protocol',
             onClick: () => {
                 setGenerateModal(true);
                 setOpenProducerPopover(false);
             }
         },
         {
-            action: 'Add a Sink',
+            action: 'Run a benchmark',
+            onClick: () => {
+                setOpenRunBenchmark(true);
+                setOpenProducerPopover(false);
+            }
+        },
+        {
+            action: 'Add a sink',
             onClick: () => {
                 setOpenConnectorModal(true);
                 setOpenProducerPopover(false);
@@ -248,7 +272,7 @@ const ProduceConsumList = ({ producer }) => {
 
     useEffect(() => {
         arrangeData(selectedRowIndex);
-    }, [producersList, cgsList]);
+    }, [producersList, cgsList, connectorsSinkList]);
 
     const concatFunction = (type, data) => {
         let connected = [];
@@ -273,6 +297,8 @@ const ProduceConsumList = ({ producer }) => {
             concatArrays = connected.concat(disconnected);
             concatArrays = concatArrays.concat(deleted);
             return concatArrays;
+        } else if (type === 'sinks') {
+            return [];
         } else {
             connected = data?.connected_consumers || [];
             disconnected = data?.disconnected_consumers || [];
@@ -289,7 +315,9 @@ const ProduceConsumList = ({ producer }) => {
     };
 
     const arrangeData = (rowIndex) => {
-        let concatAllConsumers = concatFunction('consumers', cgsList[rowIndex]);
+        let concatAllConsumers = cgsList[rowIndex]
+            ? concatFunction('consumers', cgsList[rowIndex] || connectorsSinkList[rowIndex - cgsList?.length])
+            : concatFunction('sinks', cgsList[rowIndex] || connectorsSinkList[rowIndex - cgsList?.length]);
         let consumersDetails = [];
         concatAllConsumers.map((row, index) => {
             let consumer = {
@@ -304,23 +332,28 @@ const ProduceConsumList = ({ producer }) => {
             details: [
                 {
                     name: 'Unacknowledged messages',
-                    value: cgsList[rowIndex]?.poison_messages?.toLocaleString()
+                    value: cgsList[rowIndex]?.poison_messages?.toLocaleString() || connectorsSinkList[rowIndex - cgsList?.length]?.poison_messages?.toLocaleString()
                 },
                 {
                     name: 'Unprocessed messages',
-                    value: cgsList[rowIndex]?.unprocessed_messages?.toLocaleString()
+                    value:
+                        cgsList[rowIndex]?.unprocessed_messages?.toLocaleString() ||
+                        connectorsSinkList[rowIndex - cgsList?.length]?.unprocessed_messages?.toLocaleString()
                 },
                 {
                     name: 'In process message',
-                    value: cgsList[rowIndex]?.in_process_messages?.toLocaleString()
+                    value:
+                        cgsList[rowIndex]?.in_process_messages?.toLocaleString() || connectorsSinkList[rowIndex - cgsList?.length]?.in_process_messages?.toLocaleString()
                 },
                 {
                     name: 'Max ack time',
-                    value: `${cgsList[rowIndex]?.max_ack_time_ms?.toLocaleString()}ms`
+                    value: `${
+                        cgsList[rowIndex]?.max_ack_time_ms?.toLocaleString() || connectorsSinkList[rowIndex - cgsList?.length]?.max_ack_time_ms?.toLocaleString()
+                    }ms`
                 },
                 {
                     name: 'Max message deliveries',
-                    value: cgsList[rowIndex]?.max_msg_deliveries
+                    value: cgsList[rowIndex]?.max_msg_deliveries || connectorsSinkList[rowIndex - cgsList?.length]?.max_msg_deliveries
                 }
             ],
             consumers: consumersDetails
@@ -338,6 +371,11 @@ const ProduceConsumList = ({ producer }) => {
         } else return 'pubSub-row';
     };
 
+    const handleConnectorErr = (index, row) => {
+        setSelectedConnector(row);
+        setOpenConnectorError(true);
+    };
+
     const restGWHost =
         localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
             ? `http://localhost:${localStorage.getItem(LOCAL_STORAGE_REST_GW_PORT)}`
@@ -346,6 +384,28 @@ const ProduceConsumList = ({ producer }) => {
         const connected = producersList?.reduce((accumulator, item) => accumulator + item.connected_producers_count, 0);
         const disconnected = producersList?.reduce((accumulator, item) => accumulator + item.disconnected_producers_count, 0);
         return connected + disconnected;
+    };
+
+    function getIconByLang(item) {
+        const lang = item?.sdk_language;
+
+        const mapping = {
+            go: <BiLogoGoLang />,
+            'node.js': <DiJavascript1 />,
+            python: <BiLogoPython />,
+            '.NET': <SiDotnet />
+        };
+
+        const iconComponent = lang ? mapping[lang] : <ProducerIcon />;
+
+        return <div style={{ fontSize: '17px', display: 'flex', alignItems: 'center' }}>{iconComponent}</div>;
+    }
+
+    const getIconByConnector = (item, connectorType) => {
+        let connector;
+        if (connectorType === 'source') connector = connectorTypesSource.find((connector) => connector?.name?.toLowerCase() === item?.type);
+        else connector = connectorTypesSink.find((connector) => connector?.name?.toLowerCase() === item?.type);
+        return <img src={connector?.icon} height="16px" width="16px" alt={item?.type} /> || <ConnectIcon />;
     };
 
     return (
@@ -357,8 +417,8 @@ const ProduceConsumList = ({ producer }) => {
                             <p className="title">
                                 <TooltipComponent text="max allowed producers" placement="right">
                                     <>
-                                        Sources ({(producersList?.length > 0 && countProducers(producersList)) || 0}
-                                        {isCloud() && '/' + stationState?.stationSocketData?.max_amount_of_allowed_producers})
+                                        Producers ({(producersList?.length > 0 && countProducers(producersList).toLocaleString()) || 0}
+                                        {isCloud() && '/' + stationState?.stationSocketData?.max_amount_of_allowed_producers?.toLocaleString()})
                                     </>
                                 </TooltipComponent>
                             </p>
@@ -379,7 +439,8 @@ const ProduceConsumList = ({ producer }) => {
                     {!producer && (
                         <span className="poduce-consume-header">
                             <p className="title">
-                                Consumer groups {(cgsList?.length > 0 || connectorsSinkList?.length > 0) && `(${cgsList?.length + connectorsSinkList?.length})`}
+                                Consumer groups{' '}
+                                {(cgsList?.length > 0 || connectorsSinkList?.length > 0) && `(${(cgsList?.length + connectorsSinkList?.length)?.toLocaleString()})`}
                             </p>
                             <Popover
                                 overlayInnerStyle={overlayStylesConnectors}
@@ -398,18 +459,18 @@ const ProduceConsumList = ({ producer }) => {
                 </div>
                 {producer && (producersList?.length > 0 || connectorsSourceList?.length > 0) && (
                     <div className="coulmns-table">
-                        <span style={{ width: '100px' }}>Name</span>
-                        <span style={{ width: '100px' }}>Count</span>
-                        <span style={{ width: '35px' }}>Status</span>
+                        <span style={{ width: '120px' }}>Name</span>
+                        <span style={{ width: '120px' }}>Count</span>
+                        <span style={{ width: '40px' }}>Status</span>
                         <span style={{ width: '20px' }}></span>
                     </div>
                 )}
                 {!producer && (cgsList.length > 0 || connectorsSinkList?.length > 0) && (
                     <div className="coulmns-table">
-                        <span style={{ width: '60px' }}>Name</span>
-                        <span style={{ width: '100px', textAlign: 'center' }}>Unacknowledged</span>
+                        <span style={{ width: '120px' }}>Name</span>
+                        <span style={{ width: '80px', textAlign: 'center' }}>Unacked</span>
                         <span style={{ width: '80px', textAlign: 'center' }}>Unprocessed</span>
-                        <span style={{ width: '35px', textAlign: 'center' }}>Status</span>
+                        <span style={{ width: '45px', textAlign: 'center' }}>Status</span>
                         <span style={{ width: '20px' }}></span>
                     </div>
                 )}
@@ -433,29 +494,35 @@ const ProduceConsumList = ({ producer }) => {
                                         <div className={returnClassName(index, row?.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'producer')}>
                                             <span className="connector-name">
                                                 {row?.connector_connection_id ? (
-                                                    <TooltipComponent text="connector">
-                                                        <ConnectIcon />
-                                                    </TooltipComponent>
+                                                    <TooltipComponent text="connector">{getIconByConnector(row, 'source')}</TooltipComponent>
                                                 ) : (
-                                                    <TooltipComponent text="producer">
-                                                        <ProducerIcon />
-                                                    </TooltipComponent>
+                                                    <TooltipComponent text="producer">{getIconByLang(row)}</TooltipComponent>
                                                 )}
                                                 <OverflowTip text={row.name} width={'80px'}>
                                                     {row.name}
                                                 </OverflowTip>
+                                                {row?.update_available && (
+                                                    <TooltipComponent text="SDK update avaliable" placement="bottom">
+                                                        <MdError size={'16px'} fill={'#FF9F38'} />
+                                                    </TooltipComponent>
+                                                )}
+                                                {row?.error_logs_exist && (
+                                                    <span onClick={() => handleConnectorErr(index, row)}>
+                                                        <MdError size={'16px'} fill={'#E54F4F'} />
+                                                    </span>
+                                                )}
                                             </span>
                                             <div style={{ width: '92px', maxWidth: '100%' }}>
                                                 {row?.connector_connection_id ? (
                                                     'N/A'
                                                 ) : (
                                                     <TooltipComponent text="connected | disconnected" placement="right">
-                                                        {row.connected_producers_count + ' | ' + row.disconnected_producers_count}
+                                                        {row?.connected_producers_count?.toLocaleString() + ' | ' + row?.disconnected_producers_count?.toLocaleString()}
                                                     </TooltipComponent>
                                                 )}
                                             </div>
                                             <span className="status-icon" style={{ width: '38px' }}>
-                                                <StatusIndication is_active={row.is_active} is_deleted={row.is_active} />
+                                                <StatusIndication is_active={row?.is_active} is_deleted={row?.is_active} />
                                             </span>
                                             <Popover
                                                 overlayInnerStyle={overlayStyleConnectors}
@@ -470,19 +537,32 @@ const ProduceConsumList = ({ producer }) => {
                                                     <>
                                                         <MenuItem
                                                             name={row?.is_active ? 'Pause' : 'Play'}
-                                                            onClick={() => (row?.is_active ? stopConnector('source') : startConnector('source'))}
+                                                            onClick={() => {
+                                                                setActionItem(0);
+                                                                row?.is_active ? stopConnector('source') : startConnector('source');
+                                                            }}
                                                             icon={row?.is_active ? <IoPause /> : <IoPlayCircleOutline />}
+                                                            loader={loading && actionItem === 0}
                                                         />
                                                         <MenuItem
                                                             name={'Disconnect'}
                                                             onClick={() => {
+                                                                setActionItem(1);
                                                                 removeConnector('source');
                                                             }}
                                                             icon={<IoRemoveCircleOutline />}
-                                                            loader={loading && openConnectorPopoverItem === index}
+                                                            loader={loading && actionItem === 1}
                                                         />
                                                         <MenuItem
-                                                            name={'Erros'}
+                                                            name={'Information'}
+                                                            onClick={() => {
+                                                                setOpenConnectorInfo(true);
+                                                                setOpenConnectorPopover(false);
+                                                            }}
+                                                            icon={<IoMdInformationCircle />}
+                                                        />
+                                                        <MenuItem
+                                                            name={'Logs'}
                                                             onClick={() => {
                                                                 setOpenConnectorError(true);
                                                                 setOpenConnectorPopover(false);
@@ -512,17 +592,23 @@ const ProduceConsumList = ({ producer }) => {
                                         <div className={returnClassName(index, row?.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'consumer')}>
                                             <span className="connector-name">
                                                 {row?.connector_connection_id ? (
-                                                    <TooltipComponent text="connector">
-                                                        <ConnectIcon />
-                                                    </TooltipComponent>
+                                                    <TooltipComponent text="connector">{getIconByConnector(row, 'sink')}</TooltipComponent>
                                                 ) : (
-                                                    <TooltipComponent text="consumer">
-                                                        <ProducerIcon />
+                                                    <TooltipComponent text="consumer">{getIconByLang(row)}</TooltipComponent>
+                                                )}
+                                                <OverflowTip text={row?.name} width={'80px'}>
+                                                    {row?.name}
+                                                </OverflowTip>
+                                                {row?.update_available && (
+                                                    <TooltipComponent text="SDK update avaliable" placement="bottom">
+                                                        <MdError size={'16px'} fill={'#FF9F38'} />
                                                     </TooltipComponent>
                                                 )}
-                                                <OverflowTip text={row.name} width={'80px'}>
-                                                    {row.name}
-                                                </OverflowTip>
+                                                {row?.error_logs_exist && (
+                                                    <span onClick={() => handleConnectorErr(index, row)}>
+                                                        <MdError size={'16px'} fill={'#E54F4F'} />
+                                                    </span>
+                                                )}
                                             </span>
                                             <OverflowTip
                                                 text={row?.poison_messages?.toLocaleString()}
@@ -530,10 +616,10 @@ const ProduceConsumList = ({ producer }) => {
                                                 textAlign={'center'}
                                                 textColor={row?.poison_messages > 0 ? '#F7685B' : null}
                                             >
-                                                {row?.poison_messages?.toLocaleString()}
+                                                {row?.poison_messages?.toLocaleString() || 0}
                                             </OverflowTip>
                                             <OverflowTip text={row?.unprocessed_messages?.toLocaleString()} width={'80px'} textAlign={'center'}>
-                                                {row?.unprocessed_messages?.toLocaleString()}
+                                                {row?.unprocessed_messages?.toLocaleString() || 0}
                                             </OverflowTip>
                                             <span className="status-icon" style={{ width: '35px' }}>
                                                 <StatusIndication is_active={row?.is_active} is_deleted={row?.is_deleted} />
@@ -551,12 +637,32 @@ const ProduceConsumList = ({ producer }) => {
                                                     <>
                                                         <MenuItem
                                                             name={row?.is_active ? 'Pause' : 'Play'}
-                                                            onClick={() => (row?.is_active ? stopConnector('sink') : startConnector('sink'))}
+                                                            onClick={() => {
+                                                                setActionItem(0);
+                                                                row?.is_active ? stopConnector('sink') : startConnector('sink');
+                                                            }}
                                                             icon={row?.is_active ? <IoPause /> : <IoPlayCircleOutline />}
+                                                            loader={loading && actionItem === 0}
                                                         />
-                                                        <MenuItem name={'Disconnect'} onClick={() => removeConnector('sink')} icon={<IoRemoveCircleOutline />} />
                                                         <MenuItem
-                                                            name={'Erros'}
+                                                            name={'Disconnect'}
+                                                            onClick={() => {
+                                                                setActionItem(1);
+                                                                removeConnector('sink');
+                                                            }}
+                                                            icon={<IoRemoveCircleOutline />}
+                                                            loader={loading && actionItem === 1}
+                                                        />
+                                                        <MenuItem
+                                                            name={'Information'}
+                                                            onClick={() => {
+                                                                setOpenConnectorInfo(true);
+                                                                setOpenConnectorPopover(false);
+                                                            }}
+                                                            icon={<IoMdInformationCircle />}
+                                                        />
+                                                        <MenuItem
+                                                            name={'Logs'}
                                                             onClick={() => {
                                                                 setOpenConnectorError(true);
                                                                 setOpenConnectorPopover(false);
@@ -583,10 +689,10 @@ const ProduceConsumList = ({ producer }) => {
                         </div>
                         <div style={{ marginRight: '10px' }} id={producer ? 'producer-details' : 'consumer-details'}>
                             {producer && (producersList?.length > 0 || connectorsSourceList?.length > 0)}
-                            {!producer && cgsList?.length > 0 && (
+                            {!producer && (cgsList?.length > 0 || connectorsSourceList?.length > 0) && (
                                 <Space direction="vertical">
-                                    <CustomCollapse header="Details" status={false} defaultOpen={true} data={cgDetails.details} />
-                                    <CustomCollapse header="Consumers" data={cgDetails.consumers} consumerList={true} />
+                                    <CustomCollapse header="Details" status={false} defaultOpen={true} data={cgDetails?.details} />
+                                    <CustomCollapse header="Consumers" data={cgDetails?.consumers} consumerList={true} />
                                 </Space>
                             )}
                         </div>
@@ -658,8 +764,7 @@ const ProduceConsumList = ({ producer }) => {
                         <div className="header-img-container">
                             <PlayVideoIcon className="headerImage" alt="stationImg" />
                         </div>
-                        <p>Produce a message</p>
-                        <label>Produce a message through the Console.</label>
+                        <p>Produce synthetic data</p>
                     </div>
                 }
                 className={'modal-wrapper produce-modal'}
@@ -745,6 +850,8 @@ const ProduceConsumList = ({ producer }) => {
                 <GenerateTokenModal host={restGWHost} restProducer stationName={stationState?.stationMetaData?.name} close={() => setGenerateModal(false)} />
             </Modal>
             <ConnectorError open={openConnectorError} clickOutside={() => setOpenConnectorError(false)} connectorId={selectedConnector?.id} />
+            <ConnectorInfo open={openConnectorInfo} clickOutside={() => setOpenConnectorInfo(false)} connectorId={selectedConnector?.id} />
+            <RunBenchmarkModal open={openRunBenchmark} clickOutside={() => setOpenRunBenchmark(false)} />
         </div>
     );
 };

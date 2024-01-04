@@ -15,7 +15,7 @@ import './style.scss';
 import { CustomerPortalProvider, InvoicesSection, PaymentDetailsSection, SubscriptionsOverview } from '@stigg/react-sdk';
 import React, { useState } from 'react';
 
-import UpgradePlans from '../../../../../../components/upgradePlans';
+import UpgradePlans from 'components/upgradePlans';
 
 function TotalPayments() {
     const [isPaywallOpen, setIsPaywallOpen] = useState(false);

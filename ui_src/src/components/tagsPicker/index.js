@@ -21,16 +21,16 @@
 
 import './style.scss';
 import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
-import SearchInput from '../searchInput';
-import { ReactComponent as SearchIcon } from '../../assets/images/searchIcon.svg';
-import Modal from '../../components/modal';
-import { httpRequest } from '../../services/http';
-import { ApiEndpoints } from '../../const/apiEndpoints';
+import SearchInput from 'components/searchInput';
+import { ReactComponent as SearchIcon } from 'assets/images/searchIcon.svg';
+import Modal from 'components/modal';
+import { httpRequest } from 'services/http';
+import { ApiEndpoints } from 'const/apiEndpoints';
 import NewTagGenerator from './newTagGenerator';
 import { AddRounded, Check } from '@material-ui/icons';
 import { Divider } from 'antd';
-import { ReactComponent as EmptyTagsIcon } from '../../assets/images/emptyTags.svg';
-import Loader from '../loader';
+import { ReactComponent as EmptyTagsIcon } from 'assets/images/emptyTags.svg';
+import Loader from 'components/loader';
 
 const TagsPicker = forwardRef(({ tags, entity_name, entity_type, handleUpdatedTagList, newEntity = false }, ref) => {
     const [tagsToDisplay, setTagsToDisplay] = useState([]);

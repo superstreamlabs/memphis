@@ -15,31 +15,31 @@ import './style.scss';
 import React, { useState, useEffect, useContext } from 'react';
 import Skeleton from 'antd/lib/skeleton';
 import { IoIosInformationCircle } from 'react-icons/io';
-import { isCloud, parsingDate } from '../../../../services/valueConvertor';
+import { isCloud, parsingDate } from 'services/valueConvertor';
 import { FiGitCommit } from 'react-icons/fi';
 import { BiDownload } from 'react-icons/bi';
 import { IoClose } from 'react-icons/io5';
 import { GoRepo } from 'react-icons/go';
-import { ReactComponent as GithubBranchIcon } from '../../../../assets/images/githubBranchIcon.svg';
-import { ReactComponent as MemphisFunctionIcon } from '../../../../assets/images/memphisFunctionIcon.svg';
-import { ReactComponent as FunctionIcon } from '../../../../assets/images/functionIcon.svg';
-import { ReactComponent as DeleteIcon } from '../../../../assets/images/deleteIcon.svg';
+import { ReactComponent as GithubBranchIcon } from 'assets/images/githubBranchIcon.svg';
+import { ReactComponent as MemphisFunctionIcon } from 'assets/images/memphisFunctionIcon.svg';
+import { ReactComponent as FunctionIcon } from 'assets/images/functionIcon.svg';
+import { ReactComponent as DeleteIcon } from 'assets/images/deleteIcon.svg';
 import { FaArrowCircleUp } from 'react-icons/fa';
-import { Divider, Drawer, Rate } from 'antd';
+import { Divider, Rate } from 'antd';
+import Drawer from "components/drawer";
 import FunctionDetails from '../functionDetails';
-import { showMessages } from '../../../../services/genericServices';
-import TagsList from '../../../../components/tagList';
-import Button from '../../../../components/button';
-import Modal from '../../../../components/modal';
-import OverflowTip from '../../../../components/tooltip/overflowtip';
-import { OWNER } from '../../../../const/globalConst';
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../services/http';
+import { showMessages } from 'services/genericServices';
+import TagsList from 'components/tagList';
+import Button from 'components/button';
+import OverflowTip from 'components/tooltip/overflowtip';
+import { OWNER } from 'const/globalConst';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
 import AttachFunctionModal from '../attachFunctionModal';
-import CloudModal from '../../../../components/cloudModal';
-import TestMockEvent from '../../components/testFunctionModal/components/testMockEvent';
-import { Context } from '../../../../hooks/store';
-import TooltipComponent from '../../../../components/tooltip/tooltip';
+import CloudModal from 'components/cloudModal';
+import TestMockEvent from '../testFunctionModal/components/testMockEvent';
+import { Context } from 'hooks/store';
+import TooltipComponent from 'components/tooltip/tooltip';
 
 function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null, onApply, doneUninstall, startInstallation, funcIndex, referredFunction }) {
     const [state, dispatch] = useContext(Context);
@@ -274,6 +274,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                             disabled={!isValid || functionDetails?.installed_in_progress}
                                             isLoading={loader || functionDetails?.installed_in_progress}
                                             onClick={() => (!functionDetails?.installed || functionDetails?.updates_available ? handleInstall() : handleUnInstall())}
+                                            customClasses={!functionDetails?.installed || functionDetails?.updates_available ? 'install-btn' : 'uninstall-btn'}
                                         />
                                     </span>
                                 </TooltipComponent>

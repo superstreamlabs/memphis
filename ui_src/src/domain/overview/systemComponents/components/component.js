@@ -18,8 +18,8 @@ import { Popover, Divider } from 'antd';
 import React from 'react';
 
 import { PieChart, Pie } from 'recharts';
-import OverflowTip from '../../../../components/tooltip/overflowtip';
-import { ReactComponent as ComponentIcon } from '../../../../assets/images/componentIcon.svg';
+import OverflowTip from 'components/tooltip/overflowtip';
+import { ReactComponent as ComponentIcon } from 'assets/images/componentIcon.svg';
 import SysCompInfo from './sysCompInfo';
 
 const remainingPorstPopInnerStyle = { padding: '5px', borderRadius: '4px', boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.12), 0px 23px 44px rgba(176, 183, 195, 0.14)' };

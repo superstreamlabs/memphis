@@ -46,6 +46,23 @@ type ExtendedConsumer struct {
 	StationName      string    `json:"station_name,omitempty"`
 	PartitionsList   []int     `json:"partitions_list"`
 	Count            int       `json:"count"`
+	Version          int       `json:"version"`
+	Sdk              string    `json:"sdk"`
+}
+
+type ExtendedConsumerResponse struct {
+	ID               int       `json:"id"`
+	Name             string    `json:"name"`
+	UpdatedAt        time.Time `json:"updated_at"`
+	IsActive         bool      `json:"is_active"`
+	ConsumersGroup   string    `json:"consumers_group"`
+	MaxAckTimeMs     int64     `json:"max_ack_time_ms"`
+	MaxMsgDeliveries int       `json:"max_msg_deliveries"`
+	StationName      string    `json:"station_name,omitempty"`
+	PartitionsList   []int     `json:"partitions_list"`
+	Count            int       `json:"count"`
+	SdkLanguage      string    `json:"sdk_language"`
+	UpdateAvailable  bool      `json:"update_available"`
 }
 
 type LightConsumer struct {
@@ -55,18 +72,20 @@ type LightConsumer struct {
 }
 
 type Cg struct {
-	Name                  string             `json:"name"`
-	UnprocessedMessages   int                `json:"unprocessed_messages"`
-	PoisonMessages        int                `json:"poison_messages"`
-	IsActive              bool               `json:"is_active"`
-	InProcessMessages     int                `json:"in_process_messages"`
-	MaxAckTimeMs          int64              `json:"max_ack_time_ms"`
-	MaxMsgDeliveries      int                `json:"max_msg_deliveries"`
-	ConnectedConsumers    []ExtendedConsumer `json:"connected_consumers"`
-	DisconnectedConsumers []ExtendedConsumer `json:"disconnected_consumers"`
-	DeletedConsumers      []ExtendedConsumer `json:"deleted_consumers"`
-	LastStatusChangeDate  time.Time          `json:"last_status_change_date"`
-	PartitionsList        []int              `json:"partitions_list"`
+	Name                  string                     `json:"name"`
+	UnprocessedMessages   int                        `json:"unprocessed_messages"`
+	PoisonMessages        int                        `json:"poison_messages"`
+	IsActive              bool                       `json:"is_active"`
+	InProcessMessages     int                        `json:"in_process_messages"`
+	MaxAckTimeMs          int64                      `json:"max_ack_time_ms"`
+	MaxMsgDeliveries      int                        `json:"max_msg_deliveries"`
+	ConnectedConsumers    []ExtendedConsumerResponse `json:"connected_consumers"`
+	DisconnectedConsumers []ExtendedConsumerResponse `json:"disconnected_consumers"`
+	DeletedConsumers      []ExtendedConsumerResponse `json:"deleted_consumers"`
+	LastStatusChangeDate  time.Time                  `json:"last_status_change_date"`
+	PartitionsList        []int                      `json:"partitions_list"`
+	SdkLanguage           string                     `json:"sdk_language"`
+	UpdateAvailable       bool                       `json:"update_available"`
 }
 
 type GetAllConsumersByStationSchema struct {

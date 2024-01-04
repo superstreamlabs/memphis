@@ -14,10 +14,10 @@ import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
 
-import { LOCAL_STORAGE_AVATAR_ID, USER_IMAGE } from '../../const/localStorageConsts';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { httpRequest } from '../../services/http';
-import { Context } from '../../hooks/store';
+import { LOCAL_STORAGE_AVATAR_ID, USER_IMAGE } from 'const/localStorageConsts';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import { Context } from 'hooks/store';
 
 function Profile() {
     const [state, dispatch] = useContext(Context);
@@ -73,7 +73,7 @@ function Profile() {
                                     }
                                     onClick={() => (localStorage.getItem(USER_IMAGE) === 'undefined' || !localStorage.getItem(USER_IMAGE)) && editAvatar(item + 1)}
                                 >
-                                    <img src={require(`../../assets/images/bots/avatar${item + 1}.svg`)} alt="avater" />
+                                    <img src={require(`assets/images/bots/avatar${item + 1}.svg`)} alt="avater" />
                                 </div>
                             );
                         })}

@@ -13,9 +13,9 @@
 import './style.scss';
 
 import React, { useState, useEffect } from 'react';
-import Input from '../../../../../components/Input';
-import SelectComponent from '../../../../../components/select';
-import { tieredStorageTimeValidator } from '../../../../../services/valueConvertor';
+import Input from 'components/Input';
+import SelectComponent from 'components/select';
+import { tieredStorageTimeValidator } from 'services/valueConvertor';
 
 function TieredInputRow({ title, desc, value, onChanges, img }) {
     const [inputValue, setInputValue] = useState(value);

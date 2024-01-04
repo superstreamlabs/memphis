@@ -30,14 +30,14 @@ import { Line } from 'react-chartjs-2';
 import { Chart } from 'chart.js';
 import 'chartjs-plugin-streaming';
 import moment from 'moment';
-import { convertBytes, isCloud } from '../../../services/valueConvertor';
-import SelectThroughput from '../../../components/selectThroughput';
-import SegmentButton from '../../../components/segmentButton';
-import Loader from '../../../components/loader';
-import DataNotFound from '../../../assets/images/dataNotFound.svg';
-import pathDomains from '../../../router';
+import { convertBytes, isCloud } from 'services/valueConvertor';
+import SelectThroughput from 'components/selectThroughput';
+import SegmentButton from 'components/segmentButton';
+import Loader from 'components/loader';
+import DataNotFound from 'assets/images/dataNotFound.svg';
+import pathDomains from 'router';
 
-import { Context } from '../../../hooks/store';
+import { Context } from 'hooks/store';
 import { PauseRounded, PlayArrowRounded } from '@material-ui/icons';
 
 const yAxesOptions = [

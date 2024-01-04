@@ -14,7 +14,7 @@ import './style.scss';
 import React from 'react';
 import { Spin, Badge } from 'antd';
 import { SyncOutlined } from '@ant-design/icons';
-import { ReactComponent as RefreshIcon } from '../../assets/images/refresh.svg';
+import { ReactComponent as RefreshIcon } from 'assets/images/refresh.svg';
 
 const RefreshButton = ({ refreshIndeicator, onClick, isLoading }) => {
     return (
@@ -22,7 +22,7 @@ const RefreshButton = ({ refreshIndeicator, onClick, isLoading }) => {
             {refreshIndeicator && <Badge dot />}
             <div className="refresh-btn" onClick={onClick}>
                 {isLoading ? (
-                    <Spin indicator={<SyncOutlined style={{ color: '#6557FF', fontSize: '16px' }} spin />} />
+                    <Spin className="refresh-icon-spin" indicator={<SyncOutlined style={{ color: '#6557FF', fontSize: '16px' }} spin />} />
                 ) : (
                     <RefreshIcon alt="refreshIcon" style={{ path: { color: '#6557FF' } }} />
                 )}

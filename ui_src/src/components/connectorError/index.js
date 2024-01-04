@@ -13,13 +13,13 @@
 import './style.scss';
 
 import React, { useEffect, useState } from 'react';
-import Modal from '../modal';
-import Spinner from '../spinner';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { httpRequest } from '../../services/http';
-import { parsingDate } from '../../services/valueConvertor';
-import OverflowTip from '../tooltip/overflowtip';
-import { sendTrace } from '../../services/genericServices';
+import Modal from 'components/modal';
+import Spinner from 'components/spinner';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import { parsingDate } from 'services/valueConvertor';
+import OverflowTip from 'components/tooltip/overflowtip';
+import { sendTrace } from 'services/genericServices';
 const logsColumns = [
     {
         key: '1',
@@ -38,6 +38,7 @@ const ConnectorError = ({ open, clickOutside, connectorId }) => {
     const [logs, setLogs] = useState(null);
 
     useEffect(() => {
+        !open && setLogs(null);
         open && getConnectorErrors(connectorId);
     }, [open]);
 
@@ -71,7 +72,7 @@ const ConnectorError = ({ open, clickOutside, connectorId }) => {
 
     return (
         <Modal
-            header={'Connector Errors'}
+            header={'Connector\'s logs'}
             className={'modal-wrapper produce-modal'}
             width="550px"
             height="50vh"

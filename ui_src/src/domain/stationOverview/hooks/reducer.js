@@ -47,6 +47,12 @@ const Reducer = (stationState, action) => {
                 ...stationState,
                 stationSocketData: updatedSocketState
             };
+        case 'SET_FUNCTION_FAILED_MESSAGES':
+            updatedSocketState.functions_failed_messages = action.payload;
+            return {
+                ...stationState,
+                stationSocketData: updatedSocketState
+            };
         case 'SET_TAGS':
             updatedSocketState.tags = action.payload;
             return {
@@ -59,6 +65,7 @@ const Reducer = (stationState, action) => {
                 ...stationState,
                 stationSocketData: updatedSocketState
             };
+
         case 'SET_DLS':
             updatedMetdaDataState.dls_station = action.payload;
             return {

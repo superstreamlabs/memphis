@@ -12,19 +12,19 @@
 
 import './style.scss';
 import React, { useEffect, useState } from 'react';
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../services/http';
-import { convertBytes } from '../../../../services/valueConvertor';
-import { ReactComponent as ConsumedIcon } from '../../../../assets/images/setting/consumed.svg';
-import { ReactComponent as RedeliverIcon } from '../../../../assets/images/setting/redeliver.svg';
-import { ReactComponent as DeadLetterIcon } from '../../../../assets/images/setting/deadLetter.svg';
-import { ReactComponent as StorageIcon } from '../../../../assets/images/setting/storage.svg';
-import DatePickerComponent from '../../../../components/datePicker';
-import Loader from '../../../../components/loader';
-import { ReactComponent as DataInIcon } from '../../../../assets/images/dataIn.svg';
-import { ReactComponent as DataOutIcon } from '../../../../assets/images/dataOut.svg';
-import { ReactComponent as MessageIcon } from '../../../../assets/images/messageIcon.svg';
-import { LOCAL_STORAGE_CREATION_DATE } from '../../../../const/localStorageConsts';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import { convertBytes } from 'services/valueConvertor';
+import { ReactComponent as ConsumedIcon } from 'assets/images/setting/consumed.svg';
+import { ReactComponent as RedeliverIcon } from 'assets/images/setting/redeliver.svg';
+import { ReactComponent as DeadLetterIcon } from 'assets/images/setting/deadLetter.svg';
+import { ReactComponent as StorageIcon } from 'assets/images/setting/storage.svg';
+import DatePickerComponent from 'components/datePicker';
+import Loader from 'components/loader';
+import { ReactComponent as DataInIcon } from 'assets/images/dataIn.svg';
+import { ReactComponent as DataOutIcon } from 'assets/images/dataOut.svg';
+import { ReactComponent as MessageIcon } from 'assets/images/messageIcon.svg';
+import { LOCAL_STORAGE_CREATION_DATE } from 'const/localStorageConsts';
 function Requests() {
     const [usageData, setUsageData] = useState(null);
     const [usageType, setUsageType] = useState('Data out');

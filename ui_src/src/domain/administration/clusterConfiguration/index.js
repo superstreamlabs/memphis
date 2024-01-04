@@ -14,17 +14,17 @@ import './style.scss';
 
 import React, { useEffect, useState } from 'react';
 
-import { compareObjects, isCloud } from '../../../services/valueConvertor';
-import BrokerHostname from '../../../assets/images/BrokerHostname.svg';
-import UIHostname from '../../../assets/images/UIHostname.svg';
-import DeadLetterInHours from '../../../assets/images/DeadLetterInHours.svg';
-import LogsRetentionInDays from '../../../assets/images/LogsRetentionInDays.svg';
-import RestHostname from '../../../assets/images/RestHostname.svg';
-import TieredStorageInterval from '../../../assets/images/TieredStorageInterval.svg';
+import { compareObjects, isCloud } from 'services/valueConvertor';
+import BrokerHostname from 'assets/images/BrokerHostname.svg';
+import UIHostname from 'assets/images/UIHostname.svg';
+import DeadLetterInHours from 'assets/images/DeadLetterInHours.svg';
+import LogsRetentionInDays from 'assets/images/LogsRetentionInDays.svg';
+import RestHostname from 'assets/images/RestHostname.svg';
+import TieredStorageInterval from 'assets/images/TieredStorageInterval.svg';
 
-import { ApiEndpoints } from '../../../const/apiEndpoints';
-import { httpRequest } from '../../../services/http';
-import Button from '../../../components/button';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import Button from 'components/button';
 import SliderRow from './components/sliderRow';
 import InputRow from './components/inputRow';
 import TieredInputRow from './components/tieredInputRow';
@@ -38,9 +38,9 @@ import {
     DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS,
     TIERED_STORAGE_UPLOAD_INTERVAL,
     LOGS_RETENTION_IN_DAYS
-} from '../../../const/localStorageConsts';
-import Loader from '../../../components/loader';
-import { showMessages } from '../../../services/genericServices';
+} from 'const/localStorageConsts';
+import Loader from 'components/loader';
+import { showMessages } from 'services/genericServices';
 
 function ClusterConfiguration() {
     const [formFields, setFormFields] = useState({});
@@ -113,42 +113,31 @@ function ClusterConfiguration() {
             {!isLoading && (
                 <>
                     <div className="configuration-body">
-                        {isCloud() ? (
-                            <SliderRow
-                                title="DEAD LETTERED MESSAGES RETENTION IN HOURS"
-                                desc="Amount of hours to retain dead lettered messages in a DLS"
-                                value={formFields?.dls_retention}
-                                img={DeadLetterInHours}
-                                min={1}
-                                max={30}
-                                unit={'h'}
-                                onChanges={(e) => handleChange('dls_retention', e)}
-                            />
-                        ) : (
+                        <SliderRow
+                            title="DEAD LETTERED MESSAGES RETENTION IN HOURS"
+                            desc="Amount of hours to retain dead lettered messages in a DLS"
+                            value={formFields?.dls_retention}
+                            img={DeadLetterInHours}
+                            min={1}
+                            max={30}
+                            unit={'h'}
+                            onChanges={(e) => handleChange('dls_retention', e)}
+                        />
+                        <SliderRow
+                            title="DISCONNECTED PRODUCERS AND CONSUMERS RETENTION"
+                            desc="Amount of hours to retain inactive producers and consumers"
+                            value={formFields?.gc_producer_consumer_retention_hours}
+                            img={DeadLetterInHours}
+                            min={1}
+                            max={48}
+                            unit={'h'}
+                            onChanges={(e) => handleChange('gc_producer_consumer_retention_hours', e)}
+                        />
+                        {!isCloud() && (
                             <>
                                 <SliderRow
-                                    title="DEAD LETTERED MESSAGES RETENTION IN HOURS"
-                                    desc="Amount of hours to retain dead lettered messages in a DLS"
-                                    value={formFields?.dls_retention}
-                                    img={DeadLetterInHours}
-                                    min={1}
-                                    max={30}
-                                    unit={'h'}
-                                    onChanges={(e) => handleChange('dls_retention', e)}
-                                />
-                                <SliderRow
-                                    title="DISCONNECTED PRODUCERS AND CONSUMERS RETENTION"
-                                    desc="Amount of hours to retain inactive producerd and consumers"
-                                    value={formFields?.gc_producer_consumer_retention_hours}
-                                    img={DeadLetterInHours}
-                                    min={1}
-                                    max={48}
-                                    unit={'h'}
-                                    onChanges={(e) => handleChange('gc_producer_consumer_retention_hours', e)}
-                                />
-                                <SliderRow
                                     title="MAX MESSAGE SIZE"
-                                    desc="Maximum  message size (payload + headers) in megabytes"
+                                    desc="Maximum message size (payload + headers) in megabytes"
                                     value={formFields?.max_msg_size_mb}
                                     img={DeadLetterInHours}
                                     min={1}
@@ -171,12 +160,11 @@ function ClusterConfiguration() {
                                     desc="(if configured) The interval which the broker will migrate a batch of messages to the second storage tier"
                                     img={TieredStorageInterval}
                                     value={formFields?.tiered_storage_time_sec}
-                                    onChanges={(e, err) => {
-                                        handleChange('tiered_storage_time_sec', e, err);
-                                    }}
+                                    onChanges={(e, err) => handleChange('tiered_storage_time_sec', e, err)}
                                 />
                             </>
                         )}
+
                         {localStorage.getItem(LOCAL_STORAGE_ENV) !== 'docker' && !isCloud() && (
                             <>
                                 <InputRow

@@ -14,23 +14,24 @@ import './style.scss';
 
 import React, { useEffect, useState, useRef, useContext } from 'react';
 import { useHistory } from 'react-router-dom';
-import { Context } from '../../../hooks/store';
-import debeziumIcon from '../../../../src/assets/images/debeziumIcon.svg';
-import slackLogo from '../../../../src/assets/images/slackLogo.svg';
-import discordIntegrationIcon from '../../../../src/assets/images/discordIntegrationIcon.svg';
-import s3Logo from '../../../../src/assets/images/s3Logo.svg';
-import pathDomains from '../../../router';
-import Modal from '../../../../src/components/modal';
+
+import { Context } from 'hooks/store';
+import debeziumIcon from 'assets/images/debeziumIcon.svg';
+import slackLogo from 'assets/images/slackLogo.svg';
+import discordIntegrationIcon from 'assets/images/discordIntegrationIcon.svg';
+import s3Logo from 'assets/images/s3Logo.svg';
+import pathDomains from 'router';
+import Modal from 'components/modal';
 import SlackIntegration from '../../administration/integrations/components/slackIntegration';
 import DiscordIntegration from '../../administration/integrations/components/discordIntegration';
 import S3Integration from '../../administration/integrations/components/s3Integration';
 import DebeziumIntegration from '../../administration/integrations/components/debeziumIntegration';
-import { httpRequest } from '../../../services/http';
-import { ApiEndpoints } from '../../../const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import { ApiEndpoints } from 'const/apiEndpoints';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import ErrorRoundedIcon from '@material-ui/icons/ErrorRounded';
-import LockFeature from '../../../components/lockFeature';
-import {entitlementChecker} from "../../../utils/plan";
+import LockFeature from 'components/lockFeature';
+import {entitlementChecker} from "utils/plan";
 
 const Integrations = () => {
     const [state, dispatch] = useContext(Context);

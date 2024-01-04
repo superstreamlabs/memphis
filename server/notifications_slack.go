@@ -14,7 +14,9 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/memphisdev/memphis/db"
 	"github.com/memphisdev/memphis/models"
@@ -92,7 +94,7 @@ func cacheDetailsSlack(keys map[string]interface{}, properties map[string]bool, 
 	}
 	if slackIntegration.Keys["auth_token"] != authToken {
 		slackIntegration.Keys["auth_token"] = authToken
-		if authToken != "" {
+		if authToken != _EMPTY_ {
 			slackIntegration.Client = slack.New(authToken)
 		}
 	}
@@ -127,7 +129,7 @@ func (it IntegrationsHandler) getSlackIntegrationDetails(body models.CreateInteg
 		}
 	}
 	uiUrl = body.UIUrl
-	if uiUrl == "" {
+	if uiUrl == _EMPTY_ {
 		return map[string]interface{}{}, map[string]bool{}, 500, errors.New("must provide UI url for slack integration")
 	}
 
@@ -144,7 +146,7 @@ func (it IntegrationsHandler) getSlackIntegrationDetails(body models.CreateInteg
 		disconnectAlert = false
 	}
 
-	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, "", pmAlert, svfAlert, disconnectAlert, "", "", "", "", "", "", map[string]interface{}{}, "", "", "", "")
+	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, _EMPTY_, pmAlert, svfAlert, disconnectAlert, _EMPTY_, _EMPTY_, _EMPTY_, _EMPTY_, _EMPTY_, _EMPTY_, map[string]interface{}{}, _EMPTY_, _EMPTY_, _EMPTY_, _EMPTY_)
 	return keys, properties, 0, nil
 }
 
@@ -153,7 +155,7 @@ func (it IntegrationsHandler) handleCreateSlackIntegration(tenantName string, bo
 	if err != nil {
 		return keys, properties, models.Integration{}, errorCode, err
 	}
-	if it.S.opts.UiHost == "" {
+	if it.S.opts.UiHost == _EMPTY_ {
 		EditClusterCompHost("ui_host", body.UIUrl)
 	}
 	slackIntegration, err := createSlackIntegration(tenantName, keys, properties, body.UIUrl)
@@ -237,7 +239,7 @@ func createSlackIntegration(tenantName string, keys map[string]interface{}, prop
 
 func updateSlackIntegration(tenantName string, authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, uiUrl string) (models.Integration, error) {
 	var slackIntegration models.Integration
-	if authToken == "" {
+	if authToken == _EMPTY_ {
 		exist, integrationFromDb, err := db.GetIntegration("slack", tenantName)
 		if err != nil {
 			return models.Integration{}, err
@@ -256,7 +258,7 @@ func updateSlackIntegration(tenantName string, authToken string, channelID strin
 	if err != nil {
 		return slackIntegration, err
 	}
-	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, "", pmAlert, svfAlert, disconnectAlert, "", "", "", "", "", "", map[string]interface{}{}, "", "", "", "")
+	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, _EMPTY_, pmAlert, svfAlert, disconnectAlert, _EMPTY_, _EMPTY_, _EMPTY_, _EMPTY_, _EMPTY_, _EMPTY_, map[string]interface{}{}, _EMPTY_, _EMPTY_, _EMPTY_, _EMPTY_)
 	stringMapKeys := GetKeysAsStringMap(keys)
 	cloneKeys := copyMaps(stringMapKeys)
 	encryptedValue, err := EncryptAES([]byte(authToken))
@@ -308,9 +310,118 @@ func testSlackIntegration(authToken string) error {
 }
 
 func hideSlackAuthToken(authToken string) string {
-	if authToken != "" {
+	if authToken != _EMPTY_ {
 		authToken = "xoxb-****"
 		return authToken
 	}
 	return authToken
+}
+
+type slackMsg struct {
+	Msg          []byte
+	ReplySubject string
+}
+
+func sendSlackNotifications(s *Server, msgs []slackMsg) {
+	tenantMsgs := groupMessagesByTenant(msgs, s)
+	for tenantName, tMsgs := range tenantMsgs {
+		sendTenantSlackNotifications(s, tenantName, tMsgs)
+	}
+}
+
+func sendTenantSlackNotifications(s *Server, tenantName string, msgs []NotificationMsgWithReply) {
+	var ok bool
+	if _, ok := NotificationFunctionsMap[slackIntegrationName]; !ok {
+		s.Errorf("[tenant: %v]slack integration doesn't exist", tenantName)
+		return
+	}
+
+	var tenantIntegrations map[string]any
+	if tenantIntegrations, ok = IntegrationsConcurrentCache.Load(tenantName); !ok {
+		// slack is either not enabled or have been disabled - just ack these messages
+		ackMsgs(s, msgs)
+		return
+	}
+
+	var slackIntegration models.SlackIntegration
+	if slackIntegration, ok = tenantIntegrations[slackIntegrationName].(models.SlackIntegration); !ok {
+		// slack is either not enabled or have been disabled - just ack these messages
+		ackMsgs(s, msgs)
+		return
+	}
+
+	for i := 0; i < len(msgs); i++ {
+		m := msgs[i]
+		err := sendMessageToSlackChannel(slackIntegration, m.NotificationMsg.Title, m.NotificationMsg.Message)
+		if err != nil {
+			if err.Error() == "channel_not_found" || err.Error() == "not_in_channel" {
+				s.Warnf("[tenant: %v]failed to send slack notification: %v", tenantName, err.Error())
+			} else {
+				var rateLimit *slack.RateLimitedError
+				if errors.As(err, &rateLimit) {
+					s.Warnf("[tenant: %v]failed to send slack notification: %v", tenantName, err.Error())
+					err := nackMsgs(s, msgs[i:], rateLimit.RetryAfter)
+					if err != nil {
+						s.Errorf("[tenant: %v]failed to send NACK for slack notification: %v", tenantName, err.Error())
+					}
+
+					return
+				}
+
+				s.Errorf("[tenant: %v]failed to send slack notification: %v", tenantName, err.Error())
+				continue
+			}
+		}
+
+		err = s.sendInternalAccountMsg(s.MemphisGlobalAccount(), m.ReplySubject, []byte(_EMPTY_))
+		if err != nil {
+			s.Errorf("[tenant: %v]failed to send ACK for slack notification: %v", tenantName, err.Error())
+		}
+	}
+}
+
+func nackMsgs(s *Server, msgs []NotificationMsgWithReply, nackDuration time.Duration) error {
+	nakPayload := []byte(fmt.Sprintf("%s {\"delay\": %d}", AckNak, nackDuration.Nanoseconds()))
+	for i := 0; i < len(msgs); i++ {
+		m := msgs[i]
+		err := s.sendInternalAccountMsg(s.MemphisGlobalAccount(), m.ReplySubject, nakPayload)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func ackMsgs(s *Server, msgs []NotificationMsgWithReply) {
+	for i := 0; i < len(msgs); i++ {
+		m := msgs[i]
+		s.sendInternalAccountMsg(s.MemphisGlobalAccount(), m.ReplySubject, []byte(_EMPTY_))
+	}
+}
+
+func groupMessagesByTenant(msgs []slackMsg, l Logger) map[string][]NotificationMsgWithReply {
+	tenantMsgs := make(map[string][]NotificationMsgWithReply)
+	for _, message := range msgs {
+		msg := message.Msg
+		reply := message.ReplySubject
+		var nm NotificationMsg
+		err := json.Unmarshal(msg, &nm)
+		if err != nil {
+			// TODO: does it make sense to send ack for this message?
+			// TODO: it's malformed and won't be unmarshalled next time as well
+			l.Errorf("failed to unmarshal slack message: %v", err)
+			continue
+		}
+		nmr := NotificationMsgWithReply{
+			NotificationMsg: &nm,
+			ReplySubject:    reply,
+		}
+		if _, ok := tenantMsgs[nm.TenantName]; !ok {
+			tenantMsgs[nm.TenantName] = []NotificationMsgWithReply{}
+		}
+		tenantMsgs[nm.TenantName] = append(tenantMsgs[nm.TenantName], nmr)
+	}
+
+	return tenantMsgs
 }

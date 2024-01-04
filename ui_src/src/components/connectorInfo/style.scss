@@ -1,0 +1,30 @@
+.connector-info {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding-top: 30px;
+    overflow-y: auto;
+    .loader {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        margin-top: 10px;
+    }
+    .field-conainer {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 20px;
+        .field-name {
+            color: #737373;
+            font-family: 'Inter';
+            font-size: 12px;
+            text-transform: capitalize;
+        }
+        .field-value {
+            color: #000;
+            font-family: 'Inter';
+            font-size: 14px;
+        }
+    }
+}

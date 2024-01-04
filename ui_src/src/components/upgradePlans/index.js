@@ -19,18 +19,18 @@ import React, { Fragment, useContext, useState } from 'react';
 import { BsCheckLg } from 'react-icons/bs';
 import { Link } from 'react-router-dom';
 
-import { ReactComponent as RedirectIcon } from '../../assets/images/redirectIcon.svg';
-import { showMessages, useGetAllowedActions } from '../../services/genericServices';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { httpRequest } from '../../services/http';
-import pathDomains from '../../router';
-import Button from '../button';
-import Modal from '../modal';
-import Input from '../Input';
-import CheckboxComponent from '../checkBox';
-import { Context } from '../../hooks/store';
-import { LOCAL_STORAGE_PLAN } from '../../const/localStorageConsts';
-import { planType } from '../../const/globalConst';
+import { ReactComponent as RedirectIcon } from 'assets/images/redirectIcon.svg';
+import { showMessages, useGetAllowedActions } from 'services/genericServices';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import pathDomains from 'router';
+import Button from 'components/button';
+import Modal from 'components/modal';
+import Input from 'components/Input';
+import CheckboxComponent from 'components/checkBox';
+import { Context } from 'hooks/store';
+import { LOCAL_STORAGE_PLAN } from 'const/localStorageConsts';
+import { planType } from 'const/globalConst';
 
 const reasons = ['Price is too high', 'Missing feature', 'Bad support', 'Performance', 'Limitations', 'Not using anymore', 'I switched to a competitor', 'Other'];
 

@@ -14,11 +14,11 @@ import './style.scss';
 
 import React, { useState, useEffect } from 'react';
 import { Form } from 'antd';
-import Input from '../../../../../components/Input';
-import Modal from '../../../../../components/modal';
-import TooltipComponent from '../../../../../components/tooltip/tooltip';
-import { ReactComponent as CheckShieldIcon } from '../../../../../assets/images/checkShieldIcon.svg';
-import { ReactComponent as LockIcon } from '../../../../../assets/images/lockIcon.svg';
+import Input from 'components/Input';
+import Modal from 'components/modal';
+import TooltipComponent from 'components/tooltip/tooltip';
+import { ReactComponent as CheckShieldIcon } from 'assets/images/checkShieldIcon.svg';
+import { ReactComponent as LockIcon } from 'assets/images/lockIcon.svg';
 
 const FunctionInputsModal = ({ open, clickOutside, rBtnClick, rBtnText, clickedFunction, handleInputsChange }) => {
     const [inputs, setInputs] = useState([]);

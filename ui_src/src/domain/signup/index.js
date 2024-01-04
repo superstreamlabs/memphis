@@ -20,25 +20,26 @@ import { Form } from 'antd';
 
 import {
     LOCAL_STORAGE_ACCOUNT_ID,
+    LOCAL_STORAGE_WS_HOST,
     LOCAL_STORAGE_INTERNAL_WS_PASS,
     LOCAL_STORAGE_CONNECTION_TOKEN,
     LOCAL_STORAGE_TOKEN,
     LOCAL_STORAGE_USER_PASS_BASED_AUTH
-} from '../../const/localStorageConsts';
-import { ReactComponent as FullLogo } from '../../assets/images/fullLogo.svg';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { ReactComponent as SignupIcon } from '../../assets/images/signup.svg';
-import { httpRequest } from '../../services/http';
-import Switcher from '../../components/switcher';
-import AuthService from '../../services/auth';
-import Button from '../../components/button';
-import Loader from '../../components/loader';
-import { Context } from '../../hooks/store';
-import Input from '../../components/Input';
-import Tooltip from '../../components/tooltip/tooltip';
-import pathDomains from '../../router';
+} from 'const/localStorageConsts';
+import { ReactComponent as FullLogo } from 'assets/images/fullLogo.svg';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { ReactComponent as SignupIcon } from 'assets/images/signup.svg';
+import { httpRequest } from 'services/http';
+import Switcher from 'components/switcher';
+import AuthService from 'services/auth';
+import Button from 'components/button';
+import Loader from 'components/loader';
+import { Context } from 'hooks/store';
+import Input from 'components/Input';
+import Tooltip from 'components/tooltip/tooltip';
+import pathDomains from 'router';
 import { connect } from 'nats.ws';
-import { ENVIRONMENT, WS_PREFIX, WS_SERVER_URL_PRODUCTION } from '../../config';
+import { WS_PREFIX } from 'config';
 
 const Signup = (props) => {
     const [state, dispatch] = useContext(Context);
@@ -117,14 +118,14 @@ const Signup = (props) => {
                 if (data) {
                     AuthService.saveToLocalStorage(data);
                     try {
-                        const ws_port = data.ws_port;
-                        const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
+                        let wsHost = localStorage.getItem(LOCAL_STORAGE_WS_HOST);
+                        wsHost = `${WS_PREFIX}://${wsHost}`;
                         let conn;
                         if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
                             const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID);
                             const internal_ws_pass = localStorage.getItem(LOCAL_STORAGE_INTERNAL_WS_PASS);
                             conn = await connect({
-                                servers: [SOCKET_URL],
+                                servers: [wsHost],
                                 user: '$memphis_user$' + account_id,
                                 pass: internal_ws_pass,
                                 timeout: '5000'
@@ -132,13 +133,13 @@ const Signup = (props) => {
                         } else {
                             const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN);
                             conn = await connect({
-                                servers: [SOCKET_URL],
+                                servers: [wsHost],
                                 token: '::' + connection_token,
                                 timeout: '5000'
                             });
                         }
                         dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
-                    } catch (error) {}
+                    } catch (error) { }
                     dispatch({ type: 'SET_USER_DATA', payload: data });
                     history.push(referer);
                 }

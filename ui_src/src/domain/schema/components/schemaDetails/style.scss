@@ -85,6 +85,7 @@ schema-details {
             margin: 0 28px;
             height: calc(100% - 300px);
             min-height: 200px;
+            position: relative;
             .header {
                 background: rgba(217, 217, 217, 0.2);
                 height: 40px;
@@ -129,11 +130,15 @@ schema-details {
             }
             .validate-note {
                 border-radius: 8px;
-                margin: 4px 20px;
                 height: 45px;
                 display: flex;
                 align-items: center;
-                padding-left: 15px;
+                justify-content: center;
+                position: absolute;
+                bottom: 0;
+                right: 0;
+                padding: 0 30px;
+                width: 100%;
                 p {
                     font-family: 'InterSemiBold';
                     font-size: 14px;

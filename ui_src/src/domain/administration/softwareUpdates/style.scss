@@ -1,9 +1,12 @@
 .softwate-updates-container {
-    height: 100%;
-    width: 100%;
     padding: 20px 20px 20px 0px;
     overflow-y: auto;
     position: relative;
+    height: calc(100% - 40px);
+    width: calc(100% - 350px);
+    min-width: 800px;
+    min-height: 530px;
+    right: 20px;
     .rows {
         width: 100%;
         height: 100%;

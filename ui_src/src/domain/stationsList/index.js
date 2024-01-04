@@ -22,26 +22,26 @@ import './style.scss';
 
 import React, { useEffect, useContext, useState, useRef } from 'react';
 import { Virtuoso } from 'react-virtuoso';
-import { useGetAllowedActions } from '../../services/genericServices';
-import { ReactComponent as DeleteWrapperIcon } from '../../assets/images/deleteWrapperIcon.svg';
-import StationsInstructions from '../../components/stationsInstructions';
-import { ReactComponent as StationIcon } from '../../assets/images/stationIcon.svg';
-import CreateStationForm from '../../components/createStationForm';
-import { stationFilterArray, isCloud } from '../../services/valueConvertor';
-import DeleteItemsModal from '../../components/deleteItemsModal';
-import stationsIcon from '../../assets/images/stationIcon.svg';
-import { ApiEndpoints } from '../../const/apiEndpoints';
+import { useGetAllowedActions } from 'services/genericServices';
+import { ReactComponent as DeleteWrapperIcon } from 'assets/images/deleteWrapperIcon.svg';
+import StationsInstructions from 'components/stationsInstructions';
+import { ReactComponent as StationIcon } from 'assets/images/stationIcon.svg';
+import CreateStationForm from 'components/createStationForm';
+import { stationFilterArray, isCloud } from 'services/valueConvertor';
+import DeleteItemsModal from 'components/deleteItemsModal';
+import stationsIcon from 'assets/images/stationIcon.svg';
+import { ApiEndpoints } from 'const/apiEndpoints';
 import StationBoxOverview from './stationBoxOverview';
-import { httpRequest } from '../../services/http';
-import Button from '../../components/button';
-import Filter from '../../components/filter';
-import Loader from '../../components/loader';
-import LearnMore from '../../components/learnMore';
-import { Context } from '../../hooks/store';
-import Modal from '../../components/modal';
-import CloudModal from '../../components/cloudModal';
+import { httpRequest } from 'services/http';
+import Button from 'components/button';
+import Filter from 'components/filter';
+import Loader from 'components/loader';
+import LearnMore from 'components/learnMore';
+import { Context } from 'hooks/store';
+import Modal from 'components/modal';
+import CloudModal from 'components/cloudModal';
 import { FaArrowCircleUp } from 'react-icons/fa';
-import RefreshButton from '../../components/refreshButton';
+import RefreshButton from 'components/refreshButton';
 
 const StationsList = () => {
     const [state, dispatch] = useContext(Context);
@@ -116,7 +116,6 @@ const StationsList = () => {
                                 radiusType="circle"
                                 backgroundColorType="purple"
                                 fontSize="16px"
-                                fontWeight="bold"
                                 onClick={() => (!isCloud() || state?.allowedActions?.can_create_stations ? modalFlip(true) : setOpenCloudModal(true))}
                             />
                         </div>

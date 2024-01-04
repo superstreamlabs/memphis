@@ -26,9 +26,7 @@
         align-items: center;
         justify-content: space-between;
         padding-left: 13px;
-
-        gap: 26px;
-
+        height: 40px;
         border-radius: 4px;
         border: 1px solid #e7e7e7;
 
@@ -38,7 +36,14 @@
             font-family: 'InterMedium';
             font-size: 14px;
             line-height: 20px;
+            overflow-x: auto;
+            white-space: nowrap;
+            max-width: 430px;
+            height: 100%;
+            display: flex;
+            align-items: center;
         }
+
         .icon {
             height: 33px;
             width: 37px;
@@ -56,6 +61,11 @@
         font-size: 14px;
         font-family: 'InterMedium';
         margin: 15px 0px 5px 0px;
+        label {
+            color: var(--purple);
+            font-weight: 600;
+            margin-right: 5px;
+        }
     }
     .footer {
         border-top: 1px solid #e4e4e4;

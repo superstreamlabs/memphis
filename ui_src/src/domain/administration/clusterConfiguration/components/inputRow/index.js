@@ -13,7 +13,7 @@
 import './style.scss';
 
 import React from 'react';
-import Input from '../../../../../components/Input';
+import Input from 'components/Input';
 
 function InputRow({ title, desc, value, onChanges, img, placeholder, disabled }) {
     const onChange = (newValue) => {

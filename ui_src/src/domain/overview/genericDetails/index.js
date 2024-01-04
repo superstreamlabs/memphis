@@ -15,11 +15,11 @@ import './style.scss';
 import React, { useContext } from 'react';
 import { Divider, Popover } from 'antd';
 
-import { ReactComponent as ConsumeLagIcon } from '../../../assets/images/consumeLagIcon.svg';
-import { ReactComponent as TotalMsgIcon } from '../../../assets/images/TotalMessages.svg';
-import { ReactComponent as TotalPoisonIcon } from '../../../assets/images/DeadLetteredMessages.svg';
-import { ReactComponent as TotalStationsIcon } from '../../../assets/images/TotalStations.svg';
-import { Context } from '../../../hooks/store';
+import { ReactComponent as ConsumeLagIcon } from 'assets/images/consumeLagIcon.svg';
+import { ReactComponent as TotalMsgIcon } from 'assets/images/TotalMessages.svg';
+import { ReactComponent as TotalPoisonIcon } from 'assets/images/DeadLetteredMessages.svg';
+import { ReactComponent as TotalStationsIcon } from 'assets/images/TotalStations.svg';
+import { Context } from 'hooks/store';
 import { InfoOutlined, InfoRounded } from '@material-ui/icons';
 import StationLagCollapse from './stationCollapse';
 

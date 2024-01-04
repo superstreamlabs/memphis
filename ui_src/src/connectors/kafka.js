@@ -144,7 +144,7 @@ export const kafka = {
             display: 'Connector name',
             type: 'string',
             required: true,
-            description: 'Note that the sink connector name is also consumer group name'
+            description: 'Note that the name of the sink connector is also used as the name of the consumer group'
         },
         {
             name: 'bootstrap.servers',
@@ -242,7 +242,7 @@ export const kafka = {
         },
         {
             name: 'memphis_batch_size',
-            display: 'Memphis batch size (messages)',
+            display: 'Batch size (messages)',
             type: 'string',
             required: false,
             placeholder: 100,
@@ -250,11 +250,11 @@ export const kafka = {
         },
         {
             name: 'memphis_max_time_wait',
-            display: 'Max time to wait for a batch of messages (seconds)',
-            placeholder: 5,
+            display: 'Batch Message Timeout Duration (Seconds)',
+            placeholder: 2,
             type: 'string',
             required: false,
-            description: 'The duration which a batch of messages is awaited till processing'
+            description: 'The wait time before delivering a batch of messages'
         }
     ]
 };

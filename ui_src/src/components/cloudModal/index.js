@@ -13,15 +13,15 @@
 import './style.scss';
 
 import React from 'react';
-import { ReactComponent as FunctionIntegrateIcon } from '../../assets/images/functionIntegrate.svg';
-import BundleBanner from '../../assets/images/banners/bundle1.webp';
-import CloudBanner from '../../assets/images/banners/cloud2.webp';
-import FunctionsBanner from '../../assets/images/banners/function3.webp';
-import UpgradeBanner from '../../assets/images/banners/upgrade4.webp';
-import UpgradePlans from '../upgradePlans';
-import Modal from '../modal';
-import Button from '../button';
-import { sendTrace } from '../../services/genericServices';
+import { ReactComponent as FunctionIntegrateIcon } from 'assets/images/functionIntegrate.svg';
+import BundleBanner from 'assets/images/banners/bundle1.webp';
+import CloudBanner from 'assets/images/banners/cloud2.webp';
+import FunctionsBanner from 'assets/images/banners/function3.webp';
+import UpgradeBanner from 'assets/images/banners/upgrade4.webp';
+import UpgradePlans from 'components/upgradePlans';
+import Modal from 'components/modal';
+import Button from 'components/button';
+import { sendTrace } from 'services/genericServices';
 
 const CloudModal = ({ type, open, handleClose }) => {
     const content = {

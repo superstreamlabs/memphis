@@ -56,7 +56,7 @@ func cacheDetailsS3(keys map[string]interface{}, properties map[string]bool, ten
 	if _, ok := s3Integration.Keys["url"].(string); ok {
 		s3Integration.Keys["url"] = keys["url"].(string)
 	} else {
-		s3Integration.Keys["url"] = ""
+		s3Integration.Keys["url"] = _EMPTY_
 	}
 	if _, ok := s3Integration.Keys["s3_path_style"].(string); ok {
 		s3Integration.Keys["s3_path_style"] = keys["s3_path_style"].(string)
@@ -81,7 +81,7 @@ func (it IntegrationsHandler) handleCreateS3Integration(tenantName string, keys 
 		return models.Integration{}, statusCode, err
 	}
 
-	keysMap, properties := createIntegrationsKeysAndProperties("s3", "", "", "", false, false, false, keys["access_key"].(string), keys["secret_key"].(string), keys["bucket_name"].(string), keys["region"].(string), keys["url"].(string), keys["s3_path_style"].(string), map[string]interface{}{}, "", "", "", "")
+	keysMap, properties := createIntegrationsKeysAndProperties("s3", _EMPTY_, _EMPTY_, _EMPTY_, false, false, false, keys["access_key"].(string), keys["secret_key"].(string), keys["bucket_name"].(string), keys["region"].(string), keys["url"].(string), keys["s3_path_style"].(string), map[string]interface{}{}, _EMPTY_, _EMPTY_, _EMPTY_, _EMPTY_)
 	s3Integration, err := createS3Integration(tenantName, keysMap, properties)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
@@ -99,7 +99,11 @@ func (it IntegrationsHandler) handleUpdateS3Integration(tenantName string, body 
 		return models.Integration{}, statusCode, err
 	}
 	integrationType := strings.ToLower(body.Name)
+<<<<<<< HEAD
 	keysMap, properties := createIntegrationsKeysAndProperties(integrationType, "", "", "", false, false, false, keys["access_key"].(string), keys["secret_key"].(string), keys["bucket_name"].(string), keys["region"].(string), keys["url"].(string), keys["s3_path_style"].(string), map[string]interface{}{}, "", "", "", "")
+=======
+	keysMap, properties := createIntegrationsKeysAndProperties(integrationType, _EMPTY_, _EMPTY_, false, false, false, keys["access_key"].(string), keys["secret_key"].(string), keys["bucket_name"].(string), keys["region"].(string), keys["url"].(string), keys["s3_path_style"].(string), map[string]interface{}{}, _EMPTY_, _EMPTY_, _EMPTY_, _EMPTY_)
+>>>>>>> upstream/master
 	s3Integration, err := updateS3Integration(tenantName, keysMap, properties)
 	if err != nil {
 		return s3Integration, 500, err
@@ -110,7 +114,7 @@ func (it IntegrationsHandler) handleUpdateS3Integration(tenantName string, body 
 func getS3EndpointResolver(region, url string) aws.EndpointResolverWithOptionsFunc {
 	return aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
 		// Override default endpoint lookup if the url was specified explicitly
-		if url != "" {
+		if url != _EMPTY_ {
 			return aws.Endpoint{
 				PartitionID:   "other",
 				URL:           url,
@@ -139,11 +143,11 @@ func (it IntegrationsHandler) handleS3Integration(tenantName string, keys map[st
 	if _, ok := keys["url"].(string); ok {
 		url = keys["url"].(string)
 	} else {
-		url = ""
+		url = _EMPTY_
 		keys["url"] = url
 	}
 
-	if keys["secret_key"] == "" {
+	if keys["secret_key"] == _EMPTY_ {
 		exist, integrationFromDb, err := db.GetIntegration("s3", tenantName)
 		if err != nil {
 			return 500, map[string]interface{}{}, err
@@ -163,7 +167,7 @@ func (it IntegrationsHandler) handleS3Integration(tenantName string, keys map[st
 		keys["secret_key"] = secretKey
 	}
 
-	provider := credentials.NewStaticCredentialsProvider(accessKey.(string), secretKey.(string), "")
+	provider := credentials.NewStaticCredentialsProvider(accessKey.(string), secretKey.(string), _EMPTY_)
 	_, err := provider.Retrieve(context.Background())
 	if err != nil {
 		if strings.Contains(err.Error(), "static credentials are empty") {
@@ -379,7 +383,7 @@ func (s *Server) uploadToS3Storage(tenantName string, tenant map[string][]Stored
 		provider := credentials.NewStaticCredentialsProvider(
 			credentialsMap.Keys["access_key"].(string),
 			credentialsMap.Keys["secret_key"].(string),
-			"",
+			_EMPTY_,
 		)
 
 		region := credentialsMap.Keys["region"]
@@ -420,7 +424,7 @@ func (s *Server) uploadToS3Storage(tenantName string, tenant map[string][]Stored
 				headers = strings.ToLower(string(msg.Header))
 				headersSplit := strings.Split(headers, CR_LF)
 				for _, header := range headersSplit {
-					if header != "" && !strings.Contains(header, "nats") {
+					if header != _EMPTY_ && !strings.Contains(header, "nats") {
 						keyVal := strings.Split(header, ":")
 						key := strings.TrimSpace(keyVal[0])
 						value := strings.TrimSpace(keyVal[1])
@@ -428,7 +432,7 @@ func (s *Server) uploadToS3Storage(tenantName string, tenant map[string][]Stored
 					}
 				}
 			} else {
-				headers = ""
+				headers = _EMPTY_
 			}
 
 			encodedMsg := hex.EncodeToString(msg.Data)
@@ -451,7 +455,7 @@ func (s *Server) uploadToS3Storage(tenantName string, tenant map[string][]Stored
 			err = errors.New("uploadToS3Storage: failed to upload object to S3: " + err.Error())
 			return err
 		}
-		IncrementEventCounter(tenantName, "tiered", size, int64(len(messages)), "", []byte{}, []byte{})
+		IncrementEventCounter(tenantName, "tiered", size, int64(len(messages)), _EMPTY_, []byte{}, []byte{})
 		serv.Noticef("new file has been uploaded to S3: %s", objectName)
 	}
 

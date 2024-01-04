@@ -91,10 +91,10 @@ export const githubUrls = {
         powershell -c "Expand-Archive memphis-cli_Windows_x86_64.zip -DestinationPath memphis-cli -Force"`,
         Mac: `brew tap memphisdev/memphis-cli
         brew install memphis-cli`,
-        'Linux RPM': `wget https://github.com/memphisdev/memphis-cli/releases/download/v0.0.1/memphis-cli_0.0.1_linux_amd64.rpm
-        sudo rpm -i memphis-cli_0.0.1_linux_amd64.rpm`,
-        'Linux APK': `wget https://github.com/memphisdev/memphis-cli/releases/download/v0.0.1/memphis-cli_0.0.1_linux_arm64.apk
-        apk add memphis-cli_0.0.1_linux_arm64.apk --allow-untrusted`,
+        'Linux RPM': `wget https://github.com/memphisdev/memphis-cli/releases/latest/download/memphis-cli_linux_amd64.rpm
+        sudo rpm -i memphis-cli_linux_amd64.rpm`,
+        'Linux APK': `wget https://github.com/memphisdev/memphis-cli/releases/latest/download/memphis-cli_linux_arm64.apk
+        apk add memphis-cli_linux_arm64.apk --allow-untrusted`,
         code: 'mem func init myExampleFunc --lang [nodejs/go/python]'
     }
 };

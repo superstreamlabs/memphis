@@ -15,11 +15,11 @@ import './style.scss';
 import React, { useEffect, useState } from 'react';
 import { Collapse } from 'antd';
 
-import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationList';
-import { ReactComponent as CollapseArrowIcon } from '../../../../../assets/images/collapseArrow.svg';
-import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
-import Loader from '../../../../../components/loader';
-import CustomTabs from '../../../../../components/Tabs';
+import { INTEGRATION_LIST, getTabList } from 'const/integrationList';
+import { ReactComponent as CollapseArrowIcon } from 'assets/images/collapseArrow.svg';
+import { ReactComponent as PurpleQuestionMark } from 'assets/images/purpleQuestionMark.svg';
+import Loader from 'components/loader';
+import CustomTabs from 'components/Tabs';
 import IntegrationDetails from '../integrationItem/integrationDetails';
 
 const { Panel } = Collapse;

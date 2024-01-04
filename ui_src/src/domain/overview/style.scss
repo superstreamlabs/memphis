@@ -190,13 +190,16 @@
                 align-content: space-between;
                 display: grid;
                 grid-template-rows: 60% 38%;
-                position: relative;
                 .graphview-section {
                     height: calc(100% - 50px);
                     position: relative;
+                    overflow: hidden;
+                    max-width: 100%;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
                     .graphview-img {
-                        height: 100%;
-                        width: 100%;
+                        max-width: 100%;
                         position: relative;
                         cursor: pointer;
                     }

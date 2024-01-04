@@ -90,6 +90,7 @@ func (l *DummyLogger) Systemf(format string, v ...interface{}) {
 	l.Msg = fmt.Sprintf(format, v...)
 	l.aggregate()
 }
+
 // ** added by Memphis
 
 // NewDummyLogger creates a dummy logger and allows to ask for logs to be

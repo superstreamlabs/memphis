@@ -12,6 +12,7 @@
         display: flex;
         align-items: center;
         gap: 4px;
+        width: 120px;
     }
     .header {
         display: flex;
@@ -262,6 +263,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 5px;
+    font-size: 13px;
     cursor: pointer;
     .item-name {
         display: flex;

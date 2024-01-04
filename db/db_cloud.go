@@ -12,14 +12,16 @@
 package db
 
 const (
-	testEventsTable               = ``
-	functionsTable                = ``
-	attachedFunctionsTable        = ``
-	functionsEngineWorkersTable   = ``
-	scheduledFunctionWorkersTable = ``
-	connectorsEngineWorkersTable  = ``
-	connectorsConnectionsTable    = ``
-	connectorsTable               = ``
+	testEventsTable                 = ``
+	functionsTable                  = ``
+	attachedFunctionsTable          = ``
+	functionsEngineWorkersTable     = ``
+	scheduledFunctionWorkersTable   = ``
+	connectorsEngineWorkersTable    = ``
+	connectorsConnectionsTable      = ``
+	connectorsTable                 = ``
+	alterConnectorsTable            = ``
+	alterConnectorsConnectionsTable = ``
 )
 
 type FunctionSchema struct {
@@ -57,5 +59,9 @@ func DeleteAllTestEvents(tenantName string) error {
 }
 
 func DeleteScheduledFunctionWorkersByTenant(tenantName string) error {
+	return nil
+}
+
+func DeleteScheduledFunctionWorkersByStationId(stationId int, tenantName string) error {
 	return nil
 }

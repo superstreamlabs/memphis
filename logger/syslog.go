@@ -137,4 +137,5 @@ func (l *SysLogger) Tracef(format string, v ...interface{}) {
 func (l *SysLogger) Systemf(format string, v ...interface{}) {
 	l.writer.Notice(fmt.Sprintf(format, v...))
 }
+
 // ** added by Memphis

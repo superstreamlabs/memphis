@@ -187,6 +187,11 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 		return err
 	}
 
+	err = db.DeleteScheduledFunctionWorkersByStationId(station.ID, station.TenantName)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -263,6 +268,41 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
+	exist, user, err := memphis_cache.GetUser(username, csr.TenantName, false)
+	if err != nil {
+		serv.Warnf("[tenant: %v][user:%v]createStationDirect at memphis_cache.GetUser: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+		return
+	}
+	if !exist {
+		serv.Warnf("[tenant: %v][user:%v]createStationDirect at memphis_cache.GetUser: user %v is not exists", csr.TenantName, csr.Username, csr.Username)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+		return
+	}
+
+	allowd, ReloadNeeded, err := ValidateStationPermissions(user.Roles, stationName.Ext(), csr.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user:%v]createStationDirect at ValidateStationPermissions: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+		return
+	}
+	if !allowd {
+		errMsg := fmt.Sprintf("user %v is not allowed to create station %v", csr.Username, csr.StationName)
+		serv.Warnf("[tenant: %v][user:%v]createStationDirect: %v", csr.TenantName, csr.Username, errMsg)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, errors.New(errMsg))
+		return
+	}
+	if ReloadNeeded {
+		defer func() {
+			err = serv.SendReloadSignal()
+			if err != nil {
+				serv.Errorf("[tenant: %v][user:%v]createStationDirect at SendReloadSignal: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
+				respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+				return
+			}
+		}()
+	}
+
 	stationsCount, err := db.CountStationsByTenant(csr.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]CreateStation at CountStationsByTenant: %v", csr.TenantName, csr.Username, err.Error())
@@ -276,7 +316,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	if csr.DlsStation != "" {
+	if csr.DlsStation != _EMPTY_ {
 		canCreate := ValidataAccessToFeature(csr.TenantName, "feature-dls-consumption-linkage")
 		if !canCreate {
 			errMsg := "cannot create station with DLS linkage, please upgrade your plan to enjoy this feature"
@@ -321,7 +361,7 @@ func (s *Server) createStationDirectIntern(c *client,
 
 	schemaName := csr.SchemaName
 	var schemaDetails models.SchemaDetails
-	if schemaName != "" {
+	if schemaName != _EMPTY_ {
 		schemaName = strings.ToLower(csr.SchemaName)
 		exist, schema, err := db.GetSchemaByName(schemaName, csr.TenantName)
 		if err != nil {
@@ -359,7 +399,7 @@ func (s *Server) createStationDirectIntern(c *client,
 
 	var retentionType string
 	var retentionValue int
-	if csr.RetentionType != "" {
+	if csr.RetentionType != _EMPTY_ {
 		retentionType = strings.ToLower(csr.RetentionType)
 		err = validateRetentionType(retentionType)
 		if err != nil {
@@ -388,7 +428,7 @@ func (s *Server) createStationDirectIntern(c *client,
 	}
 
 	var storageType string
-	if csr.StorageType != "" {
+	if csr.StorageType != _EMPTY_ {
 		storageType = getStationStorageType(csr.StorageType)
 		err = validateStorageType(storageType)
 		if err != nil {
@@ -424,20 +464,8 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	exist, user, err := memphis_cache.GetUser(username, csr.TenantName, false)
-	if err != nil {
-		serv.Warnf("[tenant: %v][user:%v]createStationDirect at memphis_cache.GetUser: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
-		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
-		return
-	}
-	if !exist {
-		serv.Warnf("[tenant: %v][user:%v]createStationDirect at memphis_cache.GetUser: user %v is not exists", csr.TenantName, csr.Username, csr.Username)
-		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
-		return
-	}
-
 	dlsStationNameToLower := strings.ToLower(csr.DlsStation)
-	if csr.DlsStation != "" {
+	if csr.DlsStation != _EMPTY_ {
 		DlsStation, err := StationNameFromStr(dlsStationNameToLower)
 		if err != nil {
 			serv.Warnf("[tenant: %v][user:%v]createStationDirect at StationNameFromStr: Station %v: %v", csr.TenantName, csr.Username, csr.DlsStation, err.Error())
@@ -459,7 +487,7 @@ func (s *Server) createStationDirectIntern(c *client,
 				respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 				return
 			}
-			_, created, err = CreateDefaultStation(user.TenantName, s, dlsStationName, user.ID, user.Username, "", 0)
+			_, created, err = CreateDefaultStation(user.TenantName, s, dlsStationName, user, _EMPTY_, 0)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user:%v]createStationDirect at DLS CreateDefaultStation: %v", csr.TenantName, csr.Username, err.Error())
 				respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
@@ -660,7 +688,7 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 		}
 		for _, info := range allStreamInfo {
 			streamName := info.Config.Name
-			if !strings.Contains(streamName, "$memphis") {
+			if !strings.Contains(streamName, MEMPHIS_GLOBAL_ACCOUNT) {
 				if strings.Contains(streamName, "$") {
 					stationNameAndPartition := strings.Split(streamName, "$")
 					stationTotalMsgs[stationNameAndPartition[0]] += int(info.State.Subjects[streamName+".final"])
@@ -752,7 +780,7 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 func (sh StationsHandler) GetAllStationsDetailsLight(shouldExtend bool, tenantName string, streamsInfo []*StreamInfo) ([]models.ExtendedStationLight, uint64, uint64, error) {
 	var stations []models.ExtendedStationLight
 	totalMessages := uint64(0)
-	if tenantName == "" {
+	if tenantName == _EMPTY_ {
 		tenantName = serv.MemphisGlobalAccountString()
 	}
 	totalDlsMessages, err := db.GetTotalDlsMessages(tenantName)
@@ -777,7 +805,7 @@ func (sh StationsHandler) GetAllStationsDetailsLight(shouldExtend bool, tenantNa
 		}
 		for _, info := range streamsInfo {
 			streamName := info.Config.Name
-			if !strings.Contains(streamName, "$memphis") {
+			if !strings.Contains(streamName, MEMPHIS_GLOBAL_ACCOUNT) {
 				totalMessages += info.State.Subjects[streamName+".final"]
 				if strings.Contains(streamName, "$") {
 					stationNameAndPartition := strings.Split(streamName, "$")
@@ -904,6 +932,34 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
+	stationName, err := StationNameFromStr(body.Name)
+	if err != nil {
+		serv.Warnf("[tenant: %v][user: %v]CreateStation at StationNameFromStr: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
+
+	allowd, ReloadNeeded, err := ValidateStationPermissions(user.Roles, stationName.Ext(), user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]CreateStation at ValidateStationPermissions: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !allowd {
+		errMsg := fmt.Sprintf("user %v is not allowed to create station %v", user.Username, body.Name)
+		serv.Warnf("[tenant: %v][user: %v]CreateStation: %v", user.TenantName, user.Username, errMsg)
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+	}
+	if ReloadNeeded {
+		defer func() {
+			err = serv.SendReloadSignal()
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]CreateStation at SendReloadSignal: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			}
+		}()
+	}
+
 	stationsCount, err := db.CountStationsByTenant(user.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]CreateStation at CountStationsByTenant: %v", user.TenantName, user.Username, err.Error())
@@ -916,7 +972,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	if body.DlsStation != "" {
+	if body.DlsStation != _EMPTY_ {
 		canCreate := ValidataAccessToFeature(tenantName, "feature-dls-consumption-linkage")
 		if !canCreate {
 			errMsg := fmt.Sprintf("cannot create station with DLS linkage, please upgrade your plan to enjoy this feature")
@@ -948,13 +1004,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	}
 	partitionsList := make([]int, 0)
 
-	stationName, err := StationNameFromStr(body.Name)
-	if err != nil {
-		serv.Warnf("[tenant: %v][user: %v]CreateStation at StationNameFromStr: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-		return
-	}
-
 	exist, _, err := db.GetStationByName(stationName.Ext(), tenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]CreateStation GetStationByName: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
@@ -970,7 +1019,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	var schemaVersionNumber int
 	schemaName := body.SchemaName
-	if schemaName != "" {
+	if schemaName != _EMPTY_ {
 		schemaName = strings.ToLower(body.SchemaName)
 		exist, schema, err := db.GetSchemaByName(schemaName, tenantName)
 		if err != nil {
@@ -1002,12 +1051,12 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 		schemaVersionNumber = schemaVersion.VersionNumber
 	} else {
-		schemaName = ""
+		schemaName = _EMPTY_
 		schemaVersionNumber = 0
 	}
 
 	var retentionType string
-	if body.RetentionType != "" {
+	if body.RetentionType != _EMPTY_ {
 		retentionType = strings.ToLower(body.RetentionType)
 		err = validateRetentionType(retentionType)
 		if err != nil {
@@ -1031,7 +1080,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		body.RetentionValue = 3600 // 1 hour
 	}
 
-	if body.StorageType != "" {
+	if body.StorageType != _EMPTY_ {
 		body.StorageType = getStationStorageType(body.StorageType)
 		err = validateStorageType(body.StorageType)
 		if err != nil {
@@ -1069,7 +1118,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		body.IdempotencyWindow = 100 // minimum is 100 millis
 	}
 
-	if body.DlsStation != "" {
+	if body.DlsStation != _EMPTY_ {
 		dlsStationName, err := StationNameFromStr(body.DlsStation)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user:%v]CreateStation at DLS StationNameFromStr: %v", user.TenantName, user.Username, err.Error())
@@ -1085,7 +1134,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		}
 		if !exist {
 			var created bool
-			_, created, err = CreateDefaultStation(user.TenantName, sh.S, dlsStationName, user.ID, user.Username, "", 0)
+			_, created, err = CreateDefaultStation(user.TenantName, sh.S, dlsStationName, user, _EMPTY_, 0)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user:%v]CreateStation at DLS CreateDefaultStation: %v", user.TenantName, user.Username, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1161,7 +1210,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	}
 
 	if len(body.Tags) > 0 {
-		err = AddTagsToEntity(body.Tags, "station", newStation.ID, newStation.TenantName, "")
+		err = AddTagsToEntity(body.Tags, "station", newStation.ID, newStation.TenantName, _EMPTY_)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]CreateStation: : Station %v Failed adding tags: %v", user.TenantName, user.Username, body.Name, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1250,7 +1299,7 @@ func (sh StationsHandler) AttachDlsStation(c *gin.Context) {
 			return
 		}
 
-		station, _, err = CreateDefaultStation(tenantName, sh.S, stationName, user.ID, user.Username, "", 0)
+		station, _, err = CreateDefaultStation(tenantName, sh.S, stationName, user, _EMPTY_, 0)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]AttachDlsStation at CreateDefaultStation: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1307,7 +1356,7 @@ func (sh StationsHandler) DetachDlsStation(c *gin.Context) {
 		return
 	}
 
-	err = db.UpdateStationsDls(body.StationNames, "", tenantName)
+	err = db.UpdateStationsDls(body.StationNames, _EMPTY_, tenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]DetachDlsStation at UpdateStationsDls: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1420,6 +1469,40 @@ func (s *Server) removeStationDirectIntern(c *client,
 	jsApiResp := JSApiStreamDeleteResponse{ApiResponse: ApiResponse{Type: JSApiStreamDeleteResponseType}}
 	memphisGlobalAcc := s.MemphisGlobalAccount()
 
+	_, user, err := memphis_cache.GetUser(dsr.Username, dsr.TenantName, false)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]removeStationDirectIntern at memphis_cache.GetUser: Station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+		return
+	}
+
+	stationName, err := StationNameFromStr(dsr.StationName)
+	if err != nil {
+		serv.Warnf("[tenant: %v][user: %v]removeStationDirectIntern at StationNameFromStr: Station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
+		jsApiResp.Error = NewJSStreamDeleteError(err)
+		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+		return
+	}
+
+	allowd, ReloadNeeded, err := ValidateStationPermissions(user.Roles, stationName.Ext(), user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]CreateStation at ValidateStationPermissions: Station %v: %v", user.TenantName, user.Username, stationName.Ext(), err.Error())
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+		return
+	}
+	if !allowd {
+		errMsg := fmt.Sprintf("user %v is not allowed to remove station %v", user.Username, stationName.Ext())
+		serv.Warnf("[tenant: %v][user: %v]CreateStation: %v", user.TenantName, user.Username, errMsg)
+	}
+	if ReloadNeeded {
+		defer func() {
+			err = serv.SendReloadSignal()
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]CreateStation at SendReloadSignal: Station %v: %v", user.TenantName, user.Username, stationName.Ext(), err.Error())
+			}
+		}()
+	}
+
 	// for NATS compatibility
 	username, tenantId, err := getUserAndTenantIdFromString(dsr.Username)
 	if err != nil {
@@ -1446,14 +1529,6 @@ func (s *Server) removeStationDirectIntern(c *client,
 		}
 		dsr.TenantName = t.Name
 		dsr.Username = username
-	}
-
-	stationName, err := StationNameFromStr(dsr.StationName)
-	if err != nil {
-		serv.Warnf("[tenant: %v][user: %v]removeStationDirectIntern at StationNameFromStr: Station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
-		jsApiResp.Error = NewJSStreamDeleteError(err)
-		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
-		return
 	}
 
 	exist, station, err := db.GetStationByName(stationName.Ext(), dsr.TenantName)
@@ -1486,12 +1561,6 @@ func (s *Server) removeStationDirectIntern(c *client,
 		return
 	}
 
-	_, user, err := memphis_cache.GetUser(dsr.Username, dsr.TenantName, false)
-	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]removeStationDirectIntern at memphis_cache.GetUser: Station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
-		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
-		return
-	}
 	message := "Station " + stationName.Ext() + " has been deleted by user " + dsr.Username
 	serv.Noticef("[tenant: %v][user: %v] %v ", user.TenantName, user.Username, message)
 	if isNative {
@@ -1678,15 +1747,21 @@ func (s *Server) ResendUnackedMsg(dlsMsg models.DlsMessage, user models.User, st
 			err = fmt.Errorf("Failed ResendUnackedMsg at DecodeString: Poisoned consumer group: %v: %v", cgName, err.Error())
 			return cgName, err
 		}
-		err = s.ResendPoisonMessage(user.TenantName, "$memphis_dls_"+replaceDelimiters(stationName)+"_"+replaceDelimiters(cgName), []byte(data), headers)
+		//resend to both old and new subject convention
+		err = s.ResendPoisonMessage(user.TenantName, fmt.Sprintf(dlsResendMessagesStreamNew, replaceDelimiters(stationName), replaceDelimiters(cgName)), []byte(data), headers)
+		if err != nil {
+			err = fmt.Errorf("Failed ResendUnackedMsg at ResendPoisonMessage: Poisoned consumer group: %v: %v", cgName, err.Error())
+			return cgName, err
+		}
+		err = s.ResendPoisonMessage(user.TenantName, fmt.Sprintf(dlsResendMessagesStreamOld, replaceDelimiters(stationName), replaceDelimiters(cgName)), []byte(data), headers)
 		if err != nil {
 			err = fmt.Errorf("Failed ResendUnackedMsg at ResendPoisonMessage: Poisoned consumer group: %v: %v", cgName, err.Error())
 			return cgName, err
 		}
 		size += int64(dlsMsg.MessageDetails.Size)
 	}
-	IncrementEventCounter(user.TenantName, "dls-resend", size, int64(len(dlsMsg.PoisonedCgs)), "", []byte{}, []byte{})
-	return "", nil
+	IncrementEventCounter(user.TenantName, "dls-resend", size, int64(len(dlsMsg.PoisonedCgs)), _EMPTY_, []byte{}, []byte{})
+	return _EMPTY_, nil
 }
 
 func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
@@ -1846,7 +1921,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
 
 	for header := range headersJson {
-		if strings.HasPrefix(header, "$memphis") {
+		if strings.HasPrefix(header, MEMPHIS_GLOBAL_ACCOUNT) {
 			delete(headersJson, header)
 		}
 	}
@@ -1872,7 +1947,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	if exist {
 		isActive = producer.IsActive
 	} else {
-		if producedByHeader == "" {
+		if producedByHeader == _EMPTY_ {
 			producedByHeader = "unknown"
 		}
 	}
@@ -2514,7 +2589,7 @@ func getUserAndTenantIdFromString(username string) (string, int, error) {
 		numberAfterSuffix := strings.TrimLeft(matches[2], userNameItemSep)
 		tenantId, err := strconv.Atoi(numberAfterSuffix)
 		if err != nil {
-			return "", 0, err
+			return _EMPTY_, 0, err
 		}
 		return beforeSuffix, tenantId, nil
 	}

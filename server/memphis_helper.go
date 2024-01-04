@@ -55,13 +55,25 @@ const (
 	dlsUnackedStream            = "$memphis_dls_unacked"
 	dlsSchemaverseStream        = "$memphis_dls_schemaverse"
 	dlsFunctionsStream          = "$memphis_dls_functions"
+	dlsResendMessagesStreamNew  = "$memphis_dls_%v.%v"
+	dlsResendMessagesStreamOld  = "$memphis_dls_%v_%v"
 	tieredStorageStream         = "$memphis_tiered_storage"
 	throughputStreamName        = "$memphis-throughput"
 	throughputStreamNameV1      = "$memphis-throughput-v1"
 	MEMPHIS_GLOBAL_ACCOUNT      = "$memphis"
 	integrationsAuditLogsStream = "$memphis_integrations_audit_logs"
+	notificationsStreamName     = "$memphis_notifications_buffer"
 	systemTasksStreamName       = "$memphis_system_tasks"
 	connectorsLogsStream        = "$memphis_connectors_logs"
+	memphisSchemaDetachments    = "$memphis_schema_detachments"
+	memphisConsumerCreations    = "$memphis_consumer_creations"
+	memphisConsumerDestructions = "$memphis_consumer_destructions"
+	memphisNotifications        = "$memphis_notifications"
+	memphisProducerCreations    = "$memphis_producer_creations"
+	memphisProducerDestructions = "$memphis_producer_destructions"
+	memphisSchemaCreations      = "$memphis_schema_creations"
+	memphisStationCreations     = "$memphis_station_creations"
+	memphisStationDestructions  = "$memphis_station_destructions"
 )
 
 var noLimit = -1
@@ -141,6 +153,8 @@ var (
 	THROUGHPUT_STREAM_CREATED              bool
 	THROUGHPUT_LEGACY_STREAM_EXIST         bool
 	INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED bool
+	NOTIFICATIONS_BUFFER_STREAM_CREATED    bool
+	NOTIFICATIONS_BUFFER_CONSUMER_CREATED  bool
 	SYSTEM_TASKS_STREAM_CREATED            bool
 	FUNCTIONS_TASKS_CONSUMER_CREATED       bool
 	CONNECTORS_LOGS_STREAM_CREATED         bool
@@ -223,7 +237,7 @@ func (s *Server) WaitForLeaderElection() {
 			break
 		}
 
-		if ci.Leader != "" {
+		if ci.Leader != _EMPTY_ {
 			break
 		} else {
 			time.Sleep(100 * time.Millisecond)
@@ -271,9 +285,10 @@ func (s *Server) CreateInternalJetStreamResources() {
 
 	if s.memphis.activateSysLogsPubFunc == nil {
 		s.Fatalf("internal error: sys logs publish activation func is not initialized")
+	} else {
+		s.memphis.activateSysLogsPubFunc()
+		s.popFallbackLogs()
 	}
-	s.memphis.activateSysLogsPubFunc()
-	s.popFallbackLogs()
 }
 
 func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, successCh chan error, isCluster bool) {
@@ -520,6 +535,51 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED = true
 	}
 
+	// create notifications stream
+	if !NOTIFICATIONS_BUFFER_STREAM_CREATED {
+		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
+			Name:         notificationsStreamName,
+			Subjects:     []string{notificationsStreamName + ".>"},
+			Retention:    WorkQueuePolicy,
+			MaxAge:       0,
+			MaxConsumers: -1,
+			Discard:      DiscardOld,
+			Storage:      FileStorage,
+			Replicas:     replicas,
+			Duplicates:   idempotencyWindow,
+		})
+		if err != nil && IsNatsErr(err, JSClusterNoPeersErrF) {
+			time.Sleep(1 * time.Second)
+			tryCreateInternalJetStreamResources(s, retentionDur, successCh, isCluster)
+			return
+		}
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+
+		NOTIFICATIONS_BUFFER_STREAM_CREATED = true
+	}
+
+	if !NOTIFICATIONS_BUFFER_CONSUMER_CREATED {
+		cc := ConsumerConfig{
+			DeliverPolicy: DeliverAll,
+			AckPolicy:     AckExplicit,
+			Durable:       NOTIFICATIONS_BUFFER_CONSUMER,
+			FilterSubject: notificationsStreamName + ".user_notifications",
+			AckWait:       time.Duration(10) * time.Second,
+			MaxAckPending: -1,
+			MaxDeliver:    10,
+		}
+		err = serv.memphisAddConsumer(s.MemphisGlobalAccountString(), notificationsStreamName, &cc)
+		if err != nil {
+			successCh <- err
+			return
+		}
+
+		NOTIFICATIONS_BUFFER_CONSUMER_CREATED = true
+	}
+
 	// create system tasks stream
 	if shouldCreateSystemTasksStream() && !SYSTEM_TASKS_STREAM_CREATED {
 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
@@ -537,6 +597,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			successCh <- err
 			return
 		}
+
 		SYSTEM_TASKS_STREAM_CREATED = true
 	}
 
@@ -650,7 +711,7 @@ func getInternalConsumerName(cn string) string {
 
 func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, station models.Station, partitionsList []int) error {
 	var consumerName string
-	if consumer.ConsumersGroup != "" {
+	if consumer.ConsumersGroup != _EMPTY_ {
 		consumerName = consumer.ConsumersGroup
 	} else {
 		consumerName = consumer.Name
@@ -1105,7 +1166,7 @@ func (s *Server) GetMessagesFromPartition(station models.Station, streamName str
 
 	filterSubj := streamName + ".final"
 	if !station.IsNative {
-		filterSubj = ""
+		filterSubj = _EMPTY_
 	}
 	replicas := 1
 	if streamInfo.Config.Retention == InterestPolicy {
@@ -1158,7 +1219,7 @@ func (s *Server) GetMessagesFromPartition(station models.Station, streamName str
 			producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
 
 			for header := range headersJson {
-				if strings.HasPrefix(header, "$memphis") {
+				if strings.HasPrefix(header, MEMPHIS_GLOBAL_ACCOUNT) {
 					delete(headersJson, header)
 				}
 			}
@@ -1210,8 +1271,8 @@ func (s *Server) memphisGetMsgs(tenantName, filterSubj, streamName string, start
 		FilterSubject: filterSubj,
 		OptStartSeq:   startSeq,
 		DeliverPolicy: DeliverByStartSequence,
-		Durable:       durableName,
-		AckPolicy:     AckExplicit,
+		Name:          durableName,
+		AckPolicy:     AckNone,
 		Replicas:      consumerReplicas,
 	}
 
@@ -1232,9 +1293,6 @@ func (s *Server) memphisGetMsgs(tenantName, filterSubj, streamName string, start
 
 	sub, err := s.subscribeOnAcc(account, reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, reply string, msg []byte, findHeader bool) {
-			// ack
-			s.sendInternalAccountMsg(account, reply, []byte(_EMPTY_))
-
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
 
@@ -1285,7 +1343,6 @@ func (s *Server) memphisGetMsgs(tenantName, filterSubj, streamName string, start
 cleanup:
 	timer.Stop()
 	s.unsubscribeOnAcc(account, sub)
-	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(tenantName, streamName, durableName) })
 
 	return msgs, nil
 }
@@ -1306,21 +1363,21 @@ func (s *Server) GetLeaderAndFollowers(station models.Station, partitionNumber i
 	var streamInfo *StreamInfo
 	stationName, err := StationNameFromStr(station.Name)
 	if err != nil {
-		return "", []string{}, err
+		return _EMPTY_, []string{}, err
 	}
 	if len(station.PartitionsList) > 0 {
 		if partitionNumber == -1 {
-			return "", []string{}, nil
+			return _EMPTY_, []string{}, nil
 		}
 		streamName := fmt.Sprintf("%s$%s", stationName.Intern(), strconv.Itoa(partitionNumber))
 		streamInfo, err = s.memphisStreamInfo(station.TenantName, streamName)
 		if err != nil {
-			return "", []string{}, err
+			return _EMPTY_, []string{}, err
 		}
 	} else { // backward compatibility
 		streamInfo, err = s.memphisStreamInfo(station.TenantName, stationName.Intern())
 		if err != nil {
-			return "", []string{}, err
+			return _EMPTY_, []string{}, err
 		}
 
 	}
@@ -1403,7 +1460,7 @@ func (s *Server) ResendPoisonMessage(tenantName, subject string, data, headers [
 
 	hdrs["$memphis_producedBy"] = "$memphis_dls"
 
-	if hdrs["producedBy"] != "" {
+	if hdrs["producedBy"] != _EMPTY_ {
 		delete(hdrs, "producedBy")
 	}
 
@@ -1487,7 +1544,7 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 			return nil, ErrBadHeader
 		}
 		key := kv[:i]
-		if key == "" {
+		if key == _EMPTY_ {
 			// Skip empty keys.
 			continue
 		}
@@ -1513,6 +1570,10 @@ func GetMemphisOpts(opts *Options) (*Options, error) {
 		opts.DlsRetentionHours = make(map[string]int)
 	}
 
+	if opts.GCProducersConsumersRetentionHours == nil { // for cases the broker started without config file
+		opts.GCProducersConsumersRetentionHours = make(map[string]int)
+	}
+
 	for _, conf := range configs {
 		switch conf.Key {
 		case "dls_retention":
@@ -1535,7 +1596,7 @@ func GetMemphisOpts(opts *Options) (*Options, error) {
 			opts.MaxPayload = int32(v * 1024 * 1024)
 		case "gc_producer_consumer_retention_hours":
 			v, _ := strconv.Atoi(conf.Value)
-			opts.GCProducersConsumersRetentionHours = v
+			opts.GCProducersConsumersRetentionHours[conf.TenantName] = v
 		}
 	}
 
@@ -1576,8 +1637,19 @@ func generateRandomPassword(length int) string {
 }
 
 type UserConfig struct {
-	User     string `json:"user"`
-	Password string `json:"password"`
+	User        string          `json:"user"`
+	Password    string          `json:"password"`
+	Permissions NatsPermissions `json:"permissions,omitempty"`
+}
+
+type NatsPermissions struct {
+	Publish   NatsAuthorization `json:"publish,omitempty"`
+	Subscribe NatsAuthorization `json:"subscribe,omitempty"`
+}
+
+type NatsAuthorization struct {
+	Allow []string `json:"allow,omitempty"`
+	Deny  []string `json:"deny,omitempty"`
 }
 
 type AccountConfig struct {
@@ -1601,9 +1673,9 @@ func generateJSONString(accounts map[string]AccountConfig) (string, error) {
 		Accounts: accounts,
 	}
 
-	jsonString, err := json.MarshalIndent(data, " ", "")
+	jsonString, err := json.MarshalIndent(data, " ", _EMPTY_)
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 	var dataMap map[string]interface{}
 	err = json.Unmarshal(jsonString, &dataMap)
@@ -1618,11 +1690,12 @@ func getAccountsAndUsersString() (string, error) {
 	decriptionKey := getAESKey()
 	users, err := db.GetAllUsersByType([]string{"application"})
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
+
 	tenants, err := db.GetAllTenantsWithoutGlobal()
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 	globalUsers := []UserConfig{{User: "$$memphis", Password: getInternalUserPassword()}}
 	accounts := map[string]AccountConfig{
@@ -1635,11 +1708,11 @@ func getAccountsAndUsersString() (string, error) {
 	if shouldCreateRootUserforGlobalAcc {
 		_, globalT, err := db.GetGlobalTenant()
 		if err != nil {
-			return "", err
+			return _EMPTY_, err
 		}
 		decryptedPass, err := DecryptAES(decriptionKey, globalT.InternalWSPass)
 		if err != nil {
-			return "", err
+			return _EMPTY_, err
 		}
 		globalUsers = append(globalUsers, UserConfig{User: "$memphis_user$1", Password: decryptedPass})
 		globalUsers = append(globalUsers, UserConfig{User: "root$1", Password: configuration.ROOT_PASSWORD})
@@ -1649,28 +1722,74 @@ func getAccountsAndUsersString() (string, error) {
 		tName := user.TenantName
 		decryptedUserPassword, err := DecryptAES(decriptionKey, user.Password)
 		if err != nil {
-			return "", err
+			return _EMPTY_, err
 		}
 		if tName == MEMPHIS_GLOBAL_ACCOUNT {
-			globalUsers = append(globalUsers, UserConfig{User: user.Username + "$1", Password: decryptedUserPassword})
+			if len(user.Roles) > 0 {
+				allowReadSubjects, allowWriteSubjects, err := GetAllowedSubjectsFromRoleIds(user.Roles, tName)
+				if err != nil {
+					//return _EMPTY_, err
+					fmt.Printf("user: %v, err: %v\n", user.Username, err)
+				}
+
+				globalUsers = append(globalUsers, UserConfig{
+					User:     user.Username + "$1",
+					Password: decryptedUserPassword,
+					Permissions: NatsPermissions{
+						Publish:   NatsAuthorization{Allow: allowWriteSubjects},
+						Subscribe: NatsAuthorization{Allow: allowReadSubjects},
+					},
+				})
+			} else {
+				globalUsers = append(globalUsers, UserConfig{User: user.Username + "$1", Password: decryptedUserPassword})
+			}
 			continue
 		}
-		if usrMap, ok := tenantsToUsers[tName]; !ok {
-			tenantsToUsers[tName] = []UserConfig{{User: user.Username, Password: decryptedUserPassword}}
+		if len(user.Roles) > 0 {
+			allowReadSubjects, allowWriteSubjects, err := GetAllowedSubjectsFromRoleIds(user.Roles, tName)
+			if err != nil {
+				//return _EMPTY_, err
+				fmt.Printf("user: %v, err: %v\n", user.Username, err)
+			}
+
+			if usrMap, ok := tenantsToUsers[tName]; !ok {
+				tenantsToUsers[tName] = []UserConfig{{
+					User:     user.Username,
+					Password: decryptedUserPassword,
+					Permissions: NatsPermissions{
+						Publish:   NatsAuthorization{Allow: allowWriteSubjects},
+						Subscribe: NatsAuthorization{Allow: allowReadSubjects},
+					},
+				}}
+			} else {
+				tenantsToUsers[tName] = append(usrMap, UserConfig{
+					User:     user.Username,
+					Password: decryptedUserPassword,
+					Permissions: NatsPermissions{
+						Publish:   NatsAuthorization{Allow: allowWriteSubjects},
+						Subscribe: NatsAuthorization{Allow: allowReadSubjects},
+					},
+				})
+			}
 		} else {
-			tenantsToUsers[tName] = append(usrMap, UserConfig{User: user.Username, Password: decryptedUserPassword})
+			if usrMap, ok := tenantsToUsers[tName]; !ok {
+				tenantsToUsers[tName] = []UserConfig{{User: user.Username, Password: decryptedUserPassword}}
+			} else {
+				tenantsToUsers[tName] = append(usrMap, UserConfig{User: user.Username, Password: decryptedUserPassword})
+			}
 		}
 	}
 	for _, t := range tenants {
 		decryptedUserPassword, err := DecryptAES(decriptionKey, t.InternalWSPass)
 		if err != nil {
-			return "", err
+			return _EMPTY_, err
 		}
 		internalAppUser := fmt.Sprintf("$%s$%v", t.Name, t.ID) // for internal use
 		usrsList := []UserConfig{{User: "$" + t.Name, Password: getInternalUserPassword()}, {User: internalAppUser, Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}, {User: MEMPHIS_USERNAME + "$" + strconv.Itoa(t.ID), Password: decryptedUserPassword}}
 		if usrMap, ok := tenantsToUsers[t.Name]; ok {
+			var usrChangeName UserConfig
 			for _, usr := range usrMap {
-				usrChangeName := UserConfig{User: usr.User + "$" + strconv.Itoa(t.ID), Password: usr.Password}
+				usrChangeName = UserConfig{User: usr.User + "$" + strconv.Itoa(t.ID), Password: usr.Password, Permissions: usr.Permissions}
 				usrsList = append(usrsList, usrChangeName)
 			}
 		}
@@ -1683,10 +1802,11 @@ func getAccountsAndUsersString() (string, error) {
 	accounts[MEMPHIS_GLOBAL_ACCOUNT] = AccountConfig{Jetstream: &enableJetStream, Users: globalUsers, Limits: map[string]*int{"max_connections": &noLimit}, Exports: memphisReplaceExportString}
 	jsonString, err := generateJSONString(accounts)
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 	jsonString = strings.ReplaceAll(jsonString, `"replaceImports"`, memphisImportString)
 	jsonString = strings.ReplaceAll(jsonString, `"replaceExports"`, memphisExportString)
+	jsonString = strings.ReplaceAll(jsonString, "\\u003e", ">")
 	return jsonString, nil
 }
 
@@ -1721,7 +1841,7 @@ func upsertAccountsAndUsers(Accounts []*Account, Users []*User) error {
 					UserType:   "application",
 					CreatedAt:  time.Now(),
 					AvatarId:   1,
-					FullName:   "",
+					FullName:   _EMPTY_,
 					TenantName: tenantName,
 				}
 				usersToUpsert = append(usersToUpsert, newUser)
@@ -1777,14 +1897,14 @@ func (s *Server) getIp() string {
 	resp, err := http.Get("https://ifconfig.me")
 	if err != nil {
 		serv.Warnf("getIp: error get ip: %s", err.Error())
-		return ""
+		return _EMPTY_
 	}
 	defer resp.Body.Close()
 
 	ip, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		serv.Warnf("getIp: error reading response get ip body: %s", err.Error())
-		return ""
+		return _EMPTY_
 	}
 	return string(ip)
 }
