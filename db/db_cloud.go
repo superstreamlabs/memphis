@@ -61,3 +61,7 @@ func DeleteAllTestEvents(tenantName string) error {
 func DeleteScheduledFunctionWorkersByTenant(tenantName string) error {
 	return nil
 }
+
+func DeleteScheduledFunctionWorkersByStationId(stationId int, tenantName string) error {
+	return nil
+}

@@ -15,7 +15,7 @@ import './style.scss';
 import { ArrowDropDownRounded } from '@material-ui/icons';
 import React from 'react';
 import { Select } from 'antd';
-import { ReactComponent as ComponentIcon } from '../../assets/images/componentIcon.svg';
+import { ReactComponent as ComponentIcon } from 'assets/images/componentIcon.svg';
 
 const { Option } = Select;
 

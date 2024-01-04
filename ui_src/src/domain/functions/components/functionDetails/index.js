@@ -23,35 +23,35 @@ import { FiGitCommit } from 'react-icons/fi';
 import { BiDownload } from 'react-icons/bi';
 import { GoFileDirectoryFill } from 'react-icons/go';
 import { Divider, Rate } from 'antd';
-import { ReactComponent as CollapseArrowIcon } from '../../../../assets/images/collapseArrow.svg';
-import Button from '../../../../components/button';
-import TagsList from '../../../../components/tagList';
-import Spinner from '../../../../components/spinner';
-import { parsingDate } from '../../../../services/valueConvertor';
-import { ReactComponent as MemphisFunctionIcon } from '../../../../assets/images/memphisFunctionIcon.svg';
-import { ReactComponent as FunctionIcon } from '../../../../assets/images/functionIcon.svg';
-import { ReactComponent as CodeBlackIcon } from '../../../../assets/images/codeIconBlack.svg';
-import { ReactComponent as GithubBranchIcon } from '../../../../assets/images/githubBranchIcon.svg';
-import { ReactComponent as PlaceholderFunctionsIcon } from '../../../../assets/images/placeholderFunctions.svg';
-import { ReactComponent as ArrowBackIcon } from '../../../../assets/images/arrowBackIcon.svg';
-import { ReactComponent as DeleteIcon } from '../../../../assets/images/deleteIcon.svg';
-import CustomTabs from '../../../../components/Tabs';
-import SelectComponent from '../../../../components/select';
-import CloudModal from '../../../../components/cloudModal';
+import { ReactComponent as CollapseArrowIcon } from 'assets/images/collapseArrow.svg';
+import Button from 'components/button';
+import TagsList from 'components/tagList';
+import Spinner from 'components/spinner';
+import { parsingDate } from 'services/valueConvertor';
+import { ReactComponent as MemphisFunctionIcon } from 'assets/images/memphisFunctionIcon.svg';
+import { ReactComponent as FunctionIcon } from 'assets/images/functionIcon.svg';
+import { ReactComponent as CodeBlackIcon } from 'assets/images/codeIconBlack.svg';
+import { ReactComponent as GithubBranchIcon } from 'assets/images/githubBranchIcon.svg';
+import { ReactComponent as PlaceholderFunctionsIcon } from 'assets/images/placeholderFunctions.svg';
+import { ReactComponent as ArrowBackIcon } from 'assets/images/arrowBackIcon.svg';
+import { ReactComponent as DeleteIcon } from 'assets/images/deleteIcon.svg';
+import CustomTabs from 'components/Tabs';
+import SelectComponent from 'components/select';
+import CloudModal from 'components/cloudModal';
 import TestMockEvent from '../testFunctionModal/components/testMockEvent';
-import Tooltip from '../../../../components/tooltip/tooltip';
-import { OWNER } from '../../../../const/globalConst';
+import Tooltip from 'components/tooltip/tooltip';
+import { OWNER } from 'const/globalConst';
 import { BsFileEarmarkCode, BsGit } from 'react-icons/bs';
 import { GoRepo } from 'react-icons/go';
 import { RxDotFilled } from 'react-icons/rx';
 import { FaArrowCircleUp } from 'react-icons/fa';
 import { Tree } from 'antd';
-import { httpRequest } from '../../../../services/http';
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import { getCodingLanguage } from '../../../../utils/languages';
-import OverflowTip from '../../../../components/tooltip/overflowtip';
-import { isCloud } from '../../../../services/valueConvertor';
-import { Context } from '../../../../hooks/store';
+import { httpRequest } from 'services/http';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { getCodingLanguage } from 'utils/languages';
+import OverflowTip from 'components/tooltip/overflowtip';
+import { isCloud } from 'services/valueConvertor';
+import { Context } from 'hooks/store';
 
 loader.init();
 loader.config({ monaco });
@@ -77,10 +77,11 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
     const formattedMarkdownContent = (text) => text.replace((/`/g, '\\`'));
 
     useEffect(() => {
-        getFunctionDetails();
-    }, [selectedFunction, selectedVersion]);
+        !stationView && getFunctionDetails();
+    }, [selectedFunction]);
 
     useEffect(() => {
+        getFunctionDetails();
         if (path) {
             setFileContent('');
             getFileContent(path);
@@ -97,6 +98,14 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
     useEffect(() => {
         buildTree(files);
     }, [files]);
+
+    useEffect(() => {
+        if (stationView) {
+            if (versions?.includes(metaData?.installed_version)) {
+                setSelectedVersion(metaData?.installed_version);
+            }
+        }
+    }, [versions]);
 
     const getFunctionDetails = async () => {
         setLoading(true);
@@ -115,7 +124,9 @@ function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, cli
                     '&function_name=' +
                     encodeURI(selectedFunction?.function_name || selectedFunction?.name) +
                     '&version=' +
-                    encodeURI(selectedVersion === 'latest' ? '' : selectedVersion)
+                    encodeURI(selectedVersion === 'latest' ? '' : selectedVersion) +
+                    '&attached_function_id=' +
+                    encodeURI(stationView ? selectedFunction?.id : '')
             );
             setMetaData(response?.metadata_function);
             setReadme(response?.readme_content);

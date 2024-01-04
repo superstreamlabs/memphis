@@ -17,13 +17,13 @@ import { FilterStoreContext } from './';
 import { Collapse } from 'antd';
 import { Checkbox } from 'antd';
 import { Divider } from 'antd';
-import Tag from '../tag';
+import Tag from 'components/tag';
 
-import { ReactComponent as CollapseArrowIcon } from '../../assets/images/collapseArrow.svg';
-import Button from '../button';
-import DatePicker from '../datePicker';
-import RadioButton from '../radioButton';
-import { filterType, labelType } from '../../const/globalConst';
+import { ReactComponent as CollapseArrowIcon } from 'assets/images/collapseArrow.svg';
+import Button from 'components/button';
+import DatePicker from 'components/datePicker';
+import RadioButton from 'components/radioButton';
+import { filterType, labelType } from 'const/globalConst';
 
 const { Panel } = Collapse;
 

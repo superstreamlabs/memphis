@@ -11,13 +11,12 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import React from 'react';
-import {} from 'react-router-dom';
 import { Route, Redirect } from 'react-router-dom';
 
-import AuthService from './services/auth';
-import { isCloud } from './services/valueConvertor';
-import { CLOUD_URL } from './config';
-import pathDomains from './router';
+import AuthService from 'services/auth';
+import { isCloud } from 'services/valueConvertor';
+import { CLOUD_URL } from 'config';
+import pathDomains from 'router';
 
 function PrivateRoute(props) {
     const { component: Component, ...rest } = props;

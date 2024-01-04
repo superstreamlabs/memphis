@@ -24,34 +24,35 @@ import {
     LOCAL_STORAGE_ENV,
     LOCAL_STORAGE_ACCOUNT_ID,
     USER_IMAGE
-} from '../../const/localStorageConsts';
-import { ReactComponent as StationIcon } from '../../assets/images/stationsIconActive.svg';
-import { ReactComponent as GraphOverview } from '../../assets/images/graphOverview.svg';
-import { ReactComponent as CloudTeaser } from '../../assets/images/cloudTeaser.svg';
-import { ReactComponent as PlusElement } from '../../assets/images/plusElement.svg';
-import { ReactComponent as EditIcon } from '../../assets/images/editIcon.svg';
-import CreateStationForm from '../../components/createStationForm';
-import { capitalizeFirst, isCloud } from '../../services/valueConvertor';
-import { sendTrace } from '../../services/genericServices';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { httpRequest } from '../../services/http';
+} from 'const/localStorageConsts';
+import { ReactComponent as StationIcon } from 'assets/images/stationsIconActive.svg';
+import GraphOverviewLight from 'assets/images/lightGraphOverview.png';
+import GraphOverviewDark from 'assets/images/darkGraphOverview.png';
+import { ReactComponent as CloudTeaser } from 'assets/images/cloudTeaser.svg';
+import { ReactComponent as PlusElement } from 'assets/images/plusElement.svg';
+import { ReactComponent as EditIcon } from 'assets/images/editIcon.svg';
+import CreateStationForm from 'components/createStationForm';
+import { capitalizeFirst, isCloud } from 'services/valueConvertor';
+import { sendTrace } from 'services/genericServices';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
 import SystemComponents from './systemComponents';
 import GenericDetails from './genericDetails';
 import Stations from './stations';
 import Tags from './tags';
 import Integrations from './integrations';
 import Usage from './usage';
-import Loader from '../../components/loader';
-import Button from '../../components/button';
-import LearnMore from '../../components/learnMore';
-import { Context } from '../../hooks/store';
-import Modal from '../../components/modal';
-import AsyncTasks from '../../components/asyncTasks';
-import CloudModal from '../../components/cloudModal';
+import Loader from 'components/loader';
+import Button from 'components/button';
+import LearnMore from 'components/learnMore';
+import { Context } from 'hooks/store';
+import Modal from 'components/modal';
+import AsyncTasks from 'components/asyncTasks';
+import CloudModal from 'components/cloudModal';
 import Throughput from './throughput';
-import Copy from '../../components/copy';
+import Copy from 'components/copy';
 import StreamLineage from '../streamLineage';
-import pathDomains from '../../router';
+import pathDomains from 'router';
 import { useHistory } from 'react-router-dom';
 import { FaArrowCircleUp } from 'react-icons/fa';
 
@@ -67,7 +68,7 @@ function OverView() {
     const [state, dispatch] = useContext(Context);
     const [open, modalFlip] = useState(false);
     const createStationRef = useRef(null);
-    const [botUrl, SetBotUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
+    const [botUrl, SetBotUrl] = useState(require('assets/images/bots/avatar1.svg'));
     const [username, SetUsername] = useState('');
     const [isLoading, setisLoading] = useState(true);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
@@ -191,7 +192,7 @@ function OverView() {
     }, [state.socket]);
 
     const setBotImage = (botId) => {
-        SetBotUrl(require(`../../assets/images/bots/avatar${botId}.svg`));
+        SetBotUrl(require(`assets/images/bots/avatar${botId}.svg`));
     };
 
     let host =
@@ -334,7 +335,7 @@ function OverView() {
                                                         setCloudModalOpen(true);
                                                     }}
                                                 >
-                                                    <GraphOverview alt="Graph view" className="graphview-img" />
+                                                    <img className="graphview-img" src={(state?.darkMode ? GraphOverviewDark : GraphOverviewLight) || null} alt=""/>
                                                 </div>
                                             </div>
                                         </div>

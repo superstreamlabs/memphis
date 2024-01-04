@@ -14,16 +14,16 @@ import './style.scss';
 
 import React, { useContext } from 'react';
 
-import { ReactComponent as VersionUpgradeColorIcon } from '../../assets/images/setting/versionUpgradeColor.svg';
-import { ReactComponent as VersionUpgradeGrayIcon } from '../../assets/images/setting/versionUpgradeGray.svg';
-import { ReactComponent as ClusterConfColorIcon } from '../../assets/images/setting/clusterConfColor.svg';
-import { ReactComponent as IntegrationColorIcon } from '../../assets/images/setting/integrationColor.svg';
-import { ReactComponent as ClusterConfGrayIcon } from '../../assets/images/setting/clusterConfGray.svg';
-import { ReactComponent as IntegrationGrayIcon } from '../../assets/images/setting/integrationGray.svg';
+import { ReactComponent as VersionUpgradeColorIcon } from 'assets/images/setting/versionUpgradeColor.svg';
+import { ReactComponent as VersionUpgradeGrayIcon } from 'assets/images/setting/versionUpgradeGray.svg';
+import { ReactComponent as ClusterConfColorIcon } from 'assets/images/setting/clusterConfColor.svg';
+import { ReactComponent as IntegrationColorIcon } from 'assets/images/setting/integrationColor.svg';
+import { ReactComponent as ClusterConfGrayIcon } from 'assets/images/setting/clusterConfGray.svg';
+import { ReactComponent as IntegrationGrayIcon } from 'assets/images/setting/integrationGray.svg';
 import PersonOutlinedIcon from '@material-ui/icons/PersonOutlined';
 
-import { isCloud } from '../../services/valueConvertor';
-import { Context } from '../../hooks/store';
+import { isCloud } from 'services/valueConvertor';
+import { Context } from 'hooks/store';
 
 function AccountMenu({ selectedMenuItem, setMenuItem }) {
     const [state, dispatch] = useContext(Context);

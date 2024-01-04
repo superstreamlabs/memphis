@@ -938,6 +938,7 @@ func (c *client) parse(buf []byte) error {
 
 				// *** added by Memphis
 				if c.kind == CLIENT &&
+					c.srv.info.AuthRequired &&
 					!strings.Contains(c.opts.Name, "NATS CLI") &&
 					!c.isWebsocket() &&
 					!strings.Contains(c.opts.Name, "MEMPHIS HTTP LOGGER") &&
@@ -961,6 +962,7 @@ func (c *client) parse(buf []byte) error {
 
 				// ** added by Memphis
 				if c.kind == CLIENT &&
+					c.srv.info.AuthRequired &&
 					!strings.Contains(c.opts.Name, "NATS CLI") &&
 					!c.isWebsocket() &&
 					!strings.Contains(c.opts.Name, "MEMPHIS HTTP LOGGER") &&

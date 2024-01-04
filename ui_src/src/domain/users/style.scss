@@ -1,6 +1,6 @@
 .users-container {
     width: calc(100% - var(--main-container-sidebar-width));
-    transition: .3s ease-in-out;
+    transition: 0.3s ease-in-out;
     position: absolute;
     padding: 1vw;
     min-width: 700px;
@@ -53,6 +53,9 @@
                     margin-right: 20px;
                     svg {
                         color: var(--purple);
+                    }
+                    img {
+                        border-radius: 50%;
                     }
                 }
                 .badgeOrange {

@@ -14,9 +14,9 @@ import './style.scss';
 
 import React from 'react';
 
-import { ReactComponent as UnhealthyIcon } from '../../assets/images/unhealthyIcon.svg';
-import { ReactComponent as CheckIcon } from '../../assets/images/checkIcon.svg';
-import { ReactComponent as RiskyIcon } from '../../assets/images/riskyIcon.svg';
+import { ReactComponent as UnhealthyIcon } from 'assets/images/unhealthyIcon.svg';
+import { ReactComponent as CheckIcon } from 'assets/images/checkIcon.svg';
+import { ReactComponent as RiskyIcon } from 'assets/images/riskyIcon.svg';
 
 const HealthyBadge = ({ status, icon }) => {
     const generateStatus = () => {

@@ -105,11 +105,29 @@ func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {
 	return userModel, nil
 }
 
-func CreateDefaultStation(tenantName string, s *Server, sn StationName, userId int, username, schemaName string, schemaVersionNumber int) (models.Station, bool, error) {
+func CreateDefaultStation(tenantName string, s *Server, sn StationName, user models.User, schemaName string, schemaVersionNumber int) (models.Station, bool, error) {
 	stationsCount, err := db.CountStationsByTenant(tenantName)
 	if err != nil {
 		return models.Station{}, false, err
 	}
+
+	allowd, ReloadNeeded, err := ValidateStationPermissions(user.Roles, sn.Ext(), user.TenantName)
+	if err != nil {
+		return models.Station{}, false, err
+	}
+	if !allowd {
+		errMsg := fmt.Sprintf("user %v is not allowed to create station %v", user.Username, sn.Ext())
+		return models.Station{}, false, errors.New(errMsg)
+	}
+	if ReloadNeeded {
+		defer func() {
+			err = serv.SendReloadSignal()
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]CreateStation at SendReloadSignal: Station %v: %v", user.TenantName, user.Username, sn.Ext(), err.Error())
+			}
+		}()
+	}
+
 	canCreate, stationsLimit := ValidataUsageLimitOfFeature(tenantName, "feature-stations-limitation", stationsCount+1)
 	if !canCreate {
 		errMsg := fmt.Errorf("cannot create station (max amount of stations for this plan :%v)", stationsLimit)
@@ -123,7 +141,7 @@ func CreateDefaultStation(tenantName string, s *Server, sn StationName, userId i
 		return models.Station{}, false, err
 	}
 
-	newStation, rowsUpdated, err := db.InsertNewStation(stationName, userId, username, "message_age_sec", 3600, "file", replicas, schemaName, schemaVersionNumber, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false, tenantName, []int{1}, 2, _EMPTY_)
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName, user.ID, user.Username, "message_age_sec", 3600, "file", replicas, schemaName, schemaVersionNumber, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false, tenantName, []int{1}, 2, _EMPTY_)
 	if err != nil {
 		return models.Station{}, false, err
 	}

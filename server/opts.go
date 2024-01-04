@@ -5206,9 +5206,8 @@ func setBaselineOptions(opts *Options) {
 		opts.RestGwPort = DEFAULT_REST_GW_PORT
 	}
 	if !configuration.USER_PASS_BASED_AUTH && len(opts.Users) == 0 { // default auth - token based
-		opts.Authorization = configuration.CONNECTION_TOKEN
 		if opts.Authorization == _EMPTY_ {
-			opts.Authorization = DEFAULT_CLIENTS_TOKEN
+			opts.Authorization = configuration.CONNECTION_TOKEN
 		}
 	}
 	if opts.Websocket.Port == 0 { // default ws config

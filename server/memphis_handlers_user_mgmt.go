@@ -492,10 +492,11 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+	tenantName := user.TenantName
 
-	users, err := db.GetAllUsers(user.TenantName)
+	_, users, err := db.GetAllUsersAndPermissionsByTenant(tenantName)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]GetAllUsers: %v", user.TenantName, user.Username, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]GetAllUsers: %v", tenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -504,14 +505,15 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
 		analyticsParams := make(map[string]interface{})
-		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-users-page")
+		analytics.SendEvent(tenantName, user.Username, analyticsParams, "user-enter-users-page")
 	}
 
 	applicationUsers := []models.FilteredAppUser{}
-	managementUsers := []models.FilteredGenericUser{}
+	managementUsers := []models.UserWithPermissions{}
 
 	for _, user := range users {
 		if user.UserType == "application" {
+			permissions := ExternalPermissions(user.Permissions)
 			applicationUser := models.FilteredAppUser{
 				ID:          user.ID,
 				Username:    user.Username,
@@ -524,9 +526,11 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 				Team:        user.Team,
 				Owner:       user.Owner,
 				Description: user.Description,
+				Permissions: permissions,
 			}
 			applicationUsers = append(applicationUsers, applicationUser)
 		} else if user.UserType == "management" || user.UserType == "root" {
+			// TODO: add permissions when supported
 			managementUsers = append(managementUsers, user)
 		}
 	}
@@ -981,4 +985,83 @@ func (umh UserMgmtHandler) SendTrace(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, gin.H{})
+}
+
+func ExternalPermissions(permissions models.Permissions) models.Permissions {
+	allowReadPermissionsExternal := []string{}
+	for _, permission := range permissions.AllowReadPermissions {
+		allowReadPermissionsExternal = append(allowReadPermissionsExternal, strings.ReplaceAll(permission, "\\", ""))
+	}
+	allowWritePermissionsExternal := []string{}
+	for _, permission := range permissions.AllowWritePermissions {
+		allowWritePermissionsExternal = append(allowWritePermissionsExternal, strings.ReplaceAll(permission, "\\", ""))
+	}
+	denyReadPermissionsExternal := []string{}
+	for _, permission := range permissions.DenyReadPermissions {
+		denyReadPermissionsExternal = append(denyReadPermissionsExternal, strings.ReplaceAll(permission, "\\", ""))
+	}
+	denyWritePermissionsExternal := []string{}
+	for _, permission := range permissions.DenyWritePermissions {
+		denyWritePermissionsExternal = append(denyWritePermissionsExternal, strings.ReplaceAll(permission, "\\", ""))
+	}
+	return models.Permissions{
+		AllowReadPermissions:  allowReadPermissionsExternal,
+		AllowWritePermissions: allowWritePermissionsExternal,
+		DenyReadPermissions:   denyReadPermissionsExternal,
+		DenyWritePermissions:  denyWritePermissionsExternal,
+	}
+}
+
+func InternalPermissions(permissions models.Permissions) (models.Permissions, error) {
+	allowReadPermissionsInternal := []string{}
+	var err error
+	for _, permission := range permissions.AllowReadPermissions {
+		err = ValidatePermissionPattern(permission)
+		if err != nil {
+			return models.Permissions{}, err
+		}
+		allowReadPermissionsInternal = append(allowReadPermissionsInternal, GetPatternWithDots(permission))
+	}
+	allowWritePermissionsInternal := []string{}
+	for _, permission := range permissions.AllowWritePermissions {
+		err = ValidatePermissionPattern(permission)
+		if err != nil {
+			return models.Permissions{}, err
+		}
+		allowWritePermissionsInternal = append(allowWritePermissionsInternal, GetPatternWithDots(permission))
+	}
+	denyReadPermissionsInternal := []string{}
+	for _, permission := range permissions.DenyReadPermissions {
+		err = ValidatePermissionPattern(permission)
+		if err != nil {
+			return models.Permissions{}, err
+		}
+		denyReadPermissionsInternal = append(denyReadPermissionsInternal, GetPatternWithDots(permission))
+	}
+	denyWritePermissionsInternal := []string{}
+	for _, permission := range permissions.DenyWritePermissions {
+		err = ValidatePermissionPattern(permission)
+		if err != nil {
+			return models.Permissions{}, err
+		}
+		denyWritePermissionsInternal = append(denyWritePermissionsInternal, GetPatternWithDots(permission))
+	}
+	return models.Permissions{
+		AllowReadPermissions:  allowReadPermissionsInternal,
+		AllowWritePermissions: allowWritePermissionsInternal,
+		DenyReadPermissions:   denyReadPermissionsInternal,
+		DenyWritePermissions:  denyWritePermissionsInternal,
+	}, nil
+}
+
+func ValidatePermissionPattern(permission string) error {
+	if len(permission) > 120 {
+		return errors.New("permission exceeds the maximum allowed length of 120 characters")
+	}
+	re := regexp.MustCompile("^[a-z0-9_.*-]*$")
+	validName := re.MatchString(permission)
+	if !validName || len(permission) == 0 {
+		return errors.New("permission has to include only letters/numbers/./_/-/* ")
+	}
+	return nil
 }

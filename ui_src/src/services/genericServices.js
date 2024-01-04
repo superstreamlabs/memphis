@@ -11,9 +11,9 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 import { useContext } from 'react';
 import { message } from 'antd';
-import { ApiEndpoints } from '../const/apiEndpoints';
+import { ApiEndpoints } from 'const/apiEndpoints';
 import { httpRequest } from './http';
-import { Context } from '../hooks/store';
+import { Context } from 'hooks/store';
 
 export const showMessages = (type, content) => {
     switch (type) {

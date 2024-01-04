@@ -14,22 +14,22 @@ import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
 import { Divider, Form, Result } from 'antd';
-import { StationStoreContext } from '../../domain/stationOverview';
-import { ReactComponent as ConnectorIcon } from '../../assets/images/connectorIcon.svg';
-import InputNumberComponent from '../InputNumber';
-import TitleComponent from '../titleComponent';
-import SelectComponent from '../select';
+import { StationStoreContext } from 'domain/stationOverview';
+import { ReactComponent as ConnectorIcon } from 'assets/images/connectorIcon.svg';
+import InputNumberComponent from 'components/InputNumber';
+import TitleComponent from 'components/titleComponent';
+import SelectComponent from 'components/select';
 import { Select } from 'antd';
-import Input from '../Input';
-import Modal from '../modal';
-import Spinner from '../spinner';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { httpRequest } from '../../services/http';
-import CloudModal from '../cloudModal';
-import { isCloud } from '../../services/valueConvertor';
-import { sendTrace } from '../../services/genericServices';
-import { connectorTypesSource } from '../../connectors';
-import { connectorTypesSink } from '../../connectors';
+import Input from 'components/Input';
+import Modal from 'components/modal';
+import Spinner from 'components/spinner';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import CloudModal from 'components/cloudModal';
+import { isCloud } from 'services/valueConvertor';
+import { sendTrace } from 'services/genericServices';
+import { connectorTypesSource } from 'connectors';
+import { connectorTypesSink } from 'connectors';
 
 const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -147,7 +147,7 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
             });
             newConnecor(data?.connector, formFields?.connector_type?.toLocaleLowerCase());
         } catch (error) {
-            setError(JSON.stringify(error));
+            setError(JSON.stringify(error?.data?.message || error?.data));
         } finally {
             setLoading(false);
         }

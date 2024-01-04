@@ -13,11 +13,11 @@
 import React, { useState, useEffect } from 'react';
 import { Divider, Form } from 'antd';
 import { IoClose } from 'react-icons/io5';
-import { ReactComponent as GithubBranchIcon } from '../../../../../assets/images/githubBranchIcon.svg';
-import { ApiEndpoints } from '../../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../../services/http';
-import SelectComponent from '../../../../../components/select';
-import Button from '../../../../../components/button';
+import { ReactComponent as GithubBranchIcon } from 'assets/images/githubBranchIcon.svg';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import SelectComponent from 'components/select';
+import Button from 'components/button';
 import { FiPlus } from 'react-icons/fi';
 
 const IntegrationItem = ({ isNew, index, disabled, repo, reposList, updateIntegrationList, removeRepo, updateIntegration, addIsLoading, isEdittingIntegration }) => {
@@ -84,6 +84,7 @@ const IntegrationItem = ({ isNew, index, disabled, repo, reposList, updateIntegr
                             updateRepo(e);
                         }}
                         options={Object?.keys(reposList)}
+                        placeholder={'Choose a repository'}
                     />
                 </Form.Item>
 
@@ -102,6 +103,7 @@ const IntegrationItem = ({ isNew, index, disabled, repo, reposList, updateIntegr
                         onChange={(e) => {
                             updateBranch(e);
                         }}
+                        placeholder={'Branch to sync with'}
                     />
                 </Form.Item>
 

@@ -50,7 +50,7 @@ const (
 	DEFAULT_REST_GW_PORT                         = 4444
 	DEFAULT_WS_TOKEN                             = "memphis"
 	DEFAULT_CLIENTS_TOKEN                        = "memphis"
-	SHOWABLE_ERROR_STATUS_CODE                   = 666
+	SHOWABLE_ERROR_STATUS_CODE                   = 406
 	DEFAULT_TIERED_STORAGE_UPLOAD_INTERVAL_SEC   = 8
 	DEFAULT_DLS_RETENTION_HOURS                  = 3
 	DEFAULT_GC_PRODUCER_CONSUMER_RETENTION_HOURS = 2

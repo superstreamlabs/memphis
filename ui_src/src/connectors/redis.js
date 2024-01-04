@@ -5,7 +5,7 @@ export const redis = {
             display: 'Connector name',
             type: 'string',
             required: true,
-            description: 'Note that the sink connector name is also consumer group name'
+            description: 'Note that the name of the sink connector is also used as the name of the consumer group'
         },
         {
             name: 'redis_type',
@@ -25,20 +25,39 @@ export const redis = {
             children: false
         },
         {
-            name: 'username',
-            display: 'Username',
-            type: 'string',
-            required: false
-        },
-        {
-            name: 'password',
-            display: 'Password',
-            type: 'string',
-            required: false
+            name: 'authentication',
+            display: 'Authentication method',
+            type: 'select',
+            options: ['No authentication', 'Username and Password', 'Password Only'],
+            required: true,
+            children: true,
+            'Username and Password': [
+                {
+                    name: 'username',
+                    display: 'Username',
+                    type: 'string',
+                    required: true
+                },
+                {
+                    name: 'password',
+                    display: 'Password',
+                    type: 'string',
+                    required: true
+                }
+            ],
+            'Password Only': [
+                {
+                    name: 'password',
+                    display: 'Password',
+                    type: 'string',
+                    required: true
+                }
+            ],
+            'No authentication': []
         },
         {
             name: 'db',
-            display: 'DB',
+            display: 'Database',
             type: 'string',
             required: true,
             placeholder: 0,
@@ -47,13 +66,13 @@ export const redis = {
         {
             name: 'key_header',
             display: 'Key header',
-            description: 'The name of the header in Memphis message, to take the Redis key from',
+            description: 'The header name in the Memphis message from which the Redis key is derived',
             type: 'string',
             required: true
         },
         {
             name: 'memphis_batch_size',
-            display: 'Memphis batch size (messages)',
+            display: 'Batch size (messages)',
             type: 'string',
             required: false,
             placeholder: 100,
@@ -61,11 +80,11 @@ export const redis = {
         },
         {
             name: 'memphis_max_time_wait',
-            display: 'Max time to wait for a batch of messages (seconds)',
+            display: 'Batch Message Timeout Duration (Seconds)',
             placeholder: 2,
             type: 'string',
             required: false,
-            description: 'The duration which a batch of messages is awaited till processing'
+            description: 'The wait time before delivering a batch of messages'
         }
     ]
 };

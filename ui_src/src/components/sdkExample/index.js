@@ -18,7 +18,7 @@ import Editor, { loader } from '@monaco-editor/react';
 import { Divider, Form, Collapse } from 'antd';
 import * as monaco from 'monaco-editor';
 
-import { REST_CODE_EXAMPLE, SDK_CODE_EXAMPLE, sdkLangOptions, restLangOptions } from '../../const/codeExample';
+import { REST_CODE_EXAMPLE, SDK_CODE_EXAMPLE, sdkLangOptions, restLangOptions } from 'const/codeExample';
 import {
     LOCAL_STORAGE_ACCOUNT_ID,
     LOCAL_STORAGE_BROKER_HOST,
@@ -30,24 +30,24 @@ import {
     LOCAL_STORAGE_PRODUCER_PROGRAMMING_LANGUAGE,
     LOCAL_STORAGE_CONSUMER_COMMUNICATION_TYPE,
     LOCAL_STORAGE_CONSUMER_PROGRAMMING_LANGUAGE,
-} from '../../const/localStorageConsts';
-import GenerateTokenModal from '../../domain/stationOverview/components/generateTokenModal';
-import { ReactComponent as NoCodeExampleIcon } from '../../assets/images/noCodeExample.svg';
-import { ReactComponent as RefreshIcon } from '../../assets/images/refresh.svg';
-import { ReactComponent as CodeIcon } from '../../assets/images/codeIcon.svg';
-import CreateUserDetails from '../../domain/users/createUserDetails';
-import CollapseArrow from '../../assets/images/collapseArrow.svg';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import TitleComponent from '../titleComponent/index';
-import { httpRequest } from '../../services/http';
-import SegmentButton from '../segmentButton';
-import CustomSelect from '../customSelect';
-import SelectComponent from '../select';
-import Switcher from '../switcher';
-import Modal from '../modal';
-import Input from '../Input';
-import Copy from '../copy';
-import { Drawer } from 'antd';
+} from 'const/localStorageConsts';
+import GenerateTokenModal from 'domain/stationOverview/components/generateTokenModal';
+import { ReactComponent as NoCodeExampleIcon } from 'assets/images/noCodeExample.svg';
+import { ReactComponent as RefreshIcon } from 'assets/images/refresh.svg';
+import { ReactComponent as CodeIcon } from 'assets/images/codeIcon.svg';
+import CreateUserDetails from 'domain/users/createUserDetails';
+import CollapseArrow from 'assets/images/collapseArrow.svg';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import TitleComponent from 'components/titleComponent/index';
+import { httpRequest } from 'services/http';
+import SegmentButton from 'components/segmentButton';
+import CustomSelect from 'components/customSelect';
+import SelectComponent from 'components/select';
+import Switcher from 'components/switcher';
+import Modal from 'components/modal';
+import Input from 'components/Input';
+import Copy from 'components/copy';
+import Drawer from "components/drawer";
 
 loader.init();
 loader.config({ monaco });
@@ -55,7 +55,6 @@ loader.config({ monaco });
 const tabs = ['Producer', 'Consumer'];
 const tabsProtocol = ['Generate token', 'Produce data', 'Consume data'];
 const selectProtocolOption = ['SDK', 'REST'];
-const ExpandIcon = ({ isActive }) => <img className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />;
 
 const SdkExample = ({ consumer, showTabs = true, stationName, username, connectionCreds, withHeader = false }) => {
     const [langSelected, setLangSelected] = useState('Go');
@@ -96,9 +95,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
     };
 
     useEffect(() => {
-        if (!consumer) {
-            getAllUsers();
-        }
+        getAllUsers();
     }, []);
 
     useEffect(() => {
@@ -152,9 +149,10 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
         setFormFields({ ...formFields, headersList });
     };
 
-    const handleAddUser = (userData) => {
+    const handleAddUser = async (userData) => {
         setCreateUserLoader(false);
         addUserModalFlip(false);
+        await getAllUsers();
         updateFormFields('userName', userData.username);
     };
 
@@ -497,7 +495,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                             <CodeIcon className="headerImage" alt="codeIcon" />
                         </div>
                         <p className="modal-title-sdk">Client generator</p>
-                        <label>We'll provide you with snippets that you can easily connect your application with Memphis</label>
+                        <label>Utilize the client generator for a quick integration of your application with the station.</label>
                     </div>
                 )}
                 <div className="code-generator-container" style={{ height: withHeader ? 'calc(100% - 150px)' : '700px' }}>
@@ -541,13 +539,11 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                     <p className="field-title">Package installation</p>
                                     <div className="install-copy">
                                         <p>{SDK_CODE_EXAMPLE[langSelected].installation}</p>
-                                        <Copy data={SDK_CODE_EXAMPLE[langSelected].installation} />
+                                        <Copy data={SDK_CODE_EXAMPLE[langSelected].installation}/>
                                     </div>
                                 </div>
-                                <div className="tabs">
-                                    {showTabs && <SegmentButton value={tabValue} options={tabs} onChange={(tabValue) => setTabValue(tabValue)} size="medium" />}
-                                    {!showTabs && <p className="field-title">{`Code snippet for ${tabValue === 'Producer' ? 'producing' : 'consuming'} data`}</p>}
-                                </div>
+
+                                <div className="ant-divider" style={{marginBottom: '.5rem', marginTop: '1.5rem'}} role="separator"></div>
                             </>
                         )}
                         {protocolSelected === 'REST' && (
@@ -555,61 +551,51 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         )}
                         {
                             <div className="code-builder">
-                                <Collapse ghost defaultActiveKey={['0']} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}>
-                                    <Panel
-                                        header={
-                                            <div className="header">
-                                                <span className="panel-header">
-                                                    <p className="collapse-title">Parameters</p>
-                                                    <label className="custom-label">Custom</label>
-                                                </span>
+                                <div className="parameters-section">
+                                    {(tabValue === 'SDK' || tabValueRest === 'Generate token') && withHeader && (
+                                        <div className="username-section">
+                                            <span className="input-item">
+                                                <TitleComponent headerTitle="Username" typeTitle="sub-header"/>
+                                                <Form.Item>
+                                                    <CustomSelect
+                                                        placeholder={'Select user'}
+                                                        value={formFields.userName}
+                                                        options={users}
+                                                        onChange={(e) => {updateFormFields('userName', e)}}
+                                                        type="user"
+                                                        handleCreateNew={() => addUserModalFlip(true)}
+                                                        showCreatedBy={false}
+                                                    />
+                                                </Form.Item>
+                                            </span>
+                                            <span className="input-item">
+                                                <TitleComponent headerTitle="Password" typeTitle="sub-header"/>
+                                                <Form.Item name="password">
+                                                    <Input
+                                                        placeholder="Type password"
+                                                        type="password"
+                                                        fontSize="14px"
+                                                        radiusType="semi-round"
+                                                        colorType="black"
+                                                        backgroundColorType="none"
+                                                        borderColorType="gray"
+                                                        height="40px"
+                                                        onBlur={(e) => updateFormFields('password', e.target.value)}
+                                                        onChange={(e) => updateFormFields('password', e.target.value)}
+                                                        value={formFields.password}
+                                                    />
+                                                </Form.Item>
+                                            </span>
+                                        </div>
+                                    )}
 
-                                                <label className="collapse-description">Clients can have multiple parameters to best suit each use case best</label>
-                                            </div>
-                                        }
-                                    >
-                                        <div className="parameters-section">
-                                            {(tabValue === 'SDK' || tabValueRest === 'Generate token') && withHeader && (
-                                                <div className="username-section">
-                                                    <span className="input-item">
-                                                        <TitleComponent headerTitle="Username" typeTitle="sub-header" />
-                                                        <Form.Item>
-                                                            <CustomSelect
-                                                                placeholder={'Select user'}
-                                                                value={formFields.userName}
-                                                                options={users}
-                                                                onChange={(e) => updateFormFields('userName', e)}
-                                                                type="user"
-                                                                handleCreateNew={() => addUserModalFlip(true)}
-                                                            />
-                                                        </Form.Item>
-                                                    </span>
-                                                    <span className="input-item">
-                                                        <TitleComponent headerTitle="Password" typeTitle="sub-header" />
-                                                        <Form.Item name="password">
-                                                            <Input
-                                                                placeholder="Type password"
-                                                                type="password"
-                                                                fontSize="14px"
-                                                                radiusType="semi-round"
-                                                                colorType="black"
-                                                                backgroundColorType="none"
-                                                                borderColorType="gray"
-                                                                height="40px"
-                                                                onBlur={(e) => updateFormFields('password', e.target.value)}
-                                                                onChange={(e) => updateFormFields('password', e.target.value)}
-                                                                value={formFields.password}
-                                                            />
-                                                        </Form.Item>
-                                                    </span>
-                                                </div>
-                                            )}
-
-                                            {protocolSelected === 'REST' && tabValueRest === 'Generate token' && (
-                                                <>
-                                                    <div className="username-section">
+                                    {protocolSelected === 'REST' && tabValueRest === 'Generate token' && (
+                                        <>
+                                            <div className="username-section">
                                                         <span className="input-item">
-                                                            <TitleComponent headerTitle="Token expiry" spanHeader="(In minutes)" typeTitle="sub-header" />
+                                                            <TitleComponent headerTitle="Token expiry"
+                                                                            spanHeader="(In minutes)"
+                                                                            typeTitle="sub-header"/>
                                                             <Form.Item>
                                                                 <Input
                                                                     placeholder="Type token expiry"
@@ -627,8 +613,10 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                                 />
                                                             </Form.Item>
                                                         </span>
-                                                        <span className="input-item">
-                                                            <TitleComponent headerTitle="Refresh token expiry" spanHeader="(In minutes)" typeTitle="sub-header" />
+                                                <span className="input-item">
+                                                            <TitleComponent headerTitle="Refresh token expiry"
+                                                                            spanHeader="(In minutes)"
+                                                                            typeTitle="sub-header"/>
                                                             <Form.Item>
                                                                 <Input
                                                                     placeholder="Refresh token expiry"
@@ -646,36 +634,36 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                                 />
                                                             </Form.Item>
                                                         </span>
-                                                    </div>
-                                                </>
-                                            )}
-                                            {protocolSelected === 'REST' && tabValueRest !== 'Generate token' && (
-                                                <>
-                                                    <TitleComponent
-                                                        headerTitle="JWT"
-                                                        typeTitle="sub-header"
-                                                        headerDescription="To be able to recognize a specific producer across the system"
-                                                    />
-                                                    <Form.Item>
-                                                        <Input
-                                                            placeholder="JWT"
-                                                            type="text"
-                                                            fontSize="14px"
-                                                            radiusType="semi-round"
-                                                            colorType="black"
-                                                            backgroundColorType="white"
-                                                            borderColorType="gray"
-                                                            height="40px"
-                                                            onBlur={(e) => updateFormFields('jwt', e.target.value)}
-                                                            onChange={(e) => updateFormFields('jwt', e.target.value)}
-                                                            value={formFields.jwt}
-                                                        />
-                                                    </Form.Item>
-                                                </>
-                                            )}
-                                            {(protocolSelected === 'SDK' || tabValueRest === 'Consume data') && (
-                                                <>
-                                                    <div className="username-section">
+                                            </div>
+                                        </>
+                                    )}
+                                    {protocolSelected === 'REST' && tabValueRest !== 'Generate token' && (
+                                        <>
+                                            <TitleComponent
+                                                headerTitle="JWT"
+                                                typeTitle="sub-header"
+                                                headerDescription="To be able to recognize a specific producer across the system"
+                                            />
+                                            <Form.Item>
+                                                <Input
+                                                    placeholder="JWT"
+                                                    type="text"
+                                                    fontSize="14px"
+                                                    radiusType="semi-round"
+                                                    colorType="black"
+                                                    backgroundColorType="white"
+                                                    borderColorType="gray"
+                                                    height="40px"
+                                                    onBlur={(e) => updateFormFields('jwt', e.target.value)}
+                                                    onChange={(e) => updateFormFields('jwt', e.target.value)}
+                                                    value={formFields.jwt}
+                                                />
+                                            </Form.Item>
+                                        </>
+                                    )}
+                                    {(protocolSelected === 'SDK' || tabValueRest === 'Consume data') && (
+                                        <>
+                                            <div className="username-section">
                                                         <span className="input-item">
                                                             <TitleComponent
                                                                 headerTitle={`${
@@ -702,9 +690,10 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                                 />
                                                             </Form.Item>
                                                         </span>
-                                                        {(tabValue === 'Consumer' || tabValueRest === 'Consume data') && (
-                                                            <span className="input-item">
-                                                                <TitleComponent headerTitle="Consumer group name" typeTitle="sub-header" />
+                                                {(tabValue === 'Consumer' || tabValueRest === 'Consume data') && (
+                                                    <span className="input-item">
+                                                                <TitleComponent headerTitle="Consumer group name"
+                                                                                typeTitle="sub-header"/>
                                                                 <Form.Item>
                                                                     <Input
                                                                         placeholder="Type consumer group name"
@@ -722,15 +711,16 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                                     />
                                                                 </Form.Item>
                                                             </span>
-                                                        )}
-                                                    </div>
-                                                </>
-                                            )}
-                                            {protocolSelected === 'REST' && tabValueRest === 'Consume data' && (
-                                                <>
-                                                    <div className="username-section">
+                                                )}
+                                            </div>
+                                        </>
+                                    )}
+                                    {protocolSelected === 'REST' && tabValueRest === 'Consume data' && (
+                                        <>
+                                            <div className="username-section">
                                                         <span className="input-item">
-                                                            <TitleComponent headerTitle="Batch size" typeTitle="sub-header" />
+                                                            <TitleComponent headerTitle="Batch size"
+                                                                            typeTitle="sub-header"/>
                                                             <Form.Item>
                                                                 <Input
                                                                     placeholder="Type batch size"
@@ -748,8 +738,9 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                                 />
                                                             </Form.Item>
                                                         </span>
-                                                        <span className="input-item">
-                                                            <TitleComponent headerTitle="Batch timeout" spanHeader="(ms)" typeTitle="sub-header" />
+                                                <span className="input-item">
+                                                            <TitleComponent headerTitle="Batch timeout"
+                                                                            spanHeader="(ms)" typeTitle="sub-header"/>
                                                             <Form.Item>
                                                                 <Input
                                                                     placeholder="Batch timeout (ms)"
@@ -767,103 +758,104 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                                 />
                                                             </Form.Item>
                                                         </span>
-                                                    </div>
-                                                </>
-                                            )}
-                                            {protocolSelected === 'SDK' && langSelected === 'Python' && tabValue === 'Producer' && (
-                                                <div className="username-section">
-                                                    <TitleComponent
-                                                        headerTitle="Bloking"
-                                                        typeTitle="sub-header"
-                                                        headerDescription="For better performance, the client won't block requests while waiting for an acknowledgment"
-                                                    />
+                                            </div>
+                                        </>
+                                    )}
+                                    {protocolSelected === 'SDK' && langSelected === 'Python' && tabValue === 'Producer' && (
+                                        <div className="username-section">
+                                            <TitleComponent
+                                                headerTitle="Blocking"
+                                                typeTitle="sub-header"
+                                                headerDescription="For better performance, the client won't block requests while waiting for an acknowledgment"
+                                            />
 
-                                                    <Form.Item>
-                                                        <Switcher onChange={() => updateFormFields('blocking', !formFields.blocking)} checked={formFields.blocking} />
-                                                    </Form.Item>
-                                                </div>
-                                            )}
-                                            {protocolSelected === 'SDK' && langSelected !== 'Python' && tabValue === 'Producer' && (
-                                                <div className="username-section">
-                                                    <TitleComponent
-                                                        headerTitle="Async"
-                                                        typeTitle="sub-header"
-                                                        headerDescription="For better performance, the client won't block requests while waiting for an acknowledgment"
-                                                    />
-
-                                                    <Form.Item>
-                                                        <Switcher onChange={() => updateFormFields('async', !formFields.async)} checked={formFields.async} />
-                                                    </Form.Item>
-                                                </div>
-                                            )}
-                                            {((protocolSelected === 'SDK' && tabValue === 'Producer') ||
-                                                (protocolSelected === 'REST' && tabValueRest === 'Produce data')) && (
-                                                <div className="username-section">
-                                                    <TitleComponent headerTitle="Headers" typeTitle="sub-header" headerDescription="Add header to the message" />
-                                                    <Form.Item>
-                                                        <Switcher
-                                                            onChange={() => updateFormFields('useHeaders', !formFields.useHeaders)}
-                                                            checked={formFields.useHeaders}
-                                                        />
-                                                    </Form.Item>
-                                                </div>
-                                            )}
-                                            {formFields.useHeaders &&
-                                                ((protocolSelected === 'SDK' && tabValue === 'Producer') ||
-                                                    (protocolSelected === 'REST' && tabValueRest === 'Produce data')) && (
-                                                    <div>
-                                                        {formFields.headersList.map((header, index) => (
-                                                            <div className="username-section" key={index}>
-                                                                <span className="input-item">
-                                                                    <TitleComponent headerTitle="Key" typeTitle="sub-header" />
-                                                                    <Form.Item>
-                                                                        <Input
-                                                                            placeholder="Type key"
-                                                                            type="text"
-                                                                            fontSize="14px"
-                                                                            maxLength="200"
-                                                                            radiusType="semi-round"
-                                                                            colorType="black"
-                                                                            backgroundColorType="white"
-                                                                            borderColorType="gray"
-                                                                            height="40px"
-                                                                            onBlur={(e) => updateHeaders('key', e.target.value, index)}
-                                                                            onChange={(e) => updateHeaders('key', e.target.value, index)}
-                                                                            value={header.key}
-                                                                        />
-                                                                    </Form.Item>
-                                                                </span>
-                                                                <span className="input-item">
-                                                                    <TitleComponent headerTitle="Value" typeTitle="sub-header" />
-                                                                    <Form.Item>
-                                                                        <Input
-                                                                            placeholder="Type value"
-                                                                            type="text"
-                                                                            maxLength="200"
-                                                                            fontSize="14px"
-                                                                            radiusType="semi-round"
-                                                                            colorType="black"
-                                                                            backgroundColorType="white"
-                                                                            borderColorType="gray"
-                                                                            height="40px"
-                                                                            onBlur={(e) => updateHeaders('value', e.target.value, index)}
-                                                                            onChange={(e) => updateHeaders('value', e.target.value, index)}
-                                                                            value={header.value}
-                                                                        />
-                                                                    </Form.Item>
-                                                                </span>
-                                                                <FiMinusCircle className="remove-icon" onClick={() => removeHeader(index)} />
-                                                            </div>
-                                                        ))}
-                                                        <div className="generate-action" onClick={() => addHeader()}>
-                                                            <FiPlus />
-                                                            <span>Add more</span>
-                                                        </div>
-                                                    </div>
-                                                )}
+                                            <Form.Item>
+                                                <Switcher
+                                                    onChange={() => updateFormFields('blocking', !formFields.blocking)}
+                                                    checked={formFields.blocking}/>
+                                            </Form.Item>
                                         </div>
-                                    </Panel>
-                                </Collapse>
+                                    )}
+                                    {protocolSelected === 'SDK' && langSelected !== 'Python' && tabValue === 'Producer' && (
+                                        <div className="username-section">
+                                            <TitleComponent
+                                                headerTitle="Async"
+                                                typeTitle="sub-header"
+                                                headerDescription="For better performance, the client won't block requests while waiting for an acknowledgment"
+                                            />
+
+                                            <Form.Item>
+                                                <Switcher onChange={() => updateFormFields('async', !formFields.async)}
+                                                          checked={formFields.async}/>
+                                            </Form.Item>
+                                        </div>
+                                    )}
+                                    {((protocolSelected === 'SDK' && tabValue === 'Producer') ||
+                                        (protocolSelected === 'REST' && tabValueRest === 'Produce data')) && (
+                                        <div className="username-section">
+                                            <TitleComponent headerTitle="Headers" typeTitle="sub-header"
+                                                            headerDescription="Add header to the message"/>
+                                            <Form.Item>
+                                                <Switcher
+                                                    onChange={() => updateFormFields('useHeaders', !formFields.useHeaders)}
+                                                    checked={formFields.useHeaders}
+                                                />
+                                            </Form.Item>
+                                        </div>
+                                    )}
+                                    {formFields.useHeaders &&
+                                        ((protocolSelected === 'SDK' && tabValue === 'Producer') ||
+                                            (protocolSelected === 'REST' && tabValueRest === 'Produce data')) && (
+                                            <div>
+                                                {formFields.headersList.map((header, index) => (
+                                                    <div className="header-section" key={index}>
+                                                        <span className="input-item">
+                                                            <Form.Item>
+                                                                <Input
+                                                                    placeholder="key"
+                                                                    type="text"
+                                                                    fontSize="14px"
+                                                                    maxLength="200"
+                                                                    radiusType="semi-round"
+                                                                    colorType="black"
+                                                                    backgroundColorType="white"
+                                                                    borderColorType="gray"
+                                                                    height="40px"
+                                                                    onBlur={(e) => updateHeaders('key', e.target.value, index)}
+                                                                    onChange={(e) => updateHeaders('key', e.target.value, index)}
+                                                                    value={header.key}
+                                                                />
+                                                            </Form.Item>
+                                                        </span>
+                                                        <span className="input-item">
+                                                            <Form.Item>
+                                                                <Input
+                                                                    placeholder="value"
+                                                                    type="text"
+                                                                    maxLength="200"
+                                                                    fontSize="14px"
+                                                                    radiusType="semi-round"
+                                                                    colorType="black"
+                                                                    backgroundColorType="white"
+                                                                    borderColorType="gray"
+                                                                    height="40px"
+                                                                    onBlur={(e) => updateHeaders('value', e.target.value, index)}
+                                                                    onChange={(e) => updateHeaders('value', e.target.value, index)}
+                                                                    value={header.value}
+                                                                />
+                                                            </Form.Item>
+                                                        </span>
+                                                        <FiMinusCircle className="remove-icon"
+                                                                       onClick={() => removeHeader(index)}/>
+                                                    </div>
+                                                ))}
+                                                <div className="generate-action" onClick={() => addHeader()}>
+                                                    <FiPlus/>
+                                                    <span>Add more</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                </div>
                             </div>
                         }
                     </>
@@ -906,15 +898,14 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                     />
                 </Drawer>
             </div>
-            <Divider type="vertical" />
+            <Divider type="vertical"/>
             <div>
                 <div className={`code-output-title ${withHeader && 'code-output-title-code-example'}`}>
-                    <p>Code Output</p>
-                    <label>Copy code generator to your IDE</label>
+                    <p>Generated code</p>
                 </div>
                 {protocolSelected === 'SDK' && SDK_CODE_EXAMPLE[langSelected]?.link && (
                     <div className="guidline">
-                        <NoCodeExampleIcon />
+                        <NoCodeExampleIcon/>
                         <div className="content">
                             <p>{SDK_CODE_EXAMPLE[langSelected].title}</p>
                             <span>{SDK_CODE_EXAMPLE[langSelected].desc}</span>
@@ -942,12 +933,13 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                 <div className="generate-wrapper">
                                     <p className="field-title">Generate a token</p>
                                     <div className="generate-action" onClick={() => setGenerateModal(true)}>
-                                        <RefreshIcon width="14" />
+                                        <RefreshIcon width="14"/>
                                         <span>Generate JWT token</span>
                                     </div>
                                 </div>
                                 <div className="code-example ce-protoco">
-                                    <div className="code-content">{generateEditor(REST_CODE_EXAMPLE[langSelected].langCode, codeExample.tokenGenerate)}</div>
+                                    <div
+                                        className="code-content">{generateEditor(REST_CODE_EXAMPLE[langSelected].langCode, codeExample.tokenGenerate)}</div>
                                 </div>
                             </div>
                         )}
@@ -955,7 +947,8 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                             <div className="tabs">
                                 <p className="field-title">Produce data</p>
                                 <div className="code-example ce-protoco">
-                                    <div className="code-content produce">{generateEditor(REST_CODE_EXAMPLE[langSelected].langCode, codeExample.producer)}</div>
+                                    <div
+                                        className="code-content produce">{generateEditor(REST_CODE_EXAMPLE[langSelected].langCode, codeExample.producer)}</div>
                                 </div>
                             </div>
                         )}
@@ -963,7 +956,8 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                             <div className="tabs">
                                 <p className="field-title">Consumem data</p>
                                 <div className="code-example ce-protoco">
-                                    <div className="code-content produce">{generateEditor(REST_CODE_EXAMPLE[langSelected].langCode, codeExample.consumer)}</div>
+                                    <div
+                                        className="code-content produce">{generateEditor(REST_CODE_EXAMPLE[langSelected].langCode, codeExample.consumer)}</div>
                                 </div>
                             </div>
                         )}

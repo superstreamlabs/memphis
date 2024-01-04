@@ -13,12 +13,12 @@
 import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
-import Button from '../../../../../components/button';
-import CheckboxComponent from '../../../../../components/checkBox';
-import Input from '../../../../../components/Input';
-import { StationStoreContext } from '../../..';
-import { httpRequest } from '../../../../../services/http';
-import { ApiEndpoints } from '../../../../../const/apiEndpoints';
+import Button from 'components/button';
+import CheckboxComponent from 'components/checkBox';
+import Input from 'components/Input';
+import { StationStoreContext } from 'domain/stationOverview';
+import { httpRequest } from 'services/http';
+import { ApiEndpoints } from 'const/apiEndpoints';
 
 const PurgeStationModal = ({ title, desc, close, stationName, msgsDisabled = false, dlsDisabled = false }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);

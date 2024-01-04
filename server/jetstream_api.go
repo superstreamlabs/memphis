@@ -142,8 +142,9 @@ const (
 
 	// JSApiDurableCreate is the endpoint to create durable consumers for streams.
 	// You need to include the stream and consumer name in the subject.
-	JSApiDurableCreate  = "$JS.API.CONSUMER.DURABLE.CREATE.*.*"
-	JSApiDurableCreateT = "$JS.API.CONSUMER.DURABLE.CREATE.%s.%s"
+	JSApiDurableCreate         = "$JS.API.CONSUMER.DURABLE.CREATE.*.*"
+	JSApiDurableCreateT        = "$JS.API.CONSUMER.DURABLE.CREATE.%s.%s"
+	JSApiDurableCreateTMemphis = "$JS.API.CONSUMER.DURABLE.CREATE.%s" //** added by Memphis for RBAC
 
 	// JSApiConsumers is the endpoint to list all consumer names for the stream.
 	// Will return JSON response.
@@ -156,16 +157,19 @@ const (
 
 	// JSApiConsumerInfo is for obtaining general information about a consumer.
 	// Will return JSON response.
-	JSApiConsumerInfo  = "$JS.API.CONSUMER.INFO.*.*"
-	JSApiConsumerInfoT = "$JS.API.CONSUMER.INFO.%s.%s"
+	JSApiConsumerInfo         = "$JS.API.CONSUMER.INFO.*.*"
+	JSApiConsumerInfoT        = "$JS.API.CONSUMER.INFO.%s.%s"
+	JSApiConsumerInfoTMemphis = "$JS.API.CONSUMER.INFO.%s" //** added by Memphis for RBAC
 
 	// JSApiConsumerDelete is the endpoint to delete consumers.
 	// Will return JSON response.
-	JSApiConsumerDelete  = "$JS.API.CONSUMER.DELETE.*.*"
-	JSApiConsumerDeleteT = "$JS.API.CONSUMER.DELETE.%s.%s"
+	JSApiConsumerDelete         = "$JS.API.CONSUMER.DELETE.*.*"
+	JSApiConsumerDeleteT        = "$JS.API.CONSUMER.DELETE.%s.%s"
+	JSApiConsumerDeleteTMemphis = "$JS.API.CONSUMER.DELETE.%s" //** added by Memphis for RBAC
 
 	// JSApiRequestNextT is the prefix for the request next message(s) for a consumer in worker/pull mode.
-	JSApiRequestNextT = "$JS.API.CONSUMER.MSG.NEXT.%s.%s"
+	JSApiRequestNextT        = "$JS.API.CONSUMER.MSG.NEXT.%s.%s"
+	JSApiRequestNextTMemphis = "$JS.API.CONSUMER.MSG.NEXT.%s" //** added by Memphis for RBAC
 
 	// jsRequestNextPre
 	jsRequestNextPre = "$JS.API.CONSUMER.MSG.NEXT."

@@ -28,6 +28,9 @@
             color: black;
             margin-left: 10px;
         }
+        .ant-select-selection-item {
+            display: block;
+        }
     }
 }
 .select-throughput-options {
@@ -65,6 +68,8 @@
 }
 .ant-select-selection-item {
     .throughput-details {
+        display: flex;
+        align-items: center;
         svg {
             display: none;
         }

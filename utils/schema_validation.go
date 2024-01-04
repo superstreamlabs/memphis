@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	SHOWABLE_ERROR_STATUS_CODE = 666
+	SHOWABLE_ERROR_STATUS_CODE = 406
 )
 
 type ValidationError struct {

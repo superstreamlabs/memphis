@@ -13,15 +13,15 @@
 import './style.scss';
 
 import { useState, useEffect } from 'react';
-import { ReactComponent as TestEventModalIcon } from '../../../../../../assets/images/testEventModalcon.svg';
-import Button from '../../../../../../components/button';
-import Input from '../../../../../../components/Input';
-import Modal from '../../../../../../components/modal';
+import { ReactComponent as TestEventModalIcon } from 'assets/images/testEventModalcon.svg';
+import Button from 'components/button';
+import Input from 'components/Input';
+import Modal from 'components/modal';
 import Editor from '@monaco-editor/react';
 import TestResult from '../testResult';
-import { generateJSONWithMaxLength } from '../../../../../../services/valueConvertor';
-import { httpRequest } from '../../../../../../services/http';
-import { ApiEndpoints } from '../../../../../../const/apiEndpoints';
+import { generateJSONWithMaxLength } from 'services/valueConvertor';
+import { httpRequest } from 'services/http';
+import { ApiEndpoints } from 'const/apiEndpoints';
 
 const TestMockEvent = ({ functionDetails, open, selectedVersion, clickOutside }) => {
     const [testMock, setTestMock] = useState('');

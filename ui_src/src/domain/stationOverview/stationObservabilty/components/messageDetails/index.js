@@ -13,22 +13,22 @@ import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import { convertBytes, parsingDate, messageParser } from '../../../../../services/valueConvertor';
-import { httpRequest } from '../../../../../services/http';
-import { ApiEndpoints } from '../../../../../const/apiEndpoints';
-import { ReactComponent as JourneyIcon } from '../../../../../assets/images/journey.svg';
+import { convertBytes, parsingDate, messageParser } from 'services/valueConvertor';
+import { httpRequest } from 'services/http';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { ReactComponent as JourneyIcon } from 'assets/images/journey.svg';
 import { CiViewList } from 'react-icons/ci';
-import SegmentButton from '../../../../../components/segmentButton';
-import StatusIndication from '../../../../../components/indication';
-import Spinner from '../../../../../components/spinner';
-import Button from '../../../../../components/button';
-import Copy from '../../../../../components/copy';
-import { LOCAL_STORAGE_MSG_PARSER } from '../../../../../const/localStorageConsts';
+import SegmentButton from 'components/segmentButton';
+import StatusIndication from 'components/indication';
+import Spinner from 'components/spinner';
+import Button from 'components/button';
+import Copy from 'components/copy';
+import { LOCAL_STORAGE_MSG_PARSER } from 'const/localStorageConsts';
 import Editor, { loader } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import MultiCollapse from '../multiCollapse';
-import { StationStoreContext } from '../../..';
-import { Drawer } from 'antd';
+import { StationStoreContext } from 'domain/stationOverview';
+import Drawer from 'components/drawer';
 
 loader.init();
 loader.config({ monaco });
@@ -39,7 +39,7 @@ const MessageDetails = ({ open, isDls, unselect, isFailedSchemaMessage = false, 
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [messageDetails, setMessageDetails] = useState({});
     const [loadMessageData, setLoadMessageData] = useState(false);
-    const [payloadType, setPayloadType] = useState('string');
+    const [payloadType, setPayloadType] = useState('json');
 
     const history = useHistory();
 
@@ -205,23 +205,21 @@ const MessageDetails = ({ open, isDls, unselect, isFailedSchemaMessage = false, 
                     keysArray &&
                     keysArray.map((item) => (
                         <span key={item} className="content">
-                            <label>{item}</label>
-                            <label className="val">{value[item]}</label>
+                            <label>{item}: <span className="val">{value[item]}</span></label>
                             <Copy data={value[item]} />
                         </span>
                     ))}
                 {details &&
                     value?.map((item) => (
                         <span key={item.name} className="content">
-                            <label>{item.name}</label>
-                            <label className="val">{item.value}</label>
+                            <label>{item.name}: <span className="val">{item.value}</span></label>
                             <Copy data={`${item.name} ${item.value}`} />
                         </span>
                     ))}
                 {payload && (
                     <>
                         <SegmentButton
-                            value={payloadType || 'string'}
+                            value={payloadType || 'json'}
                             options={['string', 'bytes', 'json', 'protobuf']}
                             onChange={(e) => {
                                 setPayloadType(e);

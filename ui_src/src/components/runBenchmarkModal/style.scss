@@ -1,0 +1,85 @@
+.benchmark-wrapper {
+    width: 100%;
+    height: 100%;
+    .title {
+        color: #101828;
+        font-family: 'InterSemiBold';
+        font-size: 18px;
+        line-height: 28px;
+        margin-bottom: 5px;
+    }
+    .subtitle {
+        color: #475467;
+        font-family: 'Inter';
+        font-size: 14px;
+        line-height: 25px;
+        margin-bottom: 5px;
+        p {
+            margin: 0px;
+        }
+    }
+    .secondary-text {
+        color: #bcbcbc;
+        font-family: 'Inter';
+        font-size: 12px;
+        line-height: 20px;
+    }
+    .url-wrapper {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding-left: 13px;
+        height: 40px;
+        border-radius: 4px;
+        border: 1px solid #e7e7e7;
+        margin-bottom: 15px;
+        .url-text {
+            margin: 0px;
+            color: #737373;
+            font-family: 'InterMedium';
+            font-size: 14px;
+            line-height: 20px;
+            overflow-x: auto;
+            white-space: nowrap;
+            max-width: 430px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .icon {
+            height: 33px;
+            width: 37px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fbfbfb;
+            border-left: 1px solid #e7e7e7;
+            border-top-right-radius: inherit;
+            border-bottom-right-radius: inherit;
+            cursor: pointer;
+        }
+    }
+    .action {
+        font-size: 14px;
+        font-family: 'InterMedium';
+        margin: 5px 0px;
+        label {
+            color: var(--purple);
+            font-weight: 600;
+            margin-right: 5px;
+        }
+    }
+
+    .ant-tabs-tab .tabs-name {
+        font-size: 12px;
+    }
+    .ant-tabs-tab + .ant-tabs-tab {
+        margin: 0 0 0 15px;
+    }
+    .ant-tabs-tab {
+        font-size: 12px;
+        padding: 8px 0px;
+    }
+}

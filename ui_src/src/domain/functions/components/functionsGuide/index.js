@@ -12,15 +12,15 @@
 
 import './style.scss';
 import { useState } from 'react';
-import { ReactComponent as FunctionIntegrateIcon } from '../../../../assets/images/functionIntegrate.svg';
-import { ReactComponent as CloneModalIcon } from '../../../../assets/images/cloneModalIcon.svg';
+import { ReactComponent as FunctionIntegrateIcon } from 'assets/images/functionIntegrate.svg';
+import { ReactComponent as CloneModalIcon } from 'assets/images/cloneModalIcon.svg';
 import { MdDone } from 'react-icons/md';
-import VideoPlayer from '../../../../components/videoPlayer';
-import Button from '../../../../components/button';
-import Modal from '../../../../components/modal';
-import CloneModal from '../../../../components/cloneModal';
-import { FUNCTION_GUIDE_VIDEO } from '../../../../config';
-import ConnectBG from '../../../../assets/images/functionsWelcomeBanner.webp';
+import VideoPlayer from 'components/videoPlayer';
+import Button from 'components/button';
+import Modal from 'components/modal';
+import CloneModal from 'components/cloneModal';
+import { FUNCTION_GUIDE_VIDEO } from 'config';
+import ConnectBG from 'assets/images/functionsWelcomeBanner.webp';
 import { LuInfo } from 'react-icons/lu';
 
 const FunctionsGuide = ({ handleClose, handleConfirm }) => {

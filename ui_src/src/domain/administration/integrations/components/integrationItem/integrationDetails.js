@@ -12,7 +12,7 @@
 
 import React from 'react';
 
-import VideoPlayer from '../../../../../components/videoPlayer';
+import VideoPlayer from 'components/videoPlayer';
 
 const IntegrationDetails = ({ integrateDesc, videoUrl, backGroundImage }) => {
     return (

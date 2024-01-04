@@ -17,39 +17,39 @@ import { Add, FiberManualRecord } from '@material-ui/icons';
 import { HiOutlineExclamationCircle } from 'react-icons/hi';
 import { MinusOutlined } from '@ant-design/icons';
 import { useHistory } from 'react-router-dom';
-import { useGetAllowedActions } from '../../../services/genericServices';
-import { convertBytes, convertSecondsToDate, isCloud, replicasConvertor } from '../../../services/valueConvertor';
-import { ReactComponent as DeleteWrapperIcon } from '../../../assets/images/deleteWrapperIcon.svg';
-import { ReactComponent as StopUsingIcon } from '../../../assets/images/stopUsingIcon.svg';
-import { ReactComponent as SchemaIconActive } from '../../../assets/images/schemaIconActive.svg';
-import DeleteItemsModal from '../../../components/deleteItemsModal';
-import PartitionsFilter from '../../../components/partitionsFilter';
-import { ReactComponent as DlsIcon } from '../../../assets/images/stationDlsIcon.svg';
-import { ReactComponent as RedirectIcon } from '../../../assets/images/redirectIcon.svg';
-import { ReactComponent as UpRightArrow } from '../../../assets/images/upRightCorner.svg';
-import { ReactComponent as DisconnectIcon } from '../../../assets/images/disconnectDls.svg';
-import { ReactComponent as DisableIcon } from '../../../assets/images/disableIcon.svg';
-import { ReactComponent as AwaitingIcon } from '../../../assets/images/awaitingIcon.svg';
-import TooltipComponent from '../../../components/tooltip/tooltip';
-import OverflowTip from '../../../components/tooltip/overflowtip';
+import { useGetAllowedActions } from 'services/genericServices';
+import { convertBytes, convertSecondsToDate, isCloud, replicasConvertor } from 'services/valueConvertor';
+import { ReactComponent as DeleteWrapperIcon } from 'assets/images/deleteWrapperIcon.svg';
+import { ReactComponent as StopUsingIcon } from 'assets/images/stopUsingIcon.svg';
+import { ReactComponent as SchemaIconActive } from 'assets/images/schemaIconActive.svg';
+import DeleteItemsModal from 'components/deleteItemsModal';
+import PartitionsFilter from 'components/partitionsFilter';
+import { ReactComponent as DlsIcon } from 'assets/images/stationDlsIcon.svg';
+import { ReactComponent as RedirectIcon } from 'assets/images/redirectIcon.svg';
+import { ReactComponent as UpRightArrow } from 'assets/images/upRightCorner.svg';
+import { ReactComponent as DisconnectIcon } from 'assets/images/disconnectDls.svg';
+import { ReactComponent as DisableIcon } from 'assets/images/disableIcon.svg';
+import { ReactComponent as AwaitingIcon } from 'assets/images/awaitingIcon.svg';
+import TooltipComponent from 'components/tooltip/tooltip';
+import OverflowTip from 'components/tooltip/overflowtip';
 import UpdateSchemaModal from '../components/updateSchemaModal';
-import ActiveBadge from '../../../components/activeBadge';
-import Copy from '../../../components/copy';
-import { ApiEndpoints } from '../../../const/apiEndpoints';
-import { ReactComponent as BackIcon } from '../../../assets/images/backIcon.svg';
+import ActiveBadge from 'components/activeBadge';
+import Copy from 'components/copy';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { ReactComponent as BackIcon } from 'assets/images/backIcon.svg';
 import UseSchemaModal from '../components/useSchemaModal';
-import SdkExample from '../../../components/sdkExample';
-import { httpRequest } from '../../../services/http';
-import TagsList from '../../../components/tagList';
-import Button from '../../../components/button';
-import Modal from '../../../components/modal';
+import SdkExample from 'components/sdkExample';
+import { httpRequest } from 'services/http';
+import TagsList from 'components/tagList';
+import Button from 'components/button';
+import Modal from 'components/modal';
 import Auditing from '../components/auditing';
-import RefreshButton from '../../../components/refreshButton';
-import AsyncTasks from '../../../components/asyncTasks';
-import pathDomains from '../../../router';
+import RefreshButton from 'components/refreshButton';
+import AsyncTasks from 'components/asyncTasks';
+import pathDomains from 'router';
 import { StationStoreContext } from '..';
-import { TIERED_STORAGE_UPLOAD_INTERVAL, LOCAL_STORAGE_ACCOUNT_ID, LOCAL_STORAGE_ENV, LOCAL_STORAGE_BROKER_HOST } from '../../../const/localStorageConsts';
-import { Context } from '../../../hooks/store';
+import { TIERED_STORAGE_UPLOAD_INTERVAL, LOCAL_STORAGE_ACCOUNT_ID, LOCAL_STORAGE_ENV, LOCAL_STORAGE_BROKER_HOST } from 'const/localStorageConsts';
+import { Context } from 'hooks/store';
 
 const StationOverviewHeader = ({ refresh }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -212,7 +212,7 @@ const StationOverviewHeader = ({ refresh }) => {
                         />
                     </div>
                     <div className="created-by">
-                        Created by <b>{stationState?.stationMetaData?.created_by_username}</b> at {stationState?.stationMetaData?.created_at}{' '}
+                        Created by <b>{stationState?.stationMetaData?.created_by_username.startsWith('$') ? 'system' : stationState?.stationMetaData?.created_by_username}</b> at {stationState?.stationMetaData?.created_at}{' '}
                         {!stationState?.stationMetaData?.is_native && '(NATS-Compatible)'}
                         {isCloud() && (
                             <span className="hostname">

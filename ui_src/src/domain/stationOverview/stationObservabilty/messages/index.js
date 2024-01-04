@@ -15,39 +15,39 @@ import './style.scss';
 import React, { useContext, useEffect, useState, useRef } from 'react';
 import { InfoOutlined } from '@material-ui/icons';
 
-import { DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS } from '../../../../const/localStorageConsts';
-import { ReactComponent as DeadLetterPlaceholderIcon } from '../../../../assets/images/deadLetterPlaceholder.svg';
-import { isCloud, messageParser, msToUnits, parsingDate } from '../../../../services/valueConvertor';
-import { ReactComponent as PurgeWrapperIcon } from '../../../../assets/images/purgeWrapperIcon.svg';
-import { ReactComponent as WaitingMessagesIcon } from '../../../../assets/images/waitingMessages.svg';
-import { ReactComponent as IdempotencyIcon } from '../../../../assets/images/idempotencyIcon.svg';
-import { ReactComponent as DlsEnableIcon } from '../../../../assets/images/dls_enable_icon.svg';
-import { ReactComponent as FollowersIcon } from '../../../../assets/images/followersDetails.svg';
-import TooltipComponent from '../../../../components/tooltip/tooltip';
-import { ReactComponent as LeaderIcon } from '../../../../assets/images/leaderDetails.svg';
+import { DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS } from 'const/localStorageConsts';
+import { ReactComponent as DeadLetterPlaceholderIcon } from 'assets/images/deadLetterPlaceholder.svg';
+import { isCloud, messageParser, msToUnits, parsingDate } from 'services/valueConvertor';
+import { ReactComponent as PurgeWrapperIcon } from 'assets/images/purgeWrapperIcon.svg';
+import { ReactComponent as WaitingMessagesIcon } from 'assets/images/waitingMessages.svg';
+import { ReactComponent as IdempotencyIcon } from 'assets/images/idempotencyIcon.svg';
+import { ReactComponent as DlsEnableIcon } from 'assets/images/dls_enable_icon.svg';
+import { ReactComponent as FollowersIcon } from 'assets/images/followersDetails.svg';
+import TooltipComponent from 'components/tooltip/tooltip';
+import { ReactComponent as LeaderIcon } from 'assets/images/leaderDetails.svg';
 import PurgeStationModal from '../components/purgeStationModal';
-import CheckboxComponent from '../../../../components/checkBox';
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
+import CheckboxComponent from 'components/checkBox';
+import { ApiEndpoints } from 'const/apiEndpoints';
 import MessageDetails from '../components/messageDetails';
-import DetailBox from '../../../../components/detailBox';
-import DlsConfig from '../../../../components/dlsConfig';
-import { httpRequest } from '../../../../services/http';
-import { ReactComponent as PurgeIcon } from '../../../../assets/images/purge.svg';
-import CustomTabs from '../../../../components/Tabs';
-import Button from '../../../../components/button';
-import Modal from '../../../../components/modal';
-import { StationStoreContext } from '../..';
+import DetailBox from 'components/detailBox';
+import DlsConfig from 'components/dlsConfig';
+import { httpRequest } from 'services/http';
+import { ReactComponent as PurgeIcon } from 'assets/images/purge.svg';
+import CustomTabs from 'components/Tabs';
+import Button from 'components/button';
+import Modal from 'components/modal';
+import { StationStoreContext } from 'domain/stationOverview';
 import { Virtuoso } from 'react-virtuoso';
-import { showMessages } from '../../../../services/genericServices';
-import { ReactComponent as UpRightArrow } from '../../../../assets/images/upRightCorner.svg';
-import { ReactComponent as DisconnectIcon } from '../../../../assets/images/disconnectDls.svg';
+import { showMessages } from 'services/genericServices';
+import { ReactComponent as UpRightArrow } from 'assets/images/upRightCorner.svg';
+import { ReactComponent as DisconnectIcon } from 'assets/images/disconnectDls.svg';
 import UseSchemaModal from '../../components/useSchemaModal';
-import DeleteItemsModal from '../../../../components/deleteItemsModal';
-import { ReactComponent as DisableIcon } from '../../../../assets/images/disableIcon.svg';
+import DeleteItemsModal from 'components/deleteItemsModal';
+import { ReactComponent as DisableIcon } from 'assets/images/disableIcon.svg';
 import { Divider } from 'antd';
 import FunctionsOverview from '../components/functionsOverview';
-import CloudModal from '../../../../components/cloudModal';
-import { ReactComponent as CleanDisconnectedProducersIcon } from '../../../../assets/images/clean_disconnected_producers.svg';
+import CloudModal from 'components/cloudModal';
+import { ReactComponent as CleanDisconnectedProducersIcon } from 'assets/images/clean_disconnected_producers.svg';
 
 const Messages = ({ referredFunction }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -232,12 +232,18 @@ const Messages = ({ referredFunction }) => {
                     dls_message_ids: isCheck,
                     station_name: stationName
                 });
-                messages = subTabValue === subTabs[0]?.name ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
+                messages =
+                    subTabValue === subTabs[0]?.name
+                        ? stationState?.stationSocketData?.poison_messages
+                        : subTabValue === subTabs[1]?.name
+                        ? stationState?.stationSocketData?.schema_failed_messages
+                        : stationState?.stationSocketData?.functions_failed_messages;
                 isCheck.map((messageId, index) => {
                     messages = messages?.filter((item) => {
                         return item.id !== messageId;
                     });
                 });
+                console.log(messages);
             }
             setTimeout(() => {
                 setIgnoreProcced(false);
@@ -245,7 +251,9 @@ const Messages = ({ referredFunction }) => {
                     ? stationDispatch({ type: 'SET_MESSAGES', payload: messages })
                     : subTabValue === subTabs[0]?.name
                     ? stationDispatch({ type: 'SET_POISON_MESSAGES', payload: messages })
-                    : stationDispatch({ type: 'SET_FAILED_MESSAGES', payload: messages });
+                    : subTabValue === subTabs[1]?.name
+                    ? stationDispatch({ type: 'SET_FAILED_MESSAGES', payload: messages })
+                    : stationDispatch({ type: 'SET_FUNCTION_FAILED_MESSAGES', payload: messages });
                 stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
                 stationDispatch({ type: 'SET_SELECTED_ROW_PARTITION', payload: null });
                 setSelectedRowIndex(null);
@@ -415,7 +423,7 @@ const Messages = ({ referredFunction }) => {
                                 {stationState?.stationSocketData?.functions_enabled ? (
                                     <>
                                         <label>Functions</label>
-                                        <label className="badge">Alpha</label>
+                                        <label className="badge">Beta</label>
                                     </>
                                 ) : (
                                     <TooltipComponent text="Supported for new stations" minWidth="35px">

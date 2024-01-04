@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"math/rand"
 	"net/http"
@@ -52,6 +51,7 @@ import (
 const shouldCreateRootUserforGlobalAcc = true
 const TENANT_SEQUENCE_START_ID = 2
 const MAX_PARTITIONS = 10000
+const FUNCTIONS_UPDATE_SUBJ = "$memphis_functions_updates_%s"
 
 type BillingHandler struct{ S *Server }
 type TenantHandler struct{ S *Server }
@@ -1426,6 +1426,21 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		password = string(hashedPwd)
 	}
 
+	var internalPermissions models.Permissions
+	if body.AllowReadPermissions != nil || body.AllowWritePermissions != nil || body.DenyReadPermissions != nil || body.DenyWritePermissions != nil {
+		internalPermissions, err = InternalPermissions(models.Permissions{
+			AllowReadPermissions:  body.AllowReadPermissions,
+			AllowWritePermissions: body.AllowWritePermissions,
+			DenyReadPermissions:   body.DenyReadPermissions,
+			DenyWritePermissions:  body.DenyWritePermissions,
+		})
+		if err != nil {
+			serv.Warnf("[tenant: %v][user: %v]AddUser at InternalPermissions: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			return
+		}
+	}
+
 	var brokerConnectionCreds string
 	if userType == "application" {
 		fullName = _EMPTY_
@@ -1459,6 +1474,27 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 
+	roleID := 0
+	if body.AllowReadPermissions != nil || body.AllowWritePermissions != nil || body.DenyReadPermissions != nil || body.DenyWritePermissions != nil {
+		role, _, err := db.CreateNewRole(newUser.Username, user.TenantName, userType, internalPermissions.AllowReadPermissions, internalPermissions.AllowWritePermissions, internalPermissions.DenyReadPermissions, internalPermissions.DenyWritePermissions)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]AddUser at CreateNewRole: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		roleID = role.ID
+	}
+
+	if roleID > 0 {
+		err = db.UpdateUserRole(user.TenantName, newUser.Username, []int{roleID})
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]AddUser at UpdateUserRole: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		newUser.Roles = []int{roleID}
+	}
+
 	err = memphis_cache.SetUser(newUser)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]AddUser at writing to the user cache error: %v", user.TenantName, user.Username, err)
@@ -1483,6 +1519,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	}
 
 	serv.Noticef("[tenant: %v][user: %v]User %v has been created", user.TenantName, user.Username, username)
+	permissions := ExternalPermissions(internalPermissions)
 	c.IndentedJSON(200, gin.H{
 		"id":                      newUser.ID,
 		"username":                username,
@@ -1497,6 +1534,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		"pending":                 newUser.Pending,
 		"owner":                   newUser.Owner,
 		"description":             newUser.Description,
+		"permissions":             permissions,
 	})
 }
 
@@ -1547,6 +1585,14 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	err = db.DeleteUser(username, userToRemove.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]RemoveUser at DeleteUser: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	//TODO - at the future, do not remove the role and permissions from the DB, just remove the role from the user
+	err = db.RemoveRoleAndPermissions(userToRemove.Roles, userToRemove.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]RemoveUser error with deleting role and permissions from the DB: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1874,8 +1920,8 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 	cc := ConsumerConfig{
 		OptStartSeq:   startSeq,
 		DeliverPolicy: DeliverByStartSequence,
-		AckPolicy:     AckExplicit,
-		Durable:       durableName,
+		AckPolicy:     AckNone,
+		Name:          durableName,
 		Replicas:      1,
 	}
 	err = serv.memphisAddConsumer(serv.MemphisGlobalAccountString(), throughputStreamNameV1, &cc)
@@ -1890,8 +1936,6 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 
 	sub, err := serv.subscribeOnAcc(serv.MemphisGlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
-			// ack
-			serv.sendInternalAccountMsg(serv.MemphisGlobalAccount(), reply, []byte(_EMPTY_))
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
 
@@ -1927,9 +1971,6 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 cleanup:
 	timer.Stop()
 	serv.unsubscribeOnAcc(serv.MemphisGlobalAccount(), sub)
-	time.AfterFunc(500*time.Millisecond, func() {
-		serv.memphisRemoveConsumer(serv.MemphisGlobalAccountString(), throughputStreamNameV1, durableName)
-	})
 
 	sort.Slice(msgs, func(i, j int) bool { // old to new
 		return msgs[i].Time.Before(msgs[j].Time)
@@ -2223,7 +2264,7 @@ func (s *Server) CreateDefaultEntitiesOnMemphisAccount() error {
 		return err
 	}
 
-	_, _, err = CreateDefaultStation(serv.MemphisGlobalAccountString(), serv, stationName, user.ID, user.Username, schemaName, 1)
+	_, _, err = CreateDefaultStation(serv.MemphisGlobalAccountString(), serv, stationName, user, schemaName, 1)
 	if err != nil {
 		return err
 	}
@@ -2572,7 +2613,7 @@ func CreateUsersFromConfigOnFirstSystemLoad() (int, error) {
 	if configuration.DEV_ENV == "true" && !k8sEnv || configuration.DOCKER_ENV == "true" {
 		initialConfigFile = os.Getenv("INITIAL_CONFIG_FILE")
 		if initialConfigFile == _EMPTY_ {
-			return 0, fmt.Errorf("INITIAL_CONFIG_FILE environment variable is not set.")
+			return 0, nil
 		}
 	}
 
@@ -2590,9 +2631,12 @@ func CreateUsersFromConfigOnFirstSystemLoad() (int, error) {
 		}
 	} else {
 		yamlFilePath := "/etc/nats-config/initial.conf"
-		yamlData, err := ioutil.ReadFile(yamlFilePath)
+		yamlData, err := os.ReadFile(yamlFilePath)
 		if err != nil {
-			return 0, err
+			if !os.IsNotExist(err) {
+				return 0, err
+			}
+			return 0, nil
 		}
 
 		confUsers, err = parseYamlFile(string(yamlData))

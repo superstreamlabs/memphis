@@ -16,9 +16,9 @@ import React from 'react';
 import { BiSolidEnvelope } from 'react-icons/bi';
 import { PiWarningFill } from 'react-icons/pi';
 
-import { ReactComponent as RedirectWhiteIcon } from '../../../../assets/images/redirectWhite.svg';
+import { ReactComponent as RedirectWhiteIcon } from 'assets/images/redirectWhite.svg';
 import { useHistory } from 'react-router-dom/cjs/react-router-dom.min';
-import pathDomains from '../../../../router';
+import pathDomains from 'router';
 
 const Station = ({ stationName, dls_messages, total_messages, schema_name }) => {
     const history = useHistory();
