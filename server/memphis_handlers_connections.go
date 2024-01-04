@@ -140,7 +140,7 @@ func handleConnectMessage(client *client) error {
 	return nil
 }
 
-func (mci *memphisClientInfo) updateDisconnection(tenantName string) error {
+func (mci *memphisClientInfo) updateDisconnection(tenantName string, notify func(tenantName, title, message, msgType string) error) error {
 	if mci.connectionId == _EMPTY_ {
 		return nil
 	}
@@ -183,7 +183,7 @@ func (mci *memphisClientInfo) updateDisconnection(tenantName string) error {
 		}
 
 		if len(consumerNames) > 0 || len(producerNames) > 0 {
-			err = SendNotification(tenantName, "Disconnection events", msg, DisconEAlert)
+			err = notify(tenantName, "Disconnection events", msg, DisconEAlert)
 			if err != nil {
 				return err
 			}

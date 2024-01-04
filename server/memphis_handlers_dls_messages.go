@@ -147,7 +147,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 
 	idForUrl := strconv.Itoa(dlsMsgId)
 	var msgUrl = s.opts.UiHost + "/stations/" + stationName.Ext() + "/" + idForUrl
-	err = SendNotification(station.TenantName, PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, PoisonMAlert)
+	err = s.SendNotification(station.TenantName, PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, PoisonMAlert)
 	if err != nil {
 		serv.Warnf("[tenant: %v]handleNewUnackedMsg at SendNotification: Error while sending a poison message notification: %v", station.TenantName, err.Error())
 		return nil

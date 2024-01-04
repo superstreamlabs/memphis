@@ -43,6 +43,7 @@ const SCHEMAVERSE_DLS_CONSUMER = "$memphis_schemaverse_dls_consumer"
 const FUNCTIONS_DLS_INNER_SUBJ = "$memphis_functions_inner_dls"
 const FUNCTIONS_DLS_CONSUMER = "$memphis_functions_dls_consumer"
 const CACHE_UDATES_SUBJ = "$memphis_cache_updates"
+const NOTIFICATIONS_BUFFER_CONSUMER = "$memphis_notifications_buffer_consumer"
 const FUNCTION_TASKS_CONSUMER = "$memphis_function_tasks_consumer"
 
 var LastReadThroughputMap map[string]models.Throughput
@@ -184,7 +185,7 @@ func (s *Server) ListenForNotificationEvents() error {
 			if notification.Code != _EMPTY_ {
 				notificationMsg = notificationMsg + "\n```" + notification.Code + "```"
 			}
-			err = SendNotification(tenantName, notification.Title, notificationMsg, notification.Type)
+			err = s.SendNotification(tenantName, notification.Title, notificationMsg, notification.Type)
 			if err != nil {
 				s.Errorf("[tenant: %v]ListenForNotificationEvents at SendNotification: %v", tenantName, err.Error())
 				return
@@ -348,11 +349,13 @@ func (s *Server) StartBackgroundTasks() error {
 	go ScheduledCloudCacheRefresh()
 	go s.SendBillingAlertWhenNeeded()
 	go s.CheckBrokenConnectedIntegrations()
+	go s.ConsumeNotificationsBufferMessages()
 	go s.ReleaseStuckLocks()
 	go s.ConsumeFunctionTasks()
 	go s.ScaleFunctionWorkers()
 	go s.ConnectorsDeadPodsRescheduler()
-	return nil
+
+  return nil
 }
 
 func (s *Server) uploadMsgsToTier2Storage() {
@@ -757,6 +760,86 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 		}
 	}
 	return nil
+}
+
+func (s *Server) ConsumeNotificationsBufferMessages() error {
+	const mAmount = 1000
+	for {
+		if !NOTIFICATIONS_BUFFER_STREAM_CREATED || !NOTIFICATIONS_BUFFER_CONSUMER_CREATED {
+			s.Warnf("ConsumeNotificationsBufferMessages: waiting for notifications stream and consumer to be created")
+			time.Sleep(2 * time.Second)
+			continue
+		}
+
+		msgs, err := fetchMessages[slackMsg](s,
+			NOTIFICATIONS_BUFFER_CONSUMER,
+			notificationsStreamName,
+			mAmount,
+			3*time.Second,
+			createSlackMsg)
+
+		if err != nil {
+			s.Errorf("Failed to fetch notifications: %v", err.Error())
+			continue
+		}
+
+		sendSlackNotifications(s, msgs)
+	}
+}
+
+func createSlackMsg(msg []byte, reply string) slackMsg {
+	return slackMsg{
+		Msg:          msg,
+		ReplySubject: reply,
+	}
+}
+
+func fetchMessages[T any](s *Server,
+	consumer,
+	streamName string,
+	mAmount int,
+	timeToWait time.Duration,
+	create func(msg []byte, reply string) T) ([]T, error) {
+
+	req := []byte(strconv.FormatUint(uint64(mAmount), 10))
+	resp := make(chan T)
+	replySubject := consumer + "_reply_" + s.memphis.nuid.Next()
+
+	timeout := time.NewTimer(timeToWait)
+	sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), replySubject, replySubject+"_sid", func(_ *client, subject string, reply string, msg []byte) {
+		go func(subject, reply string, msg []byte) {
+			if reply != "" {
+				m := create(msg, reply)
+				resp <- m
+			}
+		}(subject, reply, copyBytes(msg))
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	subject := fmt.Sprintf(JSApiRequestNextT, streamName, consumer)
+	s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), subject, replySubject, nil, req, true)
+
+	msgs := make([]T, 0)
+	stop := false
+	for {
+		if stop {
+			s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
+			break
+		}
+		select {
+		case m := <-resp:
+			msgs = append(msgs, m)
+			if len(msgs) == mAmount {
+				stop = true
+			}
+		case <-timeout.C:
+			stop = true
+		}
+	}
+
+	return msgs, nil
 }
 
 func (s *Server) ReleaseStuckLocks() {

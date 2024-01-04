@@ -62,6 +62,7 @@ const (
 	throughputStreamNameV1      = "$memphis-throughput-v1"
 	MEMPHIS_GLOBAL_ACCOUNT      = "$memphis"
 	integrationsAuditLogsStream = "$memphis_integrations_audit_logs"
+	notificationsStreamName     = "$memphis_notifications_buffer"
 	systemTasksStreamName       = "$memphis_system_tasks"
 	connectorsLogsStream        = "$memphis_connectors_logs"
 	memphisSchemaDetachments    = "$memphis_schema_detachments"
@@ -152,6 +153,8 @@ var (
 	THROUGHPUT_STREAM_CREATED              bool
 	THROUGHPUT_LEGACY_STREAM_EXIST         bool
 	INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED bool
+	NOTIFICATIONS_BUFFER_STREAM_CREATED    bool
+	NOTIFICATIONS_BUFFER_CONSUMER_CREATED  bool
 	SYSTEM_TASKS_STREAM_CREATED            bool
 	FUNCTIONS_TASKS_CONSUMER_CREATED       bool
 	CONNECTORS_LOGS_STREAM_CREATED         bool
@@ -532,6 +535,51 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED = true
 	}
 
+	// create notifications stream
+	if !NOTIFICATIONS_BUFFER_STREAM_CREATED {
+		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
+			Name:         notificationsStreamName,
+			Subjects:     []string{notificationsStreamName + ".>"},
+			Retention:    WorkQueuePolicy,
+			MaxAge:       0,
+			MaxConsumers: -1,
+			Discard:      DiscardOld,
+			Storage:      FileStorage,
+			Replicas:     replicas,
+			Duplicates:   idempotencyWindow,
+		})
+		if err != nil && IsNatsErr(err, JSClusterNoPeersErrF) {
+			time.Sleep(1 * time.Second)
+			tryCreateInternalJetStreamResources(s, retentionDur, successCh, isCluster)
+			return
+		}
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+
+		NOTIFICATIONS_BUFFER_STREAM_CREATED = true
+	}
+
+	if !NOTIFICATIONS_BUFFER_CONSUMER_CREATED {
+		cc := ConsumerConfig{
+			DeliverPolicy: DeliverAll,
+			AckPolicy:     AckExplicit,
+			Durable:       NOTIFICATIONS_BUFFER_CONSUMER,
+			FilterSubject: notificationsStreamName + ".user_notifications",
+			AckWait:       time.Duration(10) * time.Second,
+			MaxAckPending: -1,
+			MaxDeliver:    10,
+		}
+		err = serv.memphisAddConsumer(s.MemphisGlobalAccountString(), notificationsStreamName, &cc)
+		if err != nil {
+			successCh <- err
+			return
+		}
+
+		NOTIFICATIONS_BUFFER_CONSUMER_CREATED = true
+	}
+
 	// create system tasks stream
 	if shouldCreateSystemTasksStream() && !SYSTEM_TASKS_STREAM_CREATED {
 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
@@ -549,6 +597,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			successCh <- err
 			return
 		}
+
 		SYSTEM_TASKS_STREAM_CREATED = true
 	}
 
