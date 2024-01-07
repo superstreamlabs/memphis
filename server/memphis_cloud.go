@@ -2627,7 +2627,7 @@ func CreateUsersFromConfigOnFirstSystemLoad() (int, error) {
 			return 0, err
 		}
 	} else if configuration.DOCKER_ENV == "true" {
-		fmt.Println("2", k8sEnv)
+		fmt.Println("2", k8sEnv, initialConfigFile)
 		var err error
 		confUsers, err = parseYamlFile(initialConfigFile)
 		if err != nil {
