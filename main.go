@@ -207,10 +207,12 @@ func main() {
 	// we do this check here and not below the function creating the users - CreateUsersFromConfigOnFirstSystemLoad because we need the s *Server for logs
 	fmt.Println("check2", errCreateUsers)
 	if errCreateUsers != nil {
-		s.Warnf("[tenant: %v]Failed create users from config file", s.MemphisGlobalAccountString(), errCreateUsers.Error())
+		msg := fmt.Errorf("[tenant: %v]Failed create users from config file %v", s.MemphisGlobalAccountString(), errCreateUsers.Error())
+		fmt.Fprintln(os.Stderr, msg)
 	}
 	if lenUsers > 0 {
-		s.Noticef("[tenant: %v]loaded %d users from config file", s.MemphisGlobalAccountString(), lenUsers)
+		msg := fmt.Errorf("[tenant: %v]loaded %d users from config file", s.MemphisGlobalAccountString(), lenUsers)
+		fmt.Fprintln(os.Stderr, msg)
 	}
 	// Configure the logger based on the flags
 	s.ConfigureLogger()
