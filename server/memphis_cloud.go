@@ -2570,6 +2570,8 @@ func parseYamlFile(initialConfigFile string) (configUsers, error) {
 		return configUsers{}, err
 	}
 
+	fmt.Println("data", data)
+
 	usersMapData := map[interface{}]interface{}{}
 	usersMapDataMgmt := []interface{}{}
 	usersMapDataClient := []interface{}{}
@@ -2631,6 +2633,7 @@ func CreateUsersFromConfigOnFirstSystemLoad() (int, error) {
 		if err != nil {
 			return 0, err
 		}
+		fmt.Println("confUsers", confUsers)
 	} else {
 		yamlFilePath := "/etc/nats-config/initial.conf"
 		yamlData, err := os.ReadFile(yamlFilePath)
