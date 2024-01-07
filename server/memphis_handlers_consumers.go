@@ -172,6 +172,16 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 			serv.Warnf("[tenant: %v]createConsumerDirectCommon at CreateDefaultStation: Consumer %v at station %v : %v", tenantName, consumerName, cStationName, err.Error())
 			return []int{}, err
 		}
+		allowed, _, err := ValidateStationPermissions(user.Roles, cStationName, user.TenantName)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user:%v]createConsumerDirectCommon at ValidateStationPermissions: Station %v: %v", user.TenantName, user.Username, cStationName, err.Error())
+			return []int{}, err
+		}
+		if !allowed {
+			errMsg := fmt.Sprintf("user %v is not allowed to access station %v", user.Username, cStationName)
+			serv.Warnf("[tenant: %v][user:%v]createConsumerDirectCommon: %v", user.TenantName, user.Username, errMsg)
+			return []int{}, errors.New(errMsg)
+		}
 	}
 
 	consumerGroupExist, consumerFromGroup, err := isConsumerGroupExist(consumerGroup, station.ID)
