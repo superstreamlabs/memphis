@@ -183,6 +183,7 @@ func main() {
 	// create only on the first system load
 	if rootUserCreated {
 		lenUsers, errCreateUsers = server.CreateUsersFromConfigOnFirstSystemLoad()
+		fmt.Println("check", lenUsers, errCreateUsers)
 	}
 
 	// Configure the options from the flags/config file
@@ -204,6 +205,7 @@ func main() {
 	}
 
 	// we do this check here and not below the function creating the users - CreateUsersFromConfigOnFirstSystemLoad because we need the s *Server for logs
+	fmt.Println("check2", errCreateUsers)
 	if errCreateUsers != nil {
 		s.Warnf("[tenant: %v]Failed create users from config file", s.MemphisGlobalAccountString(), errCreateUsers.Error())
 	}
