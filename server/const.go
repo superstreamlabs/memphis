@@ -40,8 +40,8 @@ var (
 )
 
 const (
-	// VERSION is the current version for the memphis server.
-	VERSION = "1.4.3" // ** changed by Memphis
+	// VERSION is the current version for the NATS server.
+	VERSION = "2.10.7"
 
 	// ** added by Memphis
 	DEFAULT_SERVER_NAME                          = "memphis-0"
@@ -55,8 +55,8 @@ const (
 	DEFAULT_DLS_RETENTION_HOURS                  = 3
 	DEFAULT_GC_PRODUCER_CONSUMER_RETENTION_HOURS = 2
 	DEFAULT_ENCRYPTION_SECRET_KEY                = "thisis32bitlongpassphraseimusing"
-	// COMP_WITH_NATS_VERSION is the NATS version Memphis is compatible with
-	COMP_WITH_NATS_VERSION = "2.9.22"
+	// MEMPHIS_VERSION is the current version for the memphis server.
+	MEMPHIS_VERSION = "1.4.3"
 	// ** added by Memphis
 
 	// PROTO is the currently supported protocol.
