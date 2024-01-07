@@ -179,6 +179,7 @@ func main() {
 	// create users from env or config file
 	var lenUsers int
 	var errCreateUsers error
+	fmt.Println("rootUserCreated", rootUserCreated)
 	// create only on the first system load
 	if rootUserCreated {
 		lenUsers, errCreateUsers = server.CreateUsersFromConfigOnFirstSystemLoad()
