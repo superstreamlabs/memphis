@@ -2564,8 +2564,10 @@ type configUsers struct {
 }
 
 func parseYamlFile(initialConfigFile string) (configUsers, error) {
+	fmt.Println("parseYamlFile")
 	var data map[string]interface{}
 	err := yaml.Unmarshal([]byte(initialConfigFile), &data)
+	fmt.Println("err", err)
 	if err != nil {
 		return configUsers{}, err
 	}
@@ -2630,6 +2632,7 @@ func CreateUsersFromConfigOnFirstSystemLoad() (int, error) {
 		fmt.Println("2", k8sEnv, initialConfigFile)
 		var err error
 		confUsers, err = parseYamlFile(initialConfigFile)
+		fmt.Println("err1", err)
 		if err != nil {
 			return 0, err
 		}
