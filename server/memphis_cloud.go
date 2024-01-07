@@ -2618,12 +2618,14 @@ func CreateUsersFromConfigOnFirstSystemLoad() (int, error) {
 	}
 
 	if configuration.DEV_ENV == "true" && !k8sEnv {
+		fmt.Println("1", k8sEnv)
 		// for local env with launch json
 		err := json.Unmarshal([]byte(initialConfigFile), &confUsers)
 		if err != nil {
 			return 0, err
 		}
 	} else if configuration.DOCKER_ENV == "true" {
+		fmt.Println("2", k8sEnv)
 		var err error
 		confUsers, err = parseYamlFile(initialConfigFile)
 		if err != nil {
