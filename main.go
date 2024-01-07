@@ -211,7 +211,7 @@ func main() {
 
 	// we do this check here and not below the function creating the users - CreateUsersFromConfigOnFirstSystemLoad because we need the s *Server for logs
 	if errCreateUsers != nil {
-		s.Warnf("[tenant: %v]Failed create users from config file", s.MemphisGlobalAccountString(), errCreateUsers.Error())
+		s.Warnf("[tenant: %v]Failed create users from config file %v", s.MemphisGlobalAccountString(), errCreateUsers.Error())
 	}
 	if lenUsers > 0 {
 		s.Noticef("[tenant: %v]loaded %d users from config file", s.MemphisGlobalAccountString(), lenUsers)
