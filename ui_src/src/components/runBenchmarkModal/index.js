@@ -24,7 +24,7 @@ import { LOCAL_STORAGE_BROKER_HOST, LOCAL_STORAGE_ENV, LOCAL_STORAGE_ACCOUNT_ID 
 let write =
     'mem bench producer --message-size 128 --count 1000 --concurrency 1 --host <host> --account-id <account-id(not needed for open-source)> --user <client type user> --password <password>';
 let read =
-    'mem bench consumer --message-size 128 --count 1000 --concurrency 1 --batch-size 50 --host <host> --account-id <account-id(not needed for open-source)> --user <client type user> --password <password>';
+    'mem bench consumer --message-size 128 --count 1000 --concurrency 1 --batch-size 500 --host <broker_hostname> --account-id <account_id(not needed for open-source)> --user <client_type_username> --password <password>';
 
 const RunBenchmarkModal = ({ open, clickOutside }) => {
     const [tabValue, setTabValue] = useState('Windows');
@@ -40,8 +40,8 @@ const RunBenchmarkModal = ({ open, clickOutside }) => {
                 : 'memphis.memphis.svc.cluster.local';
         write = write.replace('<host>', host);
         write = write.replace('<account-id(not needed for open-source)>', parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
-        read = write.replace('<host>', host);
-        read = write.replace('<account-id(not needed for open-source)>', parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
+        read = read.replace('<host>', host);
+        read = read.replace('<account-id(not needed for open-source)>', parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
         setWriteLink(write);
         setReadLink(read);
     }, []);
