@@ -201,20 +201,20 @@ func main() {
 	if err != nil {
 		server.PrintAndDie(fmt.Sprintf("%s: %s", exe, err))
 	}
-
-	// we do this check here and not below the function creating the users - CreateUsersFromConfigOnFirstSystemLoad because we need the s *Server for logs
-	if errCreateUsers != nil {
-		s.Warnf("[tenant: %v]Failed create users from config file", s.MemphisGlobalAccountString(), errCreateUsers.Error())
-	}
-	if lenUsers > 0 {
-		s.Noticef("[tenant: %v]loaded %d users from config file", s.MemphisGlobalAccountString(), lenUsers)
-	}
 	// Configure the logger based on the flags
 	s.ConfigureLogger()
 
 	// Start things up. Block here until done.
 	if err := server.Run(s); err != nil {
 		server.PrintAndDie(err.Error())
+	}
+
+	// we do this check here and not below the function creating the users - CreateUsersFromConfigOnFirstSystemLoad because we need the s *Server for logs
+	if errCreateUsers != nil {
+		s.Warnf("[tenant: %v]Failed create users from config file %v", s.MemphisGlobalAccountString(), errCreateUsers.Error())
+	}
+	if lenUsers > 0 {
+		s.Noticef("[tenant: %v]loaded %d users from config file", s.MemphisGlobalAccountString(), lenUsers)
 	}
 
 	// Adjust MAXPROCS if running under linux/cgroups quotas.
