@@ -8,8 +8,9 @@
     flex-direction: column;
     justify-content: space-between;
     gap: 30px;
+    height: 100%;
     .overview-header {
-        min-width: 1370px;
+        min-width: 1300px;
     }
     .station-observability {
         min-width: 900px;
@@ -18,9 +19,6 @@
         flex-direction: column;
         justify-content: center;
         width: 100%;
-        @media (max-width: 1200px) {
-            width: calc(100% - 2vw - var(--main-container-sidebar-width));
-        }
     }
     .overview-top {
         display: flex;

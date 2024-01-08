@@ -590,4 +590,24 @@ html.dark-mode {
     filter: $color-invert-filter-reverse!important;
   }
 
+  .stigg-customer-portal-subscriptions-overview {
+    .MuiBox-root button svg, .MuiBox-root button p {
+      filter: $color-invert-filter-reverse;
+    }
+  }
+
+  .message-wrapper .monaco-editor {
+    padding-top: 15px;
+    position: relative;
+    &:after {
+      position: absolute;
+      content: '';
+      background: #fffffe;
+      height: 100%;
+      width: 15px;
+      right: 0;
+      top: 0;
+    }
+  }
+
 }
