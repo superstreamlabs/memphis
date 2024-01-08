@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	inboxSubject = "_INBOX.>"
+	inboxSubject   = "_INBOX.>"
+	wildCardSuffix = ".>"
 )
 
 // the function returns a bool for is allowd to create and a bool for if a reload is needed
@@ -174,13 +175,12 @@ func GetAllowReadPublishInternalSbjects(partitionStream string) []string {
 	subjects = append(subjects, fmt.Sprintf("%v%v", jsAckPre, partitionStream))
 	subjects = append(subjects, fmt.Sprintf(JSApiConsumerListT, partitionStream))
 	subjects = append(subjects, fmt.Sprintf(JSApiConsumerCreateT, partitionStream))
-	subjects = append(subjects, fmt.Sprintf(JSApiStreamInfoT, partitionStream))
 	subjects = append(subjects, fmt.Sprintf(JSApiMsgGetT, partitionStream))
-
 	subjects = append(subjects, fmt.Sprintf(JSApiRequestNextTMemphis, partitionStream))
 	subjects = append(subjects, fmt.Sprintf(JSApiConsumerDeleteTMemphis, partitionStream))
 	subjects = append(subjects, fmt.Sprintf(JSApiDurableCreateTMemphis, partitionStream))
 	subjects = append(subjects, fmt.Sprintf(JSApiConsumerInfoTMemphis, partitionStream))
+	subjects = append(subjects, fmt.Sprintf(JSApiStreamInfoT, strings.TrimSuffix(partitionStream, wildCardSuffix)))
 
 	return subjects
 }
@@ -192,7 +192,7 @@ func GetAllowWritePublishInternalSubjects(partitionStream string) []string {
 	subjects = append(subjects, fmt.Sprintf(JSApiStreamCreateT, partitionStream))
 	subjects = append(subjects, fmt.Sprintf(JSApiStreamDeleteT, partitionStream))
 	subjects = append(subjects, fmt.Sprintf(JSApiStreamUpdateT, partitionStream))
-	subjects = append(subjects, fmt.Sprintf(JSApiStreamInfoT, partitionStream))
+	subjects = append(subjects, fmt.Sprintf(JSApiStreamInfoT, strings.TrimSuffix(partitionStream, wildCardSuffix)))
 
 	return subjects
 }
