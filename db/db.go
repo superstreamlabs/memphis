@@ -7391,11 +7391,13 @@ func GetActiveAsyncTasks(tenantName string) ([]models.AsyncTaskRes, error) {
 	a.created_at,
 	a.created_by,
 	s.name,
-	a.meta_data
-  FROM
-	async_tasks AS a
-LEFT JOIN stations AS s ON a.station_id = s.id
-  WHERE
+	a.meta_data,
+	a.status,
+	a.failure_reason
+	FROM
+		async_tasks AS a
+	LEFT JOIN stations AS s ON a.station_id = s.id
+	WHERE
 	a.tenant_name = $1
 	AND (a.status = 'running' OR a.id IN (
 	  SELECT
@@ -7432,6 +7434,8 @@ LEFT JOIN stations AS s ON a.station_id = s.id
 			&task.CreatedBy,
 			&sName,
 			&task.Data,
+			&task.Status,
+			&task.InvalidReason,
 		)
 		if err != nil {
 			return []models.AsyncTaskRes{}, err
