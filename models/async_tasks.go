@@ -12,6 +12,8 @@ type AsyncTask struct {
 	TenantName    string      `json:"tenant_name"`
 	StationId     int         `json:"station_id"`
 	CreatedBy     string      `json:"created_by"`
+	Status        string      `json:"status"`
+	InvalidReason string      `json:"invalid_reason"`
 }
 
 type AsyncTaskRes struct {

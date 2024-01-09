@@ -103,9 +103,9 @@ func (ash AsyncTasksHandler) GetAsyncTasks(c *gin.Context) {
 }
 
 func (ash AsyncTasksHandler) GetAllAsyncTasks(tenantName string) ([]models.AsyncTaskRes, error) {
-	asyncTasks, err := db.GetAllAsyncTasks(tenantName)
+	asyncTasks, err := db.GetActiveAsyncTasks(tenantName)
 	if err != nil {
-		serv.Errorf("GetAllAsyncTasks at GetAllAsyncTasks:  %v", err.Error())
+		serv.Errorf("GetAllAsyncTasks at GetActiveAsyncTasks:  %v", err.Error())
 		return []models.AsyncTaskRes{}, err
 	}
 	for i, task := range asyncTasks {

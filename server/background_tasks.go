@@ -354,8 +354,9 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.ConsumeFunctionTasks()
 	go s.ScaleFunctionWorkers()
 	go s.ConnectorsDeadPodsRescheduler()
+	go s.RemoveOldAndCompletedAsyncTasks()
 
-  return nil
+	return nil
 }
 
 func (s *Server) uploadMsgsToTier2Storage() {
@@ -851,5 +852,15 @@ func (s *Server) ReleaseStuckLocks() {
 			serv.Errorf("ReleaseStuckLocks at UnlockStuckLocks: %v", err.Error())
 		}
 
+	}
+}
+
+func (s *Server) RemoveOldAndCompletedAsyncTasks() {
+	ticker := time.NewTicker(15 * time.Minute)
+	for range ticker.C {
+		err := db.RemoveAsyncTasks()
+		if err != nil {
+			serv.Errorf("RemoveOldAndCompletedAsyncTasks at RemoveAsyncTasks : %v", err.Error())
+		}
 	}
 }
