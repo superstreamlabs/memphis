@@ -188,6 +188,9 @@ func groupMessagesByTenantAndIntegration(msgs []notificationBufferMsg, l Logger)
 			NotificationMsg: &nm,
 			ReplySubject:    reply,
 		}
+		if _, ok := groupMsgs[nm.IntegrationName]; !ok {
+			groupMsgs[nm.IntegrationName] = make(map[string][]NotificationMsgWithReply)
+		}
 		if _, ok := groupMsgs[nm.IntegrationName][nm.TenantName]; !ok {
 			groupMsgs[nm.IntegrationName][nm.TenantName] = []NotificationMsgWithReply{}
 		}
