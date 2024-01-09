@@ -1,4 +1,4 @@
-[![Github functions new banner (1)](https://github.com/memphisdev/memphis/assets/107035359/7f89dcba-b897-4164-93b3-fec252341960)](https://www.functions.memphis.dev/)
+<a href="![Github (4)](https://github.com/memphisdev/memphis-terraform/assets/107035359/a5fe5d0f-22e1-4445-957d-5ce4464e61b1)">[![Github (4)](https://github.com/memphisdev/memphis-terraform/assets/107035359/a5fe5d0f-22e1-4445-957d-5ce4464e61b1)](https://memphis.dev)</a>
 <p align="center">
 <a href="https://memphis.dev/discord"><img src="https://img.shields.io/discord/963333392844328961?color=6557ff&label=discord" alt="Discord"></a>
 <a href="https://github.com/memphisdev/memphis/issues?q=is%3Aissue+is%3Aclosed"><img src="https://img.shields.io/github/issues-closed/memphisdev/memphis?color=6557ff"></a> 
@@ -48,7 +48,7 @@ docker compose -f docker-compose.yml -p memphis up
 
 </div>
 
-## ✨ Key Features [v1.4.1](https://docs.memphis.dev/memphis/release-notes/releases/v1.4.1-latest)
+## ✨ Key Features [v1.4.2](https://docs.memphis.dev/memphis/release-notes/releases/v1.4.2-latest)
 
 
 ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Production-ready message broker in under 3 minutes<br>
