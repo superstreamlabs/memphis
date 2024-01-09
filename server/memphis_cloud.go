@@ -1318,6 +1318,9 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"dls_retention":           serv.opts.DlsRetentionHours[user.TenantName],
 		"logs_retention":          serv.opts.LogsRetentionDays,
 		"max_msg_size_mb":         serv.opts.MaxPayload / 1024 / 1024,
+		"light_icon":              tenant.LightIcon,
+		"dark_icon":               tenant.DarkIcon,
+		"brand_colors":            tenant.BrandColors,
 	})
 }
 
@@ -1895,6 +1898,9 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"dls_retention":           serv.opts.DlsRetentionHours[user.TenantName],
 		"logs_retention":          serv.opts.LogsRetentionDays,
 		"max_msg_size_mb":         serv.opts.MaxPayload / 1024 / 1024,
+		"light_icon":              tenant.LightIcon,
+		"dark_icon":               tenant.DarkIcon,
+		"brand_colors":            tenant.BrandColors,
 	})
 }
 
