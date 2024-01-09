@@ -38,7 +38,7 @@ import { ReactComponent as DebeziumIcon } from 'assets/images/debeziumIcon.svg';
 import { ReactComponent as ElasticIcon } from 'assets/images/elasticIcon.svg';
 import { ReactComponent as ZapierIcon } from 'assets/images/zapierIcon.svg';
 import { ReactComponent as SlackLogo } from 'assets/images/slackLogo.svg';
-import { ReactComponent as DiscordLogo } from '/assets/images/discordIntegrationIcon.svg';
+import { ReactComponent as DiscordLogo } from 'assets/images/discordIntegrationIcon.svg';
 import { ReactComponent as MemphisVerifiedIcon } from 'assets/images/memphisFunctionIcon.svg';
 import s3Banner from 'assets/images/s3Banner.webp';
 import { ReactComponent as S3Logo } from 'assets/images/s3Logo.svg';
