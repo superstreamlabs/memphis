@@ -85,6 +85,9 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		) THEN
 			ALTER TABLE tenants ADD COLUMN IF NOT EXISTS firebase_organization_id VARCHAR NOT NULL DEFAULT '';
 			ALTER TABLE tenants ADD COLUMN IF NOT EXISTS organization_name VARCHAR NOT NULL DEFAULT '';
+			ALTER TABLE tenants ADD COLUMN IF NOT EXISTS dark_icon VARCHAR NOT NULL DEFAULT '';
+			ALTER TABLE tenants ADD COLUMN IF NOT EXISTS light_icon VARCHAR NOT NULL DEFAULT '';
+			ALTER TABLE tenants ADD COLUMN IF NOT EXISTS brand_colors JSON[] NOT NULL DEFAULT ARRAY[]::JSON[];
 			UPDATE tenants SET organization_name = name WHERE organization_name = ''; 
 		END IF;
 	END $$;`
@@ -95,6 +98,9 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		firebase_organization_id VARCHAR NOT NULL DEFAULT '',
 		internal_ws_pass VARCHAR NOT NULL,
 		organization_name VARCHAR NOT NULL DEFAULT '',
+		dark_icon VARCHAR NOT NULL DEFAULT '',
+		light_icon VARCHAR NOT NULL DEFAULT '',
+		brand_colors JSON[] NOT NULL DEFAULT ARRAY[]::JSON[],
 		PRIMARY KEY (id));`
 
 	alterAuditLogsTable := `
@@ -6736,7 +6742,7 @@ func GetTenantByName(name string) (bool, models.Tenant, error) {
 	return true, tenants[0], nil
 }
 
-func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass, organizationName string) (models.Tenant, error) {
+func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass, organizationName string, brandData models.BrandColors) (models.Tenant, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -6746,7 +6752,9 @@ func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass, organiz
 	}
 	defer conn.Release()
 
-	query := `INSERT INTO tenants (id, name, firebase_organization_id, internal_ws_pass, organization_name) VALUES(nextval('tenants_seq'),$1, $2, $3, $4)`
+	query := `INSERT INTO tenants 
+	(id, name, firebase_organization_id, internal_ws_pass, organization_name, dark_icon, light_icon, brand_colors)
+	VALUES(nextval('tenants_seq'),$1, $2, $3, $4, $5, $6, $7)`
 
 	stmt, err := conn.Conn().Prepare(ctx, "create_new_tenant", query)
 	if err != nil {
@@ -6754,7 +6762,7 @@ func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass, organiz
 	}
 
 	var tenantId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, firebaseOrganizationId, encryptrdInternalWSPass, organizationName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, firebaseOrganizationId, encryptrdInternalWSPass, organizationName, brandData.DarkIcon, brandData.LightIcon, brandData.Colors)
 	if err != nil {
 		return models.Tenant{}, err
 	}

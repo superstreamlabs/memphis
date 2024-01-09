@@ -12,14 +12,28 @@
 package models
 
 type Tenant struct {
-	ID                     int    `json:"id"`
-	Name                   string `json:"name"`
-	FirebaseOrganizationId string `json:"firebase_organization_id"`
-	InternalWSPass         string `json:"internal_ws_pass"`
-	OrganizationName       string `json:"organization_name"`
+	ID                     int     `json:"id"`
+	Name                   string  `json:"name"`
+	FirebaseOrganizationId string  `json:"firebase_organization_id"`
+	InternalWSPass         string  `json:"internal_ws_pass"`
+	OrganizationName       string  `json:"organization_name"`
+	DarkIcon               string  `json:"dark_icon"`
+	LightIcon              string  `json:"light_icon"`
+	BrandColors            []Color `json:"brand_colors"`
 }
 
 type TenantForUpsert struct {
 	Name           string `json:"name"`
 	InternalWSPass string `json:"internal_ws_pass"`
+}
+
+type Color struct {
+	Hex  string `json:"hex"`
+	Type string `json:"type"`
+}
+
+type BrandColors struct {
+	DarkIcon  string  `json:"dark_icon"`
+	LightIcon string  `json:"light_icon"`
+	Colors    []Color `json:"colors"`
 }
