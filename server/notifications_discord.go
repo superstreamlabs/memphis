@@ -15,11 +15,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"net/http"
-	"strings"
-
+	"fmt"
 	"github.com/memphisdev/memphis/db"
 	"github.com/memphisdev/memphis/models"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
 )
 
 type Author struct {
@@ -37,6 +39,23 @@ type DiscordMessage struct {
 	Embeds []Embed `json:"embeds"`
 }
 
+type DiscordRateLimitedError struct {
+	RetryAfter time.Duration
+}
+
+func (e *DiscordRateLimitedError) Error() string {
+	return fmt.Sprintf("discord rate limit exceeded, retry after %s", e.RetryAfter)
+}
+
+type DiscordStatusCodeError struct {
+	Code   int
+	Status string
+}
+
+func (e *DiscordStatusCodeError) Error() string {
+	return fmt.Sprintf("discord server error: %s", e.Status)
+}
+
 func IsDiscordEnabled(tenantName string) (bool, error) {
 	exist, _, err := db.GetIntegration("discord", tenantName)
 	if err != nil {
@@ -48,6 +67,22 @@ func IsDiscordEnabled(tenantName string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func checkDiscordStatusCode(resp *http.Response) error {
+	if resp.StatusCode == http.StatusTooManyRequests {
+		retry, err := strconv.ParseInt(resp.Header.Get("X-RateLimit-Reset-After"), 10, 64)
+		if err != nil {
+			return err
+		}
+		return &DiscordRateLimitedError{time.Duration(retry) * time.Second}
+	}
+
+	if resp.StatusCode != http.StatusNoContent {
+		return &DiscordStatusCodeError{Code: resp.StatusCode, Status: resp.Status}
+	}
+
+	return nil
 }
 
 func sendMessageToDiscordChannel(integration models.DiscordIntegration, title string, message string) error {
@@ -78,6 +113,12 @@ func sendMessageToDiscordChannel(integration models.DiscordIntegration, title st
 		return err
 	}
 	defer resp.Body.Close()
+
+	err = checkDiscordStatusCode(resp)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -329,4 +370,51 @@ func hideDiscordWebhookUrl(webhookUrl string) string {
 		return webhookUrl
 	}
 	return webhookUrl
+}
+
+func sendDiscordTenantNotifications(s *Server, tenantName string, msgs []NotificationMsgWithReply) {
+	var ok bool
+	if _, ok := NotificationFunctionsMap["discord"]; !ok {
+		s.Errorf("[tenant: %v]discord integration doesn't exist", tenantName)
+		return
+	}
+
+	var tenantIntegrations map[string]any
+	if tenantIntegrations, ok = IntegrationsConcurrentCache.Load(tenantName); !ok {
+		// discord is either not enabled or have been disabled - just ack these messages
+		ackMsgs(s, msgs)
+		return
+	}
+
+	var discordIntegration models.DiscordIntegration
+	if discordIntegration, ok = tenantIntegrations["discord"].(models.DiscordIntegration); !ok {
+		// discord is either not enabled or have been disabled - just ack these messages
+		ackMsgs(s, msgs)
+		return
+	}
+
+	for i := 0; i < len(msgs); i++ {
+		m := msgs[i]
+		err := sendMessageToDiscordChannel(discordIntegration, m.NotificationMsg.Title, m.NotificationMsg.Message)
+		if err != nil {
+			var rateLimit *DiscordRateLimitedError
+			if errors.As(err, &rateLimit) {
+				s.Warnf("[tenant: %v]failed to send discord notification: %v", tenantName, err.Error())
+				err := nackMsgs(s, msgs[i:], rateLimit.RetryAfter)
+				if err != nil {
+					s.Errorf("[tenant: %v]failed to send NACK for discord notification: %v", tenantName, err.Error())
+				}
+
+				return
+			}
+
+			s.Errorf("[tenant: %v]failed to send discord notification: %v", tenantName, err.Error())
+
+		}
+
+		err = s.sendInternalAccountMsg(s.MemphisGlobalAccount(), m.ReplySubject, []byte(_EMPTY_))
+		if err != nil {
+			s.Errorf("[tenant: %v]failed to send ACK for discord notification: %v", tenantName, err.Error())
+		}
+	}
 }

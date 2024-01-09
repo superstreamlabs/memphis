@@ -360,7 +360,7 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.ScaleFunctionWorkers()
 	go s.ConnectorsDeadPodsRescheduler()
 
-  return nil
+	return nil
 }
 
 func (s *Server) uploadMsgsToTier2Storage() {
@@ -798,45 +798,43 @@ func (s *Server) ConsumeNotificationsBufferMessages() error {
 			continue
 		}
 
-		msgs, err := fetchMessages[slackMsg](s,
+		msgs, err := fetchMessages(s,
 			NOTIFICATIONS_BUFFER_CONSUMER,
 			notificationsStreamName,
 			mAmount,
-			3*time.Second,
-			createSlackMsg)
+			3*time.Second)
 
 		if err != nil {
 			s.Errorf("Failed to fetch notifications: %v", err.Error())
 			continue
 		}
 
-		sendSlackNotifications(s, msgs)
+		sendNotifications(s, msgs)
 	}
 }
 
-func createSlackMsg(msg []byte, reply string) slackMsg {
-	return slackMsg{
+func createNotificationBufferMsg(msg []byte, reply string) notificationBufferMsg {
+	return notificationBufferMsg{
 		Msg:          msg,
 		ReplySubject: reply,
 	}
 }
 
-func fetchMessages[T any](s *Server,
+func fetchMessages(s *Server,
 	consumer,
 	streamName string,
 	mAmount int,
-	timeToWait time.Duration,
-	create func(msg []byte, reply string) T) ([]T, error) {
+	timeToWait time.Duration) ([]notificationBufferMsg, error) {
 
 	req := []byte(strconv.FormatUint(uint64(mAmount), 10))
-	resp := make(chan T)
+	resp := make(chan notificationBufferMsg)
 	replySubject := consumer + "_reply_" + s.memphis.nuid.Next()
 
 	timeout := time.NewTimer(timeToWait)
 	sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), replySubject, replySubject+"_sid", func(_ *client, subject string, reply string, msg []byte) {
 		go func(subject, reply string, msg []byte) {
 			if reply != "" {
-				m := create(msg, reply)
+				m := createNotificationBufferMsg(msg, reply)
 				resp <- m
 			}
 		}(subject, reply, copyBytes(msg))
@@ -848,7 +846,7 @@ func fetchMessages[T any](s *Server,
 	subject := fmt.Sprintf(JSApiRequestNextT, streamName, consumer)
 	s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), subject, replySubject, nil, req, true)
 
-	msgs := make([]T, 0)
+	var msgs []notificationBufferMsg
 	stop := false
 	for {
 		if stop {

@@ -99,11 +99,7 @@ func (it IntegrationsHandler) handleUpdateS3Integration(tenantName string, body 
 		return models.Integration{}, statusCode, err
 	}
 	integrationType := strings.ToLower(body.Name)
-<<<<<<< HEAD
-	keysMap, properties := createIntegrationsKeysAndProperties(integrationType, "", "", "", false, false, false, keys["access_key"].(string), keys["secret_key"].(string), keys["bucket_name"].(string), keys["region"].(string), keys["url"].(string), keys["s3_path_style"].(string), map[string]interface{}{}, "", "", "", "")
-=======
-	keysMap, properties := createIntegrationsKeysAndProperties(integrationType, _EMPTY_, _EMPTY_, false, false, false, keys["access_key"].(string), keys["secret_key"].(string), keys["bucket_name"].(string), keys["region"].(string), keys["url"].(string), keys["s3_path_style"].(string), map[string]interface{}{}, _EMPTY_, _EMPTY_, _EMPTY_, _EMPTY_)
->>>>>>> upstream/master
+	keysMap, properties := createIntegrationsKeysAndProperties(integrationType, _EMPTY_, _EMPTY_, _EMPTY_, false, false, false, keys["access_key"].(string), keys["secret_key"].(string), keys["bucket_name"].(string), keys["region"].(string), keys["url"].(string), keys["s3_path_style"].(string), map[string]interface{}{}, _EMPTY_, _EMPTY_, _EMPTY_, _EMPTY_)
 	s3Integration, err := updateS3Integration(tenantName, keysMap, properties)
 	if err != nil {
 		return s3Integration, 500, err
