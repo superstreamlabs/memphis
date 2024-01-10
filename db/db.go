@@ -2635,9 +2635,9 @@ func GetProducersForGraph(tenantName string) ([]models.ProducerForGraph, error) 
 		return []models.ProducerForGraph{}, err
 	}
 	defer conn.Release()
-	query := `SELECT p.name, p.station_id, p.app_id
+	query := `SELECT p.name, p.station_id, p.app_id, p.type
 				FROM producers AS p
-				WHERE p.tenant_name = $1 AND p.is_active = true AND p.type = 'application'
+				WHERE p.tenant_name = $1 AND p.is_active = true
 				ORDER BY p.name, p.station_id DESC
 				LIMIT 10000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producers_for_graph", query)
@@ -3197,9 +3197,9 @@ func GetConsumersForGraph(tenantName string) ([]models.ConsumerForGraph, error) 
 		return []models.ConsumerForGraph{}, err
 	}
 	defer conn.Release()
-	query := `SELECT c.name, c.consumers_group, c.station_id, c.app_id
+	query := `SELECT c.name, c.consumers_group, c.station_id, c.app_id, c.type
 				FROM consumers AS c
-				WHERE c.tenant_name = $1 AND c.is_active = true AND c.type = 'application'
+				WHERE c.tenant_name = $1 AND c.is_active = true
 				ORDER BY c.name, c.station_id DESC
 				LIMIT 10000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_consumers_for_graph", query)

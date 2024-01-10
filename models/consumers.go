@@ -140,4 +140,5 @@ type ConsumerForGraph struct {
 	CGName    string `json:"cg_name"`
 	StationId int    `json:"station_id"`
 	AppId     string `json:"app_id"`
+	Type      string `json:"type"`
 }
