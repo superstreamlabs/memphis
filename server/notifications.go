@@ -147,7 +147,6 @@ func sendNotifications(s *Server, msgs []notificationBufferMsg) {
 				sendDiscordTenantNotifications(s, tenantName, tMsgs)
 			}
 		}
-
 	}
 }
 

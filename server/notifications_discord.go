@@ -85,18 +85,23 @@ func checkDiscordStatusCode(resp *http.Response) error {
 	return nil
 }
 
-func sendMessageToDiscordChannel(integration models.DiscordIntegration, title string, message string) error {
-	payload := DiscordMessage{
-		Embeds: []Embed{
-			{
-				Color: "6641663",
-				Author: Author{
-					Name: "Memphis",
-				},
-				Title:       title,
-				Description: message,
+func sendMessagesToDiscordChannel(integration models.DiscordIntegration, msgs []NotificationMsgWithReply) error {
+	var embeds []Embed
+	for i := 0; i < len(msgs); i++ {
+		m := msgs[i]
+		embed := Embed{
+			Color: "6641663",
+			Author: Author{
+				Name: "Memphis",
 			},
-		},
+			Title:       m.NotificationMsg.Title,
+			Description: m.NotificationMsg.Message,
+		}
+		embeds = append(embeds, embed)
+	}
+
+	payload := DiscordMessage{
+		Embeds: embeds,
 	}
 
 	payloadBytes, err := json.Marshal(payload)
@@ -393,9 +398,15 @@ func sendDiscordTenantNotifications(s *Server, tenantName string, msgs []Notific
 		return
 	}
 
-	for i := 0; i < len(msgs); i++ {
-		m := msgs[i]
-		err := sendMessageToDiscordChannel(discordIntegration, m.NotificationMsg.Title, m.NotificationMsg.Message)
+	const batchedAmount = 10
+
+	for i := 0; i < len(msgs); i = i + batchedAmount {
+		right := i + batchedAmount
+		if right > len(msgs) {
+			right = len(msgs)
+		}
+		ms := msgs[i:right]
+		err := sendMessagesToDiscordChannel(discordIntegration, ms)
 		if err != nil {
 			var rateLimit *DiscordRateLimitedError
 			if errors.As(err, &rateLimit) {
@@ -412,9 +423,6 @@ func sendDiscordTenantNotifications(s *Server, tenantName string, msgs []Notific
 
 		}
 
-		err = s.sendInternalAccountMsg(s.MemphisGlobalAccount(), m.ReplySubject, []byte(_EMPTY_))
-		if err != nil {
-			s.Errorf("[tenant: %v]failed to send ACK for discord notification: %v", tenantName, err.Error())
-		}
+		ackMsgs(s, ms)
 	}
 }

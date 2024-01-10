@@ -33,7 +33,7 @@ func InitializeIntegrations() error {
 	StorageFunctionsMap = make(map[string]interface{})
 	SourceCodeManagementFunctionsMap = make(map[string]map[string]interface{})
 	NotificationFunctionsMap["slack"] = sendMessageToSlackChannel
-	NotificationFunctionsMap["discord"] = sendMessageToDiscordChannel
+	NotificationFunctionsMap["discord"] = sendMessagesToDiscordChannel
 	StorageFunctionsMap["s3"] = serv.uploadToS3Storage
 	SourceCodeManagementFunctionsMap["github"] = make(map[string]interface{})
 	SourceCodeManagementFunctionsMap["github"]["get_all_repos"] = serv.getGithubRepositories
