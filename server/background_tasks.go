@@ -354,7 +354,7 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.ConsumeFunctionTasks()
 	go s.ScaleFunctionWorkers()
 	go s.ConnectorsDeadPodsRescheduler()
-	go s.RemoveOldAndCompletedAsyncTasks()
+	go s.removeOldAsyncTasks()
 
 	return nil
 }
@@ -855,12 +855,12 @@ func (s *Server) ReleaseStuckLocks() {
 	}
 }
 
-func (s *Server) RemoveOldAndCompletedAsyncTasks() {
+func (s *Server) removeOldAsyncTasks() {
 	ticker := time.NewTicker(15 * time.Minute)
 	for range ticker.C {
-		err := db.RemoveAsyncTasks()
+		err := db.RemoveOldAsyncTasks()
 		if err != nil {
-			serv.Errorf("RemoveOldAndCompletedAsyncTasks at RemoveAsyncTasks : %v", err.Error())
+			serv.Errorf("RemoveOldAsyncTasks at db.RemoveOldAsyncTasks : %v", err.Error())
 		}
 	}
 }

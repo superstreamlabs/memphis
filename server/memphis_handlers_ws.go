@@ -529,9 +529,9 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 }
 
 func (s *Server) sendSystemMessageOnWS(user models.User, systemMessage SystemMessage) error {
-	v, err := serv.Varz(nil)
+	v, err := s.Varz(nil)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]sendSystemMessageOnWS: %v", user.TenantName, user.Username, err.Error())
+		s.Errorf("[tenant: %v][user: %v]sendSystemMessageOnWS: %v", user.TenantName, user.Username, err.Error())
 		return err
 	}
 	var serverNames []string
@@ -542,7 +542,7 @@ func (s *Server) sendSystemMessageOnWS(user models.User, systemMessage SystemMes
 		serverNames = append(serverNames, "memphis-"+strconv.Itoa(i))
 	}
 
-	acc, err := serv.lookupAccount(user.TenantName)
+	acc, err := s.lookupAccount(user.TenantName)
 	if err != nil {
 		err = fmt.Errorf("sendSystemMessageOnWS at lookupAccount: %v", err.Error())
 		return err
@@ -566,7 +566,7 @@ func (s *Server) sendSystemMessageOnWS(user models.User, systemMessage SystemMes
 
 	for _, serverName := range serverNames {
 		replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, memphisWS_Subj_GetSystemMessages+"."+serverName)
-		serv.sendInternalAccountMsgWithEcho(acc, replySubj, updateRaw)
+		s.sendInternalAccountMsgWithEcho(acc, replySubj, updateRaw)
 	}
 
 	return nil

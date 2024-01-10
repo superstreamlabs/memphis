@@ -580,7 +580,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 			station_id INT NOT NULL,
 			created_by VARCHAR NOT NULL,
-			status VARCHAR NOT NULL,
+			status VARCHAR NOT NULL DEFAULT 'running',
 			failure_reason VARCHAR NOT NULL DEFAULT '',
 			PRIMARY KEY (id)
         );`
@@ -605,7 +605,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			SELECT 1 FROM information_schema.tables WHERE table_name = 'async_tasks' AND table_schema = 'public'
 		) THEN
 		ALTER TABLE async_tasks ADD COLUMN IF NOT EXISTS created_by VARCHAR NOT NULL;
-		ALTER TABLE async_tasks ADD COLUMN IF NOT EXISTS status VARCHAR NOT NULL;
+		ALTER TABLE async_tasks ADD COLUMN IF NOT EXISTS status VARCHAR NOT NULL DEFAULT 'running';
 		ALTER TABLE async_tasks ADD COLUMN IF NOT EXISTS failure_reason VARCHAR NOT NULL DEFAULT '';
 		END IF;
 		IF EXISTS (
@@ -7268,7 +7268,7 @@ func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantNam
 		&asyncTask.StationId,
 		&asyncTask.CreatedBy,
 		&asyncTask.Status,
-		&asyncTask.InvalidReason,
+		&asyncTask.FailureReason,
 	)
 
 	if err != nil {
@@ -7376,7 +7376,7 @@ func GetAsyncTaskByNameAndBrokerName(task, brokerName string) (bool, []models.As
 	return true, asyncTask, nil
 }
 
-func GetActiveAsyncTasks(tenantName string) ([]models.AsyncTaskRes, error) {
+func GetActiveAndUpdatedAsyncTasks(tenantName string) ([]models.AsyncTaskRes, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -7390,28 +7390,35 @@ func GetActiveAsyncTasks(tenantName string) ([]models.AsyncTaskRes, error) {
 	a.name,
 	a.created_at,
 	a.created_by,
-	s.name,
+	s.name AS station_name,
 	a.meta_data,
 	a.status,
 	a.failure_reason
 	FROM
-		async_tasks AS a
-	LEFT JOIN stations AS s ON a.station_id = s.id
+	async_tasks AS a
+	LEFT JOIN
+	stations AS s ON a.station_id = s.id
 	WHERE
 	a.tenant_name = $1
 	AND (a.status = 'running' OR a.id IN (
-	  SELECT
-		a.id
-	  FROM
-		async_tasks
-	  WHERE
-		a.tenant_name = $1
-	  ORDER BY
-		a.updated_at DESC
-	  LIMIT 10
-	));
-	`
-	stmt, err := conn.Conn().Prepare(ctx, "get_active_async_tasks", query)
+		SELECT
+			id
+		FROM
+			async_tasks
+		WHERE
+			tenant_name = $1
+			AND status <> 'running'
+		ORDER BY
+			created_at DESC
+		LIMIT 10
+	))
+	ORDER BY
+	CASE
+		WHEN a.status = 'running' THEN 0
+		ELSE 1
+	END,
+	created_at DESC;`
+	stmt, err := conn.Conn().Prepare(ctx, "get_active_and_updated_async_tasks", query)
 	if err != nil {
 		return []models.AsyncTaskRes{}, err
 	}
@@ -7435,7 +7442,7 @@ func GetActiveAsyncTasks(tenantName string) ([]models.AsyncTaskRes, error) {
 			&sName,
 			&task.Data,
 			&task.Status,
-			&task.InvalidReason,
+			&task.FailureReason,
 		)
 		if err != nil {
 			return []models.AsyncTaskRes{}, err
@@ -7482,30 +7489,7 @@ func UpdateAsyncTask(task, tenantName string, updatedAt time.Time, metaData inte
 	return nil
 }
 
-func UpdateStatusAsyncTask(task, tenantName, status string, stationId int) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-	query := `UPDATE async_tasks SET status = $1 WHERE name = $3 AND tenant_name=$4 AND station_id = $5`
-	stmt, err := conn.Conn().Prepare(ctx, "edit_status_async_task_by_task_and_tenant_name_and_station_id", query)
-	if err != nil {
-		return err
-	}
-	if tenantName != conf.GlobalAccount {
-		tenantName = strings.ToLower(tenantName)
-	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, status, task, tenantName, stationId)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func UpdateReasonAsyncTask(task, tenantName, status string, stationId int, reason, functionName string) error {
+func UpdateStatusAsyncTask(task, tenantName, status string, stationId int, failureReason, functionName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -7529,12 +7513,12 @@ func UpdateReasonAsyncTask(task, tenantName, status string, stationId int, reaso
 	}
 	tenantName = strings.ToLower(tenantName)
 	if stationId == -1 {
-		_, err = conn.Conn().Query(ctx, stmt.Name, status, reason, task, tenantName, stationId, functionName)
+		_, err = conn.Conn().Query(ctx, stmt.Name, status, failureReason, task, tenantName, stationId, functionName)
 		if err != nil {
 			return err
 		}
 	} else {
-		_, err = conn.Conn().Query(ctx, stmt.Name, status, reason, task, tenantName, stationId)
+		_, err = conn.Conn().Query(ctx, stmt.Name, status, failureReason, task, tenantName, stationId)
 		if err != nil {
 			return err
 		}
@@ -7543,7 +7527,7 @@ func UpdateReasonAsyncTask(task, tenantName, status string, stationId int, reaso
 	return nil
 }
 
-func RemoveAsyncTasks() error {
+func RemoveOldAsyncTasks() error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -7555,10 +7539,11 @@ func RemoveAsyncTasks() error {
 	WHERE status != 'running' AND id NOT IN (
 		SELECT id
 		FROM async_tasks
+		WHERE status != 'running'
 		ORDER BY updated_at DESC
 		LIMIT 10
 	);`
-	stmt, err := conn.Conn().Prepare(ctx, "remove_async_task", query)
+	stmt, err := conn.Conn().Prepare(ctx, "remove_old_async_task", query)
 	if err != nil {
 		return err
 	}

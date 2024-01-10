@@ -13,7 +13,7 @@ type AsyncTask struct {
 	StationId     int         `json:"station_id"`
 	CreatedBy     string      `json:"created_by"`
 	Status        string      `json:"status"`
-	InvalidReason string      `json:"invalid_reason"`
+	FailureReason string      `json:"failure_reason"`
 }
 
 type AsyncTaskRes struct {
@@ -24,7 +24,7 @@ type AsyncTaskRes struct {
 	StationName   string      `json:"station_name"`
 	Data          interface{} `json:"data"`
 	Status        string      `json:"status"`
-	InvalidReason string      `json:"invalid_reason"`
+	FailureReason string      `json:"failure_reason"`
 }
 
 type MetaData struct {
