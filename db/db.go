@@ -3354,7 +3354,7 @@ func CountActiveConsumersInCG(consumersGroup string, stationId int) (int64, erro
 		return 0, err
 	}
 	defer conn.Release()
-	query := `SELECT COUNT(*) FROM consumers WHERE station_id = $1 AND consumers_group = $2 AND is_active = true AND type = 'application'`
+	query := `SELECT COUNT(*) FROM consumers WHERE station_id = $1 AND consumers_group = $2 AND is_active = true`
 	stmt, err := conn.Conn().Prepare(ctx, "count_active_consumers_in_cg", query)
 	if err != nil {
 		return 0, err
