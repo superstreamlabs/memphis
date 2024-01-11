@@ -1,0 +1,9 @@
+.scale-connector {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    .ant-form-item {
+        margin: 0px;
+    }
+}

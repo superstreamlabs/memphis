@@ -85,6 +85,16 @@ export const redis = {
             type: 'string',
             required: false,
             description: 'The wait time before delivering a batch of messages'
+        },
+        {
+            name: 'instances',
+            display: 'Scale (instances)',
+            placeholder: 1,
+            min: 1,
+            max: 15,
+            type: 'number',
+            required: false,
+            description: 'The number of the connector instances '
         }
     ]
 };

@@ -22,9 +22,9 @@ import { SiLinux, SiApple, SiWindows11 } from 'react-icons/si';
 import { LOCAL_STORAGE_BROKER_HOST, LOCAL_STORAGE_ENV, LOCAL_STORAGE_ACCOUNT_ID } from 'const/localStorageConsts';
 
 let write =
-    'mem bench producer --message-size 128 --count 1000 --concurrency 1 --host <host> --account-id <account-id(not needed for open-source)> --user <client type user> --password <password>';
+    'mem bench producer --message-size 128 --count 1000 --concurrency 1 --host <broker_hostname> --account-id <account-id(not needed for open-source)> --user <client type user> --password <password>';
 let read =
-    'mem bench consumer --message-size 128 --count 1000 --concurrency 1 --batch-size 500 --host <broker_hostname> --account-id <account_id(not needed for open-source)> --user <client_type_username> --password <password>';
+    'mem bench consumer --message-size 128 --count 1000 --concurrency 1 --batch-size 500 --host <broker_hostname> --account-id <account-id(not needed for open-source)> --user <client_type_username> --password <password>';
 
 const RunBenchmarkModal = ({ open, clickOutside }) => {
     const [tabValue, setTabValue] = useState('Windows');
@@ -38,11 +38,11 @@ const RunBenchmarkModal = ({ open, clickOutside }) => {
                 : localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
                 ? localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
                 : 'memphis.memphis.svc.cluster.local';
-        write = write.replace('<host>', host);
+        write = write.replace('<broker_hostname>', host);
         write = write.replace('<account-id(not needed for open-source)>', parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
-        read = read.replace('<host>', host);
-        read = read.replace('<account-id(not needed for open-source)>', parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
         setWriteLink(write);
+        read = read.replace('<broker_hostname>', host);
+        read = read.replace('<account-id(not needed for open-source)>', parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
         setReadLink(read);
     }, []);
 

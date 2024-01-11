@@ -23,7 +23,7 @@ import { ReactComponent as PlayVideoIcon } from 'assets/images/playVideoIcon.svg
 import { ReactComponent as PurplePlus } from 'assets/images/purplePlus.svg';
 import { ReactComponent as ProducerIcon } from 'assets/images/producerIcon.svg';
 import { ReactComponent as ConnectIcon } from 'assets/images/connectIcon.svg';
-import { IoPlayCircleOutline, IoRemoveCircleOutline, IoPause, IoWarning } from 'react-icons/io5';
+import { IoPlayCircleOutline, IoRemoveCircleOutline, IoPause, IoWarning, IoSwapVertical } from 'react-icons/io5';
 import { HiDotsVertical } from 'react-icons/hi';
 import { MdError } from 'react-icons/md';
 import { IoMdInformationCircle } from 'react-icons/io';
@@ -39,6 +39,7 @@ import { StationStoreContext } from 'domain/stationOverview';
 import ProduceMessages from 'components/produceMessages';
 import ConnectorModal from 'components/connectorModal';
 import ConnectorError from 'components/connectorError';
+import ConnectorScale from 'components/connectorScale';
 import { ReactComponent as ErrorModalIcon } from 'assets/images/errorModal.svg';
 import { ApiEndpoints } from 'const/apiEndpoints';
 import { httpRequest } from 'services/http';
@@ -61,11 +62,18 @@ const overlayStylesConnectors = {
     marginBottom: '10px'
 };
 
+const overlayStylesScale = {
+    borderRadius: '8px',
+    width: '300px',
+    paddingTop: '5px',
+    marginBottom: '10px'
+};
+
 const overlayStyleConnectors = { borderRadius: '8px', width: '150px', paddingTop: '5px', paddingBottom: '5px' };
 
-const MenuItem = ({ name, onClick, icon, loader }) => {
+const MenuItem = ({ name, onClick, icon, loader, disabled }) => {
     return (
-        <div className="item-wrapper-connectors" onClick={onClick}>
+        <div className={`item-wrapper-connectors ${disabled ? 'item-wrapper-disabled' : undefined}`} onClick={(e) => !disabled && onClick(e)}>
             <span className="item-name">
                 {icon}
                 <label>{name}</label>
@@ -99,6 +107,7 @@ const ProduceConsumList = ({ producer }) => {
     const [openConnectorModal, setOpenConnectorModal] = useState(false);
     const [openConnectorError, setOpenConnectorError] = useState(false);
     const [openConnectorInfo, setOpenConnectorInfo] = useState(false);
+    const [openConnectorScale, setOpenConnectorScale] = useState(false);
     const [actionItem, setActionItem] = useState(null);
     const [loading, setLoader] = useState(false);
     const producerItemsList = [
@@ -250,6 +259,26 @@ const ProduceConsumList = ({ producer }) => {
             setOpenConnectorPopover(false);
         } catch (error) {
             setLoader(false);
+        }
+    };
+
+    const updateConnector = async (updatedConnector, type) => {
+        let newConnecorList;
+        if (type === 'source') {
+            newConnecorList = connectorsSourceList?.map((connector) => {
+                if (connector?.id === updatedConnector?.id) {
+                    return updatedConnector;
+                } else return connector;
+            });
+            setConnectorsSourceList(newConnecorList);
+        }
+        if (type === 'sink') {
+            newConnecorList = connectorsSinkList?.map((connector) => {
+                if (connector?.id === updatedConnector?.id) {
+                    return updatedConnector;
+                } else return connector;
+            });
+            setConnectorsSinkList(newConnecorList);
         }
     };
 
@@ -531,6 +560,7 @@ const ProduceConsumList = ({ producer }) => {
                                                     setOpenConnectorPopoverItem(index);
                                                     setSelectedConnector(row);
                                                     setOpenConnectorPopover(!openConnectorPopover);
+                                                    openConnectorScale && setOpenConnectorScale(false);
                                                 }}
                                                 open={openConnectorPopover && openConnectorPopoverItem === index}
                                                 content={
@@ -540,6 +570,7 @@ const ProduceConsumList = ({ producer }) => {
                                                             onClick={() => {
                                                                 setActionItem(0);
                                                                 row?.is_active ? stopConnector('source') : startConnector('source');
+                                                                setOpenConnectorScale(false);
                                                             }}
                                                             icon={row?.is_active ? <IoPause /> : <IoPlayCircleOutline />}
                                                             loader={loading && actionItem === 0}
@@ -549,15 +580,42 @@ const ProduceConsumList = ({ producer }) => {
                                                             onClick={() => {
                                                                 setActionItem(1);
                                                                 removeConnector('source');
+                                                                setOpenConnectorScale(false);
                                                             }}
                                                             icon={<IoRemoveCircleOutline />}
                                                             loader={loading && actionItem === 1}
                                                         />
+                                                        <Popover
+                                                            content={
+                                                                <ConnectorScale
+                                                                    open={openConnectorScale}
+                                                                    connector={row}
+                                                                    done={(updatedConnector) => {
+                                                                        updateConnector(updatedConnector, 'source');
+                                                                        setOpenConnectorScale(false);
+                                                                    }}
+                                                                />
+                                                            }
+                                                            overlayInnerStyle={overlayStylesScale}
+                                                            open={openConnectorScale}
+                                                            placement="bottom"
+                                                        >
+                                                            <MenuItem
+                                                                name={'Scale'}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    openConnectorScale ? setOpenConnectorScale(false) : setOpenConnectorScale(true);
+                                                                }}
+                                                                icon={<IoSwapVertical />}
+                                                                disabled={!row?.scalable}
+                                                            />
+                                                        </Popover>
                                                         <MenuItem
                                                             name={'Information'}
                                                             onClick={() => {
                                                                 setOpenConnectorInfo(true);
                                                                 setOpenConnectorPopover(false);
+                                                                setOpenConnectorScale(false);
                                                             }}
                                                             icon={<IoMdInformationCircle />}
                                                         />
@@ -566,6 +624,7 @@ const ProduceConsumList = ({ producer }) => {
                                                             onClick={() => {
                                                                 setOpenConnectorError(true);
                                                                 setOpenConnectorPopover(false);
+                                                                setOpenConnectorScale(false);
                                                             }}
                                                             icon={<IoWarning />}
                                                         />
@@ -631,6 +690,7 @@ const ProduceConsumList = ({ producer }) => {
                                                     setOpenConnectorPopoverItem(index);
                                                     setSelectedConnector(row);
                                                     setOpenConnectorPopover(!openConnectorPopover);
+                                                    openConnectorScale && setOpenConnectorScale(false);
                                                 }}
                                                 open={openConnectorPopover && openConnectorPopoverItem === index}
                                                 content={
@@ -640,6 +700,7 @@ const ProduceConsumList = ({ producer }) => {
                                                             onClick={() => {
                                                                 setActionItem(0);
                                                                 row?.is_active ? stopConnector('sink') : startConnector('sink');
+                                                                setOpenConnectorScale(false);
                                                             }}
                                                             icon={row?.is_active ? <IoPause /> : <IoPlayCircleOutline />}
                                                             loader={loading && actionItem === 0}
@@ -649,15 +710,42 @@ const ProduceConsumList = ({ producer }) => {
                                                             onClick={() => {
                                                                 setActionItem(1);
                                                                 removeConnector('sink');
+                                                                setOpenConnectorScale(false);
                                                             }}
                                                             icon={<IoRemoveCircleOutline />}
                                                             loader={loading && actionItem === 1}
                                                         />
+                                                        <Popover
+                                                            content={
+                                                                <ConnectorScale
+                                                                    open={openConnectorScale}
+                                                                    connector={row}
+                                                                    done={(updatedConnector) => {
+                                                                        updateConnector(updatedConnector, 'sink');
+                                                                        setOpenConnectorScale(false);
+                                                                    }}
+                                                                />
+                                                            }
+                                                            overlayInnerStyle={overlayStylesScale}
+                                                            open={openConnectorScale}
+                                                            placement="bottom"
+                                                        >
+                                                            <MenuItem
+                                                                name={'Scale'}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    openConnectorScale ? setOpenConnectorScale(false) : setOpenConnectorScale(true);
+                                                                }}
+                                                                icon={<IoSwapVertical />}
+                                                                disabled={!row?.scalable}
+                                                            />
+                                                        </Popover>
                                                         <MenuItem
                                                             name={'Information'}
                                                             onClick={() => {
                                                                 setOpenConnectorInfo(true);
                                                                 setOpenConnectorPopover(false);
+                                                                setOpenConnectorScale(false);
                                                             }}
                                                             icon={<IoMdInformationCircle />}
                                                         />
@@ -666,6 +754,7 @@ const ProduceConsumList = ({ producer }) => {
                                                             onClick={() => {
                                                                 setOpenConnectorError(true);
                                                                 setOpenConnectorPopover(false);
+                                                                setOpenConnectorScale(false);
                                                             }}
                                                             icon={<IoWarning />}
                                                         />
