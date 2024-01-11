@@ -543,7 +543,7 @@ const ProduceConsumList = ({ producer }) => {
                                             </span>
                                             <div style={{ width: '92px', maxWidth: '100%' }}>
                                                 {row?.connector_connection_id ? (
-                                                    'N/A'
+                                                    row?.instances || 'N/A'
                                                 ) : (
                                                     <TooltipComponent text="connected | disconnected" placement="right">
                                                         {row?.connected_producers_count?.toLocaleString() + ' | ' + row?.disconnected_producers_count?.toLocaleString()}
