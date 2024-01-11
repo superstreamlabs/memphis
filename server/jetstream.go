@@ -1346,6 +1346,8 @@ func (a *Account) EnableJetStream(limits map[string]JetStreamAccountLimits) erro
 			THROUGHPUT_LEGACY_STREAM_EXIST = true
 		case dlsSchemaverseStream:
 			DLS_SCHEMAVERSE_STREAM_CREATED = true
+		case dlsNackedStream:
+			DLS_NACKED_STREAM_CREATED = true
 		case integrationsAuditLogsStream:
 			INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED = true
 		case notificationsStreamName:
@@ -1386,6 +1388,8 @@ func (a *Account) EnableJetStream(limits map[string]JetStreamAccountLimits) erro
 			DLS_UNACKED_CONSUMER_CREATED = true
 		case dlsSchemaverseStream:
 			DLS_SCHEMAVERSE_CONSUMER_CREATED = true
+		case dlsNackedStream:
+			DLS_NACKED_CONSUMER_CREATED = true
 		case notificationsStreamName:
 			NOTIFICATIONS_BUFFER_CONSUMER_CREATED = true
 		case systemTasksStreamName:

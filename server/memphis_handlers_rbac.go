@@ -128,6 +128,7 @@ func GetAllMemphisAndNatsInternalSubjects() []string {
 	var subjects []string
 
 	// Memphis subjects
+	subjects = append(subjects, NACKED_DLS_SUBJ)
 	subjects = append(subjects, SCHEMAVERSE_DLS_SUBJ)
 	subjects = append(subjects, sdkClientsUpdatesSubject)
 	subjects = append(subjects, PM_RESEND_ACK_SUBJ)

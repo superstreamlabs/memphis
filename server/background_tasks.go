@@ -37,6 +37,9 @@ const NOTIFICATION_EVENTS_SUBJ = "$memphis_notifications"
 const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
 const TIERED_STORAGE_CONSUMER = "$memphis_tiered_storage_consumer"
 const DLS_UNACKED_CONSUMER = "$memphis_dls_unacked_consumer"
+const NACKED_DLS_SUBJ = "$memphis_nacked_dls"
+const NACKED_DLS_INNER_SUBJ = "$memphis_nacked_inner_dls"
+const NACKED_DLS_CONSUMER = "$memphis_nacked_dls_consumer"
 const SCHEMAVERSE_DLS_SUBJ = "$memphis_schemaverse_dls"
 const SCHEMAVERSE_DLS_INNER_SUBJ = "$memphis_schemaverse_inner_dls"
 const SCHEMAVERSE_DLS_CONSUMER = "$memphis_schemaverse_dls_consumer"
@@ -211,6 +214,19 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 	return nil
 }
 
+func (s *Server) ListenForNackedDlsEvents() error {
+	err := s.queueSubscribe(s.MemphisGlobalAccountString(), NACKED_DLS_SUBJ, NACKED_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+		go func(msg []byte) {
+			s.sendInternalAccountMsg(s.MemphisGlobalAccount(), NACKED_DLS_INNER_SUBJ, msg)
+		}(copyBytes(msg))
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *Server) ListenForPoisonMsgAcks() error {
 	err := s.queueSubscribe(s.MemphisGlobalAccountString(), PM_RESEND_ACK_SUBJ, PM_RESEND_ACK_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
@@ -311,6 +327,11 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed to subscribing for schemaverse dls" + err.Error())
 	}
 
+	err = s.ListenForNackedDlsEvents()
+	if err != nil {
+		return errors.New("Failed to subscribing for nacked dls" + err.Error())
+	}
+
 	err = s.ListenForPoisonMsgAcks()
 	if err != nil {
 		return errors.New("Failed subscribing for poison message acks: " + err.Error())
@@ -337,6 +358,7 @@ func (s *Server) StartBackgroundTasks() error {
 	}
 
 	go s.ConsumeSchemaverseDlsMessages()
+	go s.ConsumeNackedDlsMessages()
 	go s.ConsumeUnackedMsgs()
 	go s.ConsumeFunctionsDlsMessages()
 	go s.ConsumeTieredStorageMsgs()
@@ -602,6 +624,77 @@ func (s *Server) ConsumeSchemaverseDlsMessages() {
 			}
 		} else {
 			s.Warnf("ConsumeSchemaverseDlsMessages: waiting for consumer and stream to be created")
+			time.Sleep(2 * time.Second)
+		}
+	}
+}
+
+func (s *Server) ConsumeNackedDlsMessages() {
+	type nackedDlsMsg struct {
+		Msg          []byte
+		ReplySubject string
+	}
+	amount := 1000
+	req := []byte(strconv.FormatUint(uint64(amount), 10))
+	for {
+		if DLS_NACKED_CONSUMER_CREATED && DLS_NACKED_STREAM_CREATED {
+			resp := make(chan nackedDlsMsg)
+			replySubj := NACKED_DLS_CONSUMER + "_reply_" + s.memphis.nuid.Next()
+
+			// subscribe to schemavers dls messages
+			sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), replySubj, replySubj+"_sid", func(_ *client, subject, reply string, msg []byte) {
+				go func(subject, reply string, msg []byte) {
+					// Ignore 409 Exceeded MaxWaiting cases
+					if reply != _EMPTY_ {
+						message := nackedDlsMsg{
+							Msg:          msg,
+							ReplySubject: reply,
+						}
+						resp <- message
+					}
+				}(subject, reply, copyBytes(msg))
+			})
+			if err != nil {
+				s.Errorf("Failed to subscribe to nacked dls messages: %v", err.Error())
+				continue
+			}
+
+			// send JS API request to get more messages
+			subject := fmt.Sprintf(JSApiRequestNextT, dlsNackedStream, NACKED_DLS_CONSUMER)
+			s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), subject, replySubj, nil, req, true)
+
+			s.Debugf("ConsumeNackedDlsMessages: sending fetch request")
+
+			timeout := time.NewTimer(5 * time.Second)
+			msgs := make([]nackedDlsMsg, 0)
+			stop := false
+			for {
+				if stop {
+					s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
+					break
+				}
+				select {
+				case nackedDlsMsg := <-resp:
+					msgs = append(msgs, nackedDlsMsg)
+					if len(msgs) == amount {
+						stop = true
+						s.Debugf("ConsumeNackedDlsMessages: finished appending %v messages", len(msgs))
+					}
+				case <-timeout.C:
+					stop = true
+					s.Debugf("ConsumeNackedDlsMessages: finished because of timer: %v messages", len(msgs))
+				}
+			}
+			for _, message := range msgs {
+				msg := message.Msg
+				err := s.handleNackedDlsMsg(msg)
+				if err == nil {
+					// send ack
+					s.sendInternalAccountMsgWithEcho(s.MemphisGlobalAccount(), message.ReplySubject, []byte(_EMPTY_))
+				}
+			}
+		} else {
+			s.Warnf("ConsumeNackedDlsMessages: waiting for consumer and stream to be created")
 			time.Sleep(2 * time.Second)
 		}
 	}

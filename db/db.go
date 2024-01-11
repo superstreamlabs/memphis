@@ -5897,7 +5897,7 @@ func GetMsgByStationIdAndMsgSeq(stationId, messageSeq, partitionNumber int) (boo
 	return true, message[0], nil
 }
 
-func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName string, poisonedCgs []string, messageDetails models.MessagePayload, tenantName string, partitionNumber int) (int, bool, error) {
+func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName string, poisonedCgs []string, messageDetails models.MessagePayload, tenantName string, partitionNumber int, validationError string) (int, bool, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	updated := false
@@ -5975,7 +5975,7 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName strin
 		if tenantName != conf.GlobalAccount {
 			tenantName = strings.ToLower(tenantName)
 		}
-		rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, producerName, poisonedCgs, messageDetails, updatedAt, "poison", "", tenantName, partitionNumber)
+		rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, producerName, poisonedCgs, messageDetails, updatedAt, "poison", validationError, tenantName, partitionNumber)
 		if err != nil {
 			return 0, updated, err
 		}
@@ -6004,7 +6004,7 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName strin
 			}
 		}
 	} else { // then update
-		query = `UPDATE dls_messages SET poisoned_cgs = ARRAY_APPEND(poisoned_cgs, $1), updated_at = $4 WHERE station_id=$2 AND message_seq=$3 AND not($1 = ANY(poisoned_cgs)) AND tenant_name=$5 RETURNING id`
+		query = `UPDATE dls_messages SET poisoned_cgs = ARRAY_APPEND(poisoned_cgs, $1), updated_at = $4, validation_error = $6 WHERE station_id=$2 AND message_seq=$3 AND not($1 = ANY(poisoned_cgs)) AND tenant_name=$5 RETURNING id`
 		stmt, err := tx.Prepare(ctx, "update_poisoned_cgs", query)
 		if err != nil {
 			return 0, updated, err
@@ -6013,7 +6013,7 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName strin
 		if tenantName != conf.GlobalAccount {
 			tenantName = strings.ToLower(tenantName)
 		}
-		rows, err = tx.Query(ctx, stmt.Name, poisonedCgs[0], stationId, messageSeq, updatedAt, tenantName)
+		rows, err = tx.Query(ctx, stmt.Name, poisonedCgs[0], stationId, messageSeq, updatedAt, tenantName, validationError)
 		if err != nil {
 			return 0, updated, err
 		}
