@@ -13,18 +13,46 @@
 import './style.scss';
 
 import React from 'react';
+import { ReactComponent as ProducerIcon } from 'assets/images/producerIcon.svg';
+import { ReactComponent as KafkaIcon } from 'connectors/assets/kafkaIcon.svg';
+import { ReactComponent as RedisIcon } from 'connectors/assets/redisIcon.svg';
+import { ReactComponent as MemphisIcon } from 'connectors/assets/memphisIcon.svg';
 
 const Connection = ({ id, producer, consumer }) => {
+
+    function getIconByLang() {
+        const source = producer || consumer;
+        const connector_type = source?.connector_details?.connector_type;
+
+        if (source?.type !== "connector" || !connector_type) return
+
+        const sourceIcons = {
+            kafka: <KafkaIcon/>,
+            redis: <RedisIcon/>,
+            memphis: <MemphisIcon/>,
+        };
+
+        const iconComponent = connector_type ? sourceIcons[connector_type] : <ProducerIcon />;
+
+        return <div style={{ fontSize: '17px', display: 'flex', alignItems: 'center' }}>{iconComponent}</div>;
+    }
+
     return (
         <div className="connection-wrapper">
             {producer && (
                 <div key={id} className="rectangle producer">
+                    <div style={{marginRight: '5px'}}>
+                        {getIconByLang()}
+                    </div>
                     <p>{producer.name}</p>
                     <div className="count">{producer.count}</div>
                 </div>
             )}
             {consumer && (
                 <div key={id} className="rectangle consumer">
+                    <div style={{marginRight: '5px'}}>
+                        {getIconByLang()}
+                    </div>
                     <p>{consumer.name}</p>
                     <div className="count">{consumer.count}</div>
                 </div>
