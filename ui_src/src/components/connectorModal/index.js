@@ -143,7 +143,8 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
                 type: formFields?.type?.toLocaleLowerCase(),
                 connector_type: formFields?.connector_type?.toLocaleLowerCase(),
                 settings: modifiedSettings,
-                partitions: [stationState?.stationPartition]
+                partitions: [stationState?.stationPartition],
+                instances: formFields?.instances
             });
             newConnecor(data?.connector, formFields?.connector_type?.toLocaleLowerCase());
         } catch (error) {
@@ -195,9 +196,10 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
                             borderColorType="gray"
                             fontSize="14px"
                             style={{ width: '100%', height: '40px', display: 'flex', alignItems: 'center' }}
-                            min={0}
+                            min={input?.min || 0}
+                            max={input?.max || null}
                             onChange={(e) => {
-                                updateFormSettingsState(input?.name, e);
+                                input?.name === 'instances' ? updateFormState(input?.name, e) : updateFormSettingsState(input?.name, e);
                                 connectorForm.setFieldValue(input?.name, e);
                             }}
                             value={formFields[input?.name]}

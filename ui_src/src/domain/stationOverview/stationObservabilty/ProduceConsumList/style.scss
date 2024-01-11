@@ -274,6 +274,15 @@
         cursor: pointer;
     }
 }
+
+.item-wrapper-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    label {
+        cursor: not-allowed;
+    }
+}
+
 .item-wrapper-connectors:hover {
     background: #e3e0ff;
     border-radius: 4px;

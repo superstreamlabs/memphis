@@ -92,6 +92,16 @@ export const memphis = {
                     Ack: []
                 }
             ]
+        },
+        {
+            name: 'instances',
+            display: 'Scale (instances)',
+            placeholder: 1,
+            min: 1,
+            max: 15,
+            type: 'number',
+            required: false,
+            description: 'The number of the connector instances '
         }
     ]
 };
