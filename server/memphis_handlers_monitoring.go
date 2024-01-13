@@ -1038,7 +1038,7 @@ func getDbStorageUsage() (float64, error) {
 }
 
 func getUnixStorageSize() float64 {
-	out, err := exec.Command("df", "-h", "/").Output()
+	out, err := exec.Command("df", "-h", "-P", "/").Output()
 	if err != nil {
 		serv.Errorf("getUnixStorageSize: " + err.Error())
 		return 0
