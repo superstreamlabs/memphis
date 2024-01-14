@@ -6,3 +6,4 @@
   - Sveta Gimpelson <sveta@memphis.dev> [@SvetaMemphis](https://github.com/SvetaMemphis)
   - Shay Bratslavsky <shay@memphis.dev> [@shay23b](https://github.com/shay23b)
   - Shoham Roditi <shoham@memphis.dev> [@shohamroditimemphis](https://github.com/shohamroditimemphis)
+  - Daniel David <daniel@memphis.dev> [@daniel-davidd](https://github.com/daniel-davidd)
