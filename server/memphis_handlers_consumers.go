@@ -172,7 +172,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 			serv.Warnf("[tenant: %v]createConsumerDirectCommon at CreateDefaultStation: Consumer %v at station %v : %v", tenantName, consumerName, cStationName, err.Error())
 			return []int{}, err
 		}
-		allowed, _, err := ValidateStationPermissions(user.Roles, cStationName, user.TenantName)
+		allowed, _, err := ValidateStationPermissions(user.Roles, cStationName, user.TenantName, "read")
 		if err != nil {
 			serv.Errorf("[tenant: %v][user:%v]createConsumerDirectCommon at ValidateStationPermissions: Station %v: %v", user.TenantName, user.Username, cStationName, err.Error())
 			return []int{}, err

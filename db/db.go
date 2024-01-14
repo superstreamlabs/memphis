@@ -3354,7 +3354,7 @@ func CountActiveConsumersInCG(consumersGroup string, stationId int) (int64, erro
 		return 0, err
 	}
 	defer conn.Release()
-	query := `SELECT COUNT(*) FROM consumers WHERE station_id = $1 AND consumers_group = $2 AND is_active = true AND type = 'application'`
+	query := `SELECT COUNT(*) FROM consumers WHERE station_id = $1 AND consumers_group = $2 AND is_active = true`
 	stmt, err := conn.Conn().Prepare(ctx, "count_active_consumers_in_cg", query)
 	if err != nil {
 		return 0, err
@@ -8119,7 +8119,7 @@ func UpdatePermissions(tenantName, username string, readPermissions, writePermis
 	return nil
 }
 
-func CheckUserStationPermissions(rolesId []int, stationName string) (bool, error) {
+func CheckUserStationPermissions(rolesId []int, stationName, operation string) (bool, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -8131,18 +8131,18 @@ func CheckUserStationPermissions(rolesId []int, stationName string) (bool, error
 	query := `SELECT COUNT(*)
 	FROM permissions
 	WHERE role_id = ANY($1)
-	  AND type = 'write'
+	  AND type = $2
 	  AND restriction_type = 'allow'
 	  AND (
-		(position('*' in pattern) > 0 AND $2 ~ pattern) OR
-		(position('*' in pattern) = 0 AND $2 = pattern)
+		(position('*' in pattern) > 0 AND $3 ~ pattern) OR
+		(position('*' in pattern) = 0 AND $3 = pattern)
 	  );`
 	stmt, err := conn.Conn().Prepare(ctx, "check_user_station_permissions", query)
 	if err != nil {
 		return false, err
 	}
 	var count int
-	err = conn.Conn().QueryRow(ctx, stmt.Name, rolesId, stationName).Scan(&count)
+	err = conn.Conn().QueryRow(ctx, stmt.Name, rolesId, operation, stationName).Scan(&count)
 	if err != nil {
 		return false, err
 	}

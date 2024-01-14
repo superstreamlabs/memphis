@@ -14,7 +14,7 @@ const (
 )
 
 // the function returns a bool for is allowd to create and a bool for if a reload is needed
-func ValidateStationPermissions(rolesId []int, stationName, tenantName string) (bool, bool, error) {
+func ValidateStationPermissions(rolesId []int, stationName, tenantName, operation string) (bool, bool, error) {
 	// if the user dosent have a role len rolesId is 0 then he allowd to create
 	// TODO: add check if denied when we allow to deny
 	if len(rolesId) == 0 {
@@ -24,7 +24,7 @@ func ValidateStationPermissions(rolesId []int, stationName, tenantName string) (
 		}
 		return true, neededReload, nil
 	} else {
-		allowd, err := db.CheckUserStationPermissions(rolesId, stationName)
+		allowd, err := db.CheckUserStationPermissions(rolesId, stationName, operation)
 		if err != nil {
 			return false, false, err
 		}

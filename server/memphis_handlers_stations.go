@@ -280,7 +280,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	allowed, ReloadNeeded, err := ValidateStationPermissions(user.Roles, stationName.Ext(), csr.TenantName)
+	allowed, ReloadNeeded, err := ValidateStationPermissions(user.Roles, stationName.Ext(), csr.TenantName, "write")
 	if err != nil {
 		serv.Errorf("[tenant: %v][user:%v]createStationDirect at ValidateStationPermissions: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
@@ -939,7 +939,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	allowed, ReloadNeeded, err := ValidateStationPermissions(user.Roles, stationName.Ext(), user.TenantName)
+	allowed, ReloadNeeded, err := ValidateStationPermissions(user.Roles, stationName.Ext(), user.TenantName, "write")
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]CreateStation at ValidateStationPermissions: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1484,7 +1484,7 @@ func (s *Server) removeStationDirectIntern(c *client,
 		return
 	}
 
-	allowed, ReloadNeeded, err := ValidateStationPermissions(user.Roles, stationName.Ext(), user.TenantName)
+	allowed, ReloadNeeded, err := ValidateStationPermissions(user.Roles, stationName.Ext(), user.TenantName, "write")
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]CreateStation at ValidateStationPermissions: Station %v: %v", user.TenantName, user.Username, stationName.Ext(), err.Error())
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
