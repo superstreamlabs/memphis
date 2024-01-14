@@ -35,6 +35,13 @@ export const memphis = {
             ]
         },
         {
+            name: 'consume_from',
+            display: 'Start consume from the beginning / end',
+            type: 'select',
+            options: ['Beginning', 'End'],
+            description: 'Beginning (oldest messages) / End (newest messages) of the station',
+        },
+        {
             name: 'dest_station_config',
             display: 'Destination Station Config',
             type: 'select',
@@ -92,6 +99,14 @@ export const memphis = {
                     Ack: []
                 }
             ]
+        },
+        {
+            name: 'memphis_max_time_wait',
+            display: 'Max Time Wait (Milliseconds)',
+            type: 'string',
+            required: false,
+            placeholder: 500,
+            description: 'The maximum time to wait for messages batch to be filled'
         },
         {
             name: 'instances',

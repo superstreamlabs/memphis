@@ -716,41 +716,43 @@ func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, sta
 	} else {
 		consumerName = consumer.Name
 	}
-
 	consumerName = getInternalConsumerName(consumerName)
-
 	var maxAckTimeMs int64
 	if consumer.MaxAckTimeMs <= 0 {
 		maxAckTimeMs = 30000 // 30 sec
 	} else {
 		maxAckTimeMs = consumer.MaxAckTimeMs
 	}
-
 	var MaxMsgDeliveries int
 	if consumer.MaxMsgDeliveries <= 0 || consumer.MaxMsgDeliveries > 10 {
 		MaxMsgDeliveries = 10
 	} else {
 		MaxMsgDeliveries = consumer.MaxMsgDeliveries
 	}
-
 	stationName, err := StationNameFromStr(station.Name)
 	if err != nil {
 		return err
 	}
-
 	if len(partitionsList) > len(station.PartitionsList) {
 		partitionsList = station.PartitionsList
 	}
-
 	var deliveryPolicy DeliverPolicy
 	var optStartSeq uint64
 	// This check for case when the last message is 0 (in case StartConsumeFromSequence > 1 the LastMessages is 0 )
-	if consumer.LastMessages == 0 && consumer.StartConsumeFromSeq == 0 {
+	if consumer.LastMessages == 0 && consumer.StartConsumeFromSeq == 1 {
 		deliveryPolicy = DeliverNew
 	} else if consumer.LastMessages > 0 {
-		streamInfo, err := serv.memphisStreamInfo(tenantName, stationName.Intern())
-		if err != nil {
-			return err
+		var streamInfo *StreamInfo
+		if len(partitionsList) == 1 {
+			streamInfo, err = serv.memphisStreamInfo(tenantName, stationName.Intern()+"$1.final")
+			if err != nil {
+				return err
+			}
+		} else {
+			streamInfo, err = serv.memphisStreamInfo(tenantName, stationName.Intern()+".final")
+			if err != nil {
+				return err
+			}
 		}
 		lastSeq := streamInfo.State.LastSeq
 		lastMessages := (lastSeq - uint64(consumer.LastMessages)) + 1
@@ -779,7 +781,6 @@ func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, sta
 			// RateLimit: ,// Bits per sec
 			// Heartbeat: // time.Duration,
 		}
-
 		if deliveryPolicy == DeliverByStartSequence {
 			consumerConfig.OptStartSeq = optStartSeq
 		}
@@ -800,7 +801,6 @@ func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, sta
 				// RateLimit: ,// Bits per sec
 				// Heartbeat: // time.Duration,
 			}
-
 			if deliveryPolicy == DeliverByStartSequence {
 				consumerConfig.OptStartSeq = optStartSeq
 			}
