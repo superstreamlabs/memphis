@@ -28,7 +28,7 @@ type AsyncTasksHandler struct{}
 func (s *Server) CompleteRelevantStuckAsyncTasks() {
 	exist, asyncTasks, err := db.GetAsyncTaskByNameAndBrokerName("resend_all_dls_msgs", s.opts.ServerName)
 	if err != nil {
-		serv.Errorf("CompleteRelevantStuckAsyncTasks: failed to get async tasks resend_all_dls_msgs: %v", err.Error())
+		s.Errorf("CompleteRelevantStuckAsyncTasks: failed to get async tasks resend_all_dls_msgs: %v", err.Error())
 		return
 	}
 	if !exist {
@@ -38,22 +38,22 @@ func (s *Server) CompleteRelevantStuckAsyncTasks() {
 	for _, asyncTask := range asyncTasks {
 		exist, station, err := db.GetStationById(asyncTask.StationId, asyncTask.TenantName)
 		if err != nil {
-			serv.Errorf("[tenant: %v]CompleteRelevantStuckAsyncTasks at GetStationById: %v", asyncTask.TenantName, err.Error())
+			s.Errorf("[tenant: %v]CompleteRelevantStuckAsyncTasks at GetStationById: %v", asyncTask.TenantName, err.Error())
 			return
 		}
 		if !exist {
 			errMsg := fmt.Sprintf("Station %v does not exist", station.Name)
-			serv.Warnf("[tenant: %v][user: %v]CompleteRelevantStuckAsyncTasks at GetStationById: %v", asyncTask.TenantName, station.CreatedByUsername, errMsg)
+			s.Warnf("[tenant: %v][user: %v]CompleteRelevantStuckAsyncTasks at GetStationById: %v", asyncTask.TenantName, station.CreatedByUsername, errMsg)
 			continue
 		}
 
 		exist, user, err := memphis_cache.GetUser(station.CreatedByUsername, asyncTask.TenantName, false)
 		if err != nil {
-			serv.Errorf("[tenant:%v][user: %v] CompleteRelevantStuckAsyncTasks could not retrive user model from cache or db error: %v", asyncTask.TenantName, user.Username, err)
+			s.Errorf("[tenant:%v][user: %v] CompleteRelevantStuckAsyncTasks could not retrive user model from cache or db error: %v", asyncTask.TenantName, user.Username, err)
 			continue
 		}
 		if !exist {
-			serv.Warnf("[tenant:%v][user: %v] CompleteRelevantStuckAsyncTasks user does not exist", asyncTask.TenantName, user.Username)
+			s.Warnf("[tenant:%v][user: %v] CompleteRelevantStuckAsyncTasks user does not exist", asyncTask.TenantName, user.Username)
 			continue
 		}
 
@@ -103,9 +103,9 @@ func (ash AsyncTasksHandler) GetAsyncTasks(c *gin.Context) {
 }
 
 func (ash AsyncTasksHandler) GetAllAsyncTasks(tenantName string) ([]models.AsyncTaskRes, error) {
-	asyncTasks, err := db.GetAllAsyncTasks(tenantName)
+	asyncTasks, err := db.GetActiveAndUpdatedAsyncTasks(tenantName)
 	if err != nil {
-		serv.Errorf("GetAllAsyncTasks at GetAllAsyncTasks:  %v", err.Error())
+		serv.Errorf("GetAllAsyncTasks at GetActiveAndUpdatedAsyncTasks:  %v", err.Error())
 		return []models.AsyncTaskRes{}, err
 	}
 	for i, task := range asyncTasks {
