@@ -144,7 +144,7 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
                 connector_type: formFields?.connector_type?.toLocaleLowerCase(),
                 settings: modifiedSettings,
                 partitions: [stationState?.stationPartition],
-                instances: formFields?.instances
+                instances: formFields?.instances || 1,
             });
             newConnecor(data?.connector, formFields?.connector_type?.toLocaleLowerCase());
         } catch (error) {
