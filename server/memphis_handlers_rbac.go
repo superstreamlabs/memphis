@@ -78,7 +78,11 @@ func GetUserAllowedStations(userRoles []int, tenantName string) ([]models.Statio
 }
 
 func GetPatternWithDots(pattern string) string {
-	return strings.Replace(pattern, ".", "\\.\\\\", -1)
+	if strings.Contains(pattern, "*") {
+		return strings.Replace(pattern, ".", "\\.\\\\", -1)
+	} else {
+		return pattern
+	}
 }
 
 func GetAllInternalSbjectsForWriteRespones(station models.Station) []string {
