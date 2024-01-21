@@ -115,11 +115,9 @@ const AsyncTasks = ({ overView, children }) => {
                         ((!showMore && index < 3) || showMore) && (
                             <div>
                                 <div className="task-item" key={index}>
-                                    {task?.status === 'running' && (
-                                        <span className="task-status">
-                                            <Badge status="success" />
-                                        </span>
-                                    )}
+                                    <span className="task-status">
+                                        <Badge status={task?.status === 'completed' ? 'success' : task?.status === 'failed' ? 'error' : 'processing'} />
+                                    </span>
                                     <div>
                                         <TaskIcon alt="taskIcon" />
                                     </div>
