@@ -119,7 +119,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 			serv.Warnf("[tenant: %v]createProducerDirectCommon : Producer %v at station %v : %v", user.TenantName, pName, pStationName, err.Error())
 			return false, false, err, models.Station{}
 		}
-		allowed, _, err := ValidateStationPermissions(user.Roles, pStationName.Ext(), user.TenantName)
+		allowed, _, err := ValidateStationPermissions(user.Roles, pStationName.Ext(), user.TenantName, "write")
 		if err != nil {
 			serv.Errorf("[tenant: %v][user:%v]createProducerDirectCommon at ValidateStationPermissions: Station %v: %v", user.TenantName, user.Username, pStationName.Ext(), err.Error())
 			return false, false, err, models.Station{}

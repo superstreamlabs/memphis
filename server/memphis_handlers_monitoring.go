@@ -1385,6 +1385,7 @@ func (mh MonitoringHandler) GetGraphOverview(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]%v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
 	}
 
 	c.IndentedJSON(200, res)

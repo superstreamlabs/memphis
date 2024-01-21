@@ -70,6 +70,7 @@ import Support from './support';
 import LearnMore from 'components/learnMore';
 import GetStarted from 'components/getStartedModal';
 import Modal from 'components/modal';
+import AsyncTasks from 'components/asyncTasks';
 import CreateStationForm from 'components/createStationForm';
 import { ReactComponent as StationIcon } from 'assets/images/stationIcon.svg';
 import CreateUserDetails from 'domain/users/createUserDetails';
@@ -463,6 +464,7 @@ function SideBar() {
 
     return (
         <div className={'sidebar-container ' + (expandSidebar ? 'expand' : 'collapse')}>
+            {state.route !== 'overview' && <AsyncTasks />}
             <div className="upper-icons">
                 <div
                     className={'upper-icons-toggle ' + (expandSidebar ? 'open' : 'close')}

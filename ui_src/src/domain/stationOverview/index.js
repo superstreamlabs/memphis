@@ -44,7 +44,7 @@ const StationOverview = () => {
 
     const sortData = (data) => {
         data.audit_logs?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        data.messages?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        data.messages?.sort((a, b) => b.message_seq - a.message_seq);
         data.active_producers?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         data.active_consumers?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         data.destroyed_consumers?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));

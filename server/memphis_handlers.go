@@ -111,7 +111,7 @@ func CreateDefaultStation(tenantName string, s *Server, sn StationName, user mod
 		return models.Station{}, false, err
 	}
 
-	allowed, ReloadNeeded, err := ValidateStationPermissions(user.Roles, sn.Ext(), user.TenantName)
+	allowed, ReloadNeeded, err := ValidateStationPermissions(user.Roles, sn.Ext(), user.TenantName, "write")
 	if err != nil {
 		return models.Station{}, false, err
 	}

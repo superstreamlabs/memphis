@@ -1,7 +1,6 @@
-
-.loader-container{
+.loader-container {
     .gif-wrapper {
-       background-color: var(--white);
+        background-color: var(--white);
         position: fixed;
         z-index: 5;
         opacity: 0.5;
@@ -10,13 +9,13 @@
     }
     .memphis-gif {
         position: relative;
-       z-index: 999;
-       position: fixed;
-       top: 40%;
-       -ms-transform: translateY(-50%);
-       transform: translateY(-50%);
-       left: 50%;
-       -ms-transform: translateX(-50%);
-       transform: translateX(-50%);
+        z-index: 999;
+        position: fixed;
+        top: 40%;
+        -ms-transform: translateY(-50%);
+        transform: translateY(-50%);
+        left: 50%;
+        -ms-transform: translateX(-50%);
+        transform: translateX(-50%);
     }
 }

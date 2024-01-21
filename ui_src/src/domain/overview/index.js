@@ -48,7 +48,6 @@ import Button from 'components/button';
 import LearnMore from 'components/learnMore';
 import { Context } from 'hooks/store';
 import Modal from 'components/modal';
-import AsyncTasks from 'components/asyncTasks';
 import CloudModal from 'components/cloudModal';
 import Throughput from './throughput';
 import Copy from 'components/copy';

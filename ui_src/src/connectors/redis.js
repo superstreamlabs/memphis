@@ -71,6 +71,13 @@ export const redis = {
             required: true
         },
         {
+            name: 'consume_from',
+            display: 'Start consume from the beginning / end',
+            type: 'select',
+            options: ['Beginning', 'End'],
+            description: 'Beginning (oldest messages) / End (newest messages) of the station',
+        },
+        {
             name: 'memphis_batch_size',
             display: 'Batch size (messages)',
             type: 'string',
@@ -80,7 +87,7 @@ export const redis = {
         },
         {
             name: 'memphis_max_time_wait',
-            display: 'Batch Message Timeout Duration (Seconds)',
+            display: 'Batch Message Timeout Duration (Milliseconds)',
             placeholder: 2,
             type: 'string',
             required: false,

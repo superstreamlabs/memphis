@@ -46,6 +46,7 @@ const initialState = {
     currentVersion: '',
     allowedActions: null,
     isFreePlan: null,
+    backgroundTasks: 0
 };
 
 const Store = ({ children }) => {

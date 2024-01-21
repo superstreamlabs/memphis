@@ -716,49 +716,55 @@ func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, sta
 	} else {
 		consumerName = consumer.Name
 	}
-
 	consumerName = getInternalConsumerName(consumerName)
-
 	var maxAckTimeMs int64
 	if consumer.MaxAckTimeMs <= 0 {
 		maxAckTimeMs = 30000 // 30 sec
 	} else {
 		maxAckTimeMs = consumer.MaxAckTimeMs
 	}
-
 	var MaxMsgDeliveries int
 	if consumer.MaxMsgDeliveries <= 0 || consumer.MaxMsgDeliveries > 10 {
 		MaxMsgDeliveries = 10
 	} else {
 		MaxMsgDeliveries = consumer.MaxMsgDeliveries
 	}
-
 	stationName, err := StationNameFromStr(station.Name)
 	if err != nil {
 		return err
 	}
-
 	if len(partitionsList) > len(station.PartitionsList) {
 		partitionsList = station.PartitionsList
 	}
-
 	var deliveryPolicy DeliverPolicy
 	var optStartSeq uint64
+	lastSeqPerPartition := map[string]uint64{}
 	// This check for case when the last message is 0 (in case StartConsumeFromSequence > 1 the LastMessages is 0 )
-	if consumer.LastMessages == 0 && consumer.StartConsumeFromSeq == 0 {
+	if consumer.LastMessages == 0 && consumer.StartConsumeFromSeq == 1 {
 		deliveryPolicy = DeliverNew
 	} else if consumer.LastMessages > 0 {
-		streamInfo, err := serv.memphisStreamInfo(tenantName, stationName.Intern())
-		if err != nil {
-			return err
+		var streamInfo *StreamInfo
+		if len(partitionsList) == 1 {
+			streamInfo, err = serv.memphisStreamInfo(tenantName, stationName.Intern()+"$1")
+			if err != nil {
+				return err
+			}
+			lastSeq := streamInfo.State.LastSeq
+			lastMessages := (lastSeq - uint64(consumer.LastMessages)) + 1
+			if int(lastMessages) < 1 {
+				lastMessages = uint64(1)
+			}
+			deliveryPolicy = DeliverByStartSequence
+			optStartSeq = lastMessages
+		} else {
+			for _, pl := range partitionsList {
+				streamInfo, err = serv.memphisStreamInfo(tenantName, stationName.Intern()+"$"+strconv.Itoa(pl))
+				if err != nil {
+					return err
+				}
+				lastSeqPerPartition[stationName.Intern()+"$"+strconv.Itoa(pl)] = streamInfo.State.LastSeq
+			}
 		}
-		lastSeq := streamInfo.State.LastSeq
-		lastMessages := (lastSeq - uint64(consumer.LastMessages)) + 1
-		if int(lastMessages) < 1 {
-			lastMessages = uint64(1)
-		}
-		deliveryPolicy = DeliverByStartSequence
-		optStartSeq = lastMessages
 	} else if consumer.StartConsumeFromSeq > 1 {
 		deliveryPolicy = DeliverByStartSequence
 		optStartSeq = consumer.StartConsumeFromSeq
@@ -779,34 +785,65 @@ func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, sta
 			// RateLimit: ,// Bits per sec
 			// Heartbeat: // time.Duration,
 		}
-
 		if deliveryPolicy == DeliverByStartSequence {
 			consumerConfig.OptStartSeq = optStartSeq
 		}
 		err = s.memphisAddConsumer(tenantName, stationName.Intern(), consumerConfig)
 		return err
 	} else {
-		for _, pl := range partitionsList {
-			consumerConfig := &ConsumerConfig{
-				Durable:       consumerName,
-				DeliverPolicy: deliveryPolicy,
-				AckPolicy:     AckExplicit,
-				AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
-				MaxDeliver:    MaxMsgDeliveries,
-				FilterSubject: stationName.Intern() + "$" + strconv.Itoa(pl) + ".final",
-				ReplayPolicy:  ReplayInstant,
-				MaxAckPending: -1,
-				HeadersOnly:   false,
-				// RateLimit: ,// Bits per sec
-				// Heartbeat: // time.Duration,
-			}
+		if consumer.LastMessages > 0 {
+			for k, v := range lastSeqPerPartition {
+				lastSeq := v
+				lastMessages := (lastSeq - uint64(consumer.LastMessages)) + 1
+				if int(lastMessages) < 1 {
+					lastMessages = uint64(1)
+				}
+				deliveryPolicy = DeliverByStartSequence
+				optStartSeq = lastMessages
 
-			if deliveryPolicy == DeliverByStartSequence {
-				consumerConfig.OptStartSeq = optStartSeq
+				consumerConfig := &ConsumerConfig{
+					Durable:       consumerName,
+					DeliverPolicy: deliveryPolicy,
+					AckPolicy:     AckExplicit,
+					AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
+					MaxDeliver:    MaxMsgDeliveries,
+					FilterSubject: k + ".final",
+					ReplayPolicy:  ReplayInstant,
+					MaxAckPending: -1,
+					HeadersOnly:   false,
+					// RateLimit: ,// Bits per sec
+					// Heartbeat: // time.Duration,
+				}
+				if deliveryPolicy == DeliverByStartSequence {
+					consumerConfig.OptStartSeq = optStartSeq
+				}
+				err = s.memphisAddConsumer(tenantName, k, consumerConfig)
+				if err != nil {
+					return err
+				}
 			}
-			err = s.memphisAddConsumer(tenantName, stationName.Intern()+"$"+strconv.Itoa(pl), consumerConfig)
-			if err != nil {
-				return err
+		} else {
+			for _, pl := range partitionsList {
+				consumerConfig := &ConsumerConfig{
+					Durable:       consumerName,
+					DeliverPolicy: deliveryPolicy,
+					AckPolicy:     AckExplicit,
+					AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
+					MaxDeliver:    MaxMsgDeliveries,
+					FilterSubject: stationName.Intern() + "$" + strconv.Itoa(pl) + ".final",
+					ReplayPolicy:  ReplayInstant,
+					MaxAckPending: -1,
+					HeadersOnly:   false,
+					// RateLimit: ,// Bits per sec
+					// Heartbeat: // time.Duration,
+				}
+				if deliveryPolicy == DeliverByStartSequence {
+					consumerConfig.OptStartSeq = optStartSeq
+				}
+				err = s.memphisAddConsumer(tenantName, stationName.Intern()+"$"+strconv.Itoa(pl), consumerConfig)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
