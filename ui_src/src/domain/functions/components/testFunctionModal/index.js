@@ -162,6 +162,7 @@ const TestFunctionModal = ({ onCancel }) => {
                                 aria-haspopup="true"
                                 boxShadowStyle="float"
                                 disabled={isCheck?.length === 0}
+                                isVisible={isCheck?.length !== 0}
                                 onClick={() => setIsDeleteModalOpen(true)}
                             />
                             <Button

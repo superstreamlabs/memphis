@@ -14,21 +14,21 @@ import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
 import { StringCodec, JSONCodec } from 'nats.ws';
-import { Divider, Popover } from 'antd';
+import { Divider, Popover, Badge } from 'antd';
 import { parsingDate } from 'services/valueConvertor';
 import { ApiEndpoints } from 'const/apiEndpoints';
-import { ReactComponent as AsyncIcon } from 'assets/images/asyncIcon.svg';
+import { ReactComponent as BgTasksIcon } from 'assets/images/bgTasksIcon.svg';
 import { ReactComponent as TaskIcon } from 'assets/images/task.svg';
 import { httpRequest } from 'services/http';
-import { ReactComponent as CollapseArrowIcon } from 'assets/images/collapseArrow.svg';
 import { Context } from 'hooks/store';
 import OverflowTip from 'components/tooltip/overflowtip';
 
-const AsyncTasks = ({ height, overView }) => {
+const AsyncTasks = ({ overView, children }) => {
     const [state, dispatch] = useContext(Context);
     const [isOpen, setIsOpen] = useState(false);
     const [showMore, setShowMore] = useState(false);
     const [asyncTasks, setAsyncTasks] = useState([]);
+    const [runningTasks, setRunningTasks] = useState([]);
 
     useEffect(() => {
         getAsyncTasks();
@@ -90,6 +90,12 @@ const AsyncTasks = ({ height, overView }) => {
         };
     }, [state.socket]);
 
+    useEffect(() => {
+        const running = asyncTasks?.filter((task) => task?.status === 'running');
+        setRunningTasks(running);
+        dispatch({ type: 'SET_BACKGROUND_TASKS_COUNT', payload: running?.length || 0 });
+    }, [asyncTasks]);
+
     const getAsyncTasks = async () => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_ASYNC_TASKS);
@@ -109,6 +115,11 @@ const AsyncTasks = ({ height, overView }) => {
                         ((!showMore && index < 3) || showMore) && (
                             <div>
                                 <div className="task-item" key={index}>
+                                    {task?.status === 'running' && (
+                                        <span className="task-status">
+                                            <Badge status="success" />
+                                        </span>
+                                    )}
                                     <div>
                                         <TaskIcon alt="taskIcon" />
                                     </div>
@@ -135,39 +146,37 @@ const AsyncTasks = ({ height, overView }) => {
     };
     const getContent = () => {
         return (
-            <div>
-                <div className="async-title">
-                    <span>
-                        <p>Async tasks</p>
-                        <label className="async-number">{asyncTasks.length}</label>
-                    </span>
-                    <Divider />
-                </div>
-                <div className="tasks-container">{getItems()}</div>
-                {asyncTasks.length > 3 && (
-                    <div className="show-more-less-tasks" onClick={() => setShowMore(!showMore)}>
-                        <label> {!showMore ? 'Show more' : 'Show less'}</label>
+            asyncTasks?.length > 0 && (
+                <div>
+                    <div className="async-title">
+                        <span>
+                            <p>Background tasks</p>
+                        </span>
+                        <Divider />
                     </div>
-                )}
-            </div>
+                    <div className="tasks-container">{getItems()}</div>
+                    {asyncTasks.length > 3 && (
+                        <div className="show-more-less-tasks" onClick={() => setShowMore(!showMore)}>
+                            <label> {!showMore ? 'Show more' : 'Show less'}</label>
+                        </div>
+                    )}
+                </div>
+            )
         );
     };
 
     return (
-        asyncTasks?.length > 0 && (
-            <Popover placement="bottomLeft" content={getContent()} trigger="click" onOpenChange={handleOpenChange} open={isOpen}>
-                <div className="async-btn-container">
-                    <div className="async-btn">
-                        <AsyncIcon alt="AsyncIcon" />
-                        <div>
-                            <label className="async-title">Async tasks </label>
-                            <label className="async-number">{asyncTasks.length}</label>
-                        </div>
-                        <CollapseArrowIcon className={isOpen ? 'collapse-arrow open' : 'collapse-arrow'} alt="CollapseArrowIcon" />
+        <Popover placement={overView ? 'bottomRight' : 'bottomLeft'} content={getContent()} trigger="click" onOpenChange={handleOpenChange} open={isOpen}>
+            {overView ? (
+                <span className={asyncTasks?.length > 0 ? 'overview-tasks' : undefined}>{children}</span>
+            ) : (
+                runningTasks?.length > 0 && (
+                    <div className="async-btn-container">
+                        <BgTasksIcon alt="AsyncIcon" />
                     </div>
-                </div>
-            </Popover>
-        )
+                )
+            )}
+        </Popover>
     );
 };
 export default AsyncTasks;

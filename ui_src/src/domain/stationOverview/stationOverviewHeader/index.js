@@ -236,8 +236,6 @@ const StationOverviewHeader = ({ refresh }) => {
                     {stationState?.stationMetaData?.partitions_number > 1 && (
                         <PartitionsFilter partitions_number={stationState?.stationMetaData?.partitions_number || 0} />
                     )}
-
-                    <AsyncTasks height={'32px'} />
                     <Button
                         width="100px"
                         height="32px"
