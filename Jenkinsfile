@@ -151,7 +151,7 @@ pipeline {
       	    dir ('memphis-k8s'){
        	        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: 'master'
                 sh """
-	                helm install memphis-tests memphis --set memphis.extraEnvironmentVars.enabled=true,memphis.image=${repoUrlPrefix}/${imageName}-${gitBranch} --set-json 'memphis.extraEnvironmentVars.vars=[{"name":"ENV","value":"staging"}]' --create-namespace --namespace memphis-$unique_id --wait
+	                helm install memphis-tests memphis --set memphis.extraEnvironmentVars.enabled=true,memphis.image=${repoUrlPrefix}/${imageName}-${gitBranch},"imagePullSecrets[0].name=regcred" --set-json 'memphis.extraEnvironmentVars.vars=[{"name":"ENV","value":"staging"}]' --create-namespace --namespace memphis-$unique_id --wait
                 """
       	    }
         }
