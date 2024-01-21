@@ -47,7 +47,6 @@ import Button from 'components/button';
 import LearnMore from 'components/learnMore';
 import { Context } from 'hooks/store';
 import Modal from 'components/modal';
-import AsyncTasks from 'components/asyncTasks';
 import CloudModal from 'components/cloudModal';
 import Throughput from './throughput';
 import Copy from 'components/copy';
@@ -252,7 +251,6 @@ function OverView() {
                             </div>
                         </div>
                         <div className="btn-section">
-                            <AsyncTasks height={'32px'} overView />
                             {!isCloud() && (
                                 <CloudTeaser
                                     alt="Cloud"
@@ -335,7 +333,7 @@ function OverView() {
                                                         setCloudModalOpen(true);
                                                     }}
                                                 >
-                                                    <img className="graphview-img" src={(state?.darkMode ? GraphOverviewDark : GraphOverviewLight) || null} alt=""/>
+                                                    <img className="graphview-img" src={(state?.darkMode ? GraphOverviewDark : GraphOverviewLight) || null} alt="" />
                                                 </div>
                                             </div>
                                         </div>

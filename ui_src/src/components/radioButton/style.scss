@@ -1,8 +1,8 @@
 .radio-group {
     display: flex;
-    .radio-wrapper{
+    .radio-wrapper {
         position: relative;
-        .cloud-only-tooltip{
+        .cloud-only-tooltip {
             z-index: 3;
             right: 10px;
             top: -8px;
@@ -45,7 +45,7 @@
             font-size: 14px;
             color: #777777;
         }
-        .ant-radio-wrapper{
+        .ant-radio-wrapper {
             width: 100%;
             height: 100%;
             padding: 10px;

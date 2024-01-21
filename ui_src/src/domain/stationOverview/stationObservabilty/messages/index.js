@@ -460,7 +460,7 @@ const Messages = ({ referredFunction }) => {
                                     onClick={() => (isCheck.length === 0 ? modalPurgeFlip(true) : handleDrop())}
                                 />
                             )}
-                            {tabValue === 'Dead-letter' && subTabValue === 'Unacked' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
+                            {tabValue === 'Dead-letter' && subTabValue === 'Unacknowledged' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
                                 <Button
                                     width="95px"
                                     height="32px"

@@ -175,6 +175,11 @@ const Reducer = (state, action) => {
                 ...state,
                 darkMode: action.payload
             };
+        case 'SET_BACKGROUND_TASKS_COUNT':
+            return {
+                ...state,
+                backgroundTasks: action.payload
+            };
         default:
             return state;
     }
