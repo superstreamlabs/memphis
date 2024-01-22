@@ -275,10 +275,8 @@ github.com/mattn/go-isatty v0.0.12/go.mod h1:cbi8OIDigv2wuxKPP5vlRcQ1OAZbq2CE4Ky
 github.com/mattn/go-isatty v0.0.14/go.mod h1:7GGIvUiUoEMVVmxf/4nioHXj79iQHKdU27kJ6hsGG94=
 github.com/mattn/go-isatty v0.0.19 h1:JITubQf0MOLdlGRuRq+jtsDlekdYPia9ZFsB8h/APPA=
 github.com/mattn/go-isatty v0.0.19/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
-github.com/memphisdev/memphis.go v1.3.1 h1:WbJ2iinvxtOZPZ6rLYFGIlHW27jU30nYqovBlS1md1Y=
-github.com/memphisdev/memphis.go v1.3.1/go.mod h1:KurLqbBBZ5PMabJuOh3JX9VpSykRsog1QQKcwW5b9bU=
-github.com/memphisdev/memphis.go v1.3.2-beta.1 h1:KsYWa3AcKHuvjc9AbSOAM19pIcjttmIYqrhJ+i8D1iA=
-github.com/memphisdev/memphis.go v1.3.2-beta.1/go.mod h1:jZKJ82lyQHr01QissJUdDrnj0KT5wXjh2irhb+j0JH8=
+github.com/memphisdev/memphis.go v1.3.4-beta.1 h1:eQikKu0fHGlCoy5E1NoAtrFh1Hf8V0hz4J2/5pKBGw0=
+github.com/memphisdev/memphis.go v1.3.4-beta.1/go.mod h1:KurLqbBBZ5PMabJuOh3JX9VpSykRsog1QQKcwW5b9bU=
 github.com/minio/highwayhash v1.0.2 h1:Aak5U0nElisjDCfPSG79Tgzkn2gl66NxOMspRrKnA/g=
 github.com/minio/highwayhash v1.0.2/go.mod h1:BQskDq+xkJ12lmlUUi7U0M5Swg3EWR+dLTk+kldvVxY=
 github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=
