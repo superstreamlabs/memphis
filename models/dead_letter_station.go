@@ -71,6 +71,14 @@ type SchemaVerseDlsMessageSdk struct {
 	PartitionNumber int             `json:"partition_number"`
 }
 
+type NackedDlsMessageSdk struct {
+	StationName string `json:"station_name"`
+	Error       string `json:"error"`
+	CgName      string `json:"cg_name"`
+	Seq         uint64 `json:"seq"`
+	Partition   int    `json:"partition"`
+}
+
 type FunctionsDlsMessage struct {
 	StationID       int                       `json:"station_id"`
 	TenantName      string                    `json:"tenant_name"`
