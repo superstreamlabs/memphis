@@ -464,7 +464,6 @@ function SideBar() {
 
     return (
         <div className={'sidebar-container ' + (expandSidebar ? 'expand' : 'collapse')}>
-            {state.route !== 'overview' && <AsyncTasks />}
             <div className="upper-icons">
                 <div
                     className={'upper-icons-toggle ' + (expandSidebar ? 'open' : 'close')}
@@ -474,6 +473,7 @@ function SideBar() {
                 >
                     <ArrowRight />
                 </div>
+                {state.route !== 'overview' && <AsyncTasks />}
                 <span className="logo-wrapper">
                     <img
                         src={getCompanyLogoSrc()}

@@ -30,7 +30,7 @@ import { ReactComponent as CodeGrayIcon } from 'assets/images/codeGrayIcon.svg';
 import { ReactComponent as PurpleQuestionMark } from 'assets/images/purpleQuestionMark.svg';
 import { parsingDate, messageParser } from 'services/valueConvertor';
 import Spinner from 'components/spinner';
-import Drawer from "components/drawer";
+import Drawer from 'components/drawer';
 import { IoClose } from 'react-icons/io5';
 import OverflowTip from 'components/tooltip/overflowtip';
 

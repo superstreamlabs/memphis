@@ -45,7 +45,6 @@ import Button from 'components/button';
 import Modal from 'components/modal';
 import Auditing from '../components/auditing';
 import RefreshButton from 'components/refreshButton';
-import AsyncTasks from 'components/asyncTasks';
 import pathDomains from 'router';
 import { StationStoreContext } from '..';
 import { TIERED_STORAGE_UPLOAD_INTERVAL, LOCAL_STORAGE_ACCOUNT_ID, LOCAL_STORAGE_ENV, LOCAL_STORAGE_BROKER_HOST } from 'const/localStorageConsts';
@@ -234,7 +233,7 @@ const StationOverviewHeader = ({ refresh }) => {
                 <div className="station-buttons">
                     <RefreshButton onClick={() => handleRefreshStationData()} isLoading={isLoading} />
                     {stationState?.stationMetaData?.partitions_number > 1 && (
-                        <PartitionsFilter partitions_number={stationState?.stationMetaData?.partitions_number || 0} />
+                        <PartitionsFilter partitions_number={stationState?.stationMetaData?.partitions_number || 1} />
                     )}
                     <Button
                         width="100px"

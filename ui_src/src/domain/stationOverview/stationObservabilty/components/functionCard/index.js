@@ -23,7 +23,7 @@ import { httpRequest } from 'services/http';
 import { convertLongNumbers } from 'services/valueConvertor';
 import { StationStoreContext } from 'domain/stationOverview';
 import FunctionDetails from 'domain/functions/components/functionDetails';
-import Drawer from "components/drawer";
+import Drawer from 'components/drawer';
 import Tooltip from 'components/tooltip/tooltip';
 
 export default function FunctionCard({
@@ -77,7 +77,7 @@ export default function FunctionCard({
         try {
             const data = await httpRequest(
                 'GET',
-                `${ApiEndpoints.GET_FUNCTIONS_OVERVIEW}?station_name=${stationState?.stationMetaData?.name}&partition=${stationState?.stationPartition || -1}`
+                `${ApiEndpoints.GET_FUNCTIONS_OVERVIEW}?station_name=${stationState?.stationMetaData?.name}&partition=${stationState?.stationPartition || 1}`
             );
             stationDispatch({ type: 'SET_STATION_FUNCTIONS', payload: data });
         } catch (e) {

@@ -47,9 +47,10 @@ import { ReactComponent as DisableIcon } from 'assets/images/disableIcon.svg';
 import { Divider } from 'antd';
 import FunctionsOverview from '../components/functionsOverview';
 import CloudModal from 'components/cloudModal';
+import Spinner from 'components/spinner';
 import { ReactComponent as CleanDisconnectedProducersIcon } from 'assets/images/clean_disconnected_producers.svg';
 
-const Messages = ({ referredFunction }) => {
+const Messages = ({ referredFunction, loading }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [selectedRowIndex, setSelectedRowIndex] = useState(null);
     const [selectedRowPartition, setSelectedRowPartition] = useState(null);
@@ -107,6 +108,10 @@ const Messages = ({ referredFunction }) => {
     }, []);
 
     useEffect(() => {
+        activeTab === 'functions' && setSelectedRowIndex(null);
+    }, [activeTab]);
+
+    useEffect(() => {
         referredFunction && setActiveTab('functions');
         setChoseReferredFunction(referredFunction);
     }, [referredFunction]);
@@ -135,10 +140,7 @@ const Messages = ({ referredFunction }) => {
 
     const getStationDetails = async () => {
         try {
-            const data = await httpRequest(
-                'GET',
-                `${ApiEndpoints.GET_STATION_DATA}?station_name=${stationName}&partition_number=${stationState?.stationPartition || -1}`
-            );
+            const data = await httpRequest('GET', `${ApiEndpoints.GET_STATION_DATA}?station_name=${stationName}&partition_number=${stationState?.stationPartition || 1}`);
             stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
             stationDispatch({ type: 'SET_SCHEMA_TYPE', payload: data.schema.schema_type });
         } catch (error) {}
@@ -243,7 +245,6 @@ const Messages = ({ referredFunction }) => {
                         return item.id !== messageId;
                     });
                 });
-                console.log(messages);
             }
             setTimeout(() => {
                 setIgnoreProcced(false);
@@ -310,9 +311,9 @@ const Messages = ({ referredFunction }) => {
                 >
                     {selectedRowIndex === id && selectedRowPartition === partition && <div className="hr-selected"></div>}
                     <span className="preview-message">
-                        <lable>{tabValue === tabs[1] ? message?.id : message?.message_seq}</lable>
-                        <lable className="label">{tabValue === tabs[1] ? parsingDate(message?.message?.time_sent, true) : parsingDate(message?.created_at, true)}</lable>
-                        <lable className="label">{tabValue === tabs[1] ? messageParser('string', message?.message?.data) : messageParser('string', message?.data)}</lable>
+                        <label>{tabValue === tabs[1] ? message?.id : message?.message_seq}</label>
+                        <label className="label">{tabValue === tabs[1] ? parsingDate(message?.message?.time_sent, true) : parsingDate(message?.created_at, true)}</label>
+                        <label className="label">{tabValue === tabs[1] ? messageParser('string', message?.message?.data) : messageParser('string', message?.data)}</label>
                     </span>
                 </div>
             </div>
@@ -343,23 +344,29 @@ const Messages = ({ referredFunction }) => {
                         </TooltipComponent>
                     </span>
                 </div>
-                <div className="rows-wrapper" ref={divRef}>
-                    <Virtuoso
-                        style={{ height: `${getHeight(isDls, 37)}px` }}
-                        data={
-                            !isDls
-                                ? stationState?.stationSocketData?.messages
-                                : subTabValue === 'Unacknowledged'
-                                ? stationState?.stationSocketData?.poison_messages
-                                : subTabValue === 'Functions'
-                                ? stationState?.stationSocketData?.functions_failed_messages
-                                : stationState?.stationSocketData?.schema_failed_messages
-                        }
-                        onScroll={() => handleScroll()}
-                        overscan={100}
-                        itemContent={(index, message) => listGenerator(index, message)}
-                    />
-                </div>
+                {loading ? (
+                    <div className="loading">
+                        <Spinner />
+                    </div>
+                ) : (
+                    <div className="rows-wrapper" ref={divRef}>
+                        <Virtuoso
+                            style={{ height: `${getHeight(isDls, 37)}px` }}
+                            data={
+                                !isDls
+                                    ? stationState?.stationSocketData?.messages
+                                    : subTabValue === 'Unacknowledged'
+                                    ? stationState?.stationSocketData?.poison_messages
+                                    : subTabValue === 'Functions'
+                                    ? stationState?.stationSocketData?.functions_failed_messages
+                                    : stationState?.stationSocketData?.schema_failed_messages
+                            }
+                            onScroll={() => handleScroll()}
+                            overscan={100}
+                            itemContent={(index, message) => listGenerator(index, message)}
+                        />
+                    </div>
+                )}
             </div>
         );
     };
@@ -597,7 +604,7 @@ const Messages = ({ referredFunction }) => {
                                 showDivider
                             ></DetailBox>
                             <Divider />
-                            {!isCloud() && stationState?.stationPartition !== -1 && (
+                            {!isCloud() && stationState?.stationPartition !== 1 && (
                                 <>
                                     <DetailBox
                                         icon={<LeaderIcon width={24} alt="leaderIcon" />}
@@ -616,7 +623,7 @@ const Messages = ({ referredFunction }) => {
                                     <Divider />
                                 </>
                             )}
-                            {stationState?.stationSocketData?.followers?.length > 0 && !isCloud() && stationState?.stationPartition !== -1 && (
+                            {stationState?.stationSocketData?.followers?.length > 0 && !isCloud() && stationState?.stationPartition !== 1 && (
                                 <>
                                     <DetailBox
                                         icon={<FollowersIcon width={24} alt="followersImg" />}
@@ -702,6 +709,7 @@ const Messages = ({ referredFunction }) => {
                     referredFunction={choseReferredFunction}
                     dismissFunction={() => setChoseReferredFunction(null)}
                     moveToGenralView={() => setActiveTab('general')}
+                    loading={loading}
                 />
             )}
 

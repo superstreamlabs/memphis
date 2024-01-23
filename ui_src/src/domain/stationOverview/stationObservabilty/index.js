@@ -24,7 +24,7 @@ import ProduceConsumList from './ProduceConsumList';
 import { StationStoreContext } from '..';
 import Messages from './messages';
 
-const StationObservabilty = ({ referredFunction }) => {
+const StationObservabilty = ({ referredFunction, loading }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
 
     return (
@@ -46,7 +46,9 @@ const StationObservabilty = ({ referredFunction }) => {
                     <Lottie animationData={produceEmpty} loop={true} />
                 )}
             </div>
-            <Messages referredFunction={referredFunction} />
+
+            <Messages referredFunction={referredFunction} loading={loading} />
+
             <div className="thunnel-to-pub">
                 {stationState?.stationMetaData?.is_native ? (
                     <>
