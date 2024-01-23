@@ -21,7 +21,7 @@ import { ReactComponent as AddFunctionIcon } from 'assets/images/addFunction.svg
 import { ReactComponent as PlusIcon } from 'assets/images/plusIcon.svg';
 import { ReactComponent as ProcessedIcon } from 'assets/images/processIcon.svg';
 import { IoClose } from 'react-icons/io5';
-import Drawer from "components/drawer";
+import Drawer from 'components/drawer';
 import dataPassLineLottie from 'assets/lotties/dataPassLine.json';
 import dataPassLineEmptyLottie from 'assets/lotties/dataPassLineEmpty.json';
 import Lottie from 'lottie-react';
@@ -34,7 +34,7 @@ import Spinner from 'components/spinner';
 
 let sub;
 
-const FunctionsOverview = ({ referredFunction, dismissFunction, moveToGenralView }) => {
+const FunctionsOverview = ({ referredFunction, dismissFunction, moveToGenralView, loading }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [currentFunction, setCurrentFunction] = useState(null);
     const [functionDetails, setFunctionDetails] = useState(null);
@@ -129,7 +129,7 @@ const FunctionsOverview = ({ referredFunction, dismissFunction, moveToGenralView
         try {
             const data = await httpRequest(
                 'GET',
-                `${ApiEndpoints.GET_FUNCTIONS_OVERVIEW}?station_name=${stationState?.stationMetaData?.name}&partition=${stationState?.stationPartition || -1}`
+                `${ApiEndpoints.GET_FUNCTIONS_OVERVIEW}?station_name=${stationState?.stationMetaData?.name}&partition=${stationState?.stationPartition || 1}`
             );
             stationDispatch({ type: 'SET_STATION_FUNCTIONS', payload: data });
             setLoading(false);
@@ -154,7 +154,7 @@ const FunctionsOverview = ({ referredFunction, dismissFunction, moveToGenralView
 
     const handleAddFunction = async (requestBody) => {
         requestBody.station_name = stationState?.stationMetaData?.name;
-        requestBody.partition = stationState?.stationPartition || -1;
+        requestBody.partition = stationState?.stationPartition || 1;
         try {
             await httpRequest('POST', ApiEndpoints.ADD_FUNCTION, requestBody);
             getFunctionsOverview();
@@ -212,12 +212,11 @@ const FunctionsOverview = ({ referredFunction, dismissFunction, moveToGenralView
                             <Lottie animationData={isDataMoving ? dataPassLineLottie : dataPassLineEmptyLottie} loop={true} />
                             <Lottie animationData={isDataMoving ? dataPassLineLottie : dataPassLineEmptyLottie} loop={true} />
                         </div>
-                        {isLoading && (
+                        {isLoading || loading ? (
                             <div className="loading">
                                 <Spinner />
                             </div>
-                        )}
-                        {stationState?.stationFunctions?.functions && stationState?.stationFunctions?.functions?.length > 0 && (
+                        ) : stationState?.stationFunctions?.functions && stationState?.stationFunctions?.functions?.length > 0 ? (
                             <div className="function-overview">
                                 <div className="tab-functions-inner-left">
                                     <div className={stationState?.stationFunctions?.functions?.length < 2 ? `tab-functions-inner-one-card` : `tab-functions-inner-cards`}>
@@ -225,7 +224,7 @@ const FunctionsOverview = ({ referredFunction, dismissFunction, moveToGenralView
                                             <FunctionCard
                                                 functionItem={functionItem}
                                                 stationName={stationState?.stationMetaData?.name}
-                                                partiotionNumber={stationState?.stationPartition || -1}
+                                                partiotionNumber={stationState?.stationPartition || 1}
                                                 onClick={() => {
                                                     setCurrentFunction(functionItem);
                                                     setOpenBottomDetails(true);
@@ -251,14 +250,15 @@ const FunctionsOverview = ({ referredFunction, dismissFunction, moveToGenralView
                                     </div>
                                 </div>
                             </div>
-                        )}
-                        {stationState?.stationFunctions?.functions?.length === 0 && (
-                            <div className="functions-empty-wrap">
-                                <div className="functions-empty" onClick={() => setOpenFunctionsModal(true)}>
-                                    <AddFunctionIcon />
-                                    <span>Add Function</span>
+                        ) : (
+                            stationState?.stationFunctions?.functions?.length === 0 && (
+                                <div className="functions-empty-wrap">
+                                    <div className="functions-empty" onClick={() => setOpenFunctionsModal(true)}>
+                                        <AddFunctionIcon />
+                                        <span>Add Function</span>
+                                    </div>
                                 </div>
-                            </div>
+                            )
                         )}
                     </div>
                 </div>
