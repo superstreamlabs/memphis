@@ -3013,7 +3013,7 @@ func GetActiveConsumerByCG(consumersGroup string, stationId int) (bool, models.C
 	}
 	defer conn.Release()
 
-	query := `SELECT * FROM consumers WHERE consumers_group = $1 AND station_id = $2 AND type = 'application' LIMIT 1`
+	query := `SELECT * FROM consumers WHERE consumers_group = $1 AND station_id = $2 AND type = 'application' AND is_active = true LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_active_consumer_by_cg", query)
 	if err != nil {
 		return false, models.Consumer{}, err
