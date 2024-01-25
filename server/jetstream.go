@@ -358,7 +358,7 @@ func (s *Server) enableJetStream(cfg JetStreamConfig) error {
 		s.SetDefaultSystemAccount()
 	}
 
-	s.Noticef(" __  __                              _       _           __      _                 __   ")
+	s.Noticef("  __   __                              _       _           __      _                 __   ")
 	s.Noticef(" |  \\/  |                            | |     (_)         / /     | |                \\ \\  ")
 	s.Noticef(" | \\  / |   ___   _ __ ___    _ __   | |__    _   ___   | |    __| |   ___  __   __  | | ")
 	s.Noticef(" | |\\/| |  / _ \\ | '_ ` _ \\  | '_ \\  | '_ \\  | | / __| / /    / _` |  / _ \\ \\ \\ / /   \\ \\")
