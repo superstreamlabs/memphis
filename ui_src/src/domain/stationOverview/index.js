@@ -28,7 +28,7 @@ import { StringCodec, JSONCodec } from 'nats.ws';
 const initializeState = {
     stationMetaData: { is_native: true },
     stationSocketData: {},
-    stationPartition: 1,
+    stationPartition: null,
     stationFunctions: {}
 };
 let sub;
@@ -63,9 +63,9 @@ const StationOverview = () => {
     const getStaionMetaData = async () => {
         try {
             let data = await httpRequest('GET', `${ApiEndpoints.GET_STATION}?station_name=${stationName}`);
-
             data.created_at = await parsingDate(data.created_at);
             stationDispatch({ type: 'SET_STATION_META_DATA', payload: data });
+            stationDispatch({ type: 'SET_STATION_PARTITION', payload: data?.partitions_list ? 1 : -1 });
         } catch (error) {
             if (error.status === 404) {
                 history.push(pathDomains.stations);
@@ -95,8 +95,9 @@ const StationOverview = () => {
         // if (socketOn) {
         //     getStationDetails();
         // }
-        getStationDetails();
-    }, [stationState?.stationPartition || stationState?.stationSocketData?.total_messages || stationState?.stationSocketData?.total_dls_messages, stationName]);
+        // getStationDetails();
+        stationState?.stationPartition && getStationDetails();
+    }, [stationState?.stationPartition]);
 
     // const startListen = async () => {
     //     const jc = JSONCodec();
@@ -164,8 +165,6 @@ const StationOverview = () => {
         setisLoading(true);
         dispatch({ type: 'SET_ROUTE', payload: 'stations' });
         getStaionMetaData();
-        getStationDetails();
-        stationDispatch({ type: 'SET_STATION_PARTITION', payload: 1 });
     }, [stationName]);
 
     return (
