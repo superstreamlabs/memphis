@@ -15,16 +15,16 @@ import './style.scss';
 import React, { useContext } from 'react';
 import Lottie from 'lottie-react';
 
-import consumePoison from '../../../assets/lotties/consume_poison.json';
-import consumeEmpty from '../../../assets/lotties/consume_empty.json';
-import produceEmpty from '../../../assets/lotties/produce_empty.json';
-import produce from '../../../assets/lotties/produce-many.json';
-import consumer from '../../../assets/lotties/consume.json';
+import consumePoison from 'assets/lotties/consume_poison.json';
+import consumeEmpty from 'assets/lotties/consume_empty.json';
+import produceEmpty from 'assets/lotties/produce_empty.json';
+import produce from 'assets/lotties/produce-many.json';
+import consumer from 'assets/lotties/consume.json';
 import ProduceConsumList from './ProduceConsumList';
 import { StationStoreContext } from '..';
 import Messages from './messages';
 
-const StationObservabilty = () => {
+const StationObservabilty = ({ referredFunction, loading }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
 
     return (
@@ -33,24 +33,35 @@ const StationObservabilty = () => {
             <div className="thunnel-from-sub">
                 {stationState?.stationMetaData?.is_native ? (
                     <>
-                        {stationState?.stationSocketData?.connected_producers?.length === 0 && <Lottie animationData={produceEmpty} loop={true} />}
-                        {stationState?.stationSocketData?.connected_producers?.length > 0 && <Lottie animationData={produce} loop={true} />}
+                        {stationState?.stationSocketData?.connected_producers?.length === 0 &&
+                            stationState?.stationSocketData?.source_connectors?.filter((connector) => connector?.is_active)?.length === 0 && (
+                                <Lottie animationData={produceEmpty} loop={true} />
+                            )}
+                        {(stationState?.stationSocketData?.connected_producers?.length > 0 ||
+                            stationState?.stationSocketData?.source_connectors?.filter((connector) => connector?.is_active)?.length > 0) && (
+                            <Lottie animationData={produce} loop={true} />
+                        )}
                     </>
                 ) : (
                     <Lottie animationData={produceEmpty} loop={true} />
                 )}
             </div>
-            <Messages />
+
+            <Messages referredFunction={referredFunction} loading={loading} />
+
             <div className="thunnel-to-pub">
                 {stationState?.stationMetaData?.is_native ? (
                     <>
-                        {stationState?.stationSocketData?.connected_cgs?.length === 0 && <Lottie animationData={consumeEmpty} loop={true} />}
-                        {stationState?.stationSocketData?.connected_cgs?.length > 0 && stationState?.stationSocketData?.poison_messages?.length > 0 && (
-                            <Lottie animationData={consumePoison} loop={true} />
-                        )}
-                        {stationState?.stationSocketData?.connected_cgs?.length > 0 && stationState?.stationSocketData?.poison_messages?.length === 0 && (
-                            <Lottie animationData={consumer} loop={true} />
-                        )}
+                        {stationState?.stationSocketData?.connected_cgs?.length === 0 &&
+                            stationState?.stationSocketData?.sink_connectors?.filter((connector) => connector?.is_active)?.length === 0 && (
+                                <Lottie animationData={consumeEmpty} loop={true} />
+                            )}
+                        {(stationState?.stationSocketData?.connected_cgs?.length > 0 ||
+                            stationState?.stationSocketData?.sink_connectors?.filter((connector) => connector?.is_active)?.length > 0) &&
+                            stationState?.stationSocketData?.poison_messages?.length > 0 && <Lottie animationData={consumePoison} loop={true} />}
+                        {(stationState?.stationSocketData?.connected_cgs?.length > 0 ||
+                            stationState?.stationSocketData?.sink_connectors?.filter((connector) => connector?.is_active)?.length > 0) &&
+                            stationState?.stationSocketData?.poison_messages?.length === 0 && <Lottie animationData={consumer} loop={true} />}
                     </>
                 ) : (
                     <Lottie animationData={consumeEmpty} loop={true} />

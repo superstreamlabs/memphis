@@ -15,25 +15,29 @@ import './style.scss';
 import React, { useEffect, useContext, useState, useRef } from 'react';
 import { AccountCircleRounded } from '@material-ui/icons';
 
-import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../const/localStorageConsts';
-import { isCloud, parsingDate } from '../../services/valueConvertor';
-import { ReactComponent as AddUserIcon } from '../../assets/images/addUserIcon.svg';
-import { ReactComponent as DeleteWrapperIcon } from '../../assets/images/deleteWrapperIcon.svg';
-import { ReactComponent as MailIcon } from '../../assets/images/mailIcon.svg';
-import { ReactComponent as DeleteIcon } from '../../assets/images/deleteIcon.svg';
-import { ReactComponent as SearchIcon } from '../../assets/images/searchIcon.svg';
-import SegmentButton from '../../components/segmentButton';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import SearchInput from '../../components/searchInput';
-import ActiveBadge from '../../components/activeBadge';
+import { LOCAL_STORAGE_USER_PASS_BASED_AUTH, LOCAL_STORAGE_FULL_NAME, USER_IMAGE } from 'const/localStorageConsts';
+import { isCloud, parsingDate } from 'services/valueConvertor';
+import { ReactComponent as AddUserIcon } from 'assets/images/addUserIcon.svg';
+import { ReactComponent as DeleteWrapperIcon } from 'assets/images/deleteWrapperIcon.svg';
+import { ReactComponent as MailIcon } from 'assets/images/mailIcon.svg';
+import { ReactComponent as DeleteIcon } from 'assets/images/deleteIcon.svg';
+import { ReactComponent as SearchIcon } from 'assets/images/searchIcon.svg';
+import { FaArrowCircleUp } from 'react-icons/fa';
+import SegmentButton from 'components/segmentButton';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import SearchInput from 'components/searchInput';
+import ActiveBadge from 'components/activeBadge';
 import CreateUserDetails from './createUserDetails';
-import { httpRequest } from '../../services/http';
-import Loader from '../../components/loader';
-import Button from '../../components/button';
-import { Context } from '../../hooks/store';
-import Modal from '../../components/modal';
-import Table from '../../components/table';
-import DeleteItemsModal from '../../components/deleteItemsModal';
+import { httpRequest } from 'services/http';
+import Loader from 'components/loader';
+import Button from 'components/button';
+import { Context } from 'hooks/store';
+import Modal from 'components/modal';
+import Table from 'components/table';
+import DeleteItemsModal from 'components/deleteItemsModal';
+import CloudModal from 'components/cloudModal';
+import { isCurrentUser } from 'utils/user';
+import Drawer from 'components/drawer';
 
 function Users() {
     const [state, dispatch] = useContext(Context);
@@ -51,6 +55,8 @@ function Users() {
     const [resendEmailLoader, setResendEmailLoader] = useState(false);
     const [createUserLoader, setCreateUserLoader] = useState(false);
     const [userToResend, setuserToResend] = useState('');
+    const [openCloudModal, setOpenCloudModal] = useState(false);
+    const [selectedRow, setSelectedRow] = useState(null);
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'users' });
@@ -146,8 +152,8 @@ function Users() {
         }
     };
 
-    const getAvatarSrc = (avatarId) => {
-        return require(`../../assets/images/bots/avatar${avatarId}.svg`);
+    const getAvatarSrc = (avatarId, full_name) => {
+        return (localStorage.getItem(LOCAL_STORAGE_FULL_NAME) === full_name && localStorage.getItem(USER_IMAGE)) || require(`assets/images/bots/avatar${avatarId}.svg`);
     };
 
     const handleRemoveUser = async (name, type) => {
@@ -260,25 +266,30 @@ function Users() {
             key: 'action',
             render: (_, record) => (
                 <div className="user-action">
-                    <Button
-                        width="115px"
-                        height="30px"
-                        placeholder={
-                            <div className="action-button">
-                                <DeleteIcon className="delete-icon" alt="deleteIcon" />
-                                Delete user
-                            </div>
-                        }
-                        colorType="red"
-                        radiusType="circle"
-                        border="gray-light"
-                        backgroundColorType={'white'}
-                        fontSize="12px"
-                        fontFamily="InterMedium"
-                        onClick={() => {
-                            deleteUser(record.username, record.user_type);
-                        }}
-                    />
+                    {!isCurrentUser(record.id) && (
+                        <Button
+                            width="115px"
+                            height="30px"
+                            placeholder={
+                                <div className="action-button">
+                                    <DeleteIcon className="delete-icon" alt="deleteIcon" />
+                                    Delete user
+                                </div>
+                            }
+                            colorType="red"
+                            radiusType="circle"
+                            border="gray-light"
+                            backgroundColorType={'white'}
+                            fontSize="12px"
+                            fontFamily="InterMedium"
+                            onClick={(e) => {
+                                {
+                                    e.stopPropagation();
+                                    deleteUser(record.username, record.user_type);
+                                }
+                            }}
+                        />
+                    )}
                 </div>
             )
         }
@@ -292,7 +303,7 @@ function Users() {
             render: (text, record) => (
                 <div className="user-name">
                     <div className="user-avatar">
-                        <img src={getAvatarSrc(record.avatar_id)} width={25} height={25} alt="avatar" />
+                        <img src={getAvatarSrc(record.avatar_id, record?.full_name)} width={25} height={25} alt="avatar" />
                     </div>
                     <p>{text}</p>
                 </div>
@@ -349,12 +360,12 @@ function Users() {
             )
         },
         {
-            title: 'Creation date',
-            key: 'created_at',
-            dataIndex: 'created_at',
-            render: (created_at) => (
+            title: 'Last login',
+            key: 'last_login',
+            dataIndex: 'last_login',
+            render: (last_login) => (
                 <div className="created-column">
-                    <p>{parsingDate(created_at)}</p>
+                    <p>{parsingDate(last_login)}</p>
                 </div>
             )
         },
@@ -409,26 +420,28 @@ function Users() {
                                 />
                             </>
                         ) : (
-                            <Button
-                                width="115px"
-                                height="30px"
-                                placeholder={
-                                    <div className="action-button">
-                                        <DeleteIcon className="action-img-btn" alt="deleteIcon" />
-                                        Delete user
-                                    </div>
-                                }
-                                colorType="red"
-                                radiusType="circle"
-                                border="gray-light"
-                                backgroundColorType={'white'}
-                                fontSize="12px"
-                                fontFamily="InterMedium"
-                                isLoading={record.username === userToRemove.username && userDeletedLoader}
-                                onClick={() => {
-                                    deleteUser(record.username, record.user_type);
-                                }}
-                            />
+                            !isCurrentUser(record.id) && (
+                                <Button
+                                    width="115px"
+                                    height="30px"
+                                    placeholder={
+                                        <div className="action-button">
+                                            <DeleteIcon className="action-img-btn" alt="deleteIcon" />
+                                            Delete user
+                                        </div>
+                                    }
+                                    colorType="red"
+                                    radiusType="circle"
+                                    border="gray-light"
+                                    backgroundColorType={'white'}
+                                    fontSize="12px"
+                                    fontFamily="InterMedium"
+                                    isLoading={record.username === userToRemove.username && userDeletedLoader}
+                                    onClick={() => {
+                                        deleteUser(record.username, record.user_type);
+                                    }}
+                                />
+                            )
                         )}
                     </div>
                 )
@@ -477,7 +490,16 @@ function Users() {
                         className="modal-btn"
                         width="160px"
                         height="34px"
-                        placeholder={'Add new user'}
+                        placeholder={
+                            isCloud() && !state?.allowedActions?.can_create_users ? (
+                                <span className="create-new">
+                                    <label>Add a new user</label>
+                                    <FaArrowCircleUp className="lock-feature-icon" />
+                                </span>
+                            ) : (
+                                <span className="create-new">Add a new user</span>
+                            )
+                        }
                         colorType="white"
                         radiusType="circle"
                         backgroundColorType="purple"
@@ -485,7 +507,7 @@ function Users() {
                         fontWeight="600"
                         boxShadowStyle="float"
                         aria-haspopup="true"
-                        onClick={() => addUserModalFlip(true)}
+                        onClick={() => (!isCloud() || state?.allowedActions?.can_create_users ? addUserModalFlip(true) : setOpenCloudModal(true))}
                     />
                 </div>
             </div>
@@ -502,44 +524,33 @@ function Users() {
                         title={tableHeader}
                         columns={tableType.includes('Management') ? managmentColumns : clientColumns}
                         data={tableType.includes('Management') ? copyOfUserList?.management_users : copyOfUserList?.application_users}
+                        onSelectRow={(record) => setSelectedRow(record)}
                     />
                 )}
             </div>
-            <Modal
-                header={
-                    <div className="modal-header">
-                        <div className="header-img-container">
-                            <AddUserIcon className="headerImage" alt="addUserIcon" />
-                        </div>
-                        <p>Add a new user</p>
-                        <label>Enter user details to get started</label>
-                    </div>
-                }
-                width="450px"
-                rBtnText="Create"
-                lBtnText="Cancel"
-                lBtnClick={() => {
-                    addUserModalFlip(false);
-                    setCreateUserLoader(false);
-                }}
-                clickOutside={() => {
+            <Drawer
+                placement="right"
+                title={selectedRow ? 'User details' : 'Add a new user'}
+                onClose={() => {
                     setCreateUserLoader(false);
                     addUserModalFlip(false);
+                    setSelectedRow(null);
                 }}
-                rBtnClick={() => {
-                    setCreateUserLoader(true);
-                    createUserRef.current();
-                }}
-                isLoading={createUserLoader}
-                open={addUserModalIsOpen}
+                destroyOnClose={true}
+                width="650px"
+                open={addUserModalIsOpen || selectedRow}
             >
                 <CreateUserDetails
+                    selectedRow={selectedRow}
                     createUserRef={createUserRef}
                     userList={userList}
-                    closeModal={(userData) => handleAddUser(userData)}
                     handleLoader={(e) => setCreateUserLoader(e)}
+                    closeModal={(userData) => {
+                        selectedRow ? setSelectedRow(null) : handleAddUser(userData);
+                    }}
+                    isLoading={createUserLoader}
                 />
-            </Modal>
+            </Drawer>
             <Modal
                 header="User connection details"
                 height="220px"
@@ -582,6 +593,7 @@ function Users() {
                 />
                 <br />
             </Modal>
+            <CloudModal type="upgrade" open={openCloudModal} handleClose={() => setOpenCloudModal(false)} />
         </div>
     );
 }

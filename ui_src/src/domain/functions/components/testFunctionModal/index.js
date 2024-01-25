@@ -12,19 +12,19 @@
 
 import './style.scss';
 import { useState, useEffect } from 'react';
-import Button from '../../../../components/button';
+import Button from 'components/button';
 import { FiChevronRight } from 'react-icons/fi';
-import SearchInput from '../../../../components/searchInput';
-import { ReactComponent as SearchIcon } from '../../../../assets/images/searchIcon.svg';
-import { ReactComponent as TestEventModalIcon } from '../../../../assets/images/testEventModalcon.svg';
+import SearchInput from 'components/searchInput';
+import { ReactComponent as SearchIcon } from 'assets/images/searchIcon.svg';
+import { ReactComponent as TestEventModalIcon } from 'assets/images/testEventModalcon.svg';
 import TestItem from './components/testItem';
-import Modal from '../../../../components/modal';
+import Modal from 'components/modal';
 import NewTestEventModal from './components/newTestEventModal';
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../services/http';
-import { ReactComponent as DeleteWrapperIcon } from '../../../../assets/images/deleteWrapperIcon.svg';
-import { ReactComponent as EmptyEventsIcon } from '../../../../assets/images/emptyEvents.svg';
-import DeleteItemsModal from '../../../../components/deleteItemsModal';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import { ReactComponent as DeleteWrapperIcon } from 'assets/images/deleteWrapperIcon.svg';
+import { ReactComponent as EmptyEventsIcon } from 'assets/images/emptyEvents.svg';
+import DeleteItemsModal from 'components/deleteItemsModal';
 
 const TestFunctionModal = ({ onCancel }) => {
     const [searchEvent, setSearchEvent] = useState('');
@@ -162,6 +162,7 @@ const TestFunctionModal = ({ onCancel }) => {
                                 aria-haspopup="true"
                                 boxShadowStyle="float"
                                 disabled={isCheck?.length === 0}
+                                isVisible={isCheck?.length !== 0}
                                 onClick={() => setIsDeleteModalOpen(true)}
                             />
                             <Button

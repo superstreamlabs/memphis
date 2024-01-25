@@ -16,16 +16,16 @@ import React, { createContext, useContext, useEffect, useReducer, useState } fro
 import { StringCodec, JSONCodec } from 'nats.ws';
 import { Popover } from 'antd';
 
-import { filterType, labelType, CircleLetterColor } from '../../const/globalConst';
-import { ReactComponent as SearchIcon } from '../../assets/images/searchIcon.svg';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { ReactComponent as FilterImgIcon } from '../../assets/images/filter.svg';
-import { httpRequest } from '../../services/http';
+import { filterType, labelType, CircleLetterColor } from 'const/globalConst';
+import { ReactComponent as SearchIcon } from 'assets/images/searchIcon.svg';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { ReactComponent as FilterImgIcon } from 'assets/images/filter.svg';
+import { httpRequest } from 'services/http';
 import CustomCollapse from './customCollapse';
-import { Context } from '../../hooks/store';
-import SearchInput from '../searchInput';
+import { Context } from 'hooks/store';
+import SearchInput from 'components/searchInput';
 import Reducer from './hooks/reducer';
-import Button from '../button';
+import Button from 'components/button';
 
 const initialState = {
     isOpen: false,
@@ -33,7 +33,7 @@ const initialState = {
     filterFields: []
 };
 
-const Filter = ({ filterComponent, height, applyFilter }) => {
+const Filter = ({ filterComponent, height, applyFilter, hideElement }) => {
     const [state, dispatch] = useContext(Context);
     const [filterState, filterDispatch] = useReducer(Reducer, initialState);
     const [filterFields, setFilterFields] = useState([]);
@@ -445,11 +445,12 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
     return (
         <FilterStoreContext.Provider value={[filterState, filterDispatch]}>
             {filterComponent !== 'syslogs' && (
+                (hideElement !== 'search' &&
                 <SearchInput
                     placeholder="Search"
                     colorType="navy"
                     backgroundColorType="gray-dark"
-                    width="288px"
+                    width={ hideElement === 'search' ? "288px" : "100%" }
                     height="34px"
                     borderColorType="none"
                     boxShadowsType="none"
@@ -457,8 +458,9 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                     iconComponent={<SearchIcon alt="searchIcon" />}
                     onChange={handleSearch}
                     value={searchInput}
-                />
+                />)
             )}
+            {(hideElement !== 'filter' &&
             <Popover placement="bottomLeft" content={content} trigger="click" onOpenChange={handleOpenChange} open={filterState.isOpen}>
                 <Button
                     className="modal-btn"
@@ -474,12 +476,12 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                     colorType="black"
                     radiusType="circle"
                     backgroundColorType="white"
-                    fontSize="14px"
+                    fontSize="12px"
                     fontWeight="bold"
                     boxShadowStyle="float"
                     onClick={() => {}}
                 />
-            </Popover>
+            </Popover>)}
         </FilterStoreContext.Provider>
     );
 };

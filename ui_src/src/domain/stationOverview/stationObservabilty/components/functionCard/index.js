@@ -14,21 +14,25 @@ import './style.scss';
 import React, { useState, useEffect, useContext } from 'react';
 import { Popover } from 'antd';
 import { HiEllipsisVertical } from 'react-icons/hi2';
-import { ReactComponent as FunctionBoxTitleIcon } from '../../../../../assets/images/functionCardIcon.svg';
-import { ReactComponent as FunctionProcessingIcon } from '../../../../../assets/images/proccessingIcon.svg';
-import { ReactComponent as FunctionProcessingWarningIcon } from '../../../../../assets/images/processingWarningIcon.svg';
-import { ApiEndpoints } from '../../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../../services/http';
-import { convertLongNumbers } from '../../../../../services/valueConvertor';
-import { StationStoreContext } from '../../../';
+import { ReactComponent as FunctionBoxTitleIcon } from 'assets/images/functionCardIcon.svg';
+import { ReactComponent as FunctionProcessingIcon } from 'assets/images/proccessingIcon.svg';
+import { ReactComponent as FunctionProcessingWarningIcon } from 'assets/images/processingWarningIcon.svg';
+import { IoClose } from 'react-icons/io5';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import { convertLongNumbers } from 'services/valueConvertor';
+import { StationStoreContext } from 'domain/stationOverview';
+import FunctionDetails from 'domain/functions/components/functionDetails';
+import Drawer from 'components/drawer';
+import Tooltip from 'components/tooltip/tooltip';
 
 export default function FunctionCard({
     onClick,
+    onClickMenu,
     stationName,
     partiotionNumber,
     onDeleteFunction,
     functionItem,
-    isGeneralView,
     isDeactive = false,
     selected,
     changeActivition
@@ -36,10 +40,21 @@ export default function FunctionCard({
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [isActive, setIsActive] = useState(true);
     const [popoverFunctionContextMenu, setPopoverFunctionContextMenu] = useState(false);
-
+    const [openFunctionDetails, setOpenFunctionDetails] = useState(false);
+    const [selectedFunction, setSelectedFunction] = useState();
+    const [averageProcessingTime, setAverageProcessingTime] = useState(null);
     useEffect(() => {
         setIsActive(!isDeactive);
     }, [isDeactive]);
+
+    useEffect(() => {
+        let func = functionItem;
+        func.stars = Math.random() + 4;
+        func.rates = Math.floor(Math.random() * (80 - 50 + 1)) + 50;
+        func.forks = Math.floor(Math.random() * (100 - 80 + 1)) + 80;
+        setSelectedFunction(func);
+        getFunctionDetails();
+    }, [functionItem]);
 
     const functionContextMenuStyles = {
         borderRadius: '8px',
@@ -49,9 +64,21 @@ export default function FunctionCard({
         width: '150px'
     };
 
+    const getFunctionDetails = async () => {
+        try {
+            const response = await httpRequest('GET', `${ApiEndpoints.GET_FUNCTION_DETAILS}?function_id=${functionItem?.id}`);
+            setAverageProcessingTime(response?.metrics?.average_processing_time);
+        } catch (e) {
+            return;
+        }
+    };
+
     const getFunctionsOverview = async () => {
         try {
-            const data = await httpRequest('GET', `${ApiEndpoints.GET_FUNCTIONS_OVERVIEW}?station_name=${stationState?.stationMetaData?.name}`);
+            const data = await httpRequest(
+                'GET',
+                `${ApiEndpoints.GET_FUNCTIONS_OVERVIEW}?station_name=${stationState?.stationMetaData?.name}&partition=${stationState?.stationPartition || 1}`
+            );
             stationDispatch({ type: 'SET_STATION_FUNCTIONS', payload: data });
         } catch (e) {
             return;
@@ -60,7 +87,7 @@ export default function FunctionCard({
 
     const handleDeactivate = async () => {
         const bodyRequest = {
-            function_id: functionItem?.installed_id,
+            function_id: functionItem?.id,
             station_name: stationName,
             partition: partiotionNumber,
             visible_step: functionItem?.visible_step
@@ -75,7 +102,7 @@ export default function FunctionCard({
 
     const handleActivate = async () => {
         const bodyRequest = {
-            function_id: functionItem?.installed_id,
+            function_id: functionItem?.id,
             station_name: stationName,
             partition: partiotionNumber,
             visible_step: functionItem?.visible_step
@@ -90,7 +117,7 @@ export default function FunctionCard({
 
     const handleDelete = async () => {
         const bodyRequest = {
-            function_id: functionItem?.installed_id,
+            function_id: functionItem?.id,
             station_name: stationName,
             partition: partiotionNumber,
             visible_step: functionItem?.visible_step
@@ -109,7 +136,21 @@ export default function FunctionCard({
             <div
                 className="item-wrap"
                 style={{ width: 'initial' }}
-                onClick={() => {
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setPopoverFunctionContextMenu(false);
+                    setOpenFunctionDetails(true);
+                }}
+            >
+                <div className="item">
+                    <p className="item-title">Information</p>
+                </div>
+            </div>
+            <div
+                className="item-wrap"
+                style={{ width: 'initial' }}
+                onClick={(e) => {
+                    e.stopPropagation();
                     setPopoverFunctionContextMenu(false);
                     functionItem?.activated ? handleDeactivate() : handleActivate();
                 }}
@@ -121,7 +162,8 @@ export default function FunctionCard({
             <div
                 className="item-wrap"
                 style={{ width: 'initial' }}
-                onClick={() => {
+                onClick={(e) => {
+                    e.stopPropagation();
                     setPopoverFunctionContextMenu(false);
                     handleDelete();
                 }}
@@ -134,60 +176,70 @@ export default function FunctionCard({
     );
 
     return (
-        <div className={`ms-function-card ${!functionItem?.activated ? 'deactivated' : undefined}`} onClick={() => isActive && onClick && onClick()}>
-            {!isGeneralView && (
-                <div className="ms-function-card-badge-left">
+        <div className={`ms-function-card`} onClick={() => isActive && onClick && onClick()}>
+            <Tooltip text="Awaiting messages">
+                <div className={`ms-function-card-badge-left badge ${!selectedFunction?.activated ? 'deactivated' : undefined}`}>
                     <FunctionProcessingWarningIcon />
-                    {convertLongNumbers(functionItem?.pending_messages || 0)}
+                    {convertLongNumbers(selectedFunction?.pending_messages || 0)}
                 </div>
-            )}
-            <div className="ms-function-card-top">
-                {!isGeneralView && (
-                    <div className="ms-function-card-badge-top">
-                        <FunctionProcessingIcon />
-                        {convertLongNumbers(functionItem?.in_process_messages || 0)}
-                    </div>
-                )}
+            </Tooltip>
+            <div className={`ms-function-card-top`}>
+                {
+                    <Tooltip text="In process">
+                        <div className={`ms-function-card-badge-top badge ${!selectedFunction?.activated ? 'deactivated' : undefined}`}>
+                            <FunctionProcessingIcon />
+                            {convertLongNumbers(functionItem?.in_process_messages || 0)}
+                        </div>
+                    </Tooltip>
+                }
                 <div className={`ms-function-card-inner ${selected ? 'selected' : undefined}`}>
                     <div className="ms-function-card-header">
-                        <div className="ms-function-card-header-title">
-                            <FunctionBoxTitleIcon />
-                            <div>
-                                <span>{functionItem.name}</span>
-                                {isGeneralView && <p>Avg. processing time : {functionItem.metrics?.average_processing_time}s</p>}
-                            </div>
-                        </div>
                         <div className="ms-function-card-header-action">
                             <Popover
                                 overlayInnerStyle={functionContextMenuStyles}
                                 placement="bottom"
                                 content={functionContextMenu}
                                 trigger="click"
-                                onOpenChange={() => setPopoverFunctionContextMenu(!popoverFunctionContextMenu)}
+                                onOpenChange={(e) => {
+                                    setPopoverFunctionContextMenu(!popoverFunctionContextMenu);
+                                    e && onClickMenu();
+                                }}
                                 open={popoverFunctionContextMenu}
                             >
-                                <HiEllipsisVertical size={16} />
+                                <HiEllipsisVertical size={16} onClick={(e) => e.stopPropagation()} />
                             </Popover>
                         </div>
                     </div>
-                    {!isGeneralView && (
-                        <div className="ms-function-card-body">
-                            <div className="ms-function-card-body-left">
-                                <div className="ms-function-card-info-box">
-                                    <div className="title">Av. Processing Time</div>
-                                    <div className="subtitle">{functionItem.metrics?.average_processing_time}s</div>
-                                </div>
-                            </div>
-                            <div className="ms-function-card-body-right">
-                                <div className="ms-function-card-info-box">
-                                    <div className="title">Error Rate</div>
-                                    <div className="subtitle">{functionItem.metrics?.error_rate}%</div>
-                                </div>
-                            </div>
+
+                    <div className={`ms-function-card-title ${!selectedFunction?.activated ? 'deactivated-function' : undefined}`}>
+                        <div className="function-name">
+                            <FunctionBoxTitleIcon /> <span>{selectedFunction?.name}</span>
                         </div>
-                    )}
+                        <span className="processing">avg processing: {averageProcessingTime}/ms</span>
+                    </div>
                 </div>
+                <Tooltip text="Dead-letter">
+                    <div className={`ms-function-card-badge-bottom badge ${!selectedFunction?.activated ? 'deactivated' : undefined}`}>
+                        <FunctionProcessingIcon />
+                        {convertLongNumbers(functionItem?.dls_msgs_count || 0)}
+                    </div>
+                </Tooltip>
             </div>
+            <Drawer
+                placement="right"
+                size={'large'}
+                className="function-drawer"
+                onClose={(e) => {
+                    e.stopPropagation();
+                    setOpenFunctionDetails(false);
+                }}
+                destroyOnClose={true}
+                open={openFunctionDetails}
+                maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
+                closeIcon={<IoClose style={{ color: '#D1D1D1', width: '25px', height: '25px' }} />}
+            >
+                <FunctionDetails selectedFunction={selectedFunction} integrated={true} stationView />
+            </Drawer>
         </div>
     );
 }

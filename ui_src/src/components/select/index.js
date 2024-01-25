@@ -15,7 +15,7 @@ import './style.scss';
 import { Select } from 'antd';
 import React from 'react';
 
-import { getFontColor, getBackgroundColor, getBorderColor, getBoxShadows, getBorderRadius } from '../../utils/styleTemplates';
+import { getFontColor, getBackgroundColor, getBorderColor, getBoxShadows, getBorderRadius } from 'utils/styleTemplates';
 import ArrowDropDownRounded from '@material-ui/icons/ArrowDropDownRounded';
 
 const { Option } = Select;
@@ -63,7 +63,8 @@ const SelectComponent = ({
             borderRadius,
             height: height || '40px',
             fontFamily: fontFamily || 'Inter',
-            fontSize: fontSize || '14px'
+            fontSize: fontSize || '14px',
+            overflowY: 'auto'
         }
     };
 
@@ -80,7 +81,13 @@ const SelectComponent = ({
             >
                 {options.map((option) => (
                     <Option key={option?.id || option?.name || option} disabled={option?.disabled || false}>
-                        {option?.name || option}
+                        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }} className={option?.name}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                <img src={option?.icon} alt={option?.name} /> <label>{option?.name || option}</label>
+                            </span>
+                            {option?.comment && <span className="comment">{option?.comment}</span>}
+                            {option?.soon && <span className="coming-soon-select">Coming soon</span>}
+                        </span>
                     </Option>
                 ))}
             </Select>

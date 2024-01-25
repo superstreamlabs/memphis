@@ -12,15 +12,15 @@
 
 import './style.scss';
 import { useState } from 'react';
-import { ReactComponent as FunctionIntegrateIcon } from '../../../../assets/images/functionIntegrate.svg';
-import { ReactComponent as CloneModalIcon } from '../../../../assets/images/cloneModalIcon.svg';
+import { ReactComponent as FunctionIntegrateIcon } from 'assets/images/functionIntegrate.svg';
+import { ReactComponent as CloneModalIcon } from 'assets/images/cloneModalIcon.svg';
 import { MdDone } from 'react-icons/md';
-import VideoPlayer from '../../../../components/videoPlayer';
-import Button from '../../../../components/button';
-import Modal from '../../../../components/modal';
-import CloneModal from '../../../../components/cloneModal';
-import { CONNECT_APP_VIDEO } from '../../../../config';
-import ConnectBG from '../../../../assets/images/connectBG.webp';
+import VideoPlayer from 'components/videoPlayer';
+import Button from 'components/button';
+import Modal from 'components/modal';
+import CloneModal from 'components/cloneModal';
+import { FUNCTION_GUIDE_VIDEO } from 'config';
+import ConnectBG from 'assets/images/functionsWelcomeBanner.webp';
 import { LuInfo } from 'react-icons/lu';
 
 const FunctionsGuide = ({ handleClose, handleConfirm }) => {
@@ -37,25 +37,29 @@ const FunctionsGuide = ({ handleClose, handleConfirm }) => {
         {
             name: (
                 <>
+                    <label>Clone or create a new GitHub repository </label>
                     <label className="link" onClick={() => handleCloneClick('functions')}>
-                        Clone or Download
+                        {' '}
+                        (templates can be found here)
                     </label>
-                    <label> The Template Repository</label>
                 </>
             )
         },
         {
             name: (
                 <>
-                    <label>Code Your Function Based On One Of </label>
-                    <label className="link" onClick={() => handleCloneClick('onboard')}>
-                        The Examples
+                    <label>Code your function based on the following </label>
+                    <label
+                        className="link"
+                        onClick={() => window.open(`https://docs.memphis.dev/memphis/memphis-functions/getting-started#how-to-develop-a-new-private-function`)}
+                    >
+                        guide
                     </label>
                 </>
             )
         },
-        { name: 'Commit Your Function To A New Repository (Currently In Github)' },
-        { name: 'Connect The Newly Created Repository With Memphis' }
+        { name: 'Commit your function' },
+        { name: 'Connect the newly created repository with Memphis' }
     ];
 
     const handleNext = () => {
@@ -70,43 +74,43 @@ const FunctionsGuide = ({ handleClose, handleConfirm }) => {
                 <p className="title">
                     Welcome to <span> Memphis Functions</span>
                 </p>
-                <p className="sub-title">Say Goodbye to Manual Business Logic!</p>
-                <p className="sub-title">Embrace Lightning-Speed Serverless Stream Processing for a Seamless Experience.</p>
+                <p className="sub-title">Say Goodbye To Writing Business Logic In Your Clients!</p>
+                <p className="sub-title">Embrace Lightning-Speed Serverless Stream Processing.</p>
             </div>
             <div className="video-wrapper">
-                <VideoPlayer url={CONNECT_APP_VIDEO} bgImg={ConnectBG} width={'540px'} height={'250px'} />
+                <VideoPlayer url={FUNCTION_GUIDE_VIDEO} bgImg={ConnectBG} width={'540px'} height={'250px'} tracePlay />
             </div>
             <div className="info">
                 <p className="info-title">Getting Started</p>
-                {steps.map((step, index) => (
-                    <div className="step-container" key={index}>
-                        <div className="step-header">
-                            {index < currentStep ? (
-                                <div className="done" onClick={() => setCurrentStep(index)}>
-                                    <MdDone width={12} height={12} alt="Done" />
-                                </div>
-                            ) : (
-                                <div className="icon" onClick={() => setCurrentStep(index)}>
-                                    {index + 1}
+                <>
+                    {steps.map((step, index) => (
+                        <div className="step-container" key={index}>
+                            <div className="step-header">
+                                {index < currentStep ? (
+                                    <div className="done" onClick={() => setCurrentStep(index)}>
+                                        <MdDone width={12} height={12} alt="Done" />
+                                    </div>
+                                ) : (
+                                    <div className="icon" onClick={() => setCurrentStep(index)}>
+                                        {index + 1}
+                                    </div>
+                                )}
+                                <div className="step-name">{step.name}</div>
+                            </div>
+                            {index < steps.length - 1 && (
+                                <div className={`step-body`}>
+                                    <p className="description"></p>
                                 </div>
                             )}
-                            <div className="step-name">{step.name}</div>
                         </div>
-                        {index < steps.length - 1 && (
-                            <div className={`step-body`}>
-                                <p className="description"></p>
-                            </div>
-                        )}
-                    </div>
-                ))}
+                    ))}
+                </>
             </div>
-
             <div className="need-help">
                 <LuInfo className="msg" />
                 <label className="bold">Require assistance?</label>
-                <label> Use the chat in the lower right corner, or submit a service request!</label>
+                <label> Submit a service request and we will come to the rescue!</label>
             </div>
-
             <div className="footer">
                 <Button
                     width={'100%'}

@@ -13,38 +13,42 @@
 import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
-import { ApiEndpoints } from '../../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../../services/http';
-import { Context } from '../../../../../hooks/store';
-import Modal from '../../../../../components/modal';
-import { StationStoreContext } from '../../../';
-import { ReactComponent as AddFunctionIcon } from '../../../../../assets/images/addFunction.svg';
-import { ReactComponent as PlusIcon } from '../../../../../assets/images/plusIcon.svg';
-import { ReactComponent as ProcessedIcon } from '../../../../../assets/images/processIcon.svg';
-import { ReactComponent as GitIcon } from '../../../../../assets/images/gitIcon.svg';
-import { ReactComponent as CodeGrayIcon } from '../../../../../assets/images/codeGrayIcon.svg';
-import { ReactComponent as CloseIcon } from '../../../../../assets/images/close.svg';
-import { ReactComponent as MetricsIcon } from '../../../../../assets/images/metricsIcon.svg';
-import { ReactComponent as MetricsClockIcon } from '../../../../../assets/images/metricsClockIcon.svg';
-import { ReactComponent as MetricsErrorIcon } from '../../../../../assets/images/metricsErrorIcon.svg';
-import { Tabs } from 'antd';
-import dataPassLineLottie from '../../../../../assets/lotties/dataPassLine.json';
-import dataPassLineEmptyLottie from '../../../../../assets/lotties/dataPassLineEmpty.json';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import { Context } from 'hooks/store';
+import { StationStoreContext } from 'domain/stationOverview';
+import { ReactComponent as AddFunctionIcon } from 'assets/images/addFunction.svg';
+import { ReactComponent as PlusIcon } from 'assets/images/plusIcon.svg';
+import { ReactComponent as ProcessedIcon } from 'assets/images/processIcon.svg';
+import { IoClose } from 'react-icons/io5';
+import Drawer from 'components/drawer';
+import dataPassLineLottie from 'assets/lotties/dataPassLine.json';
+import dataPassLineEmptyLottie from 'assets/lotties/dataPassLineEmpty.json';
 import Lottie from 'lottie-react';
 import FunctionCard from '../functionCard';
 import FunctionsModal from '../functionsModal';
-import OverflowTip from '../../../../../components/tooltip/overflowtip';
+import FunctionData from '../functionData';
+import FunctionDetails from 'domain/functions/components/functionDetails';
 import { StringCodec, JSONCodec } from 'nats.ws';
+import Spinner from 'components/spinner';
 
 let sub;
 
-const FunctionsOberview = () => {
+const FunctionsOverview = ({ referredFunction, dismissFunction, moveToGenralView, loading }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [currentFunction, setCurrentFunction] = useState(null);
     const [functionDetails, setFunctionDetails] = useState(null);
     const [openFunctionsModal, setOpenFunctionsModal] = useState(false);
+    const [openFunctionDetails, setOpenFunctionDetails] = useState(false);
+    const [openBottomDetails, setOpenBottomDetails] = useState(false);
     const [socketOn, setSocketOn] = useState(false);
+    const [isLoading, setLoading] = useState(false);
     const [state, dispatch] = useContext(Context);
+
+    useEffect(() => {
+        getFunctionsOverview();
+        referredFunction && setOpenFunctionsModal(true);
+    }, []);
 
     useEffect(() => {
         if (socketOn) {
@@ -109,6 +113,11 @@ const FunctionsOberview = () => {
     }, [state.socket, stationState?.stationMetaData?.name]);
 
     useEffect(() => {
+        stationDispatch({ type: 'SET_STATION_FUNCTIONS', payload: [] });
+        getFunctionsOverview();
+    }, [stationState?.stationPartition]);
+
+    useEffect(() => {
         if (sub && socketOn) {
             stopListen();
             startListen();
@@ -116,11 +125,16 @@ const FunctionsOberview = () => {
     }, [stationState?.stationPartition, stationState?.stationMetaData?.name]);
 
     const getFunctionsOverview = async () => {
+        setLoading(true);
         try {
-            const data = await httpRequest('GET', `${ApiEndpoints.GET_FUNCTIONS_OVERVIEW}?station_name=${stationState?.stationMetaData?.name}`);
+            const data = await httpRequest(
+                'GET',
+                `${ApiEndpoints.GET_FUNCTIONS_OVERVIEW}?station_name=${stationState?.stationMetaData?.name}&partition=${stationState?.stationPartition || 1}`
+            );
             stationDispatch({ type: 'SET_STATION_FUNCTIONS', payload: data });
-            setOpenFunctionsModal(false);
+            setLoading(false);
         } catch (e) {
+            setLoading(false);
             return;
         }
     };
@@ -135,22 +149,20 @@ const FunctionsOberview = () => {
     };
 
     useEffect(() => {
-        getFunctionsOverview();
-    }, []);
-
-    useEffect(() => {
         currentFunction && getFunctionDetails();
     }, [currentFunction]);
 
     const handleAddFunction = async (requestBody) => {
-        requestBody['station_name'] = stationState?.stationMetaData?.name;
-        requestBody['partition'] = stationState?.stationMetaData?.partitions_number;
+        requestBody.station_name = stationState?.stationMetaData?.name;
+        requestBody.partition = stationState?.stationPartition || 1;
         try {
             await httpRequest('POST', ApiEndpoints.ADD_FUNCTION, requestBody);
             getFunctionsOverview();
         } catch (e) {
         } finally {
             setFunctionDetails(null);
+            setOpenFunctionsModal(false);
+            dismissFunction();
         }
     };
 
@@ -168,59 +180,15 @@ const FunctionsOberview = () => {
         setCurrentFunction(null);
     };
 
-    const items = [
-        {
-            key: '1',
-            label: 'Metrics',
-            children: (
-                <div className="metrics-wrapper">
-                    <div className="metrics">
-                        <div className="metrics-img">
-                            <MetricsIcon />
-                        </div>
-                        <div className="metrics-body">
-                            <div className="metrics-body-title">Total invocations</div>
-                            <div className="metrics-body-subtitle">{functionDetails?.total_invocations?.toLocaleString() || 0}</div>
-                        </div>
-                    </div>
-                    <div className="metrics-divider"></div>
-                    <div className="metrics">
-                        <div className="metrics-img">
-                            <MetricsClockIcon />
-                        </div>
-                        <div className="metrics-body">
-                            <div className="metrics-body-title">Av. Processing time</div>
-                            <div className="metrics-body-subtitle">
-                                {functionDetails?.avg_processing_time}
-                                <span>/sec</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="metrics-divider"></div>
-                    <div className="metrics">
-                        <div className="metrics-img">
-                            <MetricsErrorIcon />
-                        </div>
-                        <div className="metrics-body">
-                            <div className="metrics-body-title">Error rate</div>
-                            <div className="metrics-body-subtitle">{functionDetails?.error_rate}%</div>
-                        </div>
-                    </div>
-                </div>
-            )
-        },
-        {
-            key: '2',
-            label: 'Logs',
-            children: 'Content of Tab Pane 3',
-            disabled: true
-        }
-    ];
+    const isDataMoving =
+        (stationState?.stationSocketData?.connected_producers?.length > 0 ||
+            stationState?.stationSocketData?.source_connectors?.filter((connector) => connector?.is_active)?.length > 0) &&
+        stationState?.stationMetaData?.is_native;
 
     const statisticsData = [
         { name: 'Awaiting msgs', data: stationState?.stationFunctions?.total_awaiting_messages?.toLocaleString() },
-        { name: 'Processed msgs', data: stationState?.stationFunctions?.total_processed_messages?.toLocaleString() },
-        { name: 'Total invocations', data: stationState?.stationFunctions?.total_invocations?.toLocaleString() || 0 },
+        { name: 'In process', data: stationState?.stationFunctions?.total_processed_messages?.toLocaleString() },
+        { name: 'Total invocations', data: stationState?.stationFunctions?.total_invocations?.toLocaleString() },
         { name: 'Avg Error rate', data: stationState?.stationFunctions?.average_error_rate },
         {
             name: 'Ordering',
@@ -230,8 +198,8 @@ const FunctionsOberview = () => {
     return (
         <div className="station-function-overview">
             <functions-header is="x3d">
-                {statisticsData?.map((item) => (
-                    <div className="statistics-box">
+                {statisticsData?.map((item, index) => (
+                    <div className="statistics-box" key={`${item?.name}-${index}`}>
                         <div className="statistics-box-title">{item?.name}</div>
                         <div className="statistics-box-number">{item?.data?.toLocaleString()}</div>
                     </div>
@@ -241,57 +209,40 @@ const FunctionsOberview = () => {
                 <div className="tab-functions">
                     <div className="tab-functions-inner">
                         <div className="tab-functions-inner-line">
-                            {stationState?.stationMetaData?.is_native ? (
-                                <>
-                                    {stationState?.stationSocketData?.connected_producers?.length === 0 && (
-                                        <>
-                                            <Lottie animationData={dataPassLineEmptyLottie} loop={true} />
-                                            <Lottie animationData={dataPassLineEmptyLottie} loop={true} />
-                                        </>
-                                    )}
-                                    {stationState?.stationSocketData?.connected_producers?.length > 0 && (
-                                        <>
-                                            <Lottie animationData={dataPassLineLottie} loop={true} />
-                                            <Lottie animationData={dataPassLineLottie} loop={true} />
-                                        </>
-                                    )}
-                                </>
-                            ) : (
-                                <>
-                                    <Lottie animationData={dataPassLineEmptyLottie} loop={true} />
-                                    <Lottie animationData={dataPassLineEmptyLottie} loop={true} />
-                                </>
-                            )}
+                            <Lottie animationData={isDataMoving ? dataPassLineLottie : dataPassLineEmptyLottie} loop={true} />
+                            <Lottie animationData={isDataMoving ? dataPassLineLottie : dataPassLineEmptyLottie} loop={true} />
                         </div>
-                        {stationState?.stationFunctions?.functions && stationState?.stationFunctions?.functions.length === 1 && <div></div>}
-                        {stationState?.stationFunctions?.functions && stationState?.stationFunctions?.functions?.length > 0 && (
+                        {isLoading || loading ? (
+                            <div className="loading">
+                                <Spinner />
+                            </div>
+                        ) : stationState?.stationFunctions?.functions && stationState?.stationFunctions?.functions?.length > 0 ? (
                             <div className="function-overview">
                                 <div className="tab-functions-inner-left">
-                                    <div className="tab-functions-inner-cards">
+                                    <div className={stationState?.stationFunctions?.functions?.length < 2 ? `tab-functions-inner-one-card` : `tab-functions-inner-cards`}>
                                         {stationState?.stationFunctions?.functions?.map((functionItem, index) => (
                                             <FunctionCard
                                                 functionItem={functionItem}
                                                 stationName={stationState?.stationMetaData?.name}
-                                                partiotionNumber={stationState?.stationMetaData?.partitions_number}
-                                                onClick={() => setCurrentFunction(functionItem)}
+                                                partiotionNumber={stationState?.stationPartition || 1}
+                                                onClick={() => {
+                                                    setCurrentFunction(functionItem);
+                                                    setOpenBottomDetails(true);
+                                                }}
+                                                onClickMenu={() => setCurrentFunction(functionItem)}
                                                 updatedFunctionList={(data) => stationDispatch({ type: 'UPDATE_FUNCTION_LIST', payload: data?.functions['1'] })}
-                                                key={`function-tab-2-${functionItem.id}`}
-                                                changeActivition={(e) => changeActivition(functionItem.id, e)}
+                                                key={`${functionItem?.id}-${index}`}
+                                                changeActivition={(e) => changeActivition(functionItem?.id, e)}
                                                 onDeleteFunction={() => handleDeleteFunction(index)}
-                                                selected={currentFunction?.id === functionItem.id}
+                                                selected={currentFunction?.id === functionItem?.id}
                                             />
                                         ))}
-                                        <div
-                                            className="tab-functions-inner-add"
-                                            onClick={() => {
-                                                setOpenFunctionsModal(true);
-                                            }}
-                                        >
+                                        <div className="tab-functions-inner-add" onClick={() => setOpenFunctionsModal(true)}>
                                             <PlusIcon />
                                         </div>
                                     </div>
                                     <div className="tab-functions-inner-right">
-                                        <div className="processed">
+                                        <div className="processed" onClick={moveToGenralView}>
                                             <div className="processed-title">Processed</div>
                                             <ProcessedIcon />
                                             <span>{stationState?.stationFunctions?.total_processed_messages?.toLocaleString() || 0}</span>
@@ -299,63 +250,48 @@ const FunctionsOberview = () => {
                                     </div>
                                 </div>
                             </div>
-                        )}
-                        {stationState?.stationFunctions?.functions?.length === 0 && (
-                            <div className="functions-empty-wrap">
-                                <div className="functions-empty" onClick={() => setOpenFunctionsModal(true)}>
-                                    <AddFunctionIcon />
-                                    <span>Add Function</span>
+                        ) : (
+                            stationState?.stationFunctions?.functions?.length === 0 && (
+                                <div className="functions-empty-wrap">
+                                    <div className="functions-empty" onClick={() => setOpenFunctionsModal(true)}>
+                                        <AddFunctionIcon />
+                                        <span>Add Function</span>
+                                    </div>
                                 </div>
-                            </div>
+                            )
                         )}
                     </div>
                 </div>
             </functions-list>
-            {currentFunction && functionDetails && (
-                <div className={`ms-function-details ${currentFunction ? 'ms-function-details-entered' : 'ms-function-details-exited'}`}>
-                    <div className="ms-function-details-top">
-                        <div className="left">
-                            <OverflowTip text={functionDetails?.function_name}>
-                                <span>{functionDetails?.function_name}</span>
-                            </OverflowTip>
-                            <div className="ms-function-details-badge">
-                                <GitIcon />
-                                <OverflowTip text={functionDetails?.repo}>{functionDetails?.repo}</OverflowTip>
-                            </div>
-                            <div className="ms-function-details-badge">
-                                <CodeGrayIcon />
-                                {functionDetails?.language}
-                            </div>
-                        </div>
-                        <div className="right">
-                            <CloseIcon
-                                onClick={() => {
-                                    setTimeout(() => {
-                                        setCurrentFunction(null);
-                                    }, 500);
-                                }}
-                            />
-                        </div>
-                    </div>
-                    <div className="ms-function-details-body">
-                        <div className="tabs-container">
-                            <Tabs defaultActiveKey="1" items={items} size="small" />
-                        </div>
-                    </div>
-                </div>
-            )}
-            <Modal
+            <FunctionsModal
+                applyFunction={(requestBody) => handleAddFunction(requestBody)}
                 open={openFunctionsModal}
-                clickOutside={() => setOpenFunctionsModal(false)}
-                displayButtons={false}
-                className="ms-function-details-modal"
-                height="95vh"
-                width="70vw"
+                clickOutside={() => {
+                    setOpenFunctionsModal(false);
+                    dismissFunction();
+                }}
+                referredFunction={referredFunction}
+            />
+            <Drawer
+                placement="right"
+                size={'large'}
+                className="function-drawer"
+                onClose={() => setOpenFunctionDetails(false)}
+                destroyOnClose={true}
+                open={openFunctionDetails}
+                maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
+                closeIcon={<IoClose style={{ color: '#D1D1D1', width: '25px', height: '25px' }} />}
             >
-                <FunctionsModal applyFunction={(requestBody) => handleAddFunction(requestBody)} />
-            </Modal>
+                <FunctionDetails selectedFunction={currentFunction} integrated={true} stationView />
+            </Drawer>
+            <FunctionData
+                open={openBottomDetails}
+                onClose={() => setOpenBottomDetails(false)}
+                functionDetails={functionDetails}
+                setOpenFunctionDetails={() => setOpenFunctionDetails(true)}
+            />
         </div>
     );
 };
 
-export default FunctionsOberview;
+export default FunctionsOverview;

@@ -152,9 +152,12 @@ dynamic-integration {
             justify-content: center;
             align-items: center;
         }
+        .api-details-github {
+            height: 100% !important;
+        }
 
         .api-details {
-            height: 100%;
+            height: calc(100% - 55px);
             overflow: scroll;
             margin: 0 20px;
             margin-right: 2px;
@@ -273,7 +276,7 @@ dynamic-integration {
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px 0px;
+            padding: 20px 0px 0px 0px;
             border-top: 1px solid #dedede;
         }
     }
@@ -369,4 +372,10 @@ dynamic-integration {
             height: 12px;
         }
     }
+}
+
+.upgrade {
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }

@@ -15,11 +15,13 @@ import './style.scss';
 import React, { useContext } from 'react';
 import { Divider, Popover } from 'antd';
 
-import { ReactComponent as ConsumeLagIcon } from '../../../assets/images/consumeLagIcon.svg';
-import { ReactComponent as TotalMsgIcon } from '../../../assets/images/TotalMessages.svg';
-import { ReactComponent as TotalPoisonIcon } from '../../../assets/images/DeadLetteredMessages.svg';
-import { ReactComponent as TotalStationsIcon } from '../../../assets/images/TotalStations.svg';
-import { Context } from '../../../hooks/store';
+import { ReactComponent as ConsumeLagIcon } from 'assets/images/consumeLagIcon.svg';
+import { ReactComponent as TotalMsgIcon } from 'assets/images/TotalMessages.svg';
+import { ReactComponent as TotalPoisonIcon } from 'assets/images/DeadLetteredMessages.svg';
+import { ReactComponent as TotalStationsIcon } from 'assets/images/TotalStations.svg';
+import { ReactComponent as BackgroundTasksUI } from 'assets/images/backgroundTasksUI.svg';
+import AsyncTasks from 'components/asyncTasks';
+import { Context } from 'hooks/store';
 import { InfoOutlined, InfoRounded } from '@material-ui/icons';
 import StationLagCollapse from './stationCollapse';
 
@@ -80,6 +82,19 @@ const GenericDetails = () => {
                         </div>
                     </div>
                 </div>
+                <Divider type="vertical" />
+                <AsyncTasks overView>
+                    <div className="data-box">
+                        <BackgroundTasksUI width={50} height={50} alt="Background tasks" className="icon-wrapper" />
+                        <div className="data-wrapper">
+                            <span>Active background tasks</span>
+                            <span className="info-icon-wrapper">
+                                <p>{state?.backgroundTasks?.toLocaleString() || 0}</p>
+                                <InfoOutlined />
+                            </span>
+                        </div>
+                    </div>
+                </AsyncTasks>
             </div>
         </div>
     );

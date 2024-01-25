@@ -14,7 +14,9 @@
 package server
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -335,6 +337,14 @@ func copyStrings(src []string) []string {
 	return dst
 }
 
+// Returns a byte slice for the INFO protocol.
+func generateInfoJSON(info *Info) []byte {
+	b, _ := json.Marshal(info)
+	pcs := [][]byte{[]byte("INFO"), b, []byte(CR_LF)}
+	return bytes.Join(pcs, []byte(" "))
+}
+
+// ** added by Memphis
 // copyMaps make a new map of the same size than `src` and copy its content.
 // If `src` is nil, then this returns `nil`
 func copyMaps(src map[string]string) map[string]string {
@@ -347,3 +357,5 @@ func copyMaps(src map[string]string) map[string]string {
 	}
 	return dst
 }
+
+// ** added by Memphis

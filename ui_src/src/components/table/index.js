@@ -15,9 +15,10 @@ import './style.scss';
 import { Table as CustomTable } from 'antd';
 import React, { useEffect, useState } from 'react';
 
-const Table = ({ columns, data, title, tableRowClassname, className }) => {
+const Table = ({ columns, data, title, tableRowClassname, className, onSelectRow }) => {
     const [windowHeight, setWindowHeight] = useState(window.innerHeight);
     const [numRows, setNumRows] = useState(10);
+
     useEffect(() => {
         const handleResize = () => {
             setWindowHeight(window.innerHeight);
@@ -60,6 +61,13 @@ const Table = ({ columns, data, title, tableRowClassname, className }) => {
             {...fieldProps}
             pagination={{ pageSize: numRows, itemRender: itemRender, hideOnSinglePage: true, responsive: false }}
             rowKey={(record) => record.id}
+            onRow={(record, rowIndex) => {
+                return {
+                    onClick: (event) => {
+                        onSelectRow(record, rowIndex);
+                    }
+                };
+            }}
         />
     );
 };

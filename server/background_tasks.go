@@ -37,11 +37,17 @@ const NOTIFICATION_EVENTS_SUBJ = "$memphis_notifications"
 const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
 const TIERED_STORAGE_CONSUMER = "$memphis_tiered_storage_consumer"
 const DLS_UNACKED_CONSUMER = "$memphis_dls_unacked_consumer"
+const NACKED_DLS_SUBJ = "$memphis_nacked_dls"
+const NACKED_DLS_INNER_SUBJ = "$memphis_nacked_inner_dls"
+const NACKED_DLS_CONSUMER = "$memphis_nacked_dls_consumer"
 const SCHEMAVERSE_DLS_SUBJ = "$memphis_schemaverse_dls"
 const SCHEMAVERSE_DLS_INNER_SUBJ = "$memphis_schemaverse_inner_dls"
 const SCHEMAVERSE_DLS_CONSUMER = "$memphis_schemaverse_dls_consumer"
+const FUNCTIONS_DLS_INNER_SUBJ = "$memphis_functions_inner_dls"
+const FUNCTIONS_DLS_CONSUMER = "$memphis_functions_dls_consumer"
 const CACHE_UDATES_SUBJ = "$memphis_cache_updates"
-const INTEGRATIONS_AUDIT_LOGS_CONSUMER = "$memphis_integrations_audit_logs_consumer"
+const NOTIFICATIONS_BUFFER_CONSUMER = "$memphis_notifications_buffer_consumer"
+const FUNCTION_TASKS_CONSUMER = "$memphis_function_tasks_consumer"
 
 var LastReadThroughputMap map[string]models.Throughput
 var LastWriteThroughputMap map[string]models.Throughput
@@ -62,8 +68,8 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 			connectionIds := make(map[string]string)
 			for _, conn := range conns.Conns {
 				connId := strings.Split(conn.Name, "::")[0]
-				if connId != "" {
-					connectionIds[connId] = ""
+				if connId != _EMPTY_ {
+					connectionIds[connId] = _EMPTY_
 				}
 			}
 
@@ -123,7 +129,7 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 			}
 			switch strings.ToLower(integrationUpdate.Name) {
 			case "slack":
-				if s.opts.UiHost == "" {
+				if s.opts.UiHost == _EMPTY_ {
 					EditClusterCompHost("ui_host", integrationUpdate.UIUrl)
 				}
 				CacheDetails("slack", integrationUpdate.Keys, integrationUpdate.Properties, integrationUpdate.TenantName)
@@ -179,11 +185,12 @@ func (s *Server) ListenForNotificationEvents() error {
 				return
 			}
 			notificationMsg := notification.Msg
-			if notification.Code != "" {
+			if notification.Code != _EMPTY_ {
 				notificationMsg = notificationMsg + "\n```" + notification.Code + "```"
 			}
-			err = SendNotification(tenantName, notification.Title, notificationMsg, notification.Type)
+			err = s.SendNotification(tenantName, notification.Title, notificationMsg, notification.Type)
 			if err != nil {
+				s.Errorf("[tenant: %v]ListenForNotificationEvents at SendNotification: %v", tenantName, err.Error())
 				return
 			}
 		}(copyBytes(msg))
@@ -198,6 +205,19 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 	err := s.queueSubscribe(s.MemphisGlobalAccountString(), SCHEMAVERSE_DLS_SUBJ, SCHEMAVERSE_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			s.sendInternalAccountMsg(s.MemphisGlobalAccount(), SCHEMAVERSE_DLS_INNER_SUBJ, msg)
+		}(copyBytes(msg))
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Server) ListenForNackedDlsEvents() error {
+	err := s.queueSubscribe(s.MemphisGlobalAccountString(), NACKED_DLS_SUBJ, NACKED_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+		go func(msg []byte) {
+			s.sendInternalAccountMsg(s.MemphisGlobalAccount(), NACKED_DLS_INNER_SUBJ, msg)
 		}(copyBytes(msg))
 	})
 	if err != nil {
@@ -307,6 +327,11 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed to subscribing for schemaverse dls" + err.Error())
 	}
 
+	err = s.ListenForNackedDlsEvents()
+	if err != nil {
+		return errors.New("Failed to subscribing for nacked dls" + err.Error())
+	}
+
 	err = s.ListenForPoisonMsgAcks()
 	if err != nil {
 		return errors.New("Failed subscribing for poison message acks: " + err.Error())
@@ -327,19 +352,32 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed to subscribing for cloud cache updates" + err.Error())
 	}
 
+	err = s.ListenToFunctionsCounterUpdates()
+	if err != nil {
+		return errors.New("Failed to subscribing for functions counter updates" + err.Error())
+	}
+
 	go s.ConsumeSchemaverseDlsMessages()
+	go s.ConsumeNackedDlsMessages()
 	go s.ConsumeUnackedMsgs()
+	go s.ConsumeFunctionsDlsMessages()
 	go s.ConsumeTieredStorageMsgs()
 	go s.RemoveOldDlsMsgs()
 	go s.uploadMsgsToTier2Storage()
 	go s.InitializeThroughputSampling()
 	go s.UploadTenantUsageToDB()
 	go s.RefreshFirebaseFunctionsKey()
-	go s.RemoveOldProducersAndConsumers()
+	go s.RemoveOldProducersAndConsumersAndAuditLogs()
 	go ScheduledCloudCacheRefresh()
 	go s.SendBillingAlertWhenNeeded()
 	go s.CheckBrokenConnectedIntegrations()
+	go s.ConsumeNotificationsBufferMessages()
 	go s.ReleaseStuckLocks()
+	go s.ConsumeFunctionTasks()
+	go s.ScaleFunctionWorkers()
+	go s.ConnectorsDeadPodsRescheduler()
+	go s.removeOldAsyncTasks()
+
 	return nil
 }
 
@@ -407,7 +445,7 @@ func (s *Server) ConsumeUnackedMsgs() {
 			sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), replySubj, replySubj+"_sid", func(_ *client, subject, reply string, msg []byte) {
 				go func(subject, reply string, msg []byte) {
 					// Ignore 409 Exceeded MaxWaiting cases
-					if reply != "" {
+					if reply != _EMPTY_ {
 						message := unAckedMsg{
 							Msg:          msg,
 							ReplySubject: reply,
@@ -474,7 +512,7 @@ func (s *Server) ConsumeTieredStorageMsgs() {
 			sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), replySubj, replySubj+"_sid", func(_ *client, subject, reply string, msg []byte) {
 				go func(subject, reply string, msg []byte) {
 					// Ignore 409 Exceeded MaxWaiting cases
-					if reply != "" {
+					if reply != _EMPTY_ {
 						message := tsMsg{
 							Msg:          msg,
 							ReplySubject: reply,
@@ -537,7 +575,7 @@ func (s *Server) ConsumeSchemaverseDlsMessages() {
 			sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), replySubj, replySubj+"_sid", func(_ *client, subject, reply string, msg []byte) {
 				go func(subject, reply string, msg []byte) {
 					// Ignore 409 Exceeded MaxWaiting cases
-					if reply != "" {
+					if reply != _EMPTY_ {
 						message := schemaverseDlsMsg{
 							Msg:          msg,
 							ReplySubject: reply,
@@ -554,6 +592,8 @@ func (s *Server) ConsumeSchemaverseDlsMessages() {
 			// send JS API request to get more messages
 			subject := fmt.Sprintf(JSApiRequestNextT, dlsSchemaverseStream, SCHEMAVERSE_DLS_CONSUMER)
 			s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), subject, replySubj, nil, req, true)
+
+			s.Debugf("ConsumeSchemaverseDlsMessages: sending fetch request")
 
 			timeout := time.NewTimer(5 * time.Second)
 			msgs := make([]schemaverseDlsMsg, 0)
@@ -572,12 +612,12 @@ func (s *Server) ConsumeSchemaverseDlsMessages() {
 					}
 				case <-timeout.C:
 					stop = true
-					s.Debugf("ConsumeSchemaverseDlsMessages: finished because of timer")
+					s.Debugf("ConsumeSchemaverseDlsMessages: finished because of timer: %v messages", len(msgs))
 				}
 			}
 			for _, message := range msgs {
 				msg := message.Msg
-				s.handleSchemaverseDlsMsg(msg)
+				err := s.handleSchemaverseDlsMsg(msg)
 				if err == nil {
 					// send ack
 					s.sendInternalAccountMsgWithEcho(s.MemphisGlobalAccount(), message.ReplySubject, []byte(_EMPTY_))
@@ -590,6 +630,77 @@ func (s *Server) ConsumeSchemaverseDlsMessages() {
 	}
 }
 
+func (s *Server) ConsumeNackedDlsMessages() {
+	type nackedDlsMsg struct {
+		Msg          []byte
+		ReplySubject string
+	}
+	amount := 1000
+	req := []byte(strconv.FormatUint(uint64(amount), 10))
+	for {
+		if DLS_NACKED_CONSUMER_CREATED && DLS_NACKED_STREAM_CREATED {
+			resp := make(chan nackedDlsMsg)
+			replySubj := NACKED_DLS_CONSUMER + "_reply_" + s.memphis.nuid.Next()
+
+			// subscribe to schemavers dls messages
+			sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), replySubj, replySubj+"_sid", func(_ *client, subject, reply string, msg []byte) {
+				go func(subject, reply string, msg []byte) {
+					// Ignore 409 Exceeded MaxWaiting cases
+					if reply != _EMPTY_ {
+						message := nackedDlsMsg{
+							Msg:          msg,
+							ReplySubject: reply,
+						}
+						resp <- message
+					}
+				}(subject, reply, copyBytes(msg))
+			})
+			if err != nil {
+				s.Errorf("Failed to subscribe to nacked dls messages: %v", err.Error())
+				continue
+			}
+
+			// send JS API request to get more messages
+			subject := fmt.Sprintf(JSApiRequestNextT, dlsNackedStream, NACKED_DLS_CONSUMER)
+			s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), subject, replySubj, nil, req, true)
+
+			s.Debugf("ConsumeNackedDlsMessages: sending fetch request")
+
+			timeout := time.NewTimer(5 * time.Second)
+			msgs := make([]nackedDlsMsg, 0)
+			stop := false
+			for {
+				if stop {
+					s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
+					break
+				}
+				select {
+				case nackedDlsMsg := <-resp:
+					msgs = append(msgs, nackedDlsMsg)
+					if len(msgs) == amount {
+						stop = true
+						s.Debugf("ConsumeNackedDlsMessages: finished appending %v messages", len(msgs))
+					}
+				case <-timeout.C:
+					stop = true
+					s.Debugf("ConsumeNackedDlsMessages: finished because of timer: %v messages", len(msgs))
+				}
+			}
+			for _, message := range msgs {
+				msg := message.Msg
+				err := s.handleNackedDlsMsg(msg)
+				if err == nil {
+					// send ack
+					s.sendInternalAccountMsgWithEcho(s.MemphisGlobalAccount(), message.ReplySubject, []byte(_EMPTY_))
+				}
+			}
+		} else {
+			s.Warnf("ConsumeNackedDlsMessages: waiting for consumer and stream to be created")
+			time.Sleep(2 * time.Second)
+		}
+	}
+}
+
 func (s *Server) RemoveOldDlsMsgs() {
 	ticker := time.NewTicker(2 * time.Minute)
 	for range ticker.C {
@@ -597,53 +708,25 @@ func (s *Server) RemoveOldDlsMsgs() {
 			configurationTime := time.Now().Add(time.Hour * time.Duration(-rt))
 			err := db.DeleteOldDlsMessageByRetention(configurationTime, tenantName)
 			if err != nil {
-				serv.Errorf("RemoveOldDlsMsgs: %v", err.Error())
+				serv.Errorf("[tenant: %v]RemoveOldDlsMsgs: %v", tenantName, err.Error())
 			}
 		}
 	}
 }
 
-func (s *Server) RemoveOldProducersAndConsumers() {
+func (s *Server) RemoveOldProducersAndConsumersAndAuditLogs() {
 	ticker := time.NewTicker(15 * time.Minute)
 	for range ticker.C {
-		timeInterval := time.Now().Add(time.Duration(time.Hour * -time.Duration(s.opts.GCProducersConsumersRetentionHours)))
-		deletedCGs, err := db.DeleteOldProducersAndConsumers(timeInterval)
-		if err != nil {
-			serv.Errorf("RemoveOldProducersAndConsumers at DeleteOldProducersAndConsumers : %v", err.Error())
-		}
-
-		var CGsList []string
-		for _, cg := range deletedCGs {
-			CGsList = append(CGsList, cg.CGName)
-		}
-
-		remainingCG, err := db.GetAllDeletedConsumersFromList(CGsList)
-		if err != nil {
-			serv.Errorf("RemoveOldProducersAndConsumers at GetAllDeletedConsumersFromList: %v", err.Error())
-		}
-
-		CGmap := make(map[string]string)
-		for _, name := range remainingCG {
-			CGmap[name] = "."
-		}
-
-		for _, cg := range deletedCGs {
-			if _, ok := CGmap[cg.CGName]; !ok {
-				stationName, err := StationNameFromStr(cg.StationName)
-				if err == nil {
-					err = s.RemoveConsumer(cg.TenantName, stationName, cg.CGName, cg.PartitionsList)
-					if err != nil {
-						serv.Errorf("RemoveOldProducersAndConsumers at RemoveConsumer: %v", err.Error())
-					}
-
-					err = db.RemovePoisonedCg(cg.StationId, cg.CGName)
-					if err != nil {
-						serv.Errorf("RemoveOldProducersAndConsumers at RemovePoisonedCg: %v", err.Error())
-					}
-				} else {
-					serv.Errorf("RemoveOldProducersAndConsumers at StationNameFromStr: %v", err.Error())
-				}
-
+		for tenantName, rt := range s.opts.GCProducersConsumersRetentionHours {
+			configurationTime := time.Now().Add(time.Hour * time.Duration(-rt))
+			err := db.DeleteOldProducersAndConsumers(configurationTime, tenantName)
+			if err != nil {
+				serv.Errorf("[tenant: %v]RemoveOldProducersAndConsumersAndAuditLogs at DeleteOldProducersAndConsumers : %v", tenantName, err.Error())
+			}
+			time := time.Now().Add(-time.Hour * 3 * 24)
+			err = db.RemoveAuditLogsByTenantAndCreatedAt(tenantName, time)
+			if err != nil {
+				serv.Errorf("[tenant: %v]RemoveOldProducersAndConsumersAndAuditLogs at RemoveAuditLogsByTenantAndCreatedAt : %v", tenantName, err.Error())
 			}
 		}
 	}
@@ -661,7 +744,7 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 			switch integration.Name {
 			case "github":
 				if _, ok := integration.Keys["installation_id"].(string); !ok {
-					integration.Keys["installation_id"] = ""
+					integration.Keys["installation_id"] = _EMPTY_
 				}
 				err := testGithubIntegration(integration.Keys["installation_id"].(string))
 				if err != nil {
@@ -679,10 +762,10 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 			case "slack":
 				key := getAESKey()
 				if _, ok := integration.Keys["auth_token"].(string); !ok {
-					integration.Keys["auth_token"] = ""
+					integration.Keys["auth_token"] = _EMPTY_
 				}
 				if _, ok := integration.Keys["channel_id"].(string); !ok {
-					integration.Keys["channel_id"] = ""
+					integration.Keys["channel_id"] = _EMPTY_
 				}
 				authToken, err := DecryptAES(key, integration.Keys["auth_token"].(string))
 				if err != nil {
@@ -704,22 +787,22 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 			case "s3":
 				key := getAESKey()
 				if _, ok := integration.Keys["access_key"].(string); !ok {
-					integration.Keys["access_key"] = ""
+					integration.Keys["access_key"] = _EMPTY_
 				}
 				if _, ok := integration.Keys["secret_key"].(string); !ok {
-					integration.Keys["secret_key"] = ""
+					integration.Keys["secret_key"] = _EMPTY_
 				}
 				if _, ok := integration.Keys["region"].(string); !ok {
-					integration.Keys["region"] = ""
+					integration.Keys["region"] = _EMPTY_
 				}
 				if _, ok := integration.Keys["url"].(string); !ok {
-					integration.Keys["url"] = ""
+					integration.Keys["url"] = _EMPTY_
 				}
 				if _, ok := integration.Keys["s3_path_style"].(string); !ok {
-					integration.Keys["s3_path_style"] = ""
+					integration.Keys["s3_path_style"] = _EMPTY_
 				}
 				if _, ok := integration.Keys["bucket_name"].(string); !ok {
-					integration.Keys["bucket_name"] = ""
+					integration.Keys["bucket_name"] = _EMPTY_
 				}
 				accessKey := integration.Keys["access_key"].(string)
 				secretKey, err := DecryptAES(key, integration.Keys["secret_key"].(string))
@@ -727,7 +810,7 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 					serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at DecryptAES: %v", integration.TenantName, err.Error())
 				}
 
-				provider := credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")
+				provider := credentials.NewStaticCredentialsProvider(accessKey, secretKey, _EMPTY_)
 				_, err = provider.Retrieve(context.Background())
 				if err != nil {
 					if strings.Contains(err.Error(), "static credentials are empty") {
@@ -773,6 +856,86 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 	return nil
 }
 
+func (s *Server) ConsumeNotificationsBufferMessages() error {
+	const mAmount = 1000
+	for {
+		if !NOTIFICATIONS_BUFFER_STREAM_CREATED || !NOTIFICATIONS_BUFFER_CONSUMER_CREATED {
+			s.Warnf("ConsumeNotificationsBufferMessages: waiting for notifications stream and consumer to be created")
+			time.Sleep(2 * time.Second)
+			continue
+		}
+
+		msgs, err := fetchMessages[slackMsg](s,
+			NOTIFICATIONS_BUFFER_CONSUMER,
+			notificationsStreamName,
+			mAmount,
+			3*time.Second,
+			createSlackMsg)
+
+		if err != nil {
+			s.Errorf("Failed to fetch notifications: %v", err.Error())
+			continue
+		}
+
+		sendSlackNotifications(s, msgs)
+	}
+}
+
+func createSlackMsg(msg []byte, reply string) slackMsg {
+	return slackMsg{
+		Msg:          msg,
+		ReplySubject: reply,
+	}
+}
+
+func fetchMessages[T any](s *Server,
+	consumer,
+	streamName string,
+	mAmount int,
+	timeToWait time.Duration,
+	create func(msg []byte, reply string) T) ([]T, error) {
+
+	req := []byte(strconv.FormatUint(uint64(mAmount), 10))
+	resp := make(chan T)
+	replySubject := consumer + "_reply_" + s.memphis.nuid.Next()
+
+	timeout := time.NewTimer(timeToWait)
+	sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), replySubject, replySubject+"_sid", func(_ *client, subject string, reply string, msg []byte) {
+		go func(subject, reply string, msg []byte) {
+			if reply != "" {
+				m := create(msg, reply)
+				resp <- m
+			}
+		}(subject, reply, copyBytes(msg))
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	subject := fmt.Sprintf(JSApiRequestNextT, streamName, consumer)
+	s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), subject, replySubject, nil, req, true)
+
+	msgs := make([]T, 0)
+	stop := false
+	for {
+		if stop {
+			s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
+			break
+		}
+		select {
+		case m := <-resp:
+			msgs = append(msgs, m)
+			if len(msgs) == mAmount {
+				stop = true
+			}
+		case <-timeout.C:
+			stop = true
+		}
+	}
+
+	return msgs, nil
+}
+
 func (s *Server) ReleaseStuckLocks() {
 	ticker := time.NewTicker(30 * time.Second)
 	for range ticker.C {
@@ -782,5 +945,15 @@ func (s *Server) ReleaseStuckLocks() {
 			serv.Errorf("ReleaseStuckLocks at UnlockStuckLocks: %v", err.Error())
 		}
 
+	}
+}
+
+func (s *Server) removeOldAsyncTasks() {
+	ticker := time.NewTicker(15 * time.Minute)
+	for range ticker.C {
+		err := db.RemoveOldAsyncTasks()
+		if err != nil {
+			serv.Errorf("RemoveOldAsyncTasks at db.RemoveOldAsyncTasks : %v", err.Error())
+		}
 	}
 }

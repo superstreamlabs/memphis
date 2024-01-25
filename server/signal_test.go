@@ -44,7 +44,7 @@ func TestSignalToReOpenLogFile(t *testing.T) {
 	defer s.Shutdown()
 
 	// Set the file log
-	fileLog := logger.NewFileLogger(s.opts.LogFile, s.opts.Logtime, s.opts.Debug, s.opts.Trace, true)
+	fileLog := logger.NewFileLogger(s.opts.LogFile, s.opts.Logtime, s.opts.Debug, s.opts.Trace, true, logger.LogUTC(s.opts.LogtimeUTC))
 	s.SetLogger(fileLog, false, false)
 
 	// Add a trace
@@ -136,6 +136,48 @@ func TestProcessSignalMultipleProcesses(t *testing.T) {
 		t.Fatal("Expected error")
 	}
 	expectedStr := "multiple nats-server processes running:\n123\n456"
+	if err.Error() != expectedStr {
+		t.Fatalf("Error is incorrect.\nexpected: %s\ngot: %s", expectedStr, err.Error())
+	}
+}
+
+func TestProcessSignalMultipleProcessesGlob(t *testing.T) {
+	pid := os.Getpid()
+	pgrepBefore := pgrep
+	pgrep = func() ([]byte, error) {
+		return []byte(fmt.Sprintf("123\n456\n%d\n", pid)), nil
+	}
+	defer func() {
+		pgrep = pgrepBefore
+	}()
+
+	err := ProcessSignal(CommandStop, "*")
+	if err == nil {
+		t.Fatal("Expected error")
+	}
+	expectedStr := "\nsignal \"stop\" 123: no such process"
+	expectedStr += "\nsignal \"stop\" 456: no such process"
+	if err.Error() != expectedStr {
+		t.Fatalf("Error is incorrect.\nexpected: %s\ngot: %s", expectedStr, err.Error())
+	}
+}
+
+func TestProcessSignalMultipleProcessesGlobPartial(t *testing.T) {
+	pid := os.Getpid()
+	pgrepBefore := pgrep
+	pgrep = func() ([]byte, error) {
+		return []byte(fmt.Sprintf("123\n124\n456\n%d\n", pid)), nil
+	}
+	defer func() {
+		pgrep = pgrepBefore
+	}()
+
+	err := ProcessSignal(CommandStop, "12*")
+	if err == nil {
+		t.Fatal("Expected error")
+	}
+	expectedStr := "\nsignal \"stop\" 123: no such process"
+	expectedStr += "\nsignal \"stop\" 124: no such process"
 	if err.Error() != expectedStr {
 		t.Fatalf("Error is incorrect.\nexpected: %s\ngot: %s", expectedStr, err.Error())
 	}

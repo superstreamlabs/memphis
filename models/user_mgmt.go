@@ -32,6 +32,29 @@ type User struct {
 	Team            string    `json:"team"`
 	Owner           string    `json:"owner"`
 	Description     string    `json:"description"`
+	LastLogin       time.Time `json:"last_login"`
+	Roles           []int     `json:"roles"`
+}
+
+type UserWithPermissions struct {
+	ID              int         `json:"id"`
+	Username        string      `json:"username"`
+	Password        string      `json:"password"`
+	UserType        string      `json:"user_type"`
+	AlreadyLoggedIn bool        `json:"already_logged_in"`
+	CreatedAt       time.Time   `json:"created_at"`
+	AvatarId        int         `json:"avatar_id"`
+	FullName        string      `json:"full_name"`
+	Subscribtion    bool        `json:"subscription"`
+	SkipGetStarted  bool        `json:"skip_get_started"`
+	TenantName      string      `json:"tenant_name"`
+	Pending         bool        `json:"pending"`
+	Position        string      `json:"position"`
+	Team            string      `json:"team"`
+	Owner           string      `json:"owner"`
+	Description     string      `json:"description"`
+	LastLogin       time.Time   `json:"last_login"`
+	Permissions     Permissions `json:"permissions"`
 }
 
 type Image struct {
@@ -41,17 +64,21 @@ type Image struct {
 }
 
 type AddUserSchema struct {
-	Username     string `json:"username" binding:"required,min=1"`
-	Password     string `json:"password"`
-	UserType     string `json:"user_type" binding:"required"`
-	AvatarId     int    `json:"avatar_id"`
-	FullName     string `json:"full_name"`
-	Subscribtion bool   `json:"subscription"`
-	Team         string `json:"team"`
-	Position     string `json:"position"`
-	Owner        string `json:"owner"`
-	Description  string `json:"description"`
-	Organization string `json:"organization"`
+	Username              string   `json:"username" binding:"required,min=1"`
+	Password              string   `json:"password"`
+	UserType              string   `json:"user_type" binding:"required"`
+	AvatarId              int      `json:"avatar_id"`
+	FullName              string   `json:"full_name"`
+	Subscribtion          bool     `json:"subscription"`
+	Team                  string   `json:"team"`
+	Position              string   `json:"position"`
+	Owner                 string   `json:"owner"`
+	Description           string   `json:"description"`
+	Organization          string   `json:"organization"`
+	AllowReadPermissions  []string `json:"allow_read_permissions"`
+	AllowWritePermissions []string `json:"allow_write_permissions"`
+	DenyReadPermissions   []string `json:"deny_read_permissions"`
+	DenyWritePermissions  []string `json:"deny_write_permissions"`
 }
 
 type AuthenticateNatsSchema struct {
@@ -101,6 +128,23 @@ type FilteredGenericUser struct {
 	Team        string    `json:"team"`
 	Owner       string    `json:"owner"`
 	Description string    `json:"description"`
+	LastLogin   time.Time `json:"last_login"`
+	RoleID      int       `json:"role_id"`
+}
+
+type FilteredAppUser struct {
+	ID          int         `json:"id"`
+	Username    string      `json:"username"`
+	UserType    string      `json:"user_type"`
+	CreatedAt   time.Time   `json:"created_at"`
+	AvatarId    int         `json:"avatar_id"`
+	FullName    string      `json:"full_name"`
+	Pending     bool        `json:"pending"`
+	Position    string      `json:"position"`
+	Team        string      `json:"team"`
+	Owner       string      `json:"owner"`
+	Description string      `json:"description"`
+	Permissions Permissions `json:"permissions"`
 }
 
 type FilteredApplicationUser struct {

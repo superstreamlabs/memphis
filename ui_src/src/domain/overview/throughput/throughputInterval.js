@@ -16,10 +16,10 @@ import './style.scss';
 
 import React, { useState } from 'react';
 import { SearchOutlined } from '@ant-design/icons';
-import Button from '../../../components/button';
+import Button from 'components/button';
 import { Popover } from 'antd';
-import DatePickerComponent from '../../../components/datePicker';
-import SearchInput from '../../../components/searchInput';
+import DatePickerComponent from 'components/datePicker';
+import SearchInput from 'components/searchInput';
 
 const ThroughputInterval = ({ createStationTrigger }) => {
     const [selectInterval, setSelectInterval] = useState(0);

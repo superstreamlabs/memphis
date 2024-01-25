@@ -1,4 +1,4 @@
-// Copyright 2018-2022 The NATS Authors
+// Copyright 2018-2023 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -16,10 +16,8 @@ package server
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
-	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -46,60 +44,6 @@ func simpleAccountServer(t *testing.T) (*Server, *Account, *Account) {
 		t.Fatalf("Error creating account 'bar': %v", err)
 	}
 	return s, f, b
-}
-
-func TestPlaceHolderIndex(t *testing.T) {
-	testString := "$1"
-	transformType, indexes, nbPartitions, _, err := indexPlaceHolders(testString)
-	var position int32
-
-	if err != nil || transformType != Wildcard || len(indexes) != 1 || indexes[0] != 1 || nbPartitions != -1 {
-		t.Fatalf("Error parsing %s", testString)
-	}
-
-	testString = "{{partition(10,1,2,3)}}"
-
-	transformType, indexes, nbPartitions, _, err = indexPlaceHolders(testString)
-
-	if err != nil || transformType != Partition || !reflect.DeepEqual(indexes, []int{1, 2, 3}) || nbPartitions != 10 {
-		t.Fatalf("Error parsing %s", testString)
-	}
-
-	testString = "{{ Partition (10,1,2,3) }}"
-
-	transformType, indexes, nbPartitions, _, err = indexPlaceHolders(testString)
-
-	if err != nil || transformType != Partition || !reflect.DeepEqual(indexes, []int{1, 2, 3}) || nbPartitions != 10 {
-		t.Fatalf("Error parsing %s", testString)
-	}
-
-	testString = "{{wildcard(2)}}"
-	transformType, indexes, nbPartitions, _, err = indexPlaceHolders(testString)
-
-	if err != nil || transformType != Wildcard || len(indexes) != 1 || indexes[0] != 2 || nbPartitions != -1 {
-		t.Fatalf("Error parsing %s", testString)
-	}
-
-	testString = "{{SplitFromLeft(2,1)}}"
-	transformType, indexes, position, _, err = indexPlaceHolders(testString)
-
-	if err != nil || transformType != SplitFromLeft || len(indexes) != 1 || indexes[0] != 2 || position != 1 {
-		t.Fatalf("Error parsing %s", testString)
-	}
-
-	testString = "{{SplitFromRight(3,2)}}"
-	transformType, indexes, position, _, err = indexPlaceHolders(testString)
-
-	if err != nil || transformType != SplitFromRight || len(indexes) != 1 || indexes[0] != 3 || position != 2 {
-		t.Fatalf("Error parsing %s", testString)
-	}
-
-	testString = "{{SliceFromLeft(2,2)}}"
-	transformType, indexes, sliceSize, _, err := indexPlaceHolders(testString)
-
-	if err != nil || transformType != SliceFromLeft || len(indexes) != 1 || indexes[0] != 2 || sliceSize != 2 {
-		t.Fatalf("Error parsing %s", testString)
-	}
 }
 
 func TestRegisterDuplicateAccounts(t *testing.T) {
@@ -269,7 +213,7 @@ func TestAccountIsolationExportImport(t *testing.T) {
 			// Setup NATS server.
 			s := opTrustBasicSetup()
 			defer s.Shutdown()
-			go s.Start()
+			s.Start()
 			if err := s.readyForConnections(5 * time.Second); err != nil {
 				t.Fatal(err)
 			}
@@ -1733,7 +1677,7 @@ func TestAccountRequestReplyTrackLatency(t *testing.T) {
 	defer s.Shutdown()
 
 	// Run server in Go routine. We need this one running for internal sending of msgs.
-	go s.Start()
+	s.Start()
 	// Wait for accept loop(s) to be started
 	if err := s.readyForConnections(10 * time.Second); err != nil {
 		t.Fatal(err)
@@ -2099,12 +2043,17 @@ func TestCrossAccountServiceResponseTypes(t *testing.T) {
 
 	cfoo.parseAsync(string(mReply))
 
-	var b [256]byte
-	n, err := crBar.Read(b[:])
-	if err != nil {
-		t.Fatalf("Error reading response: %v", err)
+	var buf []byte
+	for i := 0; i < 20; i++ {
+		b, err := crBar.ReadBytes('\n')
+		if err != nil {
+			t.Fatalf("Error reading response: %v", err)
+		}
+		buf = append(buf[:], b...)
+		if mraw = msgPat.FindAllStringSubmatch(string(buf), -1); len(mraw) == 10 {
+			break
+		}
 	}
-	mraw = msgPat.FindAllStringSubmatch(string(b[:n]), -1)
 	if len(mraw) != 10 {
 		t.Fatalf("Expected a response but got %d", len(mraw))
 	}
@@ -3259,80 +3208,6 @@ func TestSamplingHeader(t *testing.T) {
 	test(false, http.Header{"traceparent": []string{"00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00"}})
 }
 
-func TestSubjectTransforms(t *testing.T) {
-	shouldErr := func(src, dest string) {
-		t.Helper()
-		if _, err := newTransform(src, dest); err != ErrBadSubject && !errors.Is(err, ErrInvalidMappingDestination) {
-			t.Fatalf("Did not get an error for src=%q and dest=%q", src, dest)
-		}
-	}
-
-	shouldErr("foo.*.*", "bar.$2") // Must place all pwcs.
-
-	// Must be valid subjects.
-	shouldErr("foo", "")
-	shouldErr("foo..", "bar")
-
-	// Wildcards are allowed in src, but must be matched by token placements on the other side.
-	// e.g. foo.* -> bar.$1.
-	// Need to have as many pwcs as placements on other side.
-	shouldErr("foo.*", "bar.*")
-	shouldErr("foo.*", "bar.$2")                   // Bad pwc token identifier
-	shouldErr("foo.*", "bar.$1.>")                 // fwcs have to match.
-	shouldErr("foo.>", "bar.baz")                  // fwcs have to match.
-	shouldErr("foo.*.*", "bar.$2")                 // Must place all pwcs.
-	shouldErr("foo.*", "foo.$foo")                 // invalid $ value
-	shouldErr("foo.*", "foo.{{wildcard(2)}}")      // Mapping function being passed an out of range wildcard index
-	shouldErr("foo.*", "foo.{{unimplemented(1)}}") // Mapping trying to use an unknown mapping function
-	shouldErr("foo.*", "foo.{{partition(10)}}")    // Not enough arguments passed to the mapping function
-	shouldErr("foo.*", "foo.{{wildcard(foo)}}")    // Invalid argument passed to the mapping function
-	shouldErr("foo.*", "foo.{{wildcard()}}")       // Not enough arguments passed to the mapping function
-	shouldErr("foo.*", "foo.{{wildcard(1,2)}}")    // Too many arguments passed to the mapping function
-	shouldErr("foo.*", "foo.{{ wildcard5) }}")     // Bad mapping function
-	shouldErr("foo.*", "foo.{{splitLeft(2,2}}")    // arg out of range
-
-	shouldBeOK := func(src, dest string) *transform {
-		t.Helper()
-		tr, err := newTransform(src, dest)
-		if err != nil {
-			t.Fatalf("Got an error %v for src=%q and dest=%q", err, src, dest)
-		}
-		return tr
-	}
-
-	shouldBeOK("foo", "bar")
-	shouldBeOK("foo.*.bar.*.baz", "req.$2.$1")
-	shouldBeOK("baz.>", "mybaz.>")
-	shouldBeOK("*.*", "{{partition(10,1,2)}}")
-	shouldBeOK("foo.*.*", "foo.{{wildcard(1)}}.{{wildcard(2)}}.{{partition(5,1,2)}}")
-	shouldBeOK("*", "{{splitfromleft(1,1)}}")
-
-	shouldMatch := func(src, dest, sample, expected string) {
-		t.Helper()
-		tr := shouldBeOK(src, dest)
-		s, err := tr.Match(sample)
-		if err != nil {
-			t.Fatalf("Got an error %v when expecting a match for %q to %q", err, sample, expected)
-		}
-		if s != expected {
-			t.Fatalf("Dest does not match what was expected. Got %q, expected %q", s, expected)
-		}
-	}
-
-	shouldMatch("foo", "bar", "foo", "bar")
-	shouldMatch("foo.*.bar.*.baz", "req.$2.$1", "foo.A.bar.B.baz", "req.B.A")
-	shouldMatch("baz.>", "my.pre.>", "baz.1.2.3", "my.pre.1.2.3")
-	shouldMatch("baz.>", "foo.bar.>", "baz.1.2.3", "foo.bar.1.2.3")
-	shouldMatch("*", "foo.bar.$1", "foo", "foo.bar.foo")
-	shouldMatch("*", "{{splitfromleft(1,3)}}", "12345", "123.45")
-	shouldMatch("*", "{{SplitFromRight(1,3)}}", "12345", "12.345")
-	shouldMatch("*", "{{SliceFromLeft(1,3)}}", "1234567890", "123.456.789.0")
-	shouldMatch("*", "{{SliceFromRight(1,3)}}", "1234567890", "1.234.567.890")
-	shouldMatch("*", "{{split(1,-)}}", "-abc-def--ghi-", "abc.def.ghi")
-	shouldMatch("*", "{{split(1,-)}}", "abc-def--ghi-", "abc.def.ghi")
-	shouldMatch("*.*", "{{split(2,-)}}.{{splitfromleft(1,2)}}", "foo.-abc-def--ghij-", "abc.def.ghij.fo.o") // combo + checks split for multiple instance of deliminator and deliminator being at the start or end
-}
-
 func TestAccountSystemPermsWithGlobalAccess(t *testing.T) {
 	conf := createConfFile(t, []byte(`
 		listen: 127.0.0.1:-1
@@ -3557,11 +3432,13 @@ func TestAccountImportCycle(t *testing.T) {
 	// setup requestor
 	ib := "q2.inbox"
 	subAResp, err := ncA.SubscribeSync(ib)
+	ncA.Flush()
 	require_NoError(t, err)
 	req := func() {
 		t.Helper()
 		// send request
 		err = ncA.PublishRequest("q1.a", ib, []byte("test"))
+		ncA.Flush()
 		require_NoError(t, err)
 		mRep, err := subAResp.NextMsg(time.Second)
 		require_NoError(t, err)
@@ -3657,6 +3534,7 @@ func TestAccountImportDuplicateResponseDeliveryWithLeafnodes(t *testing.T) {
 		m.Respond([]byte("bar"))
 	})
 	lnc.Flush()
+	checkSubInterest(t, s, "A", "foo", time.Second)
 
 	// Make sure it works, but request only wants one, so need second test to show failure, but
 	// want to make sure we are wired up correctly.
@@ -3677,4 +3555,118 @@ func TestAccountImportDuplicateResponseDeliveryWithLeafnodes(t *testing.T) {
 	if n, _, _ := sub.Pending(); n > 1 {
 		t.Fatalf("Expected only 1 response, got %d", n)
 	}
+}
+
+func TestAccountReloadServiceImportPanic(t *testing.T) {
+	conf := createConfFile(t, []byte(`
+		listen: 127.0.0.1:-1
+		accounts {
+			A {
+				users = [ { user: "a", pass: "p" } ]
+				exports [ { service: "HELP" } ]
+			}
+			B {
+				users = [ { user: "b", pass: "p" } ]
+				imports [ { service: { account: A, subject: "HELP"} } ]
+			}
+			$SYS { users = [ { user: "admin", pass: "s3cr3t!" } ] }
+		}
+	`))
+
+	s, _ := RunServerWithConfig(conf)
+	defer s.Shutdown()
+
+	// Now connect up the subscriber for HELP. No-op for this test.
+	nc, _ := jsClientConnect(t, s, nats.UserInfo("a", "p"))
+	defer nc.Close()
+
+	_, err := nc.Subscribe("HELP", func(m *nats.Msg) { m.Respond([]byte("OK")) })
+	require_NoError(t, err)
+
+	// Now create connection to account b where we will publish to HELP.
+	nc, _ = jsClientConnect(t, s, nats.UserInfo("b", "p"))
+	defer nc.Close()
+
+	// We want to continually be publishing messages that will trigger the service import while calling reload.
+	done := make(chan bool)
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	var requests, responses atomic.Uint64
+	reply := nats.NewInbox()
+	_, err = nc.Subscribe(reply, func(m *nats.Msg) { responses.Add(1) })
+	require_NoError(t, err)
+
+	go func() {
+		defer wg.Done()
+		for {
+			select {
+			case <-done:
+				return
+			default:
+				nc.PublishRequest("HELP", reply, []byte("HELP"))
+				requests.Add(1)
+			}
+		}
+	}()
+
+	// Perform a bunch of reloads.
+	for i := 0; i < 1000; i++ {
+		require_NoError(t, s.Reload())
+	}
+
+	close(done)
+	wg.Wait()
+
+	totalRequests := requests.Load()
+	checkFor(t, 20*time.Second, 250*time.Millisecond, func() error {
+		resp := responses.Load()
+		if resp == totalRequests {
+			return nil
+		}
+		return fmt.Errorf("Have not received all responses, want %d got %d", totalRequests, resp)
+	})
+}
+
+// https://github.com/nats-io/nats-server/issues/4674
+func TestAccountServiceAndStreamExportDoubleDelivery(t *testing.T) {
+	conf := createConfFile(t, []byte(`
+		listen: 127.0.0.1:-1
+		accounts: {
+			tenant1: {
+				jetstream: enabled
+				users: [ { user: "one", password: "one" } ]
+				exports: [
+					{ stream: "DW.>" }
+					{ service: "DW.>" }
+				]
+ 			}
+			global: {
+				jetstream: enabled
+				users: [ { user: "global", password: "global" } ]
+				imports: [
+					{ stream: { account: tenant1, subject: "DW.>" }, prefix: tenant1 }
+					{ service: { account: tenant1, subject: "DW.>" }, to: "tenant1.DW.>" }
+				]
+			}
+			$SYS { users = [ { user: "admin", pass: "s3cr3t!" } ] }
+		}
+	`))
+
+	s, _ := RunServerWithConfig(conf)
+	defer s.Shutdown()
+
+	// Now connect up the subscriber for HELP. No-op for this test.
+	nc, _ := jsClientConnect(t, s, nats.UserInfo("one", "one"))
+	defer nc.Close()
+
+	var msgs atomic.Int32
+	_, err := nc.Subscribe(">", func(m *nats.Msg) {
+		msgs.Add(1)
+	})
+	require_NoError(t, err)
+
+	nc.Publish("DW.test.123", []byte("test"))
+	time.Sleep(200 * time.Millisecond)
+	require_Equal(t, msgs.Load(), 1)
 }

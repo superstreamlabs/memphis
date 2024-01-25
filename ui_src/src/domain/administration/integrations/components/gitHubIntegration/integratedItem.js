@@ -13,35 +13,34 @@
 import React, { useState, useEffect } from 'react';
 import { Divider, Form } from 'antd';
 import { IoClose } from 'react-icons/io5';
-import { ReactComponent as GithubBranchIcon } from '../../../../../assets/images/githubBranchIcon.svg';
-import { ApiEndpoints } from '../../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../../services/http';
-import SelectComponent from '../../../../../components/select';
-import Button from '../../../../../components/button';
+import { ReactComponent as GithubBranchIcon } from 'assets/images/githubBranchIcon.svg';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import SelectComponent from 'components/select';
+import Button from 'components/button';
 import { FiPlus } from 'react-icons/fi';
 
-const IntegrationItem = ({ index, repo, reposList, updateIntegrationList, removeRepo, type, updateIntegration, addIsLoading }) => {
+const IntegrationItem = ({ isNew, index, disabled, repo, reposList, updateIntegrationList, removeRepo, updateIntegration, addIsLoading, isEdittingIntegration }) => {
     const [isEditting, setIsEditting] = useState(false);
-    const [isRemoveLoading, setIsRemoveLoading] = useState(false);
     const [formFields, setFormFields] = useState({
         type: 'functions',
-        repo_name: '',
-        repo_owner: '',
-        branch: ''
+        repo_name: null,
+        repo_owner: null,
+        branch: null
     });
     const [branches, setBranches] = useState([]);
 
     useEffect(() => {
         repo.repo_name && repo.repo_owner && getSourceCodeBranches(repo.repo_name, repo.repo_owner);
         setFormFields({ repo_name: repo.repo_name, repo_owner: repo.repo_owner, branch: repo.branch, type: 'functions' });
-    }, []);
+    }, [repo]);
 
     useEffect(() => {
         branches?.length > 0 && isEditting && updateBranch(branches[0]);
     }, [branches]);
 
     useEffect(() => {
-        updateIntegrationList(formFields, index);
+        formFields.branch && updateIntegrationList(formFields, index);
     }, [formFields.branch]);
 
     useEffect(() => {
@@ -66,17 +65,6 @@ const IntegrationItem = ({ index, repo, reposList, updateIntegrationList, remove
         } catch (error) {}
     };
 
-    const handleRemoveRepo = async () => {
-        setIsRemoveLoading(true);
-        try {
-            removeRepo(index);
-            updateIntegration();
-        } catch (error) {
-        } finally {
-            setIsRemoveLoading(false);
-        }
-    };
-
     return (
         <div>
             <div className="repos-item" repo={repo}>
@@ -91,11 +79,12 @@ const IntegrationItem = ({ index, repo, reposList, updateIntegrationList, remove
                         width={'90%'}
                         popupClassName="select-options"
                         value={formFields?.repo_name}
-                        disabled={!type}
+                        disabled={disabled}
                         onChange={(e) => {
                             updateRepo(e);
                         }}
                         options={Object?.keys(reposList)}
+                        placeholder={'Choose a repository'}
                     />
                 </Form.Item>
 
@@ -110,14 +99,15 @@ const IntegrationItem = ({ index, repo, reposList, updateIntegrationList, remove
                         value={formFields?.branch}
                         options={branches || []}
                         popupClassName="select-options"
-                        disabled={!type}
+                        disabled={!isNew}
                         onChange={(e) => {
                             updateBranch(e);
                         }}
+                        placeholder={'Branch to sync with'}
                     />
                 </Form.Item>
 
-                {!type ? (
+                {!isNew ? (
                     <Button
                         height={'30px'}
                         width={'95px'}
@@ -131,9 +121,8 @@ const IntegrationItem = ({ index, repo, reposList, updateIntegrationList, remove
                         backgroundColorType={'white'}
                         radiusType={'circle'}
                         fontFamily="InterSemiBold"
-                        onClick={handleRemoveRepo}
-                        isLoading={isRemoveLoading}
-                        disabled={!isRemoveLoading && addIsLoading}
+                        onClick={() => removeRepo(index)}
+                        disabled={isEdittingIntegration}
                         fontSize={'14px'}
                         border={'red'}
                     />

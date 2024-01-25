@@ -4,7 +4,51 @@
     height: 100%;
     overflow-y: auto;
     flex-direction: column;
+    .code-block {
+        border-radius: 4px;
+        padding: 10px;
+        background: #f9f9fa;
+        white-space: pre;
+        overflow-y: auto;
+    }
+    .code-var {
+        border-radius: 4px;
+        padding: 2px 4px;
+        background: #f9f9fa;
+        white-space: pre;
+        display: inline-block;
+    }
+    .custom-markdown table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    .custom-markdown p {
+        display: inline;
+    }
 
+    .custom-markdown th,
+    .custom-markdown td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+
+    .custom-markdown th {
+        background-color: #f9f9fa;
+    }
+    .attach-btn {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        cursor: pointer;
+    }
+    .loader {
+        display: flex;
+        justify-content: center;
+        height: 100%;
+        width: 100%;
+    }
     .back-to-function {
         display: flex;
         align-items: center;
@@ -32,6 +76,10 @@
         align-items: center;
         justify-content: center;
         gap: 4px;
+        cursor: pointer;
+        label {
+            cursor: pointer;
+        }
     }
     .drawer-header {
         height: 150px;
@@ -46,6 +94,10 @@
         min-width: 750px;
         .header-flex {
             display: flex;
+            span,
+            label {
+                cursor: pointer;
+            }
         }
         .right-side {
             display: flex;
@@ -66,7 +118,6 @@
                 font-size: 14px;
                 margin-bottom: 0px;
                 overflow: hidden;
-                max-width: 35vw;
                 white-space: nowrap;
             }
         }
@@ -167,6 +218,24 @@
             display: flex;
             gap: 10px;
         }
+        .git {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    }
+    inputsSection {
+        margin-top: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #737373;
+            font-size: 14px;
+        }
     }
     code {
         font-family: 'Inter';
@@ -183,6 +252,7 @@
         }
         .function-details {
             height: 100%;
+            overflow-y: auto;
             width: 250px;
             .label-title {
                 font-family: 'InterSemiBold';
@@ -198,9 +268,15 @@
     .ant-divider-horizontal {
         margin: 10px 0px;
     }
+    .source-code-functions {
+        height: calc(100% - 230px);
+    }
+    .source-code-stations {
+        height: calc(100% - 300px);
+    }
     .source-code {
         display: flex;
-        height: calc(100% - 230px);
+
         position: relative;
         .source-code-title {
             font-family: 'InterSemiBold';
@@ -212,10 +288,11 @@
         .repos-section {
             border-radius: 4px;
             border: 1px solid #e6e6e6;
-            height: calc(100% - 30px);
+            height: calc(100% - 40px);
             width: 30%;
             min-width: 250px;
-            margin: 0px 10px;
+            min-width: 250px;
+            margin: 16px 10px;
             padding: 10px;
             overflow-y: auto;
             overflow-x: auto;
@@ -247,6 +324,9 @@
                 display: flex;
                 justify-content: center;
                 padding-top: 10px;
+                border-radius: 4px;
+                border: 1px solid #e6e6e6;
+                margin-top: 10px;
                 p {
                     margin: 0;
                     white-space: pre-line;
@@ -267,5 +347,12 @@
         font-family: 'InterSemiBold';
         font-size: 16px;
         color: #2e2c34;
+    }
+    .inline-code {
+        display: inline-block;
+        padding: 2px 4px;
+        color: #232629;
+        background-color: #e3e6e8;
+        border-radius: 3px;
     }
 }

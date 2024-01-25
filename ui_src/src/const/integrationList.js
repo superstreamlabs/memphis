@@ -10,37 +10,37 @@
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
-import datadogBannerPopup from '../assets/images/datadogBannerPopup.webp';
-import elasticBannerPopup from '../assets/images/elasticBannerPopup.webp';
-import grafanaBannerPopup from '../assets/images/grafanaBannerPopup.webp';
-import debeziumBannerPopup from '../assets/images/debeziumBannerPopup.webp';
-import slackBannerPopup from '../assets/images/slackBannerPopup.webp';
-import zapierBannerPopup from '../assets/images/zapierBannerPopup.webp';
-import pagerdutyBanner from '../assets/images/pagerdutyBanner.webp';
-import influxDBBanner from '../assets/images/influxDBBanner.webp';
-import newrelicBanner from '../assets/images/newrelicBanner.webp';
-import elasticBanner from '../assets/images/elasticBanner.webp';
-import s3BannerPopup from '../assets/images/s3BannerPopup.webp';
-import datadogBanner from '../assets/images/datadogBanner.webp';
-import grafanaBanner from '../assets/images/grafanaBanner.webp';
-import zapierBanner from '../assets/images/zapierBanner.webp';
-import debeziumBanner from '../assets/images/debeziumBanner.webp';
-import { ReactComponent as PageDutyIcon } from '../assets/images/pagerDutyIcon.svg';
-import { ReactComponent as GithubIntegrationIcon } from '../assets/images/githubIntegrationIcon.svg';
-import githubBannerPopup from '../assets/images/githubBannerPopup.webp';
-import githubBanner from '../assets/images/githubBanner.webp';
-import { ReactComponent as NewRelicIcon } from '../assets/images/newrelicIcon.svg';
-import { ReactComponent as InfluxDBIcon } from '../assets/images/influxDBIcon.svg';
-import slackBanner from '../assets/images/slackBanner.webp';
-import { ReactComponent as DatadogIcon } from '../assets/images/datadogIcon.svg';
-import { ReactComponent as GrafanaIcon } from '../assets/images/grafanaIcon.svg';
-import { ReactComponent as DebeziumIcon } from '../assets/images/debeziumIcon.svg';
-import { ReactComponent as ElasticIcon } from '../assets/images/elasticIcon.svg';
-import { ReactComponent as ZapierIcon } from '../assets/images/zapierIcon.svg';
-import { ReactComponent as SlackLogo } from '../assets/images/slackLogo.svg';
-import { ReactComponent as MemphisVerifiedIcon } from '../assets/images/memphisFunctionIcon.svg';
-import s3Banner from '../assets/images/s3Banner.webp';
-import { ReactComponent as S3Logo } from '../assets/images/s3Logo.svg';
+import datadogBannerPopup from 'assets/images/datadogBannerPopup.webp';
+import elasticBannerPopup from 'assets/images/elasticBannerPopup.webp';
+import grafanaBannerPopup from 'assets/images/grafanaBannerPopup.webp';
+import debeziumBannerPopup from 'assets/images/debeziumBannerPopup.webp';
+import slackBannerPopup from 'assets/images/slackBannerPopup.webp';
+import zapierBannerPopup from 'assets/images/zapierBannerPopup.webp';
+import pagerdutyBanner from 'assets/images/pagerdutyBanner.webp';
+import influxDBBanner from 'assets/images/influxDBBanner.webp';
+import newrelicBanner from 'assets/images/newrelicBanner.webp';
+import elasticBanner from 'assets/images/elasticBanner.webp';
+import s3BannerPopup from 'assets/images/s3BannerPopup.webp';
+import datadogBanner from 'assets/images/datadogBanner.webp';
+import grafanaBanner from 'assets/images/grafanaBanner.webp';
+import zapierBanner from 'assets/images/zapierBanner.webp';
+import debeziumBanner from 'assets/images/debeziumBanner.webp';
+import { ReactComponent as PageDutyIcon } from 'assets/images/pagerDutyIcon.svg';
+import { ReactComponent as GithubIntegrationIcon } from 'assets/images/githubIntegrationIcon.svg';
+import githubBannerPopup from 'assets/images/githubBannerPopup.webp';
+import githubBanner from 'assets/images/githubBanner.webp';
+import { ReactComponent as NewRelicIcon } from 'assets/images/newrelicIcon.svg';
+import { ReactComponent as InfluxDBIcon } from 'assets/images/influxDBIcon.svg';
+import slackBanner from 'assets/images/slackBanner.webp';
+import { ReactComponent as DatadogIcon } from 'assets/images/datadogIcon.svg';
+import { ReactComponent as GrafanaIcon } from 'assets/images/grafanaIcon.svg';
+import { ReactComponent as DebeziumIcon } from 'assets/images/debeziumIcon.svg';
+import { ReactComponent as ElasticIcon } from 'assets/images/elasticIcon.svg';
+import { ReactComponent as ZapierIcon } from 'assets/images/zapierIcon.svg';
+import { ReactComponent as SlackLogo } from 'assets/images/slackLogo.svg';
+import { ReactComponent as MemphisVerifiedIcon } from 'assets/images/memphisFunctionIcon.svg';
+import s3Banner from 'assets/images/s3Banner.webp';
+import { ReactComponent as S3Logo } from 'assets/images/s3Logo.svg';
 
 import { ColorPalette } from './globalConst';
 import { Divider } from 'antd';
@@ -207,7 +207,7 @@ export const INTEGRATION_LIST = {
                     <p>Datadog</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label className="memphis">Mempis.dev</label>
+                        <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Open source</label>
                     </span>
@@ -258,7 +258,7 @@ export const INTEGRATION_LIST = {
                     <p>Slack</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label className="memphis">Mempis.dev</label>
+                        <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Open source</label>
                         <label className="oss-cloud-badge">Cloud</label>
@@ -294,7 +294,7 @@ export const INTEGRATION_LIST = {
                     <p>S3 Compatible Object Storage</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label className="memphis">Mempis.dev</label>
+                        <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Open source</label>
                         <label className="oss-cloud-badge">Cloud</label>
@@ -331,7 +331,7 @@ export const INTEGRATION_LIST = {
                     <p>Elasticsearch observability</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label className="memphis">Mempis.dev</label>
+                        <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Open source</label>
                     </span>
@@ -381,7 +381,7 @@ export const INTEGRATION_LIST = {
                     <p>Grafana</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label className="memphis">Mempis.dev</label>
+                        <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Open source</label>
                     </span>
@@ -426,7 +426,7 @@ export const INTEGRATION_LIST = {
                     <p>Zapier</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label className="memphis">Mempis.dev</label>
+                        <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Cloud</label>
                         <label className="oss-cloud-badge">Open source</label>
@@ -476,7 +476,7 @@ export const INTEGRATION_LIST = {
                     <p>Debezium and Postgres</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label className="memphis">Mempis.dev</label>
+                        <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Open source</label>
                         <label className="oss-cloud-badge">Cloud</label>
@@ -523,7 +523,7 @@ export const INTEGRATION_LIST = {
                     <p>GitHub</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label className="memphis">Mempis.dev</label>
+                        <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Cloud</label>
                     </span>
@@ -558,7 +558,7 @@ export const INTEGRATION_LIST = {
                     <p>PagerDuty</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label className="memphis">Mempis.dev</label>
+                        <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Open source</label>
                     </span>
@@ -592,7 +592,7 @@ export const INTEGRATION_LIST = {
                     <p>New Relic</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label className="memphis">Mempis.dev</label>
+                        <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Open source</label>
                     </span>
@@ -626,7 +626,7 @@ export const INTEGRATION_LIST = {
                     <p>influxDB</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label className="memphis">Mempis.dev</label>
+                        <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Open source</label>
                     </span>

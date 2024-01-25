@@ -1,11 +1,22 @@
 .stations-details-container {
-    width: calc(100% - 90px);
+    width: calc(100% - var(--main-container-sidebar-width));
+    transition: .3s ease-in-out;
     position: absolute;
     padding: 1vw;
     min-width: 700px;
     overflow: auto;
     height: 100%;
-
+    .create-new {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .upgrade {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 5px;
+    }
     .stations-details-header {
         .right-side {
             display: flex;

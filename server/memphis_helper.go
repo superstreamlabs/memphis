@@ -54,12 +54,27 @@ const (
 	dlsStreamName               = "$memphis-%s-dls"
 	dlsUnackedStream            = "$memphis_dls_unacked"
 	dlsSchemaverseStream        = "$memphis_dls_schemaverse"
+	dlsNackedStream             = "$memphis_dls_nacked"
+	dlsFunctionsStream          = "$memphis_dls_functions"
+	dlsResendMessagesStreamNew  = "$memphis_dls_%v.%v"
+	dlsResendMessagesStreamOld  = "$memphis_dls_%v_%v"
 	tieredStorageStream         = "$memphis_tiered_storage"
 	throughputStreamName        = "$memphis-throughput"
 	throughputStreamNameV1      = "$memphis-throughput-v1"
 	MEMPHIS_GLOBAL_ACCOUNT      = "$memphis"
 	integrationsAuditLogsStream = "$memphis_integrations_audit_logs"
+	notificationsStreamName     = "$memphis_notifications_buffer"
 	systemTasksStreamName       = "$memphis_system_tasks"
+	connectorsLogsStream        = "$memphis_connectors_logs"
+	memphisSchemaDetachments    = "$memphis_schema_detachments"
+	memphisConsumerCreations    = "$memphis_consumer_creations"
+	memphisConsumerDestructions = "$memphis_consumer_destructions"
+	memphisNotifications        = "$memphis_notifications"
+	memphisProducerCreations    = "$memphis_producer_creations"
+	memphisProducerDestructions = "$memphis_producer_destructions"
+	memphisSchemaCreations      = "$memphis_schema_creations"
+	memphisStationCreations     = "$memphis_station_creations"
+	memphisStationDestructions  = "$memphis_station_destructions"
 )
 
 var noLimit = -1
@@ -81,6 +96,7 @@ var memphisExportString = `[
 	{service: "$memphis_integration_updates"},
 	{service: "$memphis_notifications"},
 	{service: "$memphis_schemaverse_dls"},
+	{service: "$memphis_nacked_dls"},
 	{service: "$memphis_pm_acks"},
 	{service: "$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>"},
 	{stream: "$memphis_ws_pubs.>"},
@@ -101,6 +117,7 @@ var memphisImportString = `[
 	{service: {account: "$memphis", subject: "$memphis_integration_updates"}},
 	{service: {account: "$memphis", subject: "$memphis_notifications"}},
 	{service: {account: "$memphis", subject: "$memphis_schemaverse_dls"}},
+	{service: {account: "$memphis", subject: "$memphis_nacked_dls"}},
 	{service: {account: "$memphis", subject: "$memphis_pm_acks"}},
 	{service: {account: "$memphis", subject: "$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>"}},
 	{stream: {account: "$memphis", subject: "$memphis_ws_pubs.>"}},
@@ -133,11 +150,19 @@ var (
 	DLS_UNACKED_STREAM_CREATED             bool
 	DLS_SCHEMAVERSE_STREAM_CREATED         bool
 	DLS_SCHEMAVERSE_CONSUMER_CREATED       bool
+	DLS_NACKED_STREAM_CREATED              bool
+	DLS_NACKED_CONSUMER_CREATED            bool
+	DLS_FUNCTIONS_STREAM_CREATED           bool
+	DLS_FUNCTIONS_CONSUMER_CREATED         bool
 	SYSLOGS_STREAM_CREATED                 bool
 	THROUGHPUT_STREAM_CREATED              bool
 	THROUGHPUT_LEGACY_STREAM_EXIST         bool
 	INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED bool
+	NOTIFICATIONS_BUFFER_STREAM_CREATED    bool
+	NOTIFICATIONS_BUFFER_CONSUMER_CREATED  bool
 	SYSTEM_TASKS_STREAM_CREATED            bool
+	FUNCTIONS_TASKS_CONSUMER_CREATED       bool
+	CONNECTORS_LOGS_STREAM_CREATED         bool
 )
 
 type Messages []models.MessageDetails
@@ -151,17 +176,17 @@ func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 }
 
 func jsApiRequest[R any](tenantName string, s *Server, subject, kind string, msg []byte, resp *R) error {
-	account, err := s.lookupAccount(tenantName)
-	if err != nil {
-		return err
-	}
-	reply := s.getJsApiReplySubject()
-
 	// use buffered lock to limit amount of concurrent jsapi requests
 	if s.memphis.jsApiMu != nil {
 		s.memphis.jsApiMu.Lock()
 		defer s.memphis.jsApiMu.Unlock()
 	}
+
+	account, err := s.lookupAccount(tenantName)
+	if err != nil {
+		return err
+	}
+	reply := s.getJsApiReplySubject()
 
 	timeout := time.After(40 * time.Second)
 	respCh := make(chan []byte)
@@ -169,7 +194,7 @@ func jsApiRequest[R any](tenantName string, s *Server, subject, kind string, msg
 	if err != nil {
 		return err
 	}
-	// send on global account
+
 	s.sendInternalAccountMsgWithReply(account, subject, reply, nil, msg, true)
 
 	// wait for response to arrive
@@ -217,7 +242,7 @@ func (s *Server) WaitForLeaderElection() {
 			break
 		}
 
-		if ci.Leader != "" {
+		if ci.Leader != _EMPTY_ {
 			break
 		} else {
 			time.Sleep(100 * time.Millisecond)
@@ -265,9 +290,10 @@ func (s *Server) CreateInternalJetStreamResources() {
 
 	if s.memphis.activateSysLogsPubFunc == nil {
 		s.Fatalf("internal error: sys logs publish activation func is not initialized")
+	} else {
+		s.memphis.activateSysLogsPubFunc()
+		s.popFallbackLogs()
 	}
-	s.memphis.activateSysLogsPubFunc()
-	s.popFallbackLogs()
 }
 
 func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, successCh chan error, isCluster bool) {
@@ -426,6 +452,80 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		DLS_SCHEMAVERSE_CONSUMER_CREATED = true
 	}
 
+	// create nacked dls stream
+	if !DLS_NACKED_STREAM_CREATED {
+		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
+			Name:         dlsNackedStream,
+			Subjects:     []string{NACKED_DLS_INNER_SUBJ},
+			Retention:    WorkQueuePolicy,
+			MaxAge:       time.Hour * 24,
+			MaxConsumers: -1,
+			Discard:      DiscardOld,
+			Storage:      FileStorage,
+			Replicas:     replicas,
+		})
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+		DLS_NACKED_STREAM_CREATED = true
+	}
+
+	// create nacked dls consumer
+	if !DLS_NACKED_CONSUMER_CREATED {
+		cc := ConsumerConfig{
+			DeliverPolicy: DeliverAll,
+			AckPolicy:     AckExplicit,
+			Durable:       NACKED_DLS_CONSUMER,
+			AckWait:       time.Duration(80) * time.Second,
+			MaxAckPending: -1,
+			MaxDeliver:    10,
+		}
+		err = serv.memphisAddConsumer(s.MemphisGlobalAccountString(), dlsNackedStream, &cc)
+		if err != nil {
+			successCh <- err
+			return
+		}
+		DLS_NACKED_CONSUMER_CREATED = true
+	}
+
+	// create functions dls stream
+	if shouldCreateFunctionDlsStream() && !DLS_FUNCTIONS_STREAM_CREATED {
+		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
+			Name:         dlsFunctionsStream,
+			Subjects:     []string{FUNCTIONS_DLS_INNER_SUBJ},
+			Retention:    WorkQueuePolicy,
+			MaxAge:       time.Hour * 24,
+			MaxConsumers: -1,
+			Discard:      DiscardOld,
+			Storage:      FileStorage,
+			Replicas:     replicas,
+		})
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+		DLS_FUNCTIONS_STREAM_CREATED = true
+	}
+
+	// create functions dls consumer
+	if shouldCreateFunctionDlsStream() && !DLS_FUNCTIONS_CONSUMER_CREATED {
+		cc := ConsumerConfig{
+			DeliverPolicy: DeliverAll,
+			AckPolicy:     AckExplicit,
+			Durable:       FUNCTIONS_DLS_CONSUMER,
+			AckWait:       time.Duration(80) * time.Second,
+			MaxAckPending: -1,
+			MaxDeliver:    10,
+		}
+		err = serv.memphisAddConsumer(s.MemphisGlobalAccountString(), dlsFunctionsStream, &cc)
+		if err != nil {
+			successCh <- err
+			return
+		}
+		DLS_FUNCTIONS_CONSUMER_CREATED = true
+	}
+
 	// delete the old version throughput stream
 	if THROUGHPUT_LEGACY_STREAM_EXIST {
 		err = s.memphisDeleteStream(s.MemphisGlobalAccountString(), throughputStreamName)
@@ -443,6 +543,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			MaxConsumers: -1,
 			MaxMsgs:      int64(-1),
 			MaxBytes:     int64(-1),
+			MaxAge:       time.Second * ws_updates_interval_sec, // since it stores only 1 msg per second
 			Discard:      DiscardOld,
 			MaxMsgsPer:   ws_updates_interval_sec,
 			Storage:      FileStorage,
@@ -476,13 +577,58 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED = true
 	}
 
+	// create notifications stream
+	if !NOTIFICATIONS_BUFFER_STREAM_CREATED {
+		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
+			Name:         notificationsStreamName,
+			Subjects:     []string{notificationsStreamName + ".>"},
+			Retention:    WorkQueuePolicy,
+			MaxAge:       0,
+			MaxConsumers: -1,
+			Discard:      DiscardOld,
+			Storage:      FileStorage,
+			Replicas:     replicas,
+			Duplicates:   idempotencyWindow,
+		})
+		if err != nil && IsNatsErr(err, JSClusterNoPeersErrF) {
+			time.Sleep(1 * time.Second)
+			tryCreateInternalJetStreamResources(s, retentionDur, successCh, isCluster)
+			return
+		}
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+
+		NOTIFICATIONS_BUFFER_STREAM_CREATED = true
+	}
+
+	if !NOTIFICATIONS_BUFFER_CONSUMER_CREATED {
+		cc := ConsumerConfig{
+			DeliverPolicy: DeliverAll,
+			AckPolicy:     AckExplicit,
+			Durable:       NOTIFICATIONS_BUFFER_CONSUMER,
+			FilterSubject: notificationsStreamName + ".user_notifications",
+			AckWait:       time.Duration(10) * time.Second,
+			MaxAckPending: -1,
+			MaxDeliver:    10,
+		}
+		err = serv.memphisAddConsumer(s.MemphisGlobalAccountString(), notificationsStreamName, &cc)
+		if err != nil {
+			successCh <- err
+			return
+		}
+
+		NOTIFICATIONS_BUFFER_CONSUMER_CREATED = true
+	}
+
 	// create system tasks stream
 	if shouldCreateSystemTasksStream() && !SYSTEM_TASKS_STREAM_CREATED {
 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         systemTasksStreamName,
 			Subjects:     []string{systemTasksStreamName + ".>"},
 			Retention:    WorkQueuePolicy,
-			MaxAge:       time.Hour * 24 * 3, // 3 days
+			MaxAge:       time.Hour * 24,
 			MaxConsumers: -1,
 			MaxMsgsPer:   -1,
 			Discard:      DiscardOld,
@@ -493,7 +639,47 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			successCh <- err
 			return
 		}
+
 		SYSTEM_TASKS_STREAM_CREATED = true
+	}
+
+	// create function tasks consumer
+	if shouldCreateSystemTasksStream() && !FUNCTIONS_TASKS_CONSUMER_CREATED {
+		cc := ConsumerConfig{
+			Durable:       FUNCTION_TASKS_CONSUMER,
+			DeliverPolicy: DeliverAll,
+			AckPolicy:     AckExplicit,
+			MaxAckPending: 1,
+			FilterSubject: systemTasksStreamName + ".functions",
+			AckWait:       time.Duration(90) * time.Second,
+			MaxDeliver:    5,
+		}
+		err := serv.memphisAddConsumer(serv.MemphisGlobalAccountString(), systemTasksStreamName, &cc)
+		if err != nil {
+			successCh <- err
+			return
+		}
+		FUNCTIONS_TASKS_CONSUMER_CREATED = true
+	}
+
+	// create connectors logs stream
+	if shouldCreateConnectorsStream() && !CONNECTORS_LOGS_STREAM_CREATED {
+		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
+			Name:         connectorsLogsStream,
+			Subjects:     []string{connectorsLogsStream + ".>"},
+			Retention:    LimitsPolicy,
+			MaxAge:       time.Hour * 24 * 7, // 7 days
+			MaxConsumers: -1,
+			MaxMsgsPer:   200,
+			Discard:      DiscardOld,
+			Storage:      FileStorage,
+			Replicas:     replicas,
+		})
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+		CONNECTORS_LOGS_STREAM_CREATED = true
 	}
 
 	successCh <- nil
@@ -567,54 +753,60 @@ func getInternalConsumerName(cn string) string {
 
 func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, station models.Station, partitionsList []int) error {
 	var consumerName string
-	if consumer.ConsumersGroup != "" {
+	if consumer.ConsumersGroup != _EMPTY_ {
 		consumerName = consumer.ConsumersGroup
 	} else {
 		consumerName = consumer.Name
 	}
-
 	consumerName = getInternalConsumerName(consumerName)
-
 	var maxAckTimeMs int64
 	if consumer.MaxAckTimeMs <= 0 {
 		maxAckTimeMs = 30000 // 30 sec
 	} else {
 		maxAckTimeMs = consumer.MaxAckTimeMs
 	}
-
 	var MaxMsgDeliveries int
 	if consumer.MaxMsgDeliveries <= 0 || consumer.MaxMsgDeliveries > 10 {
 		MaxMsgDeliveries = 10
 	} else {
 		MaxMsgDeliveries = consumer.MaxMsgDeliveries
 	}
-
 	stationName, err := StationNameFromStr(station.Name)
 	if err != nil {
 		return err
 	}
-
 	if len(partitionsList) > len(station.PartitionsList) {
 		partitionsList = station.PartitionsList
 	}
-
 	var deliveryPolicy DeliverPolicy
 	var optStartSeq uint64
+	lastSeqPerPartition := map[string]uint64{}
 	// This check for case when the last message is 0 (in case StartConsumeFromSequence > 1 the LastMessages is 0 )
-	if consumer.LastMessages == 0 && consumer.StartConsumeFromSeq == 0 {
+	if consumer.LastMessages == 0 && consumer.StartConsumeFromSeq == 1 {
 		deliveryPolicy = DeliverNew
 	} else if consumer.LastMessages > 0 {
-		streamInfo, err := serv.memphisStreamInfo(tenantName, stationName.Intern())
-		if err != nil {
-			return err
+		var streamInfo *StreamInfo
+		if len(partitionsList) == 1 {
+			streamInfo, err = serv.memphisStreamInfo(tenantName, stationName.Intern()+"$1")
+			if err != nil {
+				return err
+			}
+			lastSeq := streamInfo.State.LastSeq
+			lastMessages := (lastSeq - uint64(consumer.LastMessages)) + 1
+			if int(lastMessages) < 1 {
+				lastMessages = uint64(1)
+			}
+			deliveryPolicy = DeliverByStartSequence
+			optStartSeq = lastMessages
+		} else {
+			for _, pl := range partitionsList {
+				streamInfo, err = serv.memphisStreamInfo(tenantName, stationName.Intern()+"$"+strconv.Itoa(pl))
+				if err != nil {
+					return err
+				}
+				lastSeqPerPartition[stationName.Intern()+"$"+strconv.Itoa(pl)] = streamInfo.State.LastSeq
+			}
 		}
-		lastSeq := streamInfo.State.LastSeq
-		lastMessages := (lastSeq - uint64(consumer.LastMessages)) + 1
-		if int(lastMessages) < 1 {
-			lastMessages = uint64(1)
-		}
-		deliveryPolicy = DeliverByStartSequence
-		optStartSeq = lastMessages
 	} else if consumer.StartConsumeFromSeq > 1 {
 		deliveryPolicy = DeliverByStartSequence
 		optStartSeq = consumer.StartConsumeFromSeq
@@ -635,34 +827,65 @@ func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, sta
 			// RateLimit: ,// Bits per sec
 			// Heartbeat: // time.Duration,
 		}
-
 		if deliveryPolicy == DeliverByStartSequence {
 			consumerConfig.OptStartSeq = optStartSeq
 		}
 		err = s.memphisAddConsumer(tenantName, stationName.Intern(), consumerConfig)
 		return err
 	} else {
-		for _, pl := range partitionsList {
-			consumerConfig := &ConsumerConfig{
-				Durable:       consumerName,
-				DeliverPolicy: deliveryPolicy,
-				AckPolicy:     AckExplicit,
-				AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
-				MaxDeliver:    MaxMsgDeliveries,
-				FilterSubject: stationName.Intern() + "$" + strconv.Itoa(pl) + ".final",
-				ReplayPolicy:  ReplayInstant,
-				MaxAckPending: -1,
-				HeadersOnly:   false,
-				// RateLimit: ,// Bits per sec
-				// Heartbeat: // time.Duration,
-			}
+		if consumer.LastMessages > 0 {
+			for k, v := range lastSeqPerPartition {
+				lastSeq := v
+				lastMessages := (lastSeq - uint64(consumer.LastMessages)) + 1
+				if int(lastMessages) < 1 {
+					lastMessages = uint64(1)
+				}
+				deliveryPolicy = DeliverByStartSequence
+				optStartSeq = lastMessages
 
-			if deliveryPolicy == DeliverByStartSequence {
-				consumerConfig.OptStartSeq = optStartSeq
+				consumerConfig := &ConsumerConfig{
+					Durable:       consumerName,
+					DeliverPolicy: deliveryPolicy,
+					AckPolicy:     AckExplicit,
+					AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
+					MaxDeliver:    MaxMsgDeliveries,
+					FilterSubject: k + ".final",
+					ReplayPolicy:  ReplayInstant,
+					MaxAckPending: -1,
+					HeadersOnly:   false,
+					// RateLimit: ,// Bits per sec
+					// Heartbeat: // time.Duration,
+				}
+				if deliveryPolicy == DeliverByStartSequence {
+					consumerConfig.OptStartSeq = optStartSeq
+				}
+				err = s.memphisAddConsumer(tenantName, k, consumerConfig)
+				if err != nil {
+					return err
+				}
 			}
-			err = s.memphisAddConsumer(tenantName, stationName.Intern()+"$"+strconv.Itoa(pl), consumerConfig)
-			if err != nil {
-				return err
+		} else {
+			for _, pl := range partitionsList {
+				consumerConfig := &ConsumerConfig{
+					Durable:       consumerName,
+					DeliverPolicy: deliveryPolicy,
+					AckPolicy:     AckExplicit,
+					AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
+					MaxDeliver:    MaxMsgDeliveries,
+					FilterSubject: stationName.Intern() + "$" + strconv.Itoa(pl) + ".final",
+					ReplayPolicy:  ReplayInstant,
+					MaxAckPending: -1,
+					HeadersOnly:   false,
+					// RateLimit: ,// Bits per sec
+					// Heartbeat: // time.Duration,
+				}
+				if deliveryPolicy == DeliverByStartSequence {
+					consumerConfig.OptStartSeq = optStartSeq
+				}
+				err = s.memphisAddConsumer(tenantName, stationName.Intern()+"$"+strconv.Itoa(pl), consumerConfig)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -1022,9 +1245,12 @@ func (s *Server) GetMessagesFromPartition(station models.Station, streamName str
 
 	filterSubj := streamName + ".final"
 	if !station.IsNative {
-		filterSubj = ""
+		filterSubj = _EMPTY_
 	}
-
+	replicas := 1
+	if streamInfo.Config.Retention == InterestPolicy {
+		replicas = streamInfo.Config.Replicas
+	}
 	msgs, err := s.memphisGetMsgs(station.TenantName, filterSubj,
 		streamName,
 		startSequence,
@@ -1032,7 +1258,7 @@ func (s *Server) GetMessagesFromPartition(station models.Station, streamName str
 		5*time.Second,
 		true,
 		station.RetentionType == "ack_based",
-		station.Replicas,
+		replicas,
 	)
 
 	if err != nil {
@@ -1072,7 +1298,7 @@ func (s *Server) GetMessagesFromPartition(station models.Station, streamName str
 			producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
 
 			for header := range headersJson {
-				if strings.HasPrefix(header, "$memphis") {
+				if strings.HasPrefix(header, MEMPHIS_GLOBAL_ACCOUNT) {
 					delete(headersJson, header)
 				}
 			}
@@ -1119,18 +1345,14 @@ func getHdrLastIdxFromRaw(msg []byte) int {
 func (s *Server) memphisGetMsgs(tenantName, filterSubj, streamName string, startSeq uint64, amount int, timeout time.Duration, findHeader, isAckBasedStation bool, consumerReplicas int) ([]StoredMsg, error) {
 	uid, _ := uuid.NewV4()
 	durableName := "$memphis_fetch_messages_consumer_" + uid.String()
-	replicas := GetStationReplicas(1)
-	if isAckBasedStation {
-		replicas = consumerReplicas
-	}
 
 	cc := ConsumerConfig{
 		FilterSubject: filterSubj,
 		OptStartSeq:   startSeq,
 		DeliverPolicy: DeliverByStartSequence,
-		Durable:       durableName,
-		AckPolicy:     AckExplicit,
-		Replicas:      replicas,
+		Name:          durableName,
+		AckPolicy:     AckNone,
+		Replicas:      consumerReplicas,
 	}
 
 	err := s.memphisAddConsumer(tenantName, streamName, &cc)
@@ -1150,9 +1372,6 @@ func (s *Server) memphisGetMsgs(tenantName, filterSubj, streamName string, start
 
 	sub, err := s.subscribeOnAcc(account, reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, reply string, msg []byte, findHeader bool) {
-			// ack
-			s.sendInternalAccountMsg(account, reply, []byte(_EMPTY_))
-
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
 
@@ -1203,7 +1422,6 @@ func (s *Server) memphisGetMsgs(tenantName, filterSubj, streamName string, start
 cleanup:
 	timer.Stop()
 	s.unsubscribeOnAcc(account, sub)
-	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(tenantName, streamName, durableName) })
 
 	return msgs, nil
 }
@@ -1224,21 +1442,21 @@ func (s *Server) GetLeaderAndFollowers(station models.Station, partitionNumber i
 	var streamInfo *StreamInfo
 	stationName, err := StationNameFromStr(station.Name)
 	if err != nil {
-		return "", []string{}, err
+		return _EMPTY_, []string{}, err
 	}
 	if len(station.PartitionsList) > 0 {
 		if partitionNumber == -1 {
-			return "", []string{}, nil
+			return _EMPTY_, []string{}, nil
 		}
 		streamName := fmt.Sprintf("%s$%s", stationName.Intern(), strconv.Itoa(partitionNumber))
 		streamInfo, err = s.memphisStreamInfo(station.TenantName, streamName)
 		if err != nil {
-			return "", []string{}, err
+			return _EMPTY_, []string{}, err
 		}
 	} else { // backward compatibility
 		streamInfo, err = s.memphisStreamInfo(station.TenantName, stationName.Intern())
 		if err != nil {
-			return "", []string{}, err
+			return _EMPTY_, []string{}, err
 		}
 
 	}
@@ -1321,7 +1539,7 @@ func (s *Server) ResendPoisonMessage(tenantName, subject string, data, headers [
 
 	hdrs["$memphis_producedBy"] = "$memphis_dls"
 
-	if hdrs["producedBy"] != "" {
+	if hdrs["producedBy"] != _EMPTY_ {
 		delete(hdrs, "producedBy")
 	}
 
@@ -1405,7 +1623,7 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 			return nil, ErrBadHeader
 		}
 		key := kv[:i]
-		if key == "" {
+		if key == _EMPTY_ {
 			// Skip empty keys.
 			continue
 		}
@@ -1431,6 +1649,10 @@ func GetMemphisOpts(opts *Options) (*Options, error) {
 		opts.DlsRetentionHours = make(map[string]int)
 	}
 
+	if opts.GCProducersConsumersRetentionHours == nil { // for cases the broker started without config file
+		opts.GCProducersConsumersRetentionHours = make(map[string]int)
+	}
+
 	for _, conf := range configs {
 		switch conf.Key {
 		case "dls_retention":
@@ -1453,7 +1675,7 @@ func GetMemphisOpts(opts *Options) (*Options, error) {
 			opts.MaxPayload = int32(v * 1024 * 1024)
 		case "gc_producer_consumer_retention_hours":
 			v, _ := strconv.Atoi(conf.Value)
-			opts.GCProducersConsumersRetentionHours = v
+			opts.GCProducersConsumersRetentionHours[conf.TenantName] = v
 		}
 	}
 
@@ -1494,8 +1716,19 @@ func generateRandomPassword(length int) string {
 }
 
 type UserConfig struct {
-	User     string `json:"user"`
-	Password string `json:"password"`
+	User        string          `json:"user"`
+	Password    string          `json:"password"`
+	Permissions NatsPermissions `json:"permissions,omitempty"`
+}
+
+type NatsPermissions struct {
+	Publish   NatsAuthorization `json:"publish,omitempty"`
+	Subscribe NatsAuthorization `json:"subscribe,omitempty"`
+}
+
+type NatsAuthorization struct {
+	Allow []string `json:"allow,omitempty"`
+	Deny  []string `json:"deny,omitempty"`
 }
 
 type AccountConfig struct {
@@ -1519,9 +1752,9 @@ func generateJSONString(accounts map[string]AccountConfig) (string, error) {
 		Accounts: accounts,
 	}
 
-	jsonString, err := json.MarshalIndent(data, " ", "")
+	jsonString, err := json.MarshalIndent(data, " ", _EMPTY_)
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 	var dataMap map[string]interface{}
 	err = json.Unmarshal(jsonString, &dataMap)
@@ -1536,11 +1769,12 @@ func getAccountsAndUsersString() (string, error) {
 	decriptionKey := getAESKey()
 	users, err := db.GetAllUsersByType([]string{"application"})
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
+
 	tenants, err := db.GetAllTenantsWithoutGlobal()
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 	globalUsers := []UserConfig{{User: "$$memphis", Password: getInternalUserPassword()}}
 	accounts := map[string]AccountConfig{
@@ -1553,11 +1787,11 @@ func getAccountsAndUsersString() (string, error) {
 	if shouldCreateRootUserforGlobalAcc {
 		_, globalT, err := db.GetGlobalTenant()
 		if err != nil {
-			return "", err
+			return _EMPTY_, err
 		}
 		decryptedPass, err := DecryptAES(decriptionKey, globalT.InternalWSPass)
 		if err != nil {
-			return "", err
+			return _EMPTY_, err
 		}
 		globalUsers = append(globalUsers, UserConfig{User: "$memphis_user$1", Password: decryptedPass})
 		globalUsers = append(globalUsers, UserConfig{User: "root$1", Password: configuration.ROOT_PASSWORD})
@@ -1567,28 +1801,74 @@ func getAccountsAndUsersString() (string, error) {
 		tName := user.TenantName
 		decryptedUserPassword, err := DecryptAES(decriptionKey, user.Password)
 		if err != nil {
-			return "", err
+			return _EMPTY_, err
 		}
 		if tName == MEMPHIS_GLOBAL_ACCOUNT {
-			globalUsers = append(globalUsers, UserConfig{User: user.Username + "$1", Password: decryptedUserPassword})
+			if len(user.Roles) > 0 {
+				allowReadSubjects, allowWriteSubjects, err := GetAllowedSubjectsFromRoleIds(user.Roles, tName)
+				if err != nil {
+					//return _EMPTY_, err
+					fmt.Printf("user: %v, err: %v\n", user.Username, err)
+				}
+
+				globalUsers = append(globalUsers, UserConfig{
+					User:     user.Username + "$1",
+					Password: decryptedUserPassword,
+					Permissions: NatsPermissions{
+						Publish:   NatsAuthorization{Allow: allowWriteSubjects},
+						Subscribe: NatsAuthorization{Allow: allowReadSubjects},
+					},
+				})
+			} else {
+				globalUsers = append(globalUsers, UserConfig{User: user.Username + "$1", Password: decryptedUserPassword})
+			}
 			continue
 		}
-		if usrMap, ok := tenantsToUsers[tName]; !ok {
-			tenantsToUsers[tName] = []UserConfig{{User: user.Username, Password: decryptedUserPassword}}
+		if len(user.Roles) > 0 {
+			allowReadSubjects, allowWriteSubjects, err := GetAllowedSubjectsFromRoleIds(user.Roles, tName)
+			if err != nil {
+				//return _EMPTY_, err
+				fmt.Printf("user: %v, err: %v\n", user.Username, err)
+			}
+
+			if usrMap, ok := tenantsToUsers[tName]; !ok {
+				tenantsToUsers[tName] = []UserConfig{{
+					User:     user.Username,
+					Password: decryptedUserPassword,
+					Permissions: NatsPermissions{
+						Publish:   NatsAuthorization{Allow: allowWriteSubjects},
+						Subscribe: NatsAuthorization{Allow: allowReadSubjects},
+					},
+				}}
+			} else {
+				tenantsToUsers[tName] = append(usrMap, UserConfig{
+					User:     user.Username,
+					Password: decryptedUserPassword,
+					Permissions: NatsPermissions{
+						Publish:   NatsAuthorization{Allow: allowWriteSubjects},
+						Subscribe: NatsAuthorization{Allow: allowReadSubjects},
+					},
+				})
+			}
 		} else {
-			tenantsToUsers[tName] = append(usrMap, UserConfig{User: user.Username, Password: decryptedUserPassword})
+			if usrMap, ok := tenantsToUsers[tName]; !ok {
+				tenantsToUsers[tName] = []UserConfig{{User: user.Username, Password: decryptedUserPassword}}
+			} else {
+				tenantsToUsers[tName] = append(usrMap, UserConfig{User: user.Username, Password: decryptedUserPassword})
+			}
 		}
 	}
 	for _, t := range tenants {
 		decryptedUserPassword, err := DecryptAES(decriptionKey, t.InternalWSPass)
 		if err != nil {
-			return "", err
+			return _EMPTY_, err
 		}
 		internalAppUser := fmt.Sprintf("$%s$%v", t.Name, t.ID) // for internal use
 		usrsList := []UserConfig{{User: "$" + t.Name, Password: getInternalUserPassword()}, {User: internalAppUser, Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}, {User: MEMPHIS_USERNAME + "$" + strconv.Itoa(t.ID), Password: decryptedUserPassword}}
 		if usrMap, ok := tenantsToUsers[t.Name]; ok {
+			var usrChangeName UserConfig
 			for _, usr := range usrMap {
-				usrChangeName := UserConfig{User: usr.User + "$" + strconv.Itoa(t.ID), Password: usr.Password}
+				usrChangeName = UserConfig{User: usr.User + "$" + strconv.Itoa(t.ID), Password: usr.Password, Permissions: usr.Permissions}
 				usrsList = append(usrsList, usrChangeName)
 			}
 		}
@@ -1601,10 +1881,11 @@ func getAccountsAndUsersString() (string, error) {
 	accounts[MEMPHIS_GLOBAL_ACCOUNT] = AccountConfig{Jetstream: &enableJetStream, Users: globalUsers, Limits: map[string]*int{"max_connections": &noLimit}, Exports: memphisReplaceExportString}
 	jsonString, err := generateJSONString(accounts)
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 	jsonString = strings.ReplaceAll(jsonString, `"replaceImports"`, memphisImportString)
 	jsonString = strings.ReplaceAll(jsonString, `"replaceExports"`, memphisExportString)
+	jsonString = strings.ReplaceAll(jsonString, "\\u003e", ">")
 	return jsonString, nil
 }
 
@@ -1639,7 +1920,7 @@ func upsertAccountsAndUsers(Accounts []*Account, Users []*User) error {
 					UserType:   "application",
 					CreatedAt:  time.Now(),
 					AvatarId:   1,
-					FullName:   "",
+					FullName:   _EMPTY_,
 					TenantName: tenantName,
 				}
 				usersToUpsert = append(usersToUpsert, newUser)
@@ -1695,14 +1976,14 @@ func (s *Server) getIp() string {
 	resp, err := http.Get("https://ifconfig.me")
 	if err != nil {
 		serv.Warnf("getIp: error get ip: %s", err.Error())
-		return ""
+		return _EMPTY_
 	}
 	defer resp.Body.Close()
 
 	ip, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		serv.Warnf("getIp: error reading response get ip body: %s", err.Error())
-		return ""
+		return _EMPTY_
 	}
 	return string(ip)
 }

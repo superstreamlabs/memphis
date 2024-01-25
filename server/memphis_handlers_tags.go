@@ -268,7 +268,6 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 			serv.Warnf("[tenant: %v][user: %v]RemoveTag: Tag %v at %v %v - create audit logs error: %v", user.TenantName, user.Username, body.Name, entity, body.EntityName, err.Error())
 		}
 	}
-
 	c.IndentedJSON(200, []string{})
 }
 
@@ -370,7 +369,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 					return
 				}
 			} else {
-				err = db.InsertEntityToTag(tag.Name, entity, entity_id, tenantName, "")
+				err = db.InsertEntityToTag(tag.Name, entity, entity_id, tenantName, _EMPTY_)
 				if err != nil {
 					serv.Errorf("[tenant: %v][user: %v]UpdateTagsForEntity at db.InsertEntityToTag: %v %v: %v", user.TenantName, user.Username, body.EntityType, body.EntityName, err.Error())
 					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -378,7 +377,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 				}
 			}
 
-			analyticsEventName := ""
+			analyticsEventName := _EMPTY_
 			analyticsParams := []analytics.EventParam{}
 			if entity == "station" {
 				message = "Tag " + name + " has been added to station " + stationName.Ext() + " by user " + user.Username
@@ -442,7 +441,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 				return
 			}
 			if exist {
-				err = db.InsertEntityToTag(tag.Name, entity, entity_id, tenantName, "")
+				err = db.InsertEntityToTag(tag.Name, entity, entity_id, tenantName, _EMPTY_)
 				if err != nil {
 					serv.Errorf("[tenant: %v][user: %v]UpdateTagsForEntity at InsertEntityToTag: %v %v: %v", user.TenantName, user.Username, body.EntityType, body.EntityName, err.Error())
 					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -518,7 +517,7 @@ func (th TagsHandler) GetTags(c *gin.Context) {
 	}
 
 	entity := strings.ToLower(body.EntityType)
-	if entity != "" {
+	if entity != _EMPTY_ {
 		err := validateEntityType(entity)
 		if err != nil {
 			serv.Warnf("[tenant: %v][user: %v]GetTags at validateEntityType: %v: %v", user.TenantName, user.Username, body.EntityType, err.Error())
@@ -529,8 +528,8 @@ func (th TagsHandler) GetTags(c *gin.Context) {
 
 	tags, err := db.GetTagsByEntityType(entity, user.TenantName)
 	if err != nil {
-		desc := ""
-		if entity == "" {
+		desc := _EMPTY_
+		if entity == _EMPTY_ {
 			desc = "All Tags"
 		} else {
 			desc = entity

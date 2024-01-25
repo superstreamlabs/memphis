@@ -7,7 +7,6 @@
     .user-password-section {
         display: flex;
         flex-direction: column;
-        height: 240px;
         gap: 10px;
     }
     p {
@@ -44,5 +43,28 @@
         textarea {
             word-break: break-all !important;
         }
+    }
+    .url-span {
+        color: rgb(29, 29, 29);
+        background-color: transparent;
+        box-shadow: none;
+        border: rgb(216, 216, 216) 1px solid;
+        border-radius: 5px;
+        height: 40px;
+        font-size: 14px;
+        width: 98%;
+        overflow-x: auto;
+        overflow-y: hidden;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+        padding: 0px 15px;
+    }
+    span.url-span::-webkit-scrollbar {
+        width: 3px;
+        height: 4px;
+    }
+    .button-container {
+        margin-top: 20px;
     }
 }

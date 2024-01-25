@@ -13,21 +13,22 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
-import { ReactComponent as IntegrationRequestIcon } from '../../../assets/images/integrationRequestIcon.svg';
-import { CATEGORY_LIST, INTEGRATION_LIST } from '../../../const/integrationList';
-import { ReactComponent as SoonBadgeIcon } from '../../../assets/images/soonBadge.svg';
+import { ReactComponent as IntegrationRequestIcon } from 'assets/images/integrationRequestIcon.svg';
+import { CATEGORY_LIST, INTEGRATION_LIST } from 'const/integrationList';
+import { ReactComponent as SoonBadgeIcon } from 'assets/images/soonBadge.svg';
 import IntegrationItem from './components/integrationItem';
-import { ApiEndpoints } from '../../../const/apiEndpoints';
-import { isCloud } from '../../../services/valueConvertor';
-import { httpRequest } from '../../../services/http';
-import Button from '../../../components/button';
-import Loader from '../../../components/loader';
-import { Context } from '../../../hooks/store';
-import Modal from '../../../components/modal';
-import Input from '../../../components/Input';
-import Tag from '../../../components/tag';
-import { showMessages } from '../../../services/genericServices';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { isCloud } from 'services/valueConvertor';
+import { httpRequest } from 'services/http';
+import Button from 'components/button';
+import Loader from 'components/loader';
+import { Context } from 'hooks/store';
+import Modal from 'components/modal';
+import Input from 'components/Input';
+import Tag from 'components/tag';
+import { showMessages } from 'services/genericServices';
 import { useLocation } from 'react-router-dom';
+import {entitlementChecker} from "utils/plan";
 
 const Integrations = () => {
     const [state, dispatch] = useContext(Context);
@@ -40,7 +41,7 @@ const Integrations = () => {
     const location = useLocation();
     const queryParameters = new URLSearchParams(location.search);
 
-    const storageTiringLimits = state?.userData?.entitlements && state?.userData?.entitlements['feature-storage-tiering'] ? false : true;
+    const storageTiringLimits = !entitlementChecker(state, 'feature-storage-tiering');
 
     useEffect(() => {
         const process = async () => {
@@ -208,7 +209,7 @@ const Integrations = () => {
                         <Button
                             width="150px"
                             height="34px"
-                            placeholder="Close"
+                            placeholder="Cancel"
                             colorType="black"
                             radiusType="circle"
                             backgroundColorType="white"

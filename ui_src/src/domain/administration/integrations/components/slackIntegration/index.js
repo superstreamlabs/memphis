@@ -13,25 +13,28 @@
 import './style.scss';
 
 import React, { useState, useContext, useEffect } from 'react';
-import { Form, message } from 'antd';
+import { Form } from 'antd';
 
-import { ReactComponent as PoisionAlertIcon } from '../../../../../assets/images/poisionAlertIcon.svg';
-import { ReactComponent as DisconAlertIcon } from '../../../../../assets/images/disconAlertIcon.svg';
-import { ReactComponent as SchemaAlertIcon } from '../../../../../assets/images/schemaAlertIcon.svg';
-import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
-import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationList';
-import { ApiEndpoints } from '../../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../../services/http';
-import Switcher from '../../../../../components/switcher';
-import Button from '../../../../../components/button';
-import { Context } from '../../../../../hooks/store';
-import Input from '../../../../../components/Input';
-import CustomTabs from '../../../../../components/Tabs';
-import { URL } from '../../../../../config';
-import Loader from '../../../../../components/loader';
-import { showMessages } from '../../../../../services/genericServices';
+import { ReactComponent as PoisionAlertIcon } from 'assets/images/poisionAlertIcon.svg';
+import { ReactComponent as DisconAlertIcon } from 'assets/images/disconAlertIcon.svg';
+import { ReactComponent as SchemaAlertIcon } from 'assets/images/schemaAlertIcon.svg';
+import { ReactComponent as PurpleQuestionMark } from 'assets/images/purpleQuestionMark.svg';
+import { INTEGRATION_LIST, getTabList } from 'const/integrationList';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import Switcher from 'components/switcher';
+import Button from 'components/button';
+import { Context } from 'hooks/store';
+import Input from 'components/Input';
+import CustomTabs from 'components/Tabs';
+import { URL } from 'config';
+import Loader from 'components/loader';
+import CloudMoadl from 'components/cloudModal';
+import { showMessages } from 'services/genericServices';
+import { isCloud } from 'services/valueConvertor';
 import IntegrationDetails from '../integrationItem/integrationDetails';
 import IntegrationLogs from '../integrationItem/integrationLogs';
+import { FaArrowCircleUp } from 'react-icons/fa';
 
 const urlSplit = URL.split('/', 3);
 
@@ -57,6 +60,7 @@ const SlackIntegration = ({ close, value }) => {
     const [loadingDisconnect, setLoadingDisconnect] = useState(false);
     const [imagesLoaded, setImagesLoaded] = useState(false);
     const [tabValue, setTabValue] = useState('Configuration');
+    const [cloudModalOpen, setCloudModalOpen] = useState(false);
     const tabs = getTabList('Slack');
 
     useEffect(() => {
@@ -324,7 +328,17 @@ const SlackIntegration = ({ close, value }) => {
                                 <Button
                                     width="500px"
                                     height="45px"
-                                    placeholder={isValue ? 'Update' : 'Connect'}
+                                    placeholder={
+                                        isValue ? (
+                                            'Update'
+                                        ) : isCloud() && !state?.allowedActions?.can_connect_slack ? (
+                                            <span className="upgrade">
+                                                Connect <FaArrowCircleUp className="lock-feature-icon" />
+                                            </span>
+                                        ) : (
+                                            'Connect'
+                                        )
+                                    }
                                     colorType="white"
                                     radiusType="circle"
                                     backgroundColorType="purple"
@@ -332,11 +346,12 @@ const SlackIntegration = ({ close, value }) => {
                                     fontFamily="InterSemiBold"
                                     isLoading={loadingSubmit}
                                     disabled={isValue && !creationForm.isFieldsTouched()}
-                                    onClick={handleSubmit}
+                                    onClick={() => (!isCloud() || state?.allowedActions?.can_connect_slack ? handleSubmit() : setCloudModalOpen(true))}
                                 />
                             </div>
                         </Form.Item>
                     </Form>
+                    <CloudMoadl type={'upgrade'} open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
                 </>
             )}
         </dynamic-integration>

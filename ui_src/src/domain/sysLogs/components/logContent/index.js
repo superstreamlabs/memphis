@@ -14,9 +14,9 @@ import './style.scss';
 
 import React from 'react';
 
-import LogBadge from '../../../../components/logBadge';
-import { parsingDate } from '../../../../services/valueConvertor';
-import Copy from '../../../../components/copy';
+import LogBadge from 'components/logBadge';
+import { parsingDate } from 'services/valueConvertor';
+import Copy from 'components/copy';
 
 const LogContent = ({ displayedLog }) => {
     return (

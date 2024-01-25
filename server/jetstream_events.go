@@ -140,6 +140,7 @@ type JSConsumerDeliveryTerminatedAdvisory struct {
 	ConsumerSeq uint64 `json:"consumer_seq"`
 	StreamSeq   uint64 `json:"stream_seq"`
 	Deliveries  uint64 `json:"deliveries"`
+	Reason      string `json:"reason,omitempty"`
 	Domain      string `json:"domain,omitempty"`
 }
 

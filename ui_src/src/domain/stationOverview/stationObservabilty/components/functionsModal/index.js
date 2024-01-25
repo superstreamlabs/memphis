@@ -15,52 +15,71 @@ import './style.scss';
 import { useState, useEffect, useContext } from 'react';
 import { LoadingOutlined } from '@ant-design/icons';
 import { Spin } from 'antd';
-import CustomTabs from '../../../../../components/Tabs';
-import FunctionBox from '../../../../functions/components/functionBox';
-import FunctionDetails from '../../../../functions/components/functionDetails';
-import { getFunctionsTabs } from '../../../../../services/valueConvertor';
-import SearchInput from '../../../../../components/searchInput';
-import { ApiEndpoints } from '../../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../../services/http';
+import CustomTabs from 'components/Tabs';
+import FunctionBox from 'domain/functions/components/functionBox';
+import FunctionDetails from 'domain/functions/components/functionDetails';
+import { getFunctionsTabs } from 'services/valueConvertor';
+import SearchInput from 'components/searchInput';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
 import FunctionsApplyModal from '../functionsApplyModal';
-import Modal from '../../../../../components/modal';
-import { ReactComponent as SearchIcon } from '../../../../../assets/images/searchIcon.svg';
-import { ReactComponent as CheckShieldIcon } from '../../../../../assets/images/checkShieldIcon.svg';
-import { ReactComponent as FunctionsModalIcon } from '../../../../../assets/images/vueSaxIcon.svg';
-import { StationStoreContext } from '../../../';
+import FunctionInputsModal from '../functionInputsModal';
+import Modal from 'components/modal';
+import { ReactComponent as SearchIcon } from 'assets/images/searchIcon.svg';
+import { ReactComponent as CheckShieldIcon } from 'assets/images/checkShieldIcon.svg';
+import { ReactComponent as FunctionsModalIcon } from 'assets/images/vueSaxIcon.svg';
+import { StationStoreContext } from 'domain/stationOverview';
+import { showMessages } from 'services/genericServices';
+import { OWNER } from 'const/globalConst';
+import RefreshButton from 'components/refreshButton';
 
-import { OWNER } from '../../../../../const/globalConst';
-
-const FunctionsModal = ({ applyFunction }) => {
+const FunctionsModal = ({ open, clickOutside, applyFunction, referredFunction }) => {
     const [functionList, setFunctionList] = useState([]);
     const [isIntegrated, setIsIntegrated] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [refreshIndeicator, setRefreshIndicator] = useState(false);
     const [tabValue, setTabValue] = useState('all');
     const [searchInput, setSearchInput] = useState('');
     const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+    const [isInputsModalOpen, setIsInputsModalOpen] = useState(false);
     const [filteredData, setFilteredData] = useState([]);
     const [clickedFunction, setClickedFunction] = useState(null);
     const [selectedFunction, setSelectedFunction] = useState(null);
     const [stationState, stationDispatch] = useContext(StationStoreContext);
+    const [tabsCounter, setTabsCounter] = useState([0, 0, 0]);
+
+    const TABS = getFunctionsTabs();
 
     useEffect(() => {
         getAllFunctions();
-    }, []);
+        setClickedFunction(null);
+    }, [open]);
+
+    useEffect(() => {
+        const memphisCount = filteredData?.filter((func) => func?.owner === OWNER)?.length;
+        const privateCount = filteredData?.filter((func) => func?.owner !== OWNER)?.length;
+        setTabsCounter([memphisCount + privateCount, memphisCount, privateCount]);
+    }, [filteredData]);
+
+    useEffect(() => {
+        let shouldRefresh = false;
+        shouldRefresh = functionList?.some((func) => {
+            return func?.installed_in_progress;
+        });
+        setRefreshIndicator(shouldRefresh);
+    }, [functionList]);
 
     useEffect(() => {
         let result = functionList;
         if (tabValue === 'Private') {
-            result = result.filter((func) => func?.owner !== OWNER && func?.is_valid);
+            result = result?.filter((func) => func?.owner !== OWNER);
         } else if (tabValue === 'Memphis') {
-            result = result.filter((func) => func?.owner === OWNER && func?.is_valid);
-        } else {
-            result = result.filter((func) => func?.is_valid);
+            result = result?.filter((func) => func?.owner === OWNER);
         }
         if (searchInput.length > 0) {
-            result = result.filter(
+            result = result?.filter(
                 (func) =>
-                    (func?.function_name?.toLowerCase()?.includes(searchInput?.toLowerCase()) && func?.is_valid) ||
-                    (func?.description?.toLowerCase()?.includes(searchInput.toLowerCase()) && func?.is_valid)
+                    func?.function_name?.toLowerCase()?.includes(searchInput?.toLowerCase()) || func?.description?.toLowerCase()?.includes(searchInput.toLowerCase())
             );
         }
         setFilteredData(result);
@@ -71,7 +90,33 @@ const FunctionsModal = ({ applyFunction }) => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_FUNCTIONS);
             setIsIntegrated(data?.scm_integrated);
-            setFunctionList([...data?.installed, ...data?.other] || []);
+
+            let updatedData = { ...data };
+
+            const installed = updatedData?.installed
+                ?.map((func, index) => {
+                    if (func?.owner === OWNER) {
+                        func.stars = Math.random() + 4;
+                        func.rates = Math.floor(Math.random() * (80 - 50 + 1)) + 50;
+                        func.forks = Math.floor(Math.random() * (100 - 80 + 1)) + 80;
+                    }
+                    return func;
+                })
+                ?.sort((a, b) => (a.function_name > b.function_name ? 1 : -1));
+
+            const other = updatedData?.other
+                ?.filter((func) => func?.is_valid)
+                ?.map((func, index) => {
+                    if (func?.owner === OWNER) {
+                        func.stars = Math.random() + 4;
+                        func.rates = Math.floor(Math.random() * (80 - 50 + 1)) + 50;
+                        func.forks = Math.floor(Math.random() * (100 - 80 + 1)) + 80;
+                    }
+                    return func;
+                })
+                ?.sort((a, b) => (a.function_name > b.function_name ? 1 : -1));
+
+            setFunctionList([...installed, ...other] || []);
             setTimeout(() => {
                 setIsLoading(false);
             }, 500);
@@ -84,13 +129,18 @@ const FunctionsModal = ({ applyFunction }) => {
     };
 
     const onFunctionApply = async (selectedFunction, ordering) => {
-        const requestBodey = {
+        let inputsObject = {};
+        selectedFunction?.inputs?.forEach((item) => {
+            inputsObject[item.name] = item.value;
+        });
+        const requestBody = {
             function_id: selectedFunction?.id,
             visible_step: stationState?.stationFunctions?.functions?.length + 1,
             ordering_matter: ordering,
-            activate: true
+            activate: true,
+            inputs: inputsObject
         };
-        applyFunction(requestBodey);
+        applyFunction(requestBody);
     };
 
     const handleUnInstall = async (clickedFunction) => {
@@ -111,7 +161,29 @@ const FunctionsModal = ({ applyFunction }) => {
         }
     };
 
-    const TABS = getFunctionsTabs();
+    const handleInstall = async (clickedFunction) => {
+        const bodyRequest = {
+            function_name: clickedFunction?.function_name,
+            repo: clickedFunction?.repo,
+            owner: clickedFunction?.owner,
+            branch: clickedFunction?.branch,
+            scm_type: clickedFunction?.scm,
+            by_memphis: clickedFunction?.by_memphis
+        };
+        try {
+            await httpRequest('POST', ApiEndpoints.INSTALL_FUNCTION, bodyRequest);
+            showMessages('success', `We are ${clickedFunction?.updates_available ? 'updating' : 'installing'} the function for you. We will let you know once its done`);
+            getAllFunctions();
+        } catch (e) {
+            return;
+        }
+    };
+
+    const handleInputsChange = (inputs) => {
+        const newFunction = { ...selectedFunction };
+        newFunction.inputs = inputs;
+        setSelectedFunction(newFunction);
+    };
 
     const antIcon = (
         <LoadingOutlined
@@ -124,75 +196,101 @@ const FunctionsModal = ({ applyFunction }) => {
     );
     return (
         <>
-            {clickedFunction ? (
-                <FunctionDetails
-                    selectedFunction={clickedFunction}
-                    integrated={false}
-                    installed={true}
-                    onBackToFunction={() => {
-                        setClickedFunction(null);
-                    }}
-                    clickApply={() => {
-                        setSelectedFunction(clickedFunction);
-                        stationState?.stationFunctions?.functions?.length === 0 ? setIsApplyModalOpen(true) : onFunctionApply(clickedFunction);
-                    }}
-                    handleUnInstall={() => handleUnInstall(clickedFunction)}
-                />
-            ) : (
-                <>
-                    <div className="fdm-header modal-header">
-                        <div className="header-img-container">
-                            <FunctionsModalIcon />
-                        </div>
-                        <p>Functions</p>
-                        <label>Say Goodbye to Manual Business Logic! Use Functions Instead of Building Complicated Clients.</label>
-                    </div>
-                    <div className="fdm-body">
-                        <CustomTabs tabs={TABS} tabValue={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
-                        <SearchInput
-                            placeholder="Search here"
-                            colorType="navy"
-                            backgroundColorType="gray-dark"
-                            width="100%"
-                            height="34px"
-                            borderRadiusType="circle"
-                            borderColorType="none"
-                            boxShadowsType="none"
-                            iconComponent={<SearchIcon alt="searchIcon" />}
-                            onChange={handleSearch}
-                            value={searchInput}
-                            className="mrb-15"
+            <Modal open={open} clickOutside={clickOutside} displayButtons={false} className="ms-function-details-modal" height="95vh" width="1200px">
+                <div className="function-modal-container">
+                    {clickedFunction ? (
+                        <FunctionDetails
+                            selectedFunction={clickedFunction}
+                            integrated={false}
+                            onBackToFunction={() => {
+                                setClickedFunction(null);
+                            }}
+                            clickApply={() => {
+                                setSelectedFunction(clickedFunction);
+                                clickedFunction?.inputs?.length > 0
+                                    ? setIsInputsModalOpen(true)
+                                    : stationState?.stationFunctions?.functions?.length === 0
+                                    ? setIsApplyModalOpen(true)
+                                    : onFunctionApply(clickedFunction);
+                            }}
+                            handleUnInstall={() => handleUnInstall(clickedFunction)}
+                            handleInstall={() => handleInstall(clickedFunction)}
                         />
-                        {isLoading ? (
-                            <div className="loader-container">
-                                <Spin indicator={antIcon} />
+                    ) : (
+                        <>
+                            <div className="fdm-header modal-header">
+                                <div className="header-img-container">
+                                    <FunctionsModalIcon />
+                                </div>
+                                <p>Functions</p>
+                                <span className="title-section">
+                                    <label>Say Goodbye to Manual Business Logic! Use Functions Instead of Building Complicated Clients.</label>
+                                    <RefreshButton refreshIndeicator={refreshIndeicator} onClick={getAllFunctions} isLoading={isLoading} />
+                                </span>
                             </div>
-                        ) : (
-                            <div className="functions-list">
-                                {filteredData?.map((functionItem, index) => (
-                                    <FunctionBox
-                                        key={index}
-                                        funcDetails={functionItem}
-                                        integrated={isIntegrated}
-                                        isTagsOn={false}
-                                        installed={true}
-                                        onApply={() => {
-                                            setSelectedFunction(functionItem);
-                                            stationState?.stationFunctions?.functions?.length === 0 ? setIsApplyModalOpen(true) : onFunctionApply(functionItem);
-                                        }}
-                                        onClick={() => {
-                                            setClickedFunction(functionItem);
-                                        }}
-                                    />
-                                ))}
+                            <div className="fdm-body">
+                                <CustomTabs tabs={TABS} tabValue={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabsCounter={tabsCounter} />
+                                <SearchInput
+                                    placeholder="Search here"
+                                    colorType="navy"
+                                    backgroundColorType="gray-dark"
+                                    width="100%"
+                                    height="34px"
+                                    borderRadiusType="circle"
+                                    borderColorType="none"
+                                    boxShadowsType="none"
+                                    iconComponent={<SearchIcon alt="searchIcon" />}
+                                    onChange={handleSearch}
+                                    value={searchInput}
+                                    className="mrb-15"
+                                />
+                                {isLoading ? (
+                                    <div className="loader-container">
+                                        <Spin indicator={antIcon} />
+                                    </div>
+                                ) : (
+                                    <div className="functions-list">
+                                        {filteredData?.map((functionItem, index) => (
+                                            <FunctionBox
+                                                key={`func-index-${index}`}
+                                                funcDetails={functionItem}
+                                                integrated={isIntegrated}
+                                                referredFunction={referredFunction}
+                                                isTagsOn={false}
+                                                onApply={() => {
+                                                    setSelectedFunction(functionItem);
+                                                    functionItem?.inputs?.length > 0
+                                                        ? setIsInputsModalOpen(true)
+                                                        : stationState?.stationFunctions?.functions?.length === 0
+                                                        ? setIsApplyModalOpen(true)
+                                                        : onFunctionApply(functionItem);
+                                                }}
+                                                onClick={() => {
+                                                    setClickedFunction(functionItem);
+                                                }}
+                                                startInstallation={() => getAllFunctions()}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
-                </>
-            )}
-
+                        </>
+                    )}
+                </div>
+            </Modal>
+            <FunctionInputsModal
+                open={isInputsModalOpen}
+                clickOutside={() => setIsInputsModalOpen(false)}
+                handleInputsChange={(inputs) => handleInputsChange(inputs)}
+                rBtnClick={() => {
+                    stationState?.stationFunctions?.functions?.length === 0 ? setIsApplyModalOpen(true) : onFunctionApply(selectedFunction);
+                    setIsInputsModalOpen(false);
+                }}
+                rBtnText={stationState?.stationFunctions?.functions?.length === 0 ? 'Next' : 'Apply'}
+                clickedFunction={selectedFunction}
+            />
             <Modal
-                width={'403px'}
+                width={'400px'}
                 header={
                     <div className="modal-header">
                         <div className="header-img-container">
@@ -212,7 +310,7 @@ const FunctionsModal = ({ applyFunction }) => {
                         onFunctionApply(selectedFunction, e);
                         setIsApplyModalOpen(false);
                     }}
-                    successText={'Apply'}
+                    successText={'Next'}
                 />
             </Modal>
         </>

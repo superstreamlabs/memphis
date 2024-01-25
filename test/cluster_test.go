@@ -74,7 +74,7 @@ func checkExpectedSubs(expected int, servers ...*server.Server) error {
 	return nil
 }
 
-func checkSubInterest(t *testing.T, s *server.Server, accName, subject string, timeout time.Duration) {
+func checkSubInterest(t testing.TB, s *server.Server, accName, subject string, timeout time.Duration) {
 	t.Helper()
 	checkFor(t, timeout, 15*time.Millisecond, func() error {
 		acc, err := s.LookupAccount(accName)
@@ -240,6 +240,10 @@ func TestClusterQueueSubs(t *testing.T) {
 	sendB("PING\r\n")
 	expectB(pongRe)
 
+	// Give plenty of time for the messages to flush, so that we don't
+	// accidentally only read some of them.
+	time.Sleep(time.Millisecond * 250)
+
 	// Should receive 5.
 	matches = expectMsgsA(5)
 	checkForQueueSid(t, matches, qg1SidsA)
@@ -247,6 +251,10 @@ func TestClusterQueueSubs(t *testing.T) {
 
 	// Send to A
 	sendA("PUB foo 2\r\nok\r\n")
+
+	// Give plenty of time for the messages to flush, so that we don't
+	// accidentally only read some of them.
+	time.Sleep(time.Millisecond * 250)
 
 	// Should receive 5.
 	matches = expectMsgsA(5)
@@ -269,6 +277,10 @@ func TestClusterQueueSubs(t *testing.T) {
 
 	// Send to B
 	sendB("PUB foo 2\r\nok\r\n")
+
+	// Give plenty of time for the messages to flush, so that we don't
+	// accidentally only read some of them.
+	time.Sleep(time.Millisecond * 250)
 
 	// Should receive 1 from B.
 	matches = expectMsgsB(1)
@@ -307,6 +319,10 @@ func TestClusterQueueSubs(t *testing.T) {
 
 	// Send to A
 	sendA("PUB foo 2\r\nok\r\n")
+
+	// Give plenty of time for the messages to flush, so that we don't
+	// accidentally only read some of them.
+	time.Sleep(time.Millisecond * 250)
 
 	// Should receive 4 now.
 	matches = expectMsgsA(4)
@@ -389,6 +405,8 @@ func TestClusterDoubleMsgs(t *testing.T) {
 	sendB("PUB foo 2\r\nok\r\n")
 	sendB("PING\r\n")
 	expectB(pongRe)
+
+	time.Sleep(10 * time.Millisecond)
 
 	matches = expectMsgsA2(2)
 	checkMsg(t, matches[0], "foo", "", "", "2", "ok")
@@ -588,6 +606,7 @@ func (c *captureErrLogger) Errorf(format string, v ...interface{}) {
 	}
 }
 
+// ** added by Memphis
 func (c *captureErrLogger) Systemf(format string, v ...interface{}) {
 	msg := fmt.Sprintf(format, v...)
 	select {
@@ -595,6 +614,8 @@ func (c *captureErrLogger) Systemf(format string, v ...interface{}) {
 	default:
 	}
 }
+
+// ** added by Memphis
 
 func TestClusterNameConflictsDropRoutes(t *testing.T) {
 	ll := &captureErrLogger{ch: make(chan string, 4)}

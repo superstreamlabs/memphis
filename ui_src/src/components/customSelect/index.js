@@ -15,20 +15,20 @@ import './style.scss';
 import { ArrowDropDownRounded } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
 import { BsPlus } from 'react-icons/bs';
-import { Select } from 'antd';
+import { Divider, Select, Space } from 'antd';
 import React from 'react';
 
-import SchemaIconSelect from '../../assets/images/schemaIconSelect.svg';
-import stationsIconActive from '../../assets/images/stationsIconActive.svg';
-import usersIconActive from '../../assets/images/usersIconActive.svg';
-import { parsingDate } from '../../services/valueConvertor';
+import SchemaIconSelect from 'assets/images/schemaIconSelect.svg';
+import stationsIconActive from 'assets/images/stationsIconActive.svg';
+import usersIconActive from 'assets/images/usersIconActive.svg';
+import { parsingDate } from 'services/valueConvertor';
 
-import Button from '../button';
-import pathDomains from '../../router';
+import Button from 'components/button';
+import pathDomains from 'router';
 
 const { Option } = Select;
 
-const CustomSelect = ({ options, onChange, value, placeholder, type = 'schema', handleCreateNew }) => {
+const CustomSelect = ({ options, onChange, value, placeholder, type = 'schema', handleCreateNew, showCreatedBy = true }) => {
     const history = useHistory();
 
     const handleChange = (e) => {
@@ -86,6 +86,43 @@ const CustomSelect = ({ options, onChange, value, placeholder, type = 'schema', 
                         )}
                     </div>
                 }
+                dropdownRender={(menu) => (
+                    <>
+                        {menu}
+                        {type === 'user' && options.length > 0 && (
+                            <>
+                                <Divider
+                                    style={{
+                                        margin: '8px 0',
+                                    }}
+                                />
+                                <Space
+                                    style={{
+                                        padding: '0 20px 4px',
+                                    }}
+                                    className="customSelect-add-user-button"
+                                >
+                                    <Button
+                                        placeholder={
+                                            <div className="create-btn">
+                                                <BsPlus style={{color: '#6557FF', fontSize: '18px'}}/>
+                                                <p>Create a user</p>
+                                            </div>
+                                        }
+                                        width="83px"
+                                        height="32px"
+                                        colorType="purple"
+                                        radiusType="circle"
+                                        backgroundColorType={'none'}
+                                        fontSize="12px"
+                                        fontWeight="600"
+                                        onClick={() => handleCreateNew()}
+                                    />
+                                </Space>
+                            </>
+                        )}
+                    </>
+                )}
             >
                 {type === 'dls' && options.length > 0 && (
                     <Option value={null}>
@@ -96,7 +133,7 @@ const CustomSelect = ({ options, onChange, value, placeholder, type = 'schema', 
                 )}
                 {options?.map((schema) => {
                     return (
-                        <Option key={schema?.id} value={schema?.name}>
+                        <Option key={schema?.id || schema} value={schema?.name || schema}>
                             <>
                                 <div className="schema-details">
                                     <img
@@ -105,12 +142,14 @@ const CustomSelect = ({ options, onChange, value, placeholder, type = 'schema', 
                                         height={20}
                                         width={20}
                                     />
-                                    <p className="schema-name">{schema?.name}</p>
+                                    <p className="schema-name">{schema?.name || schema}</p>
                                 </div>
-                                <p className="created-by">
-                                    {type === 'schema' ? <>{schema?.type} &#8226; </> : null}
-                                    {parsingDate(schema?.created_at)}
-                                </p>
+                                {showCreatedBy &&
+                                    <p className="created-by">
+                                        {type === 'schema' ? <>{schema?.type} &#8226; </> : null}
+                                        {parsingDate(schema?.created_at)}
+                                    </p>
+                                }
                             </>
                         </Option>
                     );

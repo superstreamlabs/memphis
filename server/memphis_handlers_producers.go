@@ -44,7 +44,7 @@ func validateProducerType(producerType string) error {
 	return nil
 }
 
-func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnectionId string, pStationName StationName, username string, tenantName string, version int, appId string) (bool, bool, error, models.Station) {
+func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnectionId string, pStationName StationName, username string, tenantName string, version int, appId, sdkLang string) (bool, bool, error, models.Station) {
 	name := strings.ToLower(pName)
 	err := validateProducerName(name)
 	if err != nil {
@@ -80,9 +80,9 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 			return false, false, err, models.Station{}
 		}
 		var created bool
-		station, created, err = CreateDefaultStation(user.TenantName, s, pStationName, user.ID, user.Username, "", 0)
+		station, created, err = CreateDefaultStation(user.TenantName, s, pStationName, user, _EMPTY_, 0)
 		if err != nil {
-			if strings.Contains(err.Error(), "already exists") {
+			if strings.Contains(err.Error(), "already exists") || strings.Contains(err.Error(), "max amount") || strings.Contains(err.Error(), "not allowed") {
 				serv.Warnf("[tenant: %v][user: %v]createProducerDirectCommon at CreateDefaultStation: creating default station error - producer %v at station %v: %v", user.TenantName, user.Username, pName, pStationName.external, err.Error())
 			} else {
 				serv.Errorf("[tenant: %v][user: %v]createProducerDirectCommon at CreateDefaultStation: creating default station error - producer %v at station %v: %v", user.TenantName, user.Username, pName, pStationName.external, err.Error())
@@ -119,6 +119,16 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 			serv.Warnf("[tenant: %v]createProducerDirectCommon : Producer %v at station %v : %v", user.TenantName, pName, pStationName, err.Error())
 			return false, false, err, models.Station{}
 		}
+		allowed, _, err := ValidateStationPermissions(user.Roles, pStationName.Ext(), user.TenantName, "write")
+		if err != nil {
+			serv.Errorf("[tenant: %v][user:%v]createProducerDirectCommon at ValidateStationPermissions: Station %v: %v", user.TenantName, user.Username, pStationName.Ext(), err.Error())
+			return false, false, err, models.Station{}
+		}
+		if !allowed {
+			errMsg := fmt.Sprintf("user %v is not allowed to access station %v", user.Username, pStationName.Ext())
+			serv.Warnf("[tenant: %v][user:%v]createProducerDirectCommon: %v", user.TenantName, user.Username, errMsg)
+			return false, false, errors.New(errMsg), models.Station{}
+		}
 	}
 
 	err = validateProducersCount(station.ID, user.TenantName)
@@ -127,38 +137,55 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		return false, false, err, models.Station{}
 	}
 
-	splitted := strings.Split(c.opts.Lang, ".")
-	sdkName := splitted[len(splitted)-1]
-	newProducer, err := db.InsertNewProducer(name, station.ID, producerType, pConnectionId, station.TenantName, station.PartitionsList, version, sdkName, appId)
-	if err != nil {
-		serv.Warnf("[tenant: %v][user: %v]createProducerDirectCommon at InsertNewProducer: %v", user.TenantName, user.Username, err.Error())
-		return false, false, err, models.Station{}
-	}
-	message := "Producer " + name + " connected"
-	var auditLogs []interface{}
-	newAuditLog := models.AuditLog{
-		StationName:       pStationName.Ext(),
-		Message:           message,
-		CreatedBy:         user.ID,
-		CreatedByUsername: user.Username,
-		CreatedAt:         time.Now(),
-		TenantName:        user.TenantName,
-	}
-	auditLogs = append(auditLogs, newAuditLog)
-	err = CreateAuditLogs(auditLogs)
-	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]createProducerDirectCommon at CreateAuditLogs: Producer %v at station %v: %v", user.TenantName, user.Username, pName, pStationName.external, err.Error())
-		return false, false, err, models.Station{}
+	sdkName := sdkLang
+	if sdkLang == "" {
+		switch c.opts.Lang {
+		case "nats.js":
+			sdkName = "node.js"
+		case "python3":
+			sdkName = "python"
+		default:
+			sdkName = c.opts.Lang
+		}
 	}
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		ip := serv.getIp()
-		analyticsParams := map[string]interface{}{"producer-name": newProducer.Name, "ip": ip}
-		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-create-producer-sdk")
-		if strings.HasPrefix(newProducer.Name, "rest_gateway") {
-			analyticsParams = map[string]interface{}{}
-			analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-send-messages-via-rest-gw")
+	if strings.HasPrefix(user.Username, "$") && name != "gui" {
+		_, err := db.InsertNewProducer(name, station.ID, "connector", pConnectionId, station.TenantName, station.PartitionsList, version, sdkName, appId)
+		if err != nil {
+			serv.Warnf("[tenant: %v][user: %v]createProducerDirectCommon at InsertNewProducer: %v", user.TenantName, user.Username, err.Error())
+			return false, false, err, models.Station{}
+		}
+	} else {
+		newProducer, err := db.InsertNewProducer(name, station.ID, producerType, pConnectionId, station.TenantName, station.PartitionsList, version, sdkName, appId)
+		if err != nil {
+			serv.Warnf("[tenant: %v][user: %v]createProducerDirectCommon at InsertNewProducer: %v", user.TenantName, user.Username, err.Error())
+			return false, false, err, models.Station{}
+		}
+		message := "Producer " + name + " connected"
+		var auditLogs []interface{}
+		newAuditLog := models.AuditLog{
+			StationName:       pStationName.Ext(),
+			Message:           message,
+			CreatedBy:         user.ID,
+			CreatedByUsername: user.Username,
+			CreatedAt:         time.Now(),
+			TenantName:        user.TenantName,
+		}
+		auditLogs = append(auditLogs, newAuditLog)
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]createProducerDirectCommon at CreateAuditLogs: Producer %v at station %v: %v", user.TenantName, user.Username, pName, pStationName.external, err.Error())
+			return false, false, err, models.Station{}
+		}
+		shouldSendAnalytics, _ := shouldSendAnalytics()
+		if shouldSendAnalytics {
+			ip := serv.getIp()
+			analyticsParams := map[string]interface{}{"producer-name": newProducer.Name, "ip": ip}
+			analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-create-producer-sdk")
+			if strings.HasPrefix(newProducer.Name, "rest_gateway") {
+				analyticsParams = map[string]interface{}{}
+				analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-send-messages-via-rest-gw")
+			}
 		}
 	}
 
@@ -173,12 +200,12 @@ func (s *Server) createProducerDirectV0(c *client, reply string, cpr createProdu
 		return
 	}
 	_, _, err, _ = s.createProducerDirectCommon(c, cpr.Name,
-		cpr.ProducerType, cpr.ConnectionId, sn, cpr.Username, tenantName, 0, cpr.ConnectionId)
+		cpr.ProducerType, cpr.ConnectionId, sn, cpr.Username, tenantName, 0, cpr.ConnectionId, "")
 	respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 }
 
 func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
-	var cpr createProducerRequestV2
+	var cpr createProducerRequestV3
 	var resp createProducerResponse
 
 	tenantName, message, err := s.getTenantNameAndMessage(msg)
@@ -187,26 +214,40 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	if err := json.Unmarshal([]byte(message), &cpr); err != nil || cpr.RequestVersion < 3 {
-		var cprV1 createProducerRequestV1
-		if err := json.Unmarshal([]byte(message), &cprV1); err != nil {
-			var cprV0 createProducerRequestV0
-			if err := json.Unmarshal([]byte(message), &cprV0); err != nil {
-				s.Errorf("[tenant: %v]createProducerDirect: %v", tenantName, err.Error())
-				respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
+	if err := json.Unmarshal([]byte(message), &cpr); err != nil || cpr.RequestVersion < 4 {
+		var cprV2 createProducerRequestV2
+		if err := json.Unmarshal([]byte(message), &cprV2); err != nil {
+			var cprV1 createProducerRequestV1
+			if err := json.Unmarshal([]byte(message), &cprV1); err != nil {
+				var cprV0 createProducerRequestV0
+				if err := json.Unmarshal([]byte(message), &cprV0); err != nil {
+					s.Errorf("[tenant: %v]createProducerDirect: %v", tenantName, err.Error())
+					respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
+					return
+				}
+				s.createProducerDirectV0(c, reply, cprV0, tenantName)
 				return
 			}
-			s.createProducerDirectV0(c, reply, cprV0, tenantName)
-			return
+
+			cpr = createProducerRequestV3{
+				Name:           cprV1.Name,
+				StationName:    cprV1.StationName,
+				ConnectionId:   cprV1.ConnectionId,
+				ProducerType:   cprV1.ProducerType,
+				RequestVersion: cprV1.RequestVersion,
+				Username:       cprV1.Username,
+				AppId:          cprV1.ConnectionId,
+			}
 		}
-		cpr = createProducerRequestV2{
-			Name:           cprV1.Name,
-			StationName:    cprV1.StationName,
-			ConnectionId:   cprV1.ConnectionId,
-			ProducerType:   cprV1.ProducerType,
-			RequestVersion: cprV1.RequestVersion,
-			Username:       cprV1.Username,
-			AppId:          cprV1.ConnectionId,
+
+		cpr = createProducerRequestV3{
+			Name:           cprV2.Name,
+			StationName:    cprV2.StationName,
+			ConnectionId:   cprV2.ConnectionId,
+			ProducerType:   cprV2.ProducerType,
+			RequestVersion: cprV2.RequestVersion,
+			Username:       cprV2.Username,
+			AppId:          cprV2.ConnectionId,
 		}
 	}
 	cpr.TenantName = tenantName
@@ -217,7 +258,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	clusterSendNotification, schemaVerseToDls, err, station := s.createProducerDirectCommon(c, cpr.Name, cpr.ProducerType, cpr.ConnectionId, sn, cpr.Username, tenantName, cpr.RequestVersion, cpr.AppId)
+	clusterSendNotification, schemaVerseToDls, err, station := s.createProducerDirectCommon(c, cpr.Name, cpr.ProducerType, cpr.ConnectionId, sn, cpr.Username, tenantName, cpr.RequestVersion, cpr.AppId, cpr.SdkLang)
 	if err != nil {
 		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		return
@@ -249,49 +290,56 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	respondWithResp(s.MemphisGlobalAccountString(), s, reply, &resp)
 }
 
-func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]models.ExtendedProducer, []models.ExtendedProducer, []models.ExtendedProducer, error) { // for socket io endpoint
+func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]models.ExtendedProducerResponse, []models.ExtendedProducerResponse, []models.ExtendedProducerResponse, error) { // for socket io endpoint
 	producers, err := db.GetAllProducersByStationID(station.ID)
 	if err != nil {
-		return producers, producers, producers, err
+		return []models.ExtendedProducerResponse{}, []models.ExtendedProducerResponse{}, []models.ExtendedProducerResponse{}, err
 	}
 
-	var connectedProducers []models.ExtendedProducer
-	var disconnectedProducers []models.ExtendedProducer
-	var deletedProducers []models.ExtendedProducer
+	var connectedProducers []models.ExtendedProducerResponse
+	var disconnectedProducers []models.ExtendedProducerResponse
+	var deletedProducers []models.ExtendedProducerResponse
 	producersNames := []string{}
 
 	for _, producer := range producers {
 		if slices.Contains(producersNames, producer.Name) {
 			continue
 		}
+		needToUpdateVersion := false
+		if producer.Version < lastProducerCreationReqVersion && producer.IsActive {
+			needToUpdateVersion = true
+		}
 
-		producerRes := models.ExtendedProducer{
-			ID:          producer.ID,
-			Name:        producer.Name,
-			StationName: producer.StationName,
-			UpdatedAt:   producer.UpdatedAt,
-			IsActive:    producer.IsActive,
-			Count:       producer.Count,
+		producerExtendedRes := models.ExtendedProducerResponse{
+			ID:                         producer.ID,
+			Name:                       producer.Name,
+			StationName:                producer.StationName,
+			UpdatedAt:                  producer.UpdatedAt,
+			IsActive:                   producer.IsActive,
+			DisconnedtedProducersCount: producer.DisconnedtedProducersCount,
+			ConnectedProducersCount:    producer.ConnectedProducersCount,
+			SdkLanguage:                producer.Sdk,
+			UpdateAvailable:            needToUpdateVersion,
 		}
 
 		producersNames = append(producersNames, producer.Name)
 		if producer.IsActive {
-			connectedProducers = append(connectedProducers, producerRes)
+			connectedProducers = append(connectedProducers, producerExtendedRes)
 		} else {
-			disconnectedProducers = append(disconnectedProducers, producerRes)
+			disconnectedProducers = append(disconnectedProducers, producerExtendedRes)
 		}
 	}
 
 	if len(connectedProducers) == 0 {
-		connectedProducers = []models.ExtendedProducer{}
+		connectedProducers = []models.ExtendedProducerResponse{}
 	}
 
 	if len(disconnectedProducers) == 0 {
-		disconnectedProducers = []models.ExtendedProducer{}
+		disconnectedProducers = []models.ExtendedProducerResponse{}
 	}
 
 	if len(deletedProducers) == 0 {
-		deletedProducers = []models.ExtendedProducer{}
+		deletedProducers = []models.ExtendedProducerResponse{}
 	}
 
 	sort.Slice(connectedProducers, func(i, j int) bool {
@@ -322,7 +370,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 			return
 		}
 		dprV0.TenantName = tenantName
-		if c.memphisInfo.connectionId == "" {
+		if c.memphisInfo.connectionId == _EMPTY_ {
 			s.destroyProducerDirectV0(c, reply, dprV0)
 			return
 		} else {
@@ -365,12 +413,12 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	}
 
 	username := c.memphisInfo.username
-	if username == "" {
+	if username == _EMPTY_ {
 		username = dpr.Username
 	}
 	_, user, err := memphis_cache.GetUser(username, dpr.TenantName, false)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]destroyProducerDirect at GetUserByUsername: Producer %v at station %v: %v", dpr.TenantName, dpr.Username, name, dpr.StationName, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]destroyProducerDirect at GetUser: Producer %v at station %v: %v", dpr.TenantName, dpr.Username, name, dpr.StationName, err.Error())
 	}
 	message := "Producer " + name + " has been destroyed"
 	serv.Noticef("[tenant: %v][user: %v]: %v", tenantName, username, message)
@@ -427,12 +475,12 @@ func (s *Server) destroyProducerDirectV0(c *client, reply string, dpr destroyPro
 	}
 
 	username := c.memphisInfo.username
-	if username == "" {
+	if username == _EMPTY_ {
 		username = dpr.Username
 	}
 	_, user, err := memphis_cache.GetUser(username, dpr.TenantName, false)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]destroyProducerDirectV0 at GetUserByUsername: Producer %v at station %v: %v", dpr.TenantName, dpr.Username, name, dpr.StationName, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]destroyProducerDirectV0 at GetUser: Producer %v at station %v: %v", dpr.TenantName, dpr.Username, name, dpr.StationName, err.Error())
 	}
 	message := "Producer " + name + " has been destroyed"
 	serv.Noticef("[tenant: %v][user: %v]: %v", dpr.TenantName, username, message)

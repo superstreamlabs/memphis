@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/memphisdev/memphis/models"
@@ -61,7 +62,7 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 	var client *github.Client
 	var err error
 	client = getGithubClientWithoutAccessToken()
-	_, repoContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, "", &github.RepositoryContentGetOptions{
+	_, repoContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, _EMPTY_, &github.RepositoryContentGetOptions{
 		Ref: branch})
 	if err != nil {
 		return functionsDetails, err
@@ -102,16 +103,31 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 						continue
 					}
 
-					if _, ok := contentMap["memory"]; !ok || contentMap["memory"] == "" {
-						contentMap["memory"] = int64(128) * 1024 * 1024
+					if _, ok := contentMap["memory"]; !ok || contentMap["memory"] == _EMPTY_ {
+						contentMap["memory"] = 128 * 1024 * 1024
 					}
 
-					if _, ok := contentMap["storage"]; !ok || contentMap["storage"] == "" {
-						contentMap["storage"] = int64(512) * 1024 * 1024
+					if _, ok := contentMap["storage"]; !ok || contentMap["storage"] == _EMPTY_ {
+						contentMap["storage"] = 512 * 1024 * 1024
 					}
 
-					if contentMap["dependencies"].(string) == "" {
-						switch contentMap["language"] {
+					dependenciesMissing := false
+					if dependencies, ok := contentMap["dependencies"]; !ok || dependencies == nil || dependencies.(string) == _EMPTY_ {
+						dependenciesMissing = true
+					}
+					runtime := _EMPTY_
+					if runtimeInterface, ok := contentMap["runtime"]; !ok || runtimeInterface == nil || runtimeInterface.(string) == _EMPTY_ {
+						continue
+					} else {
+						runtime = runtimeInterface.(string)
+					}
+					re := regexp.MustCompile("^[^0-9.]+")
+					lang := re.FindString(runtime)
+					if lang != "go" && lang != "python" && lang != "nodejs" {
+						continue
+					}
+					if dependenciesMissing {
+						switch lang {
 						case "go":
 							contentMap["dependencies"] = "go.mod"
 						case "nodejs":
@@ -158,8 +174,15 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 						TenantName:   tenantName,
 					}
 
-					if path != contentMap["function_name"].(string) {
-						message := fmt.Sprintf("In the repository %s, function name %s in git doesn't match the function_name field %s in YAML file.", repo, splitPath[0], contentMap["function_name"].(string))
+					functionName := _EMPTY_
+					if functionNameInterface, ok := contentMap["function_name"]; !ok || functionNameInterface == nil || functionNameInterface.(string) == _EMPTY_ {
+						continue
+					} else {
+						functionName = functionNameInterface.(string)
+					}
+
+					if path != functionName {
+						message := fmt.Sprintf("In the repository %s, function name %s in git doesn't match the function_name field %s in YAML file.", repo, splitPath[0], functionName)
 						serv.Warnf("[tenant: %s]GetGithubContentFromConnectedRepo: %s", tenantName, message)
 						fileDetails.IsValid = false
 						fileDetails.InvalidReason = message
@@ -167,7 +190,7 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 						continue
 					}
 					if strings.Contains(path, " ") {
-						message := fmt.Sprintf("In the repository %s, the function name %s in the YAML file cannot contain spaces", repo, contentMap["function_name"].(string))
+						message := fmt.Sprintf("In the repository %s, the function name %s in the YAML file cannot contain spaces", repo, functionName)
 						serv.Warnf("[tenant: %s]GetGithubContentFromConnectedRepo: %s", tenantName, message)
 						fileDetails.IsValid = false
 						fileDetails.InvalidReason = message
@@ -201,5 +224,5 @@ func getGithubKeys(githubIntegrationDetails map[string]interface{}, repoOwner, r
 }
 
 func retrieveGithubAppName() string {
-	return ""
+	return _EMPTY_
 }

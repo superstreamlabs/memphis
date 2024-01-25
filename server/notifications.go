@@ -12,19 +12,55 @@
 package server
 
 import (
+	"encoding/json"
 	"errors"
-
+	"fmt"
 	"github.com/memphisdev/memphis/models"
+	"time"
 )
 
-func SendNotification(tenantName string, title string, message string, msgType string) error {
-	for k, f := range NotificationFunctionsMap {
+const (
+	slackIntegrationName = "slack"
+)
+
+type NotificationMsg struct {
+	TenantName string    `json:"tenantName"`
+	Title      string    `json:"title"`
+	Message    string    `json:"message"`
+	MsgType    string    `json:"msgType"`
+	Time       time.Time `json:"time"`
+}
+
+type NotificationMsgWithReply struct {
+	NotificationMsg *NotificationMsg
+	ReplySubject    string
+}
+
+func (s *Server) SendNotification(tenantName string, title string, message string, msgType string) error {
+	for k := range NotificationFunctionsMap {
 		switch k {
-		case "slack":
+		case slackIntegrationName:
 			if tenantInetgrations, ok := IntegrationsConcurrentCache.Load(tenantName); ok {
-				if slackIntegration, ok := tenantInetgrations["slack"].(models.SlackIntegration); ok {
+				if slackIntegration, ok := tenantInetgrations[slackIntegrationName].(models.SlackIntegration); ok {
 					if slackIntegration.Properties[msgType] {
-						err := f.(func(models.SlackIntegration, string, string) error)(slackIntegration, title, message)
+						// TODO: if the stream doesn't exist save the messages in buffer
+						if !NOTIFICATIONS_BUFFER_STREAM_CREATED {
+							return nil
+						}
+
+						// TODO: do we need msg-id here? if yes - what's the best way to generate it? hash title?
+						if tenantName == "" {
+							tenantName = serv.MemphisGlobalAccountString()
+						}
+						notificationMsg := NotificationMsg{
+							TenantName: tenantName,
+							Title:      title,
+							Message:    message,
+							MsgType:    msgType,
+							Time:       time.Now(),
+						}
+
+						err := saveSlackNotificationToQueue(s, notificationsStreamName+".user_notifications", tenantName, &notificationMsg)
 						if err != nil {
 							return err
 						}
@@ -36,7 +72,19 @@ func SendNotification(tenantName string, title string, message string, msgType s
 		}
 	}
 	return nil
+}
 
+func saveSlackNotificationToQueue(s *Server, subject, tenantName string, notificationMsg *NotificationMsg) error {
+	msg, err := json.Marshal(notificationMsg)
+	if err != nil {
+		return err
+	}
+	err = s.sendInternalAccountMsgWithEcho(s.MemphisGlobalAccount(), subject, msg)
+	if err != nil {
+		return fmt.Errorf("SendNotification (tenant %s): %w", tenantName, err)
+	}
+
+	return nil
 }
 
 func shouldSendNotification(tenantName string, alertType string) bool {

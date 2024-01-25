@@ -14,20 +14,21 @@ import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ReactComponent as PlaceholderSchema } from '../../../../assets/images/placeholderSchema.svg';
-import { ReactComponent as DeleteWrapperIcon } from '../../../../assets/images/deleteWrapperIcon.svg';
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../services/http';
-import Loader from '../../../../components/loader';
-import Button from '../../../../components/button';
-import Filter from '../../../../components/filter';
-import { Context } from '../../../../hooks/store';
-import Modal from '../../../../components/modal';
+import { ReactComponent as PlaceholderSchema } from 'assets/images/placeholderSchema.svg';
+import { ReactComponent as DeleteWrapperIcon } from 'assets/images/deleteWrapperIcon.svg';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import { useGetAllowedActions } from 'services/genericServices';
+import Loader from 'components/loader';
+import Button from 'components/button';
+import Filter from 'components/filter';
+import { Context } from 'hooks/store';
+import Modal from 'components/modal';
 import SchemaBox from '../schemaBox';
-import { filterArray } from '../../../../services/valueConvertor';
-import DeleteItemsModal from '../../../../components/deleteItemsModal';
+import { filterArray, isCloud } from 'services/valueConvertor';
+import DeleteItemsModal from 'components/deleteItemsModal';
 import { useHistory } from 'react-router-dom';
-import pathDomains from '../../../../router';
+import pathDomains from 'router';
 
 function SchemaList({ createNew }) {
     const history = useHistory();
@@ -38,7 +39,7 @@ function SchemaList({ createNew }) {
     const [deleteModal, setDeleteModal] = useState(false);
     const [deleteLoader, setDeleteLoader] = useState(false);
     const location = useLocation();
-
+    const getAllowedActions = useGetAllowedActions();
     useEffect(() => {
         getAllSchemas();
         return () => {
@@ -99,6 +100,7 @@ function SchemaList({ createNew }) {
         } finally {
             setDeleteLoader(false);
             setDeleteModal(false);
+            isCloud() && getAllowedActions();
         }
     };
 
@@ -128,6 +130,7 @@ function SchemaList({ createNew }) {
                         aria-haspopup="true"
                         boxShadowStyle="float"
                         disabled={isCheck?.length === 0}
+                        isVisible={isCheck?.length !== 0}
                         onClick={() => setDeleteModal(true)}
                     />
                     <Button
@@ -144,7 +147,7 @@ function SchemaList({ createNew }) {
                         disabled={state?.schemaFilteredList?.length === 0}
                         onClick={() => onCheckedAll()}
                     />
-                    <Filter filterComponent="schemaverse" height="34px" />
+                    <Filter filterComponent="schemaverse" height="34px" hideElement="search" />
                     <Button
                         width="160px"
                         height="34px"
@@ -159,6 +162,10 @@ function SchemaList({ createNew }) {
                         onClick={createNewSchema}
                     />
                 </div>
+            </div>
+
+            <div className="schema-list-top">
+                <Filter filterComponent="schemaverse" height="34px" hideElement="filter" />
             </div>
 
             <div className="schema-list">

@@ -1,4 +1,4 @@
-// Copyright 2021 The NATS Authors
+// Copyright 2021-2023 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -17,7 +17,54 @@ import (
 	"math"
 	"math/rand"
 	"testing"
+	"time"
 )
+
+func TestNRGSimple(t *testing.T) {
+	c := createJetStreamClusterExplicit(t, "R3S", 3)
+	defer c.shutdown()
+
+	rg := c.createRaftGroup("TEST", 3, newStateAdder)
+	rg.waitOnLeader()
+	// Do several state transitions.
+	rg.randomMember().(*stateAdder).proposeDelta(11)
+	rg.randomMember().(*stateAdder).proposeDelta(11)
+	rg.randomMember().(*stateAdder).proposeDelta(-22)
+	// Wait for all members to have the correct state.
+	rg.waitOnTotal(t, 0)
+}
+
+func TestNRGSnapshotAndRestart(t *testing.T) {
+	c := createJetStreamClusterExplicit(t, "R3S", 3)
+	defer c.shutdown()
+
+	rg := c.createRaftGroup("TEST", 3, newStateAdder)
+	rg.waitOnLeader()
+
+	var expectedTotal int64
+
+	leader := rg.leader().(*stateAdder)
+	sm := rg.nonLeader().(*stateAdder)
+
+	for i := 0; i < 1000; i++ {
+		delta := rand.Int63n(222)
+		expectedTotal += delta
+		leader.proposeDelta(delta)
+
+		if i == 250 {
+			// Let some things catchup.
+			time.Sleep(50 * time.Millisecond)
+			// Snapshot leader and stop and snapshot a member.
+			leader.snapshot(t)
+			sm.snapshot(t)
+			sm.stop()
+		}
+	}
+	// Restart.
+	sm.restart()
+	// Wait for all members to have the correct state.
+	rg.waitOnTotal(t, expectedTotal)
+}
 
 func TestNRGAppendEntryEncode(t *testing.T) {
 	ae := &appendEntry{
@@ -89,5 +136,81 @@ func TestNRGAppendEntryDecode(t *testing.T) {
 			_, err = node.decodeAppendEntry(b, nil, _EMPTY_)
 			require_Error(t, err, errBadAppendEntry)
 		}
+	}
+}
+
+func TestNRGRecoverFromFollowingNoLeader(t *testing.T) {
+	c := createJetStreamClusterExplicit(t, "R3S", 3)
+	defer c.shutdown()
+
+	rg := c.createRaftGroup("TEST", 3, newStateAdder)
+	rg.waitOnLeader()
+
+	// Find out what term we are on.
+	term := rg.leader().node().Term()
+
+	// Start by pausing all of the nodes. This will stop them from
+	// processing new entries.
+	for _, n := range rg {
+		n.node().PauseApply()
+	}
+
+	// Now drain all of the ApplyQ entries from them, which will stop
+	// them from automatically trying to follow a previous leader if
+	// they happened to have received an apply entry from one. Then
+	// we're going to force them into a state where they are all
+	// followers but they don't have a leader.
+	for _, n := range rg {
+		rn := n.node().(*raft)
+		rn.ApplyQ().drain()
+		rn.switchToFollower("")
+	}
+
+	// Resume the nodes.
+	for _, n := range rg {
+		n.node().ResumeApply()
+	}
+
+	// Wait a while. The nodes should notice that they haven't heard
+	// from a leader lately and will switch to voting. After an
+	// election we should find a new leader and be on a new term.
+	rg.waitOnLeader()
+	require_True(t, rg.leader() != nil)
+	require_NotEqual(t, rg.leader().node().Term(), term)
+}
+
+func TestNRGObserverMode(t *testing.T) {
+	c := createJetStreamClusterExplicit(t, "R3S", 3)
+	defer c.shutdown()
+
+	rg := c.createRaftGroup("TEST", 3, newStateAdder)
+	rg.waitOnLeader()
+
+	// Put all of the followers into observer mode. In this state
+	// they will not participate in an election but they will continue
+	// to apply incoming commits.
+	for _, n := range rg {
+		if n.node().Leader() {
+			continue
+		}
+		n.node().SetObserver(true)
+	}
+
+	// Propose a change from the leader.
+	adder := rg.leader().(*stateAdder)
+	adder.proposeDelta(1)
+	adder.proposeDelta(2)
+	adder.proposeDelta(3)
+
+	// Wait for the followers to apply it.
+	rg.waitOnTotal(t, 6)
+
+	// Confirm the followers are still just observers and weren't
+	// reset out of that state for some reason.
+	for _, n := range rg {
+		if n.node().Leader() {
+			continue
+		}
+		require_True(t, n.node().IsObserver())
 	}
 }

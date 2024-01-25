@@ -3141,7 +3141,7 @@ func TestJWTBearerWithBadIssuerToken(t *testing.T) {
 func TestJWTExpiredUserCredentialsRenewal(t *testing.T) {
 	createTmpFile := func(t *testing.T, content []byte) string {
 		t.Helper()
-		conf := createTempFile(t, "")
+		conf := createTempFile(t, _EMPTY_)
 		fName := conf.Name()
 		conf.Close()
 		if err := os.WriteFile(fName, content, 0666); err != nil {
@@ -3692,7 +3692,7 @@ func TestJWTAccountNATSResolverCrossClusterFetch(t *testing.T) {
 			listen: 127.0.0.1:-1
 			no_advertise: true
 		}
-    `, ojwt, syspub, dirAA)))
+       `, ojwt, syspub, dirAA)))
 	sAA, _ := RunServerWithConfig(confAA)
 	defer sAA.Shutdown()
 	// Create Server B (using no_advertise to prevent fail over)
@@ -3718,7 +3718,7 @@ func TestJWTAccountNATSResolverCrossClusterFetch(t *testing.T) {
 				nats-route://127.0.0.1:%d
 			]
 		}
-    `, ojwt, syspub, dirAB, sAA.opts.Cluster.Port)))
+       `, ojwt, syspub, dirAB, sAA.opts.Cluster.Port)))
 	sAB, _ := RunServerWithConfig(confAB)
 	defer sAB.Shutdown()
 	// Create Server C (using no_advertise to prevent fail over)
@@ -3744,10 +3744,10 @@ func TestJWTAccountNATSResolverCrossClusterFetch(t *testing.T) {
 			listen: 127.0.0.1:-1
 			no_advertise: true
 		}
-    `, ojwt, syspub, dirBA, sAA.opts.Gateway.Port)))
+       `, ojwt, syspub, dirBA, sAA.opts.Gateway.Port)))
 	sBA, _ := RunServerWithConfig(confBA)
 	defer sBA.Shutdown()
-	// Create Sever BA  (using no_advertise to prevent fail over)
+	// Create Server BA (using no_advertise to prevent fail over)
 	confBB := createConfFile(t, []byte(fmt.Sprintf(`
 		listen: 127.0.0.1:-1
 		server_name: srv-B-B
@@ -3773,7 +3773,7 @@ func TestJWTAccountNATSResolverCrossClusterFetch(t *testing.T) {
 				{name: "clust-A", url: "nats://127.0.0.1:%d"},
 			]
 		}
-    `, ojwt, syspub, dirBB, sBA.opts.Cluster.Port, sAA.opts.Cluster.Port)))
+       `, ojwt, syspub, dirBB, sBA.opts.Cluster.Port, sAA.opts.Cluster.Port)))
 	sBB, _ := RunServerWithConfig(confBB)
 	defer sBB.Shutdown()
 	// Assert topology
@@ -3936,7 +3936,7 @@ func TestJWTTimeExpiration(t *testing.T) {
 		t.Run("simple expiration "+l, func(t *testing.T) {
 			start := time.Now()
 			creds := createUserWithLimit(t, kp, doNotExpire, func(j *jwt.UserPermissionLimits) {
-				if l == "" {
+				if l == _EMPTY_ {
 					j.Times = []jwt.TimeRange{newTimeRange(start, validFor)}
 				} else {
 					loc, err := time.LoadLocation(l)
@@ -4358,6 +4358,27 @@ func TestJwtTemplates(t *testing.T) {
 
 	lim.Pub.Deny.Add("{{tag(NOT_THERE)}}")
 	_, err = processUserPermissionsTemplate(lim, uclaim, acc)
+	require_Error(t, err)
+	require_Contains(t, err.Error(), "generated invalid subject")
+}
+
+func TestJwtTemplateGoodTagAfterBadTag(t *testing.T) {
+	kp, _ := nkeys.CreateAccount()
+	aPub, _ := kp.PublicKey()
+	ukp, _ := nkeys.CreateUser()
+	upub, _ := ukp.PublicKey()
+	uclaim := newJWTTestUserClaims()
+	uclaim.Name = "myname"
+	uclaim.Subject = upub
+	uclaim.SetScoped(true)
+	uclaim.IssuerAccount = aPub
+	uclaim.Tags.Add("foo:foo1")
+
+	lim := jwt.UserPermissionLimits{}
+	lim.Pub.Deny.Add("{{tag(NOT_THERE)}}.{{tag(foo)}}")
+	acc := &Account{nameTag: "accname", tags: []string{"acc:acc1", "acc:acc2"}}
+
+	_, err := processUserPermissionsTemplate(lim, uclaim, acc)
 	require_Error(t, err)
 	require_Contains(t, err.Error(), "generated invalid subject")
 }
@@ -6591,4 +6612,245 @@ func TestServerOperatorModeNoAuthRequired(t *testing.T) {
 	defer nc.Close()
 
 	require_True(t, nc.AuthRequired())
+}
+
+func TestServerOperatorModeUserInfoExpiration(t *testing.T) {
+	_, spub := createKey(t)
+	sysClaim := jwt.NewAccountClaims(spub)
+	sysClaim.Name = "$SYS"
+	sysJwt, err := sysClaim.Encode(oKp)
+	require_NoError(t, err)
+
+	akp, apub := createKey(t)
+	accClaim := jwt.NewAccountClaims(apub)
+	accClaim.Name = "TEST"
+	accJwt, err := accClaim.Encode(oKp)
+	require_NoError(t, err)
+
+	conf := createConfFile(t, []byte(fmt.Sprintf(`
+				listen: 127.0.0.1:-1
+				operator: %s
+				system_account: %s
+				resolver: MEM
+				resolver_preload: {
+					%s: %s
+					%s: %s
+				}
+			`, ojwt, spub, apub, accJwt, spub, sysJwt)))
+	defer removeFile(t, conf)
+
+	s, _ := RunServerWithConfig(conf)
+	defer s.Shutdown()
+
+	expires := time.Now().Add(time.Minute)
+	creds := createUserWithLimit(t, akp, expires, func(j *jwt.UserPermissionLimits) {})
+
+	nc := natsConnect(t, s.ClientURL(), nats.UserCredentials(creds))
+	defer nc.Close()
+
+	resp, err := nc.Request("$SYS.REQ.USER.INFO", nil, time.Second)
+	require_NoError(t, err)
+	now := time.Now()
+
+	response := ServerAPIResponse{Data: &UserInfo{}}
+	err = json.Unmarshal(resp.Data, &response)
+	require_NoError(t, err)
+
+	userInfo := response.Data.(*UserInfo)
+	require_True(t, userInfo.Expires != 0)
+
+	// We need to round the expiration time to the second because the server
+	// will truncate the expiration time to the second.
+	expiresDurRounded := expires.Sub(now).Truncate(time.Second)
+
+	// Checking range to avoid flaky tests where the expiration time is
+	// off by a couple of seconds.
+	require_True(t, expiresDurRounded >= userInfo.Expires-2*time.Second && expiresDurRounded <= userInfo.Expires+2*time.Second)
+}
+
+func TestJWTAccountNATSResolverWrongCreds(t *testing.T) {
+	require_NoLocalOrRemoteConnections := func(account string, srvs ...*Server) {
+		t.Helper()
+		for _, srv := range srvs {
+			if acc, ok := srv.accounts.Load(account); ok {
+				checkAccClientsCount(t, acc.(*Account), 0)
+			}
+		}
+	}
+	connect := func(url string, credsfile string, acc string, srvs ...*Server) {
+		t.Helper()
+		nc := natsConnect(t, url, nats.UserCredentials(credsfile), nats.Timeout(5*time.Second))
+		nc.Close()
+		require_NoLocalOrRemoteConnections(acc, srvs...)
+	}
+	createAccountAndUser := func(limit bool, done chan struct{}, pubKey, jwt1, jwt2, creds *string) {
+		t.Helper()
+		kp, _ := nkeys.CreateAccount()
+		*pubKey, _ = kp.PublicKey()
+		claim := jwt.NewAccountClaims(*pubKey)
+		var err error
+		*jwt1, err = claim.Encode(oKp)
+		require_NoError(t, err)
+		*jwt2, err = claim.Encode(oKp)
+		require_NoError(t, err)
+		ukp, _ := nkeys.CreateUser()
+		seed, _ := ukp.Seed()
+		upub, _ := ukp.PublicKey()
+		uclaim := newJWTTestUserClaims()
+		uclaim.Subject = upub
+		ujwt, err := uclaim.Encode(kp)
+		require_NoError(t, err)
+		*creds = genCredsFile(t, ujwt, seed)
+		done <- struct{}{}
+	}
+	// Create Accounts and corresponding user creds.
+	doneChan := make(chan struct{}, 4)
+	defer close(doneChan)
+	var syspub, sysjwt, dummy1, sysCreds string
+	createAccountAndUser(false, doneChan, &syspub, &sysjwt, &dummy1, &sysCreds)
+
+	var apub, ajwt1, ajwt2, aCreds string
+	createAccountAndUser(true, doneChan, &apub, &ajwt1, &ajwt2, &aCreds)
+
+	var bpub, bjwt1, bjwt2, bCreds string
+	createAccountAndUser(true, doneChan, &bpub, &bjwt1, &bjwt2, &bCreds)
+
+	// The one that is going to be missing.
+	var cpub, cjwt1, cjwt2, cCreds string
+	createAccountAndUser(true, doneChan, &cpub, &cjwt1, &cjwt2, &cCreds)
+	for i := 0; i < cap(doneChan); i++ {
+		<-doneChan
+	}
+	// Create one directory for each server
+	dirA := t.TempDir()
+	dirB := t.TempDir()
+	dirC := t.TempDir()
+
+	// Store accounts on servers A and B, then let C sync on its own.
+	writeJWT(t, dirA, apub, ajwt1)
+	writeJWT(t, dirB, bpub, bjwt1)
+
+	/////////////////////////////////////////
+	//                                     //
+	//   Server A: has creds from client A //
+	//                                     //
+	/////////////////////////////////////////
+	confA := createConfFile(t, []byte(fmt.Sprintf(`
+		listen: 127.0.0.1:-1
+		server_name: srv-A
+		operator: %s
+		system_account: %s
+                debug: true
+		resolver: {
+			type: full
+			dir: '%s'
+			allow_delete: true
+			timeout: "1.5s"
+			interval: "200ms"
+		}
+		resolver_preload: {
+			%s: %s
+		}
+		cluster {
+			name: clust
+			listen: 127.0.0.1:-1
+			no_advertise: true
+		}
+       `, ojwt, syspub, dirA, apub, ajwt1)))
+	sA, _ := RunServerWithConfig(confA)
+	defer sA.Shutdown()
+	require_JWTPresent(t, dirA, apub)
+
+	/////////////////////////////////////////
+	//                                     //
+	//   Server B: has creds from client B //
+	//                                     //
+	/////////////////////////////////////////
+	confB := createConfFile(t, []byte(fmt.Sprintf(`
+		listen: 127.0.0.1:-1
+		server_name: srv-B
+		operator: %s
+		system_account: %s
+		resolver: {
+			type: full
+			dir: '%s'
+			allow_delete: true
+			timeout: "1.5s"
+			interval: "200ms"
+		}
+		cluster {
+			name: clust
+			listen: 127.0.0.1:-1
+			no_advertise: true
+			routes [
+				nats-route://127.0.0.1:%d
+			]
+		}
+        `, ojwt, syspub, dirB, sA.opts.Cluster.Port)))
+	sB, _ := RunServerWithConfig(confB)
+	defer sB.Shutdown()
+
+	/////////////////////////////////////////
+	//                                     //
+	//   Server C: has no creds            //
+	//                                     //
+	/////////////////////////////////////////
+	fmtC := `
+		listen: 127.0.0.1:-1
+		server_name: srv-C
+		operator: %s
+		system_account: %s
+		resolver: {
+			type: full
+			dir: '%s'
+			allow_delete: true
+			timeout: "1.5s"
+			interval: "200ms"
+		}
+		cluster {
+			name: clust
+			listen: 127.0.0.1:-1
+			no_advertise: true
+			routes [
+				nats-route://127.0.0.1:%d
+			]
+		}
+    `
+	confClongTTL := createConfFile(t, []byte(fmt.Sprintf(fmtC, ojwt, syspub, dirC, sA.opts.Cluster.Port)))
+	sC, _ := RunServerWithConfig(confClongTTL) // use long ttl to assure it is not kicking
+	defer sC.Shutdown()
+
+	// startup cluster
+	checkClusterFormed(t, sA, sB, sC)
+	time.Sleep(1 * time.Second) // wait for the protocol to converge
+	// // Check all accounts
+	require_JWTPresent(t, dirA, apub) // was already present on startup
+	require_JWTPresent(t, dirB, apub) // was copied from server A
+	require_JWTPresent(t, dirA, bpub) // was copied from server B
+	require_JWTPresent(t, dirB, bpub) // was already present on startup
+
+	// There should be no state about the missing account.
+	require_JWTAbsent(t, dirA, cpub)
+	require_JWTAbsent(t, dirB, cpub)
+	require_JWTAbsent(t, dirC, cpub)
+
+	// system account client can connect to every server
+	connect(sA.ClientURL(), sysCreds, "")
+	connect(sB.ClientURL(), sysCreds, "")
+	connect(sC.ClientURL(), sysCreds, "")
+
+	// A and B clients can connect to any server.
+	connect(sA.ClientURL(), aCreds, "")
+	connect(sB.ClientURL(), aCreds, "")
+	connect(sC.ClientURL(), aCreds, "")
+	connect(sA.ClientURL(), bCreds, "")
+	connect(sB.ClientURL(), bCreds, "")
+	connect(sC.ClientURL(), bCreds, "")
+
+	// Check that trying to connect with bad credentials should not hang until the fetch timeout
+	// and instead return a faster response when an account is not found.
+	_, err := nats.Connect(sC.ClientURL(), nats.UserCredentials(cCreds), nats.Timeout(500*time.Second))
+	if err != nil && !errors.Is(err, nats.ErrAuthorization) {
+		t.Fatalf("Expected auth error: %v", err)
+	}
 }

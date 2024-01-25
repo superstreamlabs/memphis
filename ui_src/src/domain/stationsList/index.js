@@ -22,23 +22,26 @@ import './style.scss';
 
 import React, { useEffect, useContext, useState, useRef } from 'react';
 import { Virtuoso } from 'react-virtuoso';
-
-import { ReactComponent as DeleteWrapperIcon } from '../../assets/images/deleteWrapperIcon.svg';
-import StationsInstructions from '../../components/stationsInstructions';
-import { ReactComponent as StationIcon } from '../../assets/images/stationIcon.svg';
-import CreateStationForm from '../../components/createStationForm';
-import { stationFilterArray } from '../../services/valueConvertor';
-import DeleteItemsModal from '../../components/deleteItemsModal';
-import stationsIcon from '../../assets/images/stationIcon.svg';
-import { ApiEndpoints } from '../../const/apiEndpoints';
+import { useGetAllowedActions } from 'services/genericServices';
+import { ReactComponent as DeleteWrapperIcon } from 'assets/images/deleteWrapperIcon.svg';
+import StationsInstructions from 'components/stationsInstructions';
+import { ReactComponent as StationIcon } from 'assets/images/stationIcon.svg';
+import CreateStationForm from 'components/createStationForm';
+import { stationFilterArray, isCloud } from 'services/valueConvertor';
+import DeleteItemsModal from 'components/deleteItemsModal';
+import stationsIcon from 'assets/images/stationIcon.svg';
+import { ApiEndpoints } from 'const/apiEndpoints';
 import StationBoxOverview from './stationBoxOverview';
-import { httpRequest } from '../../services/http';
-import Button from '../../components/button';
-import Filter from '../../components/filter';
-import Loader from '../../components/loader';
-import LearnMore from '../../components/learnMore';
-import { Context } from '../../hooks/store';
-import Modal from '../../components/modal';
+import { httpRequest } from 'services/http';
+import Button from 'components/button';
+import Filter from 'components/filter';
+import Loader from 'components/loader';
+import LearnMore from 'components/learnMore';
+import { Context } from 'hooks/store';
+import Modal from 'components/modal';
+import CloudModal from 'components/cloudModal';
+import { FaArrowCircleUp } from 'react-icons/fa';
+import RefreshButton from 'components/refreshButton';
 
 const StationsList = () => {
     const [state, dispatch] = useContext(Context);
@@ -49,7 +52,9 @@ const StationsList = () => {
     const [creatingProsessd, setCreatingProsessd] = useState(false);
     const [isCheck, setIsCheck] = useState([]);
     const [isCheckAll, setIsCheckAll] = useState(false);
+    const [openCloudModal, setOpenCloudModal] = useState(false);
     const createStationRef = useRef(null);
+    const getAllowedActions = useGetAllowedActions();
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'stations' });
@@ -95,15 +100,23 @@ const StationsList = () => {
                         <div className="stations-placeholder add-more">
                             <Button
                                 className="modal-btn"
-                                width="220px"
+                                width="230px"
                                 height="42px"
-                                placeholder="Add another station"
+                                placeholder={
+                                    isCloud() && !state?.allowedActions?.can_create_stations ? (
+                                        <span className="create-new">
+                                            <label>Add another station</label>
+                                            <FaArrowCircleUp className="lock-feature-icon" />
+                                        </span>
+                                    ) : (
+                                        <span className="create-new">Add another station</span>
+                                    )
+                                }
                                 colorType="white"
                                 radiusType="circle"
                                 backgroundColorType="purple"
                                 fontSize="16px"
-                                fontWeight="bold"
-                                onClick={() => modalFlip(true)}
+                                onClick={() => (!isCloud() || state?.allowedActions?.can_create_stations ? modalFlip(true) : setOpenCloudModal(true))}
                             />
                         </div>
                     </div>
@@ -126,9 +139,9 @@ const StationsList = () => {
         }
         return (
             <StationsInstructions
+                upgrade={!state?.allowedActions?.can_create_stations}
                 header="You don’t have any station yet"
-                button="Create a new station
-        "
+                button="Create a new station"
                 image={stationsIcon}
                 newStation={() => modalFlip(true)}
             />
@@ -169,6 +182,8 @@ const StationsList = () => {
             }
         } catch (error) {
             setDeleteLoader(false);
+        } finally {
+            getAllowedActions();
         }
     };
 
@@ -188,6 +203,7 @@ const StationsList = () => {
                         </span>
                     </div>
                     <div className="right-side">
+                        <RefreshButton onClick={() => getAllStations()} isLoading={isLoading} />
                         <Button
                             height="34px"
                             placeholder={`Delete selected (${isCheck?.length})`}
@@ -199,6 +215,7 @@ const StationsList = () => {
                             aria-haspopup="true"
                             boxShadowStyle="float"
                             disabled={isCheck?.length === 0}
+                            isVisible={isCheck?.length !== 0}
                             onClick={() => modalDeleteFlip(true)}
                         />
                         <Button
@@ -217,9 +234,18 @@ const StationsList = () => {
                         />
                         <Filter filterComponent="stations" height="34px" />
                         <Button
-                            width="160px"
+                            width="170px"
                             height="34px"
-                            placeholder={'Create a new station'}
+                            placeholder={
+                                isCloud() && !state?.allowedActions?.can_create_stations ? (
+                                    <span className="create-new">
+                                        <label>Create a new station</label>
+                                        <FaArrowCircleUp className="lock-feature-icon" />
+                                    </span>
+                                ) : (
+                                    <span className="create-new">Create a new station</span>
+                                )
+                            }
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"
@@ -227,7 +253,7 @@ const StationsList = () => {
                             boxShadowStyle="float"
                             fontWeight="600"
                             aria-haspopup="true"
-                            onClick={() => modalFlip(true)}
+                            onClick={() => (!isCloud() || state?.allowedActions?.can_create_stations ? modalFlip(true) : setOpenCloudModal(true))}
                         />
                     </div>
                 </div>
@@ -285,6 +311,7 @@ const StationsList = () => {
                     loader={deleteLoader}
                 />
             </Modal>
+            <CloudModal type="upgrade" open={openCloudModal} handleClose={() => setOpenCloudModal(false)} />
         </div>
     );
 };

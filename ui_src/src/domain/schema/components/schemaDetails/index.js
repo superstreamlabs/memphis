@@ -17,37 +17,38 @@ import Editor, { DiffEditor, loader } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import React, { useContext, useEffect, useState } from 'react';
 import Schema from 'protocol-buffers-schema';
-
-import { getUnique, isThereDiff, parsingDate } from '../../../../services/valueConvertor';
-import { ReactComponent as StationsActiveIcon } from '../../../../assets/images/stationsIconActive.svg';
-import { ReactComponent as CreatedDateIcon } from '../../../../assets/images/createdDateIcon.svg';
-import { ReactComponent as ScrollBackIcon } from '../../../../assets/images/scrollBackIcon.svg';
-import { ReactComponent as RedirectIcon } from '../../../../assets/images/redirectIcon.svg';
-import { ReactComponent as CreatedByIcon } from '../../../../assets/images/createdByIcon.svg';
-import { ReactComponent as VerifiedIcon } from '../../../../assets/images/verifiedIcon.svg';
-import { ReactComponent as RollBackIcon } from '../../../../assets/images/rollBackIcon.svg';
-import SelectVersion from '../../../../components/selectVersion';
-import { ReactComponent as TypeIcon } from '../../../../assets/images/typeIcon.svg';
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import SelectComponent from '../../../../components/select';
-import { httpRequest } from '../../../../services/http';
-import Button from '../../../../components/button';
-import Modal from '../../../../components/modal';
-import Copy from '../../../../components/copy';
-import TagsList from '../../../../components/tagList';
+import { getUnique, isThereDiff, parsingDate } from 'services/valueConvertor';
+import { ReactComponent as StationsActiveIcon } from 'assets/images/stationsIconActive.svg';
+import { ReactComponent as CreatedDateIcon } from 'assets/images/createdDateIcon.svg';
+import { ReactComponent as ScrollBackIcon } from 'assets/images/scrollBackIcon.svg';
+import { ReactComponent as RedirectIcon } from 'assets/images/redirectIcon.svg';
+import { ReactComponent as CreatedByIcon } from 'assets/images/createdByIcon.svg';
+import { ReactComponent as VerifiedIcon } from 'assets/images/verifiedIcon.svg';
+import { ReactComponent as RollBackIcon } from 'assets/images/rollBackIcon.svg';
+import SelectVersion from 'components/selectVersion';
+import { ReactComponent as TypeIcon } from 'assets/images/typeIcon.svg';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import SelectComponent from 'components/select';
+import { httpRequest } from 'services/http';
+import { isCloud } from 'services/valueConvertor';
+import Button from 'components/button';
+import Modal from 'components/modal';
+import Copy from 'components/copy';
+import TagsList from 'components/tagList';
+import LockFeature from 'components/lockFeature';
 import { useHistory } from 'react-router-dom';
-import pathDomains from '../../../../router';
-import { Context } from '../../../../hooks/store';
+import pathDomains from 'router';
+import { Context } from 'hooks/store';
 import Ajv2019 from 'ajv/dist/2019';
 import jsonSchemaDraft04 from 'ajv-draft-04';
 import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 import Ajv2020 from 'ajv/dist/2020';
 import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
-import OverflowTip from '../../../../components/tooltip/overflowtip';
+import OverflowTip from 'components/tooltip/overflowtip';
 import { validate, parse, buildASTSchema } from 'graphql';
-import SegmentButton from '../../../../components/segmentButton';
+import SegmentButton from 'components/segmentButton';
 import AttachStationModal from '../attachStationModal';
-import { showMessages } from '../../../../services/genericServices';
+import { showMessages } from 'services/genericServices';
 const avro = require('avro-js');
 
 loader.init();
@@ -450,7 +451,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                 fontFamily: 'Inter'
                             }}
                             language={schemaDetails?.type === 'protobuf' ? 'proto' : schemaDetails?.type === 'avro' ? 'json' : schemaDetails?.type}
-                            height="calc(100% - 104px)"
+                            height="calc(100% - 55px)"
                             defaultValue={versionSelected?.schema_content}
                             value={newVersion}
                             onChange={(value) => {
@@ -515,12 +516,13 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                 <div className="attach-button">
                                     <AddRounded className="add" />
                                     <span>Enforce</span>
+                                    {isCloud() && !state?.allowedActions?.can_enforce_schema && <LockFeature />}
                                 </div>
                             }
                             radiusType="semi-round"
                             backgroundColorType="white"
                             border="gray-light"
-                            onClick={() => setAttachStaionModal(true)}
+                            onClick={() => (!isCloud() || state?.allowedActions?.can_enforce_schema) && setAttachStaionModal(true)}
                         />
                     </div>
                     {schemaDetails?.used_stations?.length > 0 && (

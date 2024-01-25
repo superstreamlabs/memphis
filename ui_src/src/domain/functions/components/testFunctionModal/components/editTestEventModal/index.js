@@ -13,7 +13,7 @@
 import './style.scss';
 
 import { useState } from 'react';
-import Button from '../../../../../../components/button';
+import Button from 'components/button';
 import { FaPlay } from 'react-icons/fa';
 import Editor from '@monaco-editor/react';
 import TestResult from '../testResult';

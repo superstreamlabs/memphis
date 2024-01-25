@@ -28,6 +28,7 @@ import (
 )
 
 const sendNotificationType = "send_notification"
+const INTEGRATIONS_AUDIT_LOGS_CONSUMER = "$memphis_integrations_audit_logs_consumer"
 
 type IntegrationsHandler struct{ S *Server }
 
@@ -67,6 +68,11 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 	integrationType := strings.ToLower(body.Name)
 	switch integrationType {
 	case "slack":
+		if !ValidataAccessToFeature(user.TenantName, "feature-integration-slack") {
+			serv.Warnf("[tenant: %v][user: %v]CreateIntegration at ValidataAccessToFeature: %v", user.TenantName, user.Username, "feature-notifications")
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "This feature is not available on your current pricing plan, in order to enjoy it you will have to upgrade your plan"})
+			return
+		}
 		_, _, slackIntegration, errorCode, err := it.handleCreateSlackIntegration(user.TenantName, body)
 		if err != nil {
 			if errorCode == 500 {
@@ -218,8 +224,16 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Processing a branch is currently in progress. Please wait for the current processes to complete."})
 			return
 		}
-		connectedRepos := integrationFromDb.Keys["connected_repos"].([]interface{})
-		connectedReposUpdated := body.Keys["connected_repos"].([]interface{})
+
+		var connectedRepos, connectedReposUpdated []interface{}
+		connectedReposVal, oKconnectedRepos := integrationFromDb.Keys["connected_repos"].([]interface{})
+		if oKconnectedRepos {
+			connectedRepos = connectedReposVal
+		}
+		connectedReposUpdatedVal, oKconnectedReposUpdated := body.Keys["connected_repos"].([]interface{})
+		if oKconnectedReposUpdated {
+			connectedReposUpdated = connectedReposUpdatedVal
+		}
 		for _, connectedRepo := range connectedRepos {
 			if !containsRepo(connectedReposUpdated, connectedRepo) {
 				connectedRepoName, repoNameOK := connectedRepo.(map[string]interface{})["repo_name"].(string)
@@ -325,7 +339,7 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-		err = sendDeleteAllFunctionsReqToMS(user, user.TenantName, integrationType, "", "", "aws_lambda", "", false)
+		err = sendDeleteAllFunctionsReqToMS(user, user.TenantName, integrationType, _EMPTY_, _EMPTY_, "aws_lambda", _EMPTY_, false)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]DisconnectIntegration at deleteAllFunctionMs: Repo %v: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -446,11 +460,11 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 		}
 	}
 
-	if integration.Name == "slack" && integration.Keys["auth_token"] != "" {
+	if integration.Name == "slack" && integration.Keys["auth_token"] != _EMPTY_ {
 		integration.Keys["auth_token"] = "xoxb-****"
 	}
 
-	if integration.Name == "s3" && integration.Keys["secret_key"] != "" {
+	if integration.Name == "s3" && integration.Keys["secret_key"] != _EMPTY_ {
 		integration.Keys["secret_key"] = hideIntegrationSecretKey(integration.Keys["secret_key"].(string))
 	}
 
@@ -506,13 +520,13 @@ func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
 	}
 
 	for i := 0; i < len(integrations); i++ {
-		if integrations[i].Name == "slack" && integrations[i].Keys["auth_token"] != "" {
+		if integrations[i].Name == "slack" && integrations[i].Keys["auth_token"] != _EMPTY_ {
 			integrations[i].Keys["auth_token"] = "xoxb-****"
 		}
-		if integrations[i].Name == "s3" && integrations[i].Keys["secret_key"] != "" {
+		if integrations[i].Name == "s3" && integrations[i].Keys["secret_key"] != _EMPTY_ {
 			integrations[i].Keys["secret_key"] = hideIntegrationSecretKey(integrations[i].Keys["secret_key"].(string))
 		}
-		if integrations[i].Name == "github" && integrations[i].Keys["installation_id"] != "" {
+		if integrations[i].Name == "github" && integrations[i].Keys["installation_id"] != _EMPTY_ {
 			memphisFuncs, err := db.GetMemphisFunctionsByMemphis()
 			if err != nil {
 				serv.Errorf("[tenant: %v][user: %v]GetAllIntegrations at GetMemphisFunctionsByMemphis: %v", user.TenantName, user.Username, err.Error())
@@ -600,8 +614,8 @@ func (s *Server) getIntegrationAuditLogs(integrationType, tenantName string) ([]
 	durableName := INTEGRATIONS_AUDIT_LOGS_CONSUMER + "_" + uid
 	cc := ConsumerConfig{
 		DeliverPolicy: DeliverAll,
-		AckPolicy:     AckExplicit,
-		Durable:       durableName,
+		AckPolicy:     AckNone,
+		Name:          durableName,
 		Replicas:      1,
 		FilterSubject: filterSubject,
 	}
@@ -617,8 +631,6 @@ func (s *Server) getIntegrationAuditLogs(integrationType, tenantName string) ([]
 	req := []byte(strconv.FormatUint(amount, 10))
 	sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
-			// ack
-			s.sendInternalAccountMsg(s.MemphisGlobalAccount(), reply, []byte(_EMPTY_))
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
 
@@ -655,9 +667,6 @@ func (s *Server) getIntegrationAuditLogs(integrationType, tenantName string) ([]
 cleanup:
 	timer.Stop()
 	s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
-	time.AfterFunc(500*time.Millisecond, func() {
-		serv.memphisRemoveConsumer(s.MemphisGlobalAccountString(), integrationsAuditLogsStream, durableName)
-	})
 
 	resMsgs := []models.IntegrationsAuditLog{}
 	for _, msg := range msgs {
@@ -723,12 +732,29 @@ func SharedLockUnlock(name, tenantName string) {
 
 func containsRepo(repos []interface{}, target interface{}) bool {
 	for _, repo := range repos {
-		mapBranch := repo.(map[string]interface{})["branch"].(string)
-		mapRepo := repo.(map[string]interface{})["repo_name"].(string)
-		targetBranch := target.(map[string]interface{})["branch"].(string)
-		targetRepo := target.(map[string]interface{})["repo_name"].(string)
-		if mapBranch == targetBranch && mapRepo == targetRepo {
-			return true
+		var mapBranch, mapRepo, targetBranch, targetRepo string
+		repoMap, okRepoMap := repo.(map[string]interface{})
+		target, okTarget := target.(map[string]interface{})
+		if okRepoMap && okTarget {
+			if branchVal, ok := repoMap["branch"].(string); ok {
+				mapBranch = branchVal
+			}
+			if repoVal, ok := repoMap["repo_name"].(string); ok {
+				mapRepo = repoVal
+			}
+			if targetBranchVal, ok := target["branch"].(string); ok {
+				targetBranch = targetBranchVal
+			}
+
+			if targetRepoVal, ok := target["repo_name"].(string); ok {
+				targetRepo = targetRepoVal
+			}
+			if mapBranch == _EMPTY_ && targetBranch == _EMPTY_ && mapRepo == _EMPTY_ && targetRepo == _EMPTY_ {
+				return false
+			}
+			if mapBranch == targetBranch && mapRepo == targetRepo {
+				return true
+			}
 		}
 	}
 	return false

@@ -20,37 +20,31 @@
     padding: 2px 5px;
     border-radius: 50%;
 }
-
 .async-btn-container {
-    border-radius: 50px;
-    color: rgb(29, 29, 29);
-    background-color: rgb(255, 255, 255);
-    width: 200px;
-    height: 34px;
-    border-color: rgb(255, 255, 255);
-    font-size: 14px;
-    font-weight: bold;
-    font-family: Inter;
-    opacity: 1;
-    box-shadow: rgba(0, 0, 0, 0.21) 0px 1px 2px 0px;
-    line-height: 14px;
+    border-radius: 46px 0px 0px 46px;
+    background: linear-gradient(254deg, #ffc633 -44.11%, #61dfc6 17.78%, #6557ff 83.93%);
+    box-shadow: 0px 1.438px 2.875px 0px rgba(16, 24, 40, 0.05), 0px 2.875px 17.25px 0px rgba(0, 0, 0, 0.1);
+    width: 40px;
+    height: 40px;
+    position: absolute;
+    right: 0;
+    top: 120px;
+    z-index: 9999 !important;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 10px 5px 10px 15px;
     cursor: pointer;
-    .async-btn {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-
-        img {
-            padding: 0px 10px;
-        }
-    }
 }
+.overview-tasks {
+    cursor: pointer;
+}
+
 .async-title {
     color: #737373;
     margin-right: 5px;
+    font-size: 13px;
+    font-family: 'Inter';
     span {
         display: flex;
         justify-content: space-between;
@@ -77,6 +71,12 @@
     align-items: center;
     gap: 10px;
     padding: 20px;
+    position: relative;
+    .task-status {
+        position: absolute;
+        left: 8px;
+        top: 18px;
+    }
     p {
         margin-bottom: 0;
     }
@@ -106,4 +106,7 @@
     label {
         cursor: pointer;
     }
+}
+.ant-badge-status-processing {
+    background-color: var(--purple);
 }

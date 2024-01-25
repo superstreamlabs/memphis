@@ -14,17 +14,19 @@ import './style.scss';
 
 import React, { useEffect, useState } from 'react';
 
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import { ReactComponent as TypeIcon } from '../../../../assets/images/typeIcon.svg';
-import { ReactComponent as CreatedByIcon } from '../../../../assets/images/createdByIcon.svg';
-import { ReactComponent as SchemaItemIcon } from '../../../../assets/images/schemaItemIcon.svg';
-import { httpRequest } from '../../../../services/http';
-import Button from '../../../../components/button';
-import Copy from '../../../../components/copy';
-import SelectComponent from '../../../../components/select';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { ReactComponent as TypeIcon } from 'assets/images/typeIcon.svg';
+import { ReactComponent as CreatedByIcon } from 'assets/images/createdByIcon.svg';
+import { ReactComponent as SchemaItemIcon } from 'assets/images/schemaItemIcon.svg';
+import { httpRequest } from 'services/http';
+import { useGetAllowedActions } from 'services/genericServices';
+import { isCloud } from 'services/valueConvertor';
+import Button from 'components/button';
+import Copy from 'components/copy';
+import SelectComponent from 'components/select';
 import Editor, { DiffEditor, loader } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
-import SegmentButton from '../../../../components/segmentButton';
+import SegmentButton from 'components/segmentButton';
 
 loader.init();
 loader.config({ monaco });
@@ -37,6 +39,7 @@ const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => 
     const [currentVersion, setCurrentversion] = useState();
     const [isDiff, setIsDiff] = useState('Yes');
 
+    const getAllowedActions = useGetAllowedActions();
     const getUpdateSchema = async () => {
         try {
             setIsLoading(true);
@@ -64,7 +67,10 @@ const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => 
                 dispatch(data);
                 setUseschemaLoading(false);
             }
-        } catch (error) {}
+        } catch (error) {
+        } finally {
+            isCloud() && getAllowedActions();
+        }
         setUseschemaLoading(false);
     };
 

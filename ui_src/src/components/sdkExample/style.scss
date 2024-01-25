@@ -5,6 +5,20 @@
     height: calc(100% - 15px);
     margin-top: 15px;
     position: relative;
+    .header-section {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        .input-item {
+            width: 100%;
+        }
+        .remove-icon {
+            font-size: 30px;
+            cursor: pointer;
+            position: relative;
+            top: -5px;
+        }
+    }
     .username-section {
         display: flex;
         justify-content: space-between;
@@ -50,8 +64,6 @@
         overflow-y: auto;
         padding-right: 20px;
         .code-builder {
-            border: #e7e7e7 1px solid;
-            border-radius: 12px;
             margin-bottom: 20px;
             .ant-collapse {
                 background: rgba(101, 87, 255, 0.1);
@@ -83,10 +95,6 @@
                 color: #84818a;
             }
             .parameters-section {
-                background-color: #ffffff;
-                border-radius: 0px 0px 12px 12px;
-                position: relative;
-                padding: 10px 15px;
                 .new-user {
                     position: absolute;
                     right: 15px;
@@ -121,6 +129,7 @@
         margin: 10px 0px;
     }
     .modal-header {
+        margin-bottom: 1rem;
         .header-img-container {
             background: rgba(101, 87, 255, 0.1);
             height: 45px;
@@ -136,9 +145,13 @@
                 width: 25px;
             }
         }
+        .modal-title-sdk {
+            font-family: 'InterMedium';
+            font-size: 20px;
+            margin-bottom: 0!important;
+        }
         p {
             margin-bottom: 0;
-            font-family: 'InterSemiBold';
         }
         label {
             font-family: 'Inter';
@@ -196,7 +209,7 @@
             border: 1px solid var(--gray);
             box-sizing: border-box;
             border-radius: 4px;
-            height: 540px;
+            height: 640px;
             overflow: auto;
             align-items: flex-start;
             display: flex;
@@ -260,19 +273,14 @@
         }
     }
     .code-output-title-code-example {
-        margin-top: 50px;
+        margin-top: 60px;
     }
 
     .code-output-title {
-        border-radius: 8px;
-        background: rgba(101, 87, 255, 0.1);
-        padding: 15px 20px;
-        margin-bottom: 20px;
         p {
-            margin-bottom: 5px;
-            color: #6557ff;
-            font-family: 'InterSemiBold';
-            font-size: 16px;
+            font-family: 'InterMedium', sans-serif;
+            margin-bottom: 1rem;
+            font-size: 20px;
         }
     }
 }

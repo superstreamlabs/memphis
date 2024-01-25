@@ -1,4 +1,4 @@
-// Copyright 2020-2022 The NATS Authors
+// Copyright 2020-2023 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -25,6 +25,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -37,10 +38,19 @@ import (
 func init() {
 	// Speed up raft for tests.
 	hbInterval = 50 * time.Millisecond
-	minElectionTimeout = 1 * time.Second
-	maxElectionTimeout = 3 * time.Second
-	lostQuorumInterval = time.Second
+	minElectionTimeout = 750 * time.Millisecond
+	maxElectionTimeout = 2500 * time.Millisecond
+	lostQuorumInterval = 500 * time.Millisecond
 	lostQuorumCheck = 4 * hbInterval
+}
+
+// Used to setup clusters of clusters for tests.
+type cluster struct {
+	servers  []*Server
+	opts     []*Options
+	name     string
+	t        testing.TB
+	nproxies []*netProxy
 }
 
 // Used to setup superclusters for tests.
@@ -104,6 +114,13 @@ var jsClusterAccountsTempl = `
 		name: %s
 		listen: 127.0.0.1:%d
 		routes = [%s]
+	}
+
+	websocket {
+		listen: 127.0.0.1:-1
+		compression: true
+		handshake_timeout: "5s"
+		no_tls: true
 	}
 
 	no_auth_user: one
@@ -264,6 +281,25 @@ var jsMixedModeGlobalAccountTempl = `
 
 var jsGWTempl = `%s{name: %s, urls: [%s]}`
 
+var jsClusterAccountLimitsTempl = `
+	listen: 127.0.0.1:-1
+	server_name: %s
+	jetstream: {max_mem_store: 256MB, max_file_store: 2GB, store_dir: '%s'}
+
+	cluster {
+		name: %s
+		listen: 127.0.0.1:%d
+		routes = [%s]
+	}
+
+	no_auth_user: js
+
+	accounts {
+		$JS { users = [ { user: "js", pass: "p" } ]; jetstream: {max_store: 1MB, max_mem: 0} }
+		$SYS { users = [ { user: "admin", pass: "s3cr3t!" } ] }
+	}
+`
+
 func createJetStreamTaggedSuperCluster(t *testing.T) *supercluster {
 	return createJetStreamTaggedSuperClusterWithGWProxy(t, nil)
 }
@@ -350,6 +386,9 @@ type gwProxy struct {
 	up   int
 	down int
 }
+
+// For use in normal clusters.
+type clusterProxy = gwProxy
 
 // Maps cluster names to proxy settings.
 type gwProxyMap map[string]*gwProxy
@@ -497,7 +536,7 @@ func (sc *supercluster) leader() *Server {
 
 func (sc *supercluster) waitOnLeader() {
 	sc.t.Helper()
-	expires := time.Now().Add(10 * time.Second)
+	expires := time.Now().Add(30 * time.Second)
 	for time.Now().Before(expires) {
 		for _, c := range sc.clusters {
 			if leader := c.leader(); leader != nil {
@@ -536,7 +575,7 @@ func (sc *supercluster) waitOnPeerCount(n int) {
 	sc.t.Helper()
 	sc.waitOnLeader()
 	leader := sc.leader()
-	expires := time.Now().Add(20 * time.Second)
+	expires := time.Now().Add(30 * time.Second)
 	for time.Now().Before(expires) {
 		peers := leader.JetStreamClusterPeers()
 		if len(peers) == n {
@@ -692,9 +731,19 @@ func createJetStreamCluster(t testing.TB, tmpl string, clusterName, snPre string
 
 type modifyCb func(serverName, clusterName, storeDir, conf string) string
 
-func createJetStreamClusterAndModHook(t testing.TB, tmpl string, clusterName, snPre string, numServers int, portStart int, waitOnReady bool, modify modifyCb) *cluster {
+func createJetStreamClusterAndModHook(t testing.TB, tmpl, cName, snPre string, numServers int, portStart int, waitOnReady bool, modify modifyCb) *cluster {
+	return createJetStreamClusterEx(t, tmpl, cName, snPre, numServers, portStart, waitOnReady, modify, nil)
+}
+
+func createJetStreamClusterWithNetProxy(t testing.TB, cName string, numServers int, cnp *clusterProxy) *cluster {
+	startPorts := []int{7_122, 9_122, 11_122, 15_122}
+	port := startPorts[rand.Intn(len(startPorts))]
+	return createJetStreamClusterEx(t, jsClusterTempl, cName, _EMPTY_, numServers, port, true, nil, cnp)
+}
+
+func createJetStreamClusterEx(t testing.TB, tmpl, cName, snPre string, numServers int, portStart int, wait bool, modify modifyCb, cnp *clusterProxy) *cluster {
 	t.Helper()
-	if clusterName == _EMPTY_ || numServers < 1 {
+	if cName == _EMPTY_ || numServers < 1 {
 		t.Fatalf("Bad params")
 	}
 
@@ -715,20 +764,32 @@ func createJetStreamClusterAndModHook(t testing.TB, tmpl string, clusterName, sn
 
 	// Build out the routes that will be shared with all configs.
 	var routes []string
+	var nproxies []*netProxy
 	for cp := portStart; cp < portStart+numServers; cp++ {
-		routes = append(routes, fmt.Sprintf("nats-route://127.0.0.1:%d", cp))
+		routeURL := fmt.Sprintf("nats-route://127.0.0.1:%d", cp)
+		if cnp != nil {
+			np := createNetProxy(cnp.rtt, cnp.up, cnp.down, routeURL, false)
+			nproxies = append(nproxies, np)
+			routeURL = np.routeURL()
+		}
+		routes = append(routes, routeURL)
 	}
 	routeConfig := strings.Join(routes, ",")
 
 	// Go ahead and build configurations and start servers.
-	c := &cluster{servers: make([]*Server, 0, numServers), opts: make([]*Options, 0, numServers), name: clusterName}
+	c := &cluster{servers: make([]*Server, 0, numServers), opts: make([]*Options, 0, numServers), name: cName, nproxies: nproxies}
+
+	// Start any proxies.
+	for _, np := range nproxies {
+		np.start()
+	}
 
 	for cp := portStart; cp < portStart+numServers; cp++ {
 		storeDir := t.TempDir()
 		sn := fmt.Sprintf("%sS-%d", snPre, cp-portStart+1)
-		conf := fmt.Sprintf(tmpl, sn, storeDir, clusterName, cp, routeConfig)
+		conf := fmt.Sprintf(tmpl, sn, storeDir, cName, cp, routeConfig)
 		if modify != nil {
-			conf = modify(sn, clusterName, storeDir, conf)
+			conf = modify(sn, cName, storeDir, conf)
 		}
 		s, o := RunServerWithConfig(createConfFile(t, []byte(conf)))
 		c.servers = append(c.servers, s)
@@ -738,7 +799,7 @@ func createJetStreamClusterAndModHook(t testing.TB, tmpl string, clusterName, sn
 
 	// Wait til we are formed and have a leader.
 	c.checkClusterFormed()
-	if waitOnReady {
+	if wait {
 		c.waitOnClusterReady()
 	}
 
@@ -870,6 +931,18 @@ var jsClusterTemplWithSingleLeafNode = `
 	accounts { $SYS { users = [ { user: "admin", pass: "s3cr3t!" } ] } }
 `
 
+var jsClusterTemplWithSingleFleetLeafNode = `
+	listen: 127.0.0.1:-1
+	server_name: %s
+	cluster: { name: fleet }
+	jetstream: {max_mem_store: 256MB, max_file_store: 2GB, store_dir: '%s'}
+
+	{{leaf}}
+
+	# For access to system account.
+	accounts { $SYS { users = [ { user: "admin", pass: "s3cr3t!" } ] } }
+`
+
 var jsClusterTemplWithSingleLeafNodeNoJS = `
 	listen: 127.0.0.1:-1
 	server_name: %s
@@ -938,8 +1011,12 @@ func (c *cluster) createLeafNodeWithTemplate(name, template string) *Server {
 }
 
 func (c *cluster) createLeafNodeWithTemplateNoSystem(name, template string) *Server {
+	return c.createLeafNodeWithTemplateNoSystemWithProto(name, template, "nats")
+}
+
+func (c *cluster) createLeafNodeWithTemplateNoSystemWithProto(name, template, proto string) *Server {
 	c.t.Helper()
-	tmpl := c.createLeafSolicitNoSystem(template)
+	tmpl := c.createLeafSolicitNoSystemWithProto(template, proto)
 	conf := fmt.Sprintf(tmpl, name, c.t.TempDir())
 	s, o := RunServerWithConfig(createConfFile(c.t, []byte(conf)))
 	c.servers = append(c.servers, s)
@@ -949,6 +1026,10 @@ func (c *cluster) createLeafNodeWithTemplateNoSystem(name, template string) *Ser
 
 // Helper to generate the leaf solicit configs.
 func (c *cluster) createLeafSolicit(tmpl string) string {
+	return c.createLeafSolicitWithProto(tmpl, "nats")
+}
+
+func (c *cluster) createLeafSolicitWithProto(tmpl, proto string) string {
 	c.t.Helper()
 
 	// Create our leafnode cluster template first.
@@ -958,8 +1039,8 @@ func (c *cluster) createLeafSolicit(tmpl string) string {
 			continue
 		}
 		ln := s.getOpts().LeafNode
-		lns = append(lns, fmt.Sprintf("nats://%s:%d", ln.Host, ln.Port))
-		lnss = append(lnss, fmt.Sprintf("nats://admin:s3cr3t!@%s:%d", ln.Host, ln.Port))
+		lns = append(lns, fmt.Sprintf("%s://%s:%d", proto, ln.Host, ln.Port))
+		lnss = append(lnss, fmt.Sprintf("%s://admin:s3cr3t!@%s:%d", proto, ln.Host, ln.Port))
 	}
 	lnc := strings.Join(lns, ", ")
 	lnsc := strings.Join(lnss, ", ")
@@ -967,19 +1048,26 @@ func (c *cluster) createLeafSolicit(tmpl string) string {
 	return strings.Replace(tmpl, "{{leaf}}", lconf, 1)
 }
 
-func (c *cluster) createLeafSolicitNoSystem(tmpl string) string {
+func (c *cluster) createLeafSolicitNoSystemWithProto(tmpl, proto string) string {
 	c.t.Helper()
 
 	// Create our leafnode cluster template first.
-	var lns string
+	var lns []string
 	for _, s := range c.servers {
 		if s.ClusterName() != c.name {
 			continue
 		}
-		ln := s.getOpts().LeafNode
-		lns = fmt.Sprintf("nats://%s:%d", ln.Host, ln.Port)
+		switch proto {
+		case "nats", "tls":
+			ln := s.getOpts().LeafNode
+			lns = append(lns, fmt.Sprintf("%s://%s:%d", proto, ln.Host, ln.Port))
+		case "ws", "wss":
+			ln := s.getOpts().Websocket
+			lns = append(lns, fmt.Sprintf("%s://%s:%d", proto, ln.Host, ln.Port))
+		}
 	}
-	return strings.Replace(tmpl, "{{leaf}}", fmt.Sprintf(jsLeafNoSysFrag, lns), 1)
+	lnc := strings.Join(lns, ", ")
+	return strings.Replace(tmpl, "{{leaf}}", fmt.Sprintf(jsLeafNoSysFrag, lnc), 1)
 }
 
 func (c *cluster) createLeafNodesWithTemplateMixedMode(template, clusterName string, numJsServers, numNonServers int, doJSConfig bool) *cluster {
@@ -1203,7 +1291,7 @@ func (c *cluster) waitOnPeerCount(n int) {
 
 func (c *cluster) waitOnConsumerLeader(account, stream, consumer string) {
 	c.t.Helper()
-	expires := time.Now().Add(20 * time.Second)
+	expires := time.Now().Add(30 * time.Second)
 	for time.Now().Before(expires) {
 		if leader := c.consumerLeader(account, stream, consumer); leader != nil {
 			time.Sleep(200 * time.Millisecond)
@@ -1295,7 +1383,7 @@ func (c *cluster) waitOnServerHealthz(s *Server) {
 
 func (c *cluster) waitOnServerCurrent(s *Server) {
 	c.t.Helper()
-	expires := time.Now().Add(20 * time.Second)
+	expires := time.Now().Add(30 * time.Second)
 	for time.Now().Before(expires) {
 		time.Sleep(100 * time.Millisecond)
 		if !s.JetStreamEnabled() || s.JetStreamIsCurrent() {
@@ -1364,6 +1452,25 @@ func (c *cluster) waitOnLeader() {
 	}
 
 	c.t.Fatalf("Expected a cluster leader, got none")
+}
+
+func (c *cluster) waitOnAccount(account string) {
+	c.t.Helper()
+	expires := time.Now().Add(40 * time.Second)
+	for time.Now().Before(expires) {
+		found := true
+		for _, s := range c.servers {
+			acc, err := s.fetchAccount(account)
+			found = found && err == nil && acc != nil
+		}
+		if found {
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+		continue
+	}
+
+	c.t.Fatalf("Expected account %q to exist but didn't", account)
 }
 
 // Helper function to check that a cluster is formed
@@ -1443,6 +1550,21 @@ func (c *cluster) stopAll() {
 func (c *cluster) restartAll() {
 	c.t.Helper()
 	for i, s := range c.servers {
+		if !s.Running() {
+			opts := c.opts[i]
+			s, o := RunServerWithConfig(opts.ConfigFile)
+			c.servers[i] = s
+			c.opts[i] = o
+		}
+	}
+	c.waitOnClusterReady()
+}
+
+func (c *cluster) lameDuckRestartAll() {
+	c.t.Helper()
+	for i, s := range c.servers {
+		s.lameDuckMode()
+		s.WaitForShutdown()
 		if !s.Running() {
 			opts := c.opts[i]
 			s, o := RunServerWithConfig(opts.ConfigFile)
@@ -1547,6 +1669,7 @@ func (o *consumer) setInActiveDeleteThreshold(dthresh time.Duration) error {
 
 // Net Proxy - For introducing RTT and BW constraints.
 type netProxy struct {
+	sync.RWMutex
 	listener net.Listener
 	conns    []net.Conn
 	rtt      time.Duration
@@ -1599,8 +1722,8 @@ func (np *netProxy) start() {
 				continue
 			}
 			np.conns = append(np.conns, client, server)
-			go np.loop(np.rtt, np.up, client, server)
-			go np.loop(np.rtt, np.down, server, client)
+			go np.loop(np.up, client, server)
+			go np.loop(np.down, server, client)
 		}
 	}()
 }
@@ -1613,34 +1736,40 @@ func (np *netProxy) routeURL() string {
 	return strings.Replace(np.url, "nats", "nats-route", 1)
 }
 
-func (np *netProxy) loop(rtt time.Duration, tbw int, r, w net.Conn) {
-	delay := rtt / 2
+func (np *netProxy) loop(tbw int, r, w net.Conn) {
 	const rbl = 8192
 	var buf [rbl]byte
 	ctx := context.Background()
 
 	rl := rate.NewLimiter(rate.Limit(tbw), rbl)
 
-	for fr := true; ; {
-		sr := time.Now()
+	for {
 		n, err := r.Read(buf[:])
 		if err != nil {
+			w.Close()
 			return
 		}
 		// RTT delays
-		if fr || time.Since(sr) > 250*time.Millisecond {
-			fr = false
-			if delay > 0 {
-				time.Sleep(delay)
-			}
+		np.RLock()
+		delay := np.rtt / 2
+		np.RUnlock()
+		if delay > 0 {
+			time.Sleep(delay)
 		}
 		if err := rl.WaitN(ctx, n); err != nil {
 			return
 		}
 		if _, err = w.Write(buf[:n]); err != nil {
+			r.Close()
 			return
 		}
 	}
+}
+
+func (np *netProxy) updateRTT(rtt time.Duration) {
+	np.Lock()
+	np.rtt = rtt
+	np.Unlock()
 }
 
 func (np *netProxy) stop() {

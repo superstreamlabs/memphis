@@ -23,7 +23,8 @@
                 "METADATA_DB_PORT": "5005",
                 "USER_PASS_BASED_AUTH": "true",
                 "CONNECTION_TOKEN": "memphis",
-                "ENV": "dev"
+                "ENV": "dev",
+                "INITIAL_CONFIG_FILE": ""
             }
         },
         {
@@ -48,7 +49,8 @@
                 "METADATA_DB_PORT": "5005",
                 "USER_PASS_BASED_AUTH": "true",
                 "CONNECTION_TOKEN": "memphis",
-                "ENV": "dev"
+                "ENV": "dev",
+                "INITIAL_CONFIG_FILE": ""
             }
         },
         {
@@ -73,7 +75,8 @@
                 "METADATA_DB_PORT": "5005",
                 "USER_PASS_BASED_AUTH": "true",
                 "CONNECTION_TOKEN": "memphis",
-                "ENV": "dev"
+                "ENV": "dev",
+                "INITIAL_CONFIG_FILE": ""
             }
         },
         {
@@ -98,7 +101,8 @@
                 "METADATA_DB_PORT": "5005",
                 "USER_PASS_BASED_AUTH": "true",
                 "CONNECTION_TOKEN": "memphis",
-                "ENV": "dev"
+                "ENV": "dev",
+                "INITIAL_CONFIG_FILE": ""
             }
         }
     ]

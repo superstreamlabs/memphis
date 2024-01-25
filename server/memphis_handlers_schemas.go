@@ -53,7 +53,7 @@ func validateProtobufContent(schemaContent string) error {
 			return io.NopCloser(strings.NewReader(schemaContent)), nil
 		},
 	}
-	_, err := parser.ParseFiles("")
+	_, err := parser.ParseFiles(_EMPTY_)
 	if err != nil {
 		return fmt.Errorf("your Proto file is invalid: %v", err.Error())
 	}
@@ -164,22 +164,22 @@ func validateSchemaContent(schemaContent, schemaType string) error {
 
 func generateSchemaDescriptor(schemaName string, schemaVersionNum int, schemaContent, schemaType string) (string, error) {
 	if len(schemaContent) == 0 {
-		return "", errors.New("attempt to generate schema descriptor with empty schema")
+		return _EMPTY_, errors.New("attempt to generate schema descriptor with empty schema")
 	}
 
 	if schemaType != "protobuf" {
-		return "", errors.New("descriptor generation with schema type: " + schemaType + ", while protobuf is expected")
+		return _EMPTY_, errors.New("descriptor generation with schema type: " + schemaType + ", while protobuf is expected")
 	}
 
 	descriptor, err := generateProtobufDescriptor(schemaName, schemaVersionNum, schemaContent)
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 	return base64.StdEncoding.EncodeToString(descriptor), nil
 }
 
 func validateMessageStructName(messageStructName string) error {
-	if messageStructName == "" {
+	if messageStructName == _EMPTY_ {
 		return errors.New("message struct name is required when schema type is Protobuf")
 	}
 	return nil
@@ -255,7 +255,7 @@ func getSchemaByStationName(sn StationName, tenantName string) (models.Schema, e
 		serv.Warnf("getSchemaByStation: " + errMsg)
 		return models.Schema{}, errors.New(errMsg)
 	}
-	if station.SchemaName == "" {
+	if station.SchemaName == _EMPTY_ {
 		return models.Schema{}, ErrNoSchema
 	}
 
@@ -447,7 +447,7 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		return
 	}
 	schemaVersionNumber := 1
-	descriptor := ""
+	descriptor := _EMPTY_
 	if schemaType == "protobuf" {
 		descriptor, err = generateSchemaDescriptor(schemaName, schemaVersionNumber, schemaContent, schemaType)
 		if err != nil {
@@ -481,7 +481,7 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 	}
 
 	if len(body.Tags) > 0 {
-		err = AddTagsToEntity(body.Tags, "schema", newSchema.ID, tenantName, "")
+		err = AddTagsToEntity(body.Tags, "schema", newSchema.ID, tenantName, _EMPTY_)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]CreateNewSchema at AddTagsToEntity: Failed creating tag at schema %v: %v", user.TenantName, user.Username, schemaName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -689,7 +689,7 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 	schemaContent := body.SchemaContent
 	err = validateSchemaContent(schemaContent, schema.Type)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]CreateNewVersion at validateSchemaContent: Schema %v: %v", user.TenantName, user.Username, body.SchemaName, err.Error())
+		serv.Warnf("[tenant: %v][user: %v]CreateNewVersion at validateSchemaContent: Schema %v: %v", user.TenantName, user.Username, body.SchemaName, err.Error())
 		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -702,7 +702,7 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 	}
 
 	versionNumber := countVersions + 1
-	descriptor := ""
+	descriptor := _EMPTY_
 	if schema.Type == "protobuf" {
 		descriptor, err = generateSchemaDescriptor(schemaName, versionNumber, schemaContent, schema.Type)
 		if err != nil {
@@ -939,7 +939,6 @@ func (s *Server) updateSchemaVersion(schemaID int, tenantName string, newSchemaR
 		s.Errorf("[tenant: %v][user: %v]updateSchemaVersion at db.GetShcemaVersionsCount: Schema %v: %v", tenantName, user.Username, newSchemaReq.Name, err.Error())
 		return err
 	}
-
 	_, currentSchema, err := db.GetSchemaVersionByNumberAndID(countVersions, schemaID)
 	if err != nil {
 		s.Errorf("[tenant: %v][user: %v]updateSchemaVersion at db.GetSchemaVersionByNumberAndID: Schema %v: %v", tenantName, user.Username, newSchemaReq.Name, err.Error())
@@ -947,14 +946,14 @@ func (s *Server) updateSchemaVersion(schemaID int, tenantName string, newSchemaR
 	}
 
 	if currentSchema.SchemaContent == newSchemaReq.SchemaContent {
-		alreadyExistInDB := fmt.Sprintf("%v already exist in the db", newSchemaReq.Name)
-		s.Warnf("[tenant: %v][user: %v]at updateSchemaVersion, %v already exist in the db", tenantName, user.Username, newSchemaReq.Name)
+		alreadyExistInDB := fmt.Sprintf("%v already exists in the db with the same schema content", newSchemaReq.Name)
+		s.Warnf("[tenant: %v][user: %v]at updateSchemaVersion, %v already exists in the db with the same schema content", tenantName, user.Username, newSchemaReq.Name)
 		return errors.New(alreadyExistInDB)
 	}
 
 	versionNumber := countVersions + 1
 
-	descriptor := ""
+	descriptor := _EMPTY_
 	if newSchemaReq.Type == "protobuf" {
 		descriptor, err = generateSchemaDescriptor(newSchemaReq.Name, 1, newSchemaReq.SchemaContent, newSchemaReq.Type)
 		if err != nil {
@@ -988,7 +987,7 @@ func (s *Server) createNewSchema(newSchemaReq CreateSchemaReq, tenantName string
 		return err
 	}
 
-	descriptor := ""
+	descriptor := _EMPTY_
 	if newSchemaReq.Type == "protobuf" {
 		descriptor, err = generateSchemaDescriptor(newSchemaReq.Name, 1, newSchemaReq.SchemaContent, newSchemaReq.Type)
 		if err != nil {
@@ -1026,9 +1025,9 @@ func getProtoMessageStructName(schema_content string) (string, error) {
 			return io.NopCloser(strings.NewReader(string(schema_content))), nil
 		},
 	}
-	something, err := parser.ParseFiles("")
+	something, err := parser.ParseFiles(_EMPTY_)
 	if err != nil {
-		return "", errors.New("your Proto file is invalid: " + err.Error())
+		return _EMPTY_, errors.New("your Proto file is invalid: " + err.Error())
 	}
 	return something[0].GetMessageTypes()[0].GetName(), nil
 }

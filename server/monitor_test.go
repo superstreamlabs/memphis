@@ -1,4 +1,4 @@
-// Copyright 2013-2022 The NATS Authors
+// Copyright 2013-2023 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -147,21 +147,29 @@ var (
 )
 
 func readBodyEx(t *testing.T, url string, status int, content string) []byte {
+	t.Helper()
 	resp, err := http.Get(url)
 	if err != nil {
-		stackFatalf(t, "Expected no error: Got %v\n", err)
+		t.Fatalf("Expected no error: Got %v\n", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != status {
-		stackFatalf(t, "Expected a %d response, got %d\n", status, resp.StatusCode)
+		t.Fatalf("Expected a %d response, got %d\n", status, resp.StatusCode)
 	}
 	ct := resp.Header.Get("Content-Type")
 	if ct != content {
-		stackFatalf(t, "Expected %s content-type, got %s\n", content, ct)
+		t.Fatalf("Expected %q content-type, got %q\n", content, ct)
+	}
+	// Check the CORS header for "application/json" requests only.
+	if ct == appJSONContent {
+		acao := resp.Header.Get("Access-Control-Allow-Origin")
+		if acao != "*" {
+			t.Fatalf("Expected with %q Content-Type an Access-Control-Allow-Origin header with value %q, got %q\n", appJSONContent, "*", acao)
+		}
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		stackFatalf(t, "Got an error reading the body: %v\n", err)
+		t.Fatalf("Got an error reading the body: %v\n", err)
 	}
 	return body
 }
@@ -1179,75 +1187,165 @@ func TestConnzSortedByIdle(t *testing.T) {
 	s := runMonitorServer()
 	defer s.Shutdown()
 
-	url := fmt.Sprintf("http://127.0.0.1:%d/", s.MonitorAddr().Port)
+	url := fmt.Sprintf("http://%s/connz?sort=idle", s.MonitorAddr())
+	now := time.Now()
+
+	clients := []struct {
+		start time.Time // Client start time.
+		last  time.Time // Client last activity time.
+	}{
+		{start: now.Add(-10 * time.Second), last: now.Add(-5 * time.Second)},
+		{start: now.Add(-20 * time.Second), last: now.Add(-10 * time.Second)},
+		{start: now.Add(-3 * time.Second), last: now.Add(-2 * time.Second)},
+		{start: now.Add(-30 * time.Second), last: now.Add(-20 * time.Second)},
+	}
 
 	testIdle := func(mode int) {
-		firstClient := createClientConnSubscribeAndPublish(t, s)
-		defer firstClient.Close()
-		firstClient.Subscribe("client.1", func(m *nats.Msg) {})
-		firstClient.Flush()
+		// Connect the specified number of clients.
+		for _, c := range clients {
+			clientConn := createClientConnSubscribeAndPublish(t, s)
+			defer clientConn.Close()
 
-		secondClient := createClientConnSubscribeAndPublish(t, s)
-		defer secondClient.Close()
+			cid, err := clientConn.GetClientID()
+			if err != nil {
+				t.Fatalf("error getting the client CID: %v", err)
+			}
 
-		// Make it such that the second client started 10 secs ago. 10 is important since bug
-		// was strcmp, e.g. 1s vs 11s
-		var cid uint64
-		switch mode {
-		case 0:
-			cid = uint64(2)
-		case 1:
-			cid = uint64(4)
-		}
-		client := s.getClient(cid)
-		if client == nil {
-			t.Fatalf("Error looking up client %v\n", 2)
-		}
+			client := s.getClient(cid)
+			if client == nil {
+				t.Fatalf("error looking up client %d", cid)
+			}
 
-		// We want to make sure that we set start/last after the server has finished
-		// updating this client's last activity. Doing another Flush() now (even though
-		// one is done in createClientConnSubscribeAndPublish) ensures that server has
-		// finished updating the client's last activity, since for that last flush there
-		// should be no new message/sub/unsub activity.
-		secondClient.Flush()
-
-		client.mu.Lock()
-		client.start = client.start.Add(-10 * time.Second)
-		client.last = client.start
-		client.mu.Unlock()
-
-		// The Idle granularity is a whole second
-		time.Sleep(time.Second)
-		firstClient.Publish("client.1", []byte("new message"))
-
-		c := pollConz(t, s, mode, url+"connz?sort=idle", &ConnzOptions{Sort: ByIdle})
-		// Make sure we are returned 2 connections...
-		if len(c.Conns) != 2 {
-			t.Fatalf("Expected to get two connections, got %v", len(c.Conns))
+			// Change the client's start and last activity times.
+			client.mu.Lock()
+			client.start = c.start
+			client.last = c.last
+			client.mu.Unlock()
 		}
 
-		// And that the Idle time is valid (even if equal to "0s")
-		if c.Conns[0].Idle == "" || c.Conns[1].Idle == "" {
-			t.Fatal("Expected Idle value to be valid")
+		connz := pollConz(t, s, mode, url, &ConnzOptions{Sort: ByIdle})
+
+		wantConns := len(clients)
+		gotConns := len(connz.Conns)
+
+		if gotConns != wantConns {
+			t.Fatalf("want %d connections, got %d", wantConns, gotConns)
 		}
 
-		idle1, err := time.ParseDuration(c.Conns[0].Idle)
-		if err != nil {
-			t.Fatalf("Unable to parse duration %v, err=%v", c.Conns[0].Idle, err)
-		}
-		idle2, err := time.ParseDuration(c.Conns[1].Idle)
-		if err != nil {
-			t.Fatalf("Unable to parse duration %v, err=%v", c.Conns[0].Idle, err)
-		}
+		idleDurations := getConnsIdleDurations(t, connz.Conns)
 
-		if idle2 < idle1 {
-			t.Fatalf("Expected conns sorted in descending order by Idle, got %v < %v\n",
-				idle2, idle1)
+		if !sortedDurationsDesc(idleDurations) {
+			t.Errorf("want durations sorted in descending order, got %v", idleDurations)
 		}
 	}
+
 	for mode := 0; mode < 2; mode++ {
 		testIdle(mode)
 	}
+}
+
+// getConnsIdleDurations returns a slice of parsed idle durations from a connection info slice.
+func getConnsIdleDurations(t *testing.T, conns []*ConnInfo) []time.Duration {
+	t.Helper()
+
+	durations := make([]time.Duration, 0, len(conns))
+
+	for _, conn := range conns {
+		idle, err := time.ParseDuration(conn.Idle)
+		if err != nil {
+			t.Fatalf("error parsing duration %q: %v", conn.Idle, err)
+		}
+		durations = append(durations, idle)
+	}
+
+	return durations
+}
+
+// sortedDurationsDesc checks if a time.Duration slice is sorted in descending order.
+func sortedDurationsDesc(durations []time.Duration) bool {
+	return sort.SliceIsSorted(durations, func(i, j int) bool {
+		// Must be longer than the next duration.
+		return durations[i] > durations[j]
+	})
+}
+
+func TestConnzSortByIdleTime(t *testing.T) {
+	now := time.Now().UTC()
+
+	cases := map[string]ConnInfos{
+		"zero values": {{}, {}, {}, {}},
+		"equal last activity times": {
+			{Start: now.Add(-50 * time.Minute), LastActivity: now.Add(-time.Minute)},
+			{Start: now.Add(-30 * time.Minute), LastActivity: now.Add(-time.Minute)},
+			{Start: now.Add(-10 * time.Second), LastActivity: now.Add(-time.Minute)},
+			{Start: now.Add(-2 * time.Hour), LastActivity: now.Add(-time.Minute)},
+		},
+		"last activity in the future": {
+			{Start: now.Add(-50 * time.Minute), LastActivity: now.Add(10 * time.Minute)}, // +10m
+			{Start: now.Add(-30 * time.Minute), LastActivity: now.Add(5 * time.Minute)},  // +5m
+			{Start: now.Add(-24 * time.Hour), LastActivity: now.Add(2 * time.Second)},    // +2s
+			{Start: now.Add(-10 * time.Second), LastActivity: now.Add(15 * time.Minute)}, // +15m
+			{Start: now.Add(-2 * time.Hour), LastActivity: now.Add(time.Minute)},         // +1m
+		},
+		"unsorted": {
+			{Start: now.Add(-50 * time.Minute), LastActivity: now.Add(-10 * time.Minute)}, // 10m ago
+			{Start: now.Add(-30 * time.Minute), LastActivity: now.Add(-5 * time.Minute)},  // 5m ago
+			{Start: now.Add(-24 * time.Hour), LastActivity: now.Add(-2 * time.Second)},    // 2s ago
+			{Start: now.Add(-10 * time.Second), LastActivity: now.Add(-15 * time.Minute)}, // 15m ago
+			{Start: now.Add(-2 * time.Hour), LastActivity: now.Add(-time.Minute)},         // 1m ago
+		},
+		"unsorted with zero value start time": {
+			{LastActivity: now.Add(-10 * time.Minute)}, // 10m ago
+			{LastActivity: now.Add(-5 * time.Minute)},  // 5m ago
+			{LastActivity: now.Add(-2 * time.Second)},  // 2s ago
+			{LastActivity: now.Add(-15 * time.Minute)}, // 15m ago
+			{LastActivity: now.Add(-time.Minute)},      // 1m ago
+		},
+		"sorted": {
+			{Start: now.Add(-24 * time.Hour), LastActivity: now.Add(-2 * time.Second)},    // 2s ago
+			{Start: now.Add(-2 * time.Hour), LastActivity: now.Add(-time.Minute)},         // 1m ago
+			{Start: now.Add(-30 * time.Minute), LastActivity: now.Add(-5 * time.Minute)},  // 5m ago
+			{Start: now.Add(-50 * time.Minute), LastActivity: now.Add(-10 * time.Minute)}, // 10m ago
+			{Start: now.Add(-10 * time.Second), LastActivity: now.Add(-15 * time.Minute)}, // 15m ago
+		},
+		"sorted with zero value start time": {
+			{LastActivity: now.Add(-2 * time.Second)},  // 2s ago
+			{LastActivity: now.Add(-time.Minute)},      // 1m ago
+			{LastActivity: now.Add(-5 * time.Minute)},  // 5m ago
+			{LastActivity: now.Add(-10 * time.Minute)}, // 10m ago
+			{LastActivity: now.Add(-15 * time.Minute)}, // 15m ago
+		},
+	}
+
+	for name, conns := range cases {
+		t.Run(name, func(t *testing.T) {
+			sort.Sort(byIdle{conns, now})
+
+			idleDurations := getIdleDurations(conns, now)
+
+			if !sortedDurationsAsc(idleDurations) {
+				t.Errorf("want durations sorted in ascending order, got %v", idleDurations)
+			}
+		})
+	}
+}
+
+// getIdleDurations returns a slice of idle durations from a connection info list up until now time.
+func getIdleDurations(conns ConnInfos, now time.Time) []time.Duration {
+	durations := make([]time.Duration, 0, len(conns))
+
+	for _, conn := range conns {
+		durations = append(durations, now.Sub(conn.LastActivity))
+	}
+
+	return durations
+}
+
+// sortedDurationsAsc checks if a time.Duration slice is sorted in ascending order.
+func sortedDurationsAsc(durations []time.Duration) bool {
+	return sort.SliceIsSorted(durations, func(i, j int) bool {
+		return durations[i] < durations[j]
+	})
 }
 
 func TestConnzSortBadRequest(t *testing.T) {
@@ -1346,12 +1444,12 @@ func TestConnzWithRoutes(t *testing.T) {
 		for mode := 0; mode < 2; mode++ {
 			rz := pollRoutez(t, s, mode, url+urlSuffix, &RoutezOptions{Subscriptions: subs == 1, SubscriptionsDetail: subs == 2})
 
-			if rz.NumRoutes != 1 {
-				t.Fatalf("Expected 1 route, got %d", rz.NumRoutes)
+			if rz.NumRoutes != DEFAULT_ROUTE_POOL_SIZE {
+				t.Fatalf("Expected %d route, got %d", DEFAULT_ROUTE_POOL_SIZE, rz.NumRoutes)
 			}
 
-			if len(rz.Routes) != 1 {
-				t.Fatalf("Expected route array of 1, got %v", len(rz.Routes))
+			if len(rz.Routes) != DEFAULT_ROUTE_POOL_SIZE {
+				t.Fatalf("Expected route array of %d, got %v", DEFAULT_ROUTE_POOL_SIZE, len(rz.Routes))
 			}
 
 			route := rz.Routes[0]
@@ -2250,15 +2348,15 @@ func TestServerIDs(t *testing.T) {
 
 	for mode := 0; mode < 2; mode++ {
 		v := pollVarz(t, s, mode, murl+"varz", nil)
-		if v.ID == "" {
+		if v.ID == _EMPTY_ {
 			t.Fatal("Varz ID is empty")
 		}
 		c := pollConz(t, s, mode, murl+"connz", nil)
-		if c.ID == "" {
+		if c.ID == _EMPTY_ {
 			t.Fatal("Connz ID is empty")
 		}
 		r := pollRoutez(t, s, mode, murl+"routez", nil)
-		if r.ID == "" {
+		if r.ID == _EMPTY_ {
 			t.Fatal("Routez ID is empty")
 		}
 		if v.ID != c.ID || v.ID != r.ID {
@@ -2295,7 +2393,7 @@ func TestClusterEmptyWhenNotDefined(t *testing.T) {
 	body := readBody(t, fmt.Sprintf("http://127.0.0.1:%d/varz", s.MonitorAddr().Port))
 	var v map[string]interface{}
 	if err := json.Unmarshal(body, &v); err != nil {
-		stackFatalf(t, "Got an error unmarshalling the body: %v\n", err)
+		t.Fatalf("Got an error unmarshalling the body: %v\n", err)
 	}
 	// Cluster can empty, or be defined but that needs to be empty.
 	c, ok := v["cluster"]
@@ -2328,6 +2426,7 @@ func TestRoutezPermissions(t *testing.T) {
 	defer s1.Shutdown()
 
 	opts = DefaultMonitorOptions()
+	opts.NoSystemAccount = true
 	opts.ServerName = "monitor_server_2"
 	opts.Cluster.Host = "127.0.0.1"
 	opts.Cluster.Name = "A"
@@ -2371,8 +2470,8 @@ func TestRoutezPermissions(t *testing.T) {
 					t.Fatal("Routez body should NOT contain \"export\" information.")
 				}
 				// We do expect to see them show up for the information we have on Server A though.
-				if len(rz.Routes) != 1 {
-					t.Fatalf("Expected route array of 1, got %v\n", len(rz.Routes))
+				if len(rz.Routes) != DEFAULT_ROUTE_POOL_SIZE {
+					t.Fatalf("Expected route array of %d, got %v\n", DEFAULT_ROUTE_POOL_SIZE, len(rz.Routes))
 				}
 				route := rz.Routes[0]
 				if route.Import == nil || route.Import.Allow == nil ||
@@ -2577,6 +2676,7 @@ func TestMonitorCluster(t *testing.T) {
 		opts.Cluster.TLSTimeout,
 		opts.Cluster.TLSConfig != nil,
 		opts.Cluster.TLSConfig != nil,
+		DEFAULT_ROUTE_POOL_SIZE,
 	}
 
 	varzURL := fmt.Sprintf("http://127.0.0.1:%d/varz", s.MonitorAddr().Port)
@@ -2592,7 +2692,7 @@ func TestMonitorCluster(t *testing.T) {
 
 		// Having this here to make sure that if fields are added in ClusterOptsVarz,
 		// we make sure to update this test (compiler will report an error if we don't)
-		_ = ClusterOptsVarz{"", "", 0, 0, nil, 2, false, false}
+		_ = ClusterOptsVarz{"", "", 0, 0, nil, 2, false, false, 0}
 
 		// Alter the fields to make sure that we have a proper deep copy
 		// of what may be stored in the server. Anything we change here
@@ -2966,9 +3066,10 @@ func TestMonitorLeafNode(t *testing.T) {
 		opts.LeafNode.TLSConfig != nil,
 		[]RemoteLeafOptsVarz{
 			{
-				"acc", 1, []string{"localhost:1234"}, nil,
+				"acc", 1, []string{"localhost:1234"}, nil, false,
 			},
 		},
+		false,
 	}
 
 	varzURL := fmt.Sprintf("http://127.0.0.1:%d/varz", s.MonitorAddr().Port)
@@ -2985,7 +3086,7 @@ func TestMonitorLeafNode(t *testing.T) {
 
 		// Having this here to make sure that if fields are added in ClusterOptsVarz,
 		// we make sure to update this test (compiler will report an error if we don't)
-		_ = LeafNodeOptsVarz{"", 0, 0, 0, false, false, []RemoteLeafOptsVarz{{"", 0, nil, nil}}}
+		_ = LeafNodeOptsVarz{"", 0, 0, 0, false, false, []RemoteLeafOptsVarz{{"", 0, nil, nil, false}}, false}
 
 		// Alter the fields to make sure that we have a proper deep copy
 		// of what may be stored in the server. Anything we change here
@@ -3608,12 +3709,14 @@ func TestMonitorRouteRTT(t *testing.T) {
 		for pollMode := 0; pollMode < 2; pollMode++ {
 			checkFor(t, 2*firstPingInterval, 15*time.Millisecond, func() error {
 				rz := pollRoutez(t, s, pollMode, routezURL, nil)
-				if len(rz.Routes) != 1 {
-					return fmt.Errorf("Expected 1 route, got %v", len(rz.Routes))
+				// Pool size + 1 for system account
+				if len(rz.Routes) != DEFAULT_ROUTE_POOL_SIZE+1 {
+					return fmt.Errorf("Expected %d route, got %v", DEFAULT_ROUTE_POOL_SIZE+1, len(rz.Routes))
 				}
-				ri := rz.Routes[0]
-				if ri.RTT == _EMPTY_ {
-					return fmt.Errorf("Route's RTT not reported")
+				for _, ri := range rz.Routes {
+					if ri.RTT == _EMPTY_ {
+						return fmt.Errorf("Route's RTT not reported")
+					}
 				}
 				return nil
 			})
@@ -3922,8 +4025,8 @@ func TestMonitorLeafz(t *testing.T) {
 				t.Fatalf("RTT not tracked?")
 			}
 			// LDS should be only one.
-			if ln.NumSubs != 4 || len(ln.Subs) != 4 {
-				t.Fatalf("Expected 3 subs, got %v (%v)", ln.NumSubs, ln.Subs)
+			if ln.NumSubs != 5 || len(ln.Subs) != 5 {
+				t.Fatalf("Expected 5 subs, got %v (%v)", ln.NumSubs, ln.Subs)
 			}
 		}
 	}
@@ -3941,7 +4044,7 @@ func TestMonitorAccountz(t *testing.T) {
 	body = string(readBody(t, fmt.Sprintf("http://127.0.0.1:%d%s?acc=$SYS", s.MonitorAddr().Port, AccountzPath)))
 	require_Contains(t, body, `"account_detail": {`)
 	require_Contains(t, body, `"account_name": "$SYS",`)
-	require_Contains(t, body, `"subscriptions": 40,`)
+	require_Contains(t, body, `"subscriptions": 50,`)
 	require_Contains(t, body, `"is_system": true,`)
 	require_Contains(t, body, `"system_account": "$SYS"`)
 
@@ -4123,13 +4226,15 @@ func TestMonitorJsz(t *testing.T) {
 			max_mem_store: 10Mb
 			max_file_store: 10Mb
 			store_dir: '%s'
+			unique_tag: az
 		}
 		cluster {
 			name: cluster_name
 			listen: 127.0.0.1:%d
 			routes: [nats-route://127.0.0.1:%d]
 		}
-		server_name: server_%d `, test.port, test.mport, tmpDir, test.cport, test.routed, test.port)))
+		server_name: server_%d
+		server_tags: [ "az:%d" ] `, test.port, test.mport, tmpDir, test.cport, test.routed, test.port, test.port)))
 
 		s, _ := RunServerWithConfig(cf)
 		defer s.Shutdown()
@@ -4402,6 +4507,14 @@ func TestMonitorJsz(t *testing.T) {
 			}
 		}
 	})
+	t.Run("unique-tag-exists", func(t *testing.T) {
+		for _, url := range []string{monUrl1, monUrl2} {
+			info := readJsInfo(url)
+			if len(info.Config.UniqueTag) == 0 {
+				t.Fatalf("expected unique_tag to be returned by %s but got %v", url, info)
+			}
+		}
+	})
 	t.Run("raftgroups", func(t *testing.T) {
 		for _, url := range []string{monUrl1, monUrl2} {
 			info := readJsInfo(url + "?acc=ACC&consumers=true&raft=true")
@@ -4427,7 +4540,7 @@ func TestMonitorJsz(t *testing.T) {
 				t.Fatal("expected stream raft group info to be included")
 			}
 			crgroup := si.ConsumerRaftGroups[0]
-			if crgroup.Name != "my-consumer-replicated" {
+			if crgroup.Name != "my-consumer-replicated" && crgroup.Name != "my-consumer-mirror" {
 				t.Fatalf("expected consumer name to be included in raft group info, got: %v", crgroup.Name)
 			}
 			if len(crgroup.RaftGroup) == 0 {
@@ -4599,4 +4712,552 @@ func TestMonitorWebsocket(t *testing.T) {
 			t.Fatalf("Expected\n%+v\nGot:\n%+v", expected, vw)
 		}
 	}
+}
+
+func TestServerIDZRequest(t *testing.T) {
+	conf := createConfFile(t, []byte(`
+		listen: 127.0.0.1:-1
+		server_name: TEST22
+		# For access to system account.
+		accounts { $SYS { users = [ { user: "admin", pass: "s3cr3t!" } ] } }
+	`))
+	defer removeFile(t, conf)
+
+	s, _ := RunServerWithConfig(conf)
+	defer s.Shutdown()
+
+	nc, err := nats.Connect(s.ClientURL(), nats.UserInfo("admin", "s3cr3t!"))
+	require_NoError(t, err)
+
+	subject := fmt.Sprintf(serverPingReqSubj, "IDZ")
+	resp, err := nc.Request(subject, nil, time.Second)
+	require_NoError(t, err)
+
+	var sid ServerID
+	err = json.Unmarshal(resp.Data, &sid)
+	require_NoError(t, err)
+
+	require_True(t, sid.Name == "TEST22")
+	require_True(t, strings.HasPrefix(sid.ID, "N"))
+}
+
+func TestMonitorProfilez(t *testing.T) {
+	s := RunServer(DefaultOptions())
+	defer s.Shutdown()
+
+	// Then start profiling.
+	s.StartProfiler()
+
+	// Now check that all of the profiles that we expect are
+	// returning instead of erroring.
+	for _, try := range []*ProfilezOptions{
+		{Name: "allocs", Debug: 0},
+		{Name: "allocs", Debug: 1},
+		{Name: "block", Debug: 0},
+		{Name: "goroutine", Debug: 0},
+		{Name: "goroutine", Debug: 1},
+		{Name: "goroutine", Debug: 2},
+		{Name: "heap", Debug: 0},
+		{Name: "heap", Debug: 1},
+		{Name: "mutex", Debug: 0},
+		{Name: "threadcreate", Debug: 0},
+	} {
+		if ps := s.profilez(try); ps.Error != _EMPTY_ {
+			t.Fatalf("Unexpected error on %v: %s", try, ps.Error)
+		}
+	}
+}
+
+func TestMonitorRoutePoolSize(t *testing.T) {
+	conf1 := createConfFile(t, []byte(`
+		port: -1
+		http: -1
+		cluster {
+			port: -1
+			name: "local"
+			pool_size: 5
+		}
+		no_sys_acc: true
+	`))
+	defer removeFile(t, conf1)
+	s1, o1 := RunServerWithConfig(conf1)
+	defer s1.Shutdown()
+
+	conf23 := createConfFile(t, []byte(fmt.Sprintf(`
+		port: -1
+		http: -1
+		cluster {
+			port: -1
+			name: "local"
+			routes: ["nats://127.0.0.1:%d"]
+			pool_size: 5
+		}
+		no_sys_acc: true
+	`, o1.Cluster.Port)))
+	defer removeFile(t, conf23)
+
+	s2, _ := RunServerWithConfig(conf23)
+	defer s2.Shutdown()
+	s3, _ := RunServerWithConfig(conf23)
+	defer s3.Shutdown()
+
+	checkClusterFormed(t, s1, s2, s3)
+
+	for i, s := range []*Server{s1, s2, s3} {
+		url := fmt.Sprintf("http://127.0.0.1:%d/varz", s.MonitorAddr().Port)
+		for mode := 0; mode < 2; mode++ {
+			v := pollVarz(t, s, mode, url, nil)
+			if v.Cluster.PoolSize != 5 {
+				t.Fatalf("Expected Cluster.PoolSize==5, got %v", v.Cluster.PoolSize)
+			}
+			if v.Remotes != 2 {
+				t.Fatalf("Expected Remotes==2, got %v", v.Remotes)
+			}
+			if v.Routes != 10 {
+				t.Fatalf("Expected NumRoutes==10, got %v", v.Routes)
+			}
+		}
+
+		url = fmt.Sprintf("http://127.0.0.1:%d/routez", s.MonitorAddr().Port)
+		for mode := 0; mode < 2; mode++ {
+			v := pollRoutez(t, s, mode, url, nil)
+			if v.NumRoutes != 10 {
+				t.Fatalf("Expected NumRoutes==10, got %v", v.NumRoutes)
+			}
+			if n := len(v.Routes); n != 10 {
+				t.Fatalf("Expected len(Routes)==10, got %v", n)
+			}
+			remotes := make(map[string]int)
+			for _, r := range v.Routes {
+				remotes[r.RemoteID]++
+			}
+			if n := len(remotes); n != 2 {
+				t.Fatalf("Expected routes for 2 different servers, got %v", n)
+			}
+			switch i {
+			case 0:
+				if n := remotes[s2.ID()]; n != 5 {
+					t.Fatalf("Expected 5 routes from S1 to S2, got %v", n)
+				}
+				if n := remotes[s3.ID()]; n != 5 {
+					t.Fatalf("Expected 5 routes from S1 to S3, got %v", n)
+				}
+			case 1:
+				if n := remotes[s1.ID()]; n != 5 {
+					t.Fatalf("Expected 5 routes from S2 to S1, got %v", n)
+				}
+				if n := remotes[s3.ID()]; n != 5 {
+					t.Fatalf("Expected 5 routes from S2 to S3, got %v", n)
+				}
+			case 2:
+				if n := remotes[s1.ID()]; n != 5 {
+					t.Fatalf("Expected 5 routes from S3 to S1, got %v", n)
+				}
+				if n := remotes[s2.ID()]; n != 5 {
+					t.Fatalf("Expected 5 routes from S3 to S2, got %v", n)
+				}
+			}
+		}
+	}
+}
+
+func TestMonitorRoutePerAccount(t *testing.T) {
+	conf1 := createConfFile(t, []byte(`
+		port: -1
+		http: -1
+		accounts {
+			A { users: [{user: "a", password: "pwd"}] }
+		}
+		cluster {
+			port: -1
+			name: "local"
+			accounts: ["A"]
+		}
+	`))
+	defer removeFile(t, conf1)
+	s1, o1 := RunServerWithConfig(conf1)
+	defer s1.Shutdown()
+
+	conf23 := createConfFile(t, []byte(fmt.Sprintf(`
+		port: -1
+		http: -1
+		accounts {
+			A { users: [{user: "a", password: "pwd"}] }
+		}
+		cluster {
+			port: -1
+			name: "local"
+			routes: ["nats://127.0.0.1:%d"]
+			accounts: ["A"]
+		}
+	`, o1.Cluster.Port)))
+	defer removeFile(t, conf23)
+
+	s2, _ := RunServerWithConfig(conf23)
+	defer s2.Shutdown()
+	s3, _ := RunServerWithConfig(conf23)
+	defer s3.Shutdown()
+
+	checkClusterFormed(t, s1, s2, s3)
+
+	for _, s := range []*Server{s1, s2, s3} {
+		// Default pool size + account "A" + system account (added by default)
+		enr := 2 * (DEFAULT_ROUTE_POOL_SIZE + 1 + 1)
+		url := fmt.Sprintf("http://127.0.0.1:%d/varz", s.MonitorAddr().Port)
+		for mode := 0; mode < 2; mode++ {
+			v := pollVarz(t, s, mode, url, nil)
+			if v.Remotes != 2 {
+				t.Fatalf("Expected Remotes==2, got %v", v.Remotes)
+			}
+			if v.Routes != enr {
+				t.Fatalf("Expected NumRoutes==%d, got %v", enr, v.Routes)
+			}
+		}
+
+		url = fmt.Sprintf("http://127.0.0.1:%d/routez", s.MonitorAddr().Port)
+		for mode := 0; mode < 2; mode++ {
+			v := pollRoutez(t, s, mode, url, nil)
+			if v.NumRoutes != enr {
+				t.Fatalf("Expected NumRoutes==%d, got %v", enr, v.NumRoutes)
+			}
+			if n := len(v.Routes); n != enr {
+				t.Fatalf("Expected len(Routes)==%d, got %v", enr, n)
+			}
+			remotes := make(map[string]int)
+			for _, r := range v.Routes {
+				var acc int
+				if r.Account == "A" {
+					acc = 1
+				}
+				remotes[r.RemoteID] += acc
+			}
+			if n := len(remotes); n != 2 {
+				t.Fatalf("Expected routes for 2 different servers, got %v", n)
+			}
+			for remoteID, v := range remotes {
+				if v != 1 {
+					t.Fatalf("Expected one and only one connection for account A for remote %q, got %v", remoteID, v)
+				}
+			}
+		}
+	}
+}
+
+func TestMonitorConnzOperatorModeFilterByUser(t *testing.T) {
+	accKp, accPub := createKey(t)
+	accClaim := jwt.NewAccountClaims(accPub)
+	accJwt := encodeClaim(t, accClaim, accPub)
+
+	conf := createConfFile(t, []byte(fmt.Sprintf(`
+		listen: 127.0.0.1:-1
+		http: 127.0.0.1:-1
+		operator = %s
+		resolver = MEMORY
+		resolver_preload = {
+			%s : %s
+		}
+	`, ojwt, accPub, accJwt)))
+
+	s, _ := RunServerWithConfig(conf)
+	defer s.Shutdown()
+
+	createUser := func() (string, string) {
+		ukp, _ := nkeys.CreateUser()
+		seed, _ := ukp.Seed()
+		upub, _ := ukp.PublicKey()
+		uclaim := newJWTTestUserClaims()
+		uclaim.Subject = upub
+		ujwt, err := uclaim.Encode(accKp)
+		require_NoError(t, err)
+		return upub, genCredsFile(t, ujwt, seed)
+	}
+
+	// Now create 2 users.
+	aUser, aCreds := createUser()
+	bUser, bCreds := createUser()
+
+	var users []*nats.Conn
+
+	// Create 2 for A
+	for i := 0; i < 2; i++ {
+		nc, err := nats.Connect(s.ClientURL(), nats.UserCredentials(aCreds))
+		require_NoError(t, err)
+		defer nc.Close()
+		users = append(users, nc)
+	}
+	// Create 5 for B
+	for i := 0; i < 5; i++ {
+		nc, err := nats.Connect(s.ClientURL(), nats.UserCredentials(bCreds))
+		require_NoError(t, err)
+		defer nc.Close()
+		users = append(users, nc)
+	}
+
+	// Test A
+	connz := pollConz(t, s, 1, _EMPTY_, &ConnzOptions{User: aUser, Username: true})
+	require_True(t, connz.NumConns == 2)
+	for _, ci := range connz.Conns {
+		require_True(t, ci.AuthorizedUser == aUser)
+	}
+	// Test B
+	connz = pollConz(t, s, 1, _EMPTY_, &ConnzOptions{User: bUser, Username: true})
+	require_True(t, connz.NumConns == 5)
+	for _, ci := range connz.Conns {
+		require_True(t, ci.AuthorizedUser == bUser)
+	}
+
+	// Make sure URL access is the same.
+	url := fmt.Sprintf("http://127.0.0.1:%d/", s.MonitorAddr().Port)
+	urlFull := url + fmt.Sprintf("connz?auth=true&user=%s", aUser)
+	connz = pollConz(t, s, 0, urlFull, nil)
+	require_True(t, connz.NumConns == 2)
+	for _, ci := range connz.Conns {
+		require_True(t, ci.AuthorizedUser == aUser)
+	}
+
+	// Now test closed filtering as well.
+	for _, nc := range users {
+		nc.Close()
+	}
+	// Let them process and be moved to closed ring buffer in server.
+	time.Sleep(100 * time.Millisecond)
+
+	connz = pollConz(t, s, 1, _EMPTY_, &ConnzOptions{User: aUser, Username: true, State: ConnClosed})
+	require_True(t, connz.NumConns == 2)
+	for _, ci := range connz.Conns {
+		require_True(t, ci.AuthorizedUser == aUser)
+	}
+}
+
+func TestMonitorConnzSortByRTT(t *testing.T) {
+	s := runMonitorServer()
+	defer s.Shutdown()
+
+	for i := 0; i < 10; i++ {
+		nc, err := nats.Connect(s.ClientURL())
+		require_NoError(t, err)
+		defer nc.Close()
+	}
+
+	connz := pollConz(t, s, 1, _EMPTY_, &ConnzOptions{Sort: ByRTT})
+	require_True(t, connz.NumConns == 10)
+
+	var rtt int64
+	for _, ci := range connz.Conns {
+		if rtt == 0 {
+			rtt = ci.rtt
+		} else {
+			if ci.rtt > rtt {
+				t.Fatalf("RTT not in descending order: %v vs %v",
+					time.Duration(rtt), time.Duration(ci.rtt))
+			}
+			rtt = ci.rtt
+		}
+	}
+
+	// Make sure url works as well.
+	url := fmt.Sprintf("http://127.0.0.1:%d/connz?sort=rtt", s.MonitorAddr().Port)
+	connz = pollConz(t, s, 0, url, nil)
+	require_True(t, connz.NumConns == 10)
+
+	rtt = 0
+	for _, ci := range connz.Conns {
+		crttd, err := time.ParseDuration(ci.RTT)
+		require_NoError(t, err)
+		crtt := int64(crttd)
+		if rtt == 0 {
+			rtt = crtt
+		} else {
+			if crtt > rtt {
+				t.Fatalf("RTT not in descending order: %v vs %v",
+					time.Duration(rtt), time.Duration(crtt))
+			}
+			rtt = ci.rtt
+		}
+	}
+}
+
+// https://github.com/nats-io/nats-server/issues/4144
+func TestMonitorAccountszMappingOrderReporting(t *testing.T) {
+	conf := createConfFile(t, []byte(`
+	listen: 127.0.0.1:-1
+	server_name: SR22
+	accounts {
+		CLOUD {
+			exports [ { service: "downlink.>" } ]
+		}
+		APP {
+			imports [ { service: { account: CLOUD, subject: "downlink.>"}, to: "event.>"} ]
+		}
+	}`))
+
+	s, _ := RunServerWithConfig(conf)
+	defer s.Shutdown()
+
+	az, err := s.Accountz(&AccountzOptions{"APP"})
+	require_NoError(t, err)
+	require_NotNil(t, az.Account)
+	require_True(t, len(az.Account.Imports) > 0)
+
+	var found bool
+	for _, si := range az.Account.Imports {
+		if si.Import.Subject == "downlink.>" {
+			found = true
+			require_True(t, si.Import.LocalSubject == "event.>")
+			break
+		}
+	}
+	require_True(t, found)
+}
+
+// createCallbackURL adds a callback query parameter for JSONP requests.
+func createCallbackURL(t *testing.T, endpoint string) string {
+	t.Helper()
+
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	params := u.Query()
+	params.Set("callback", "callback")
+
+	u.RawQuery = params.Encode()
+
+	return u.String()
+}
+
+// stripCallback removes the JSONP callback function from the response.
+// Returns the JSON body without the wrapping callback function.
+// If there's no callback function, the data is returned as is.
+func stripCallback(data []byte) []byte {
+	// Cut the JSONP callback function with the opening parentheses.
+	_, after, found := bytes.Cut(data, []byte("("))
+
+	if found {
+		return bytes.TrimSuffix(after, []byte(")"))
+	}
+
+	return data
+}
+
+// expectHealthStatus makes 1 regular and 1 JSONP request to the URL and checks the
+// HTTP status code, Content-Type header and health status string.
+func expectHealthStatus(t *testing.T, url string, statusCode int, wantStatus string) {
+	t.Helper()
+
+	// First check for regular requests.
+	body := readBodyEx(t, url, statusCode, appJSONContent)
+	checkHealthStatus(t, body, wantStatus)
+
+	// Another check for JSONP requests.
+	jsonpURL := createCallbackURL(t, url) // Adds a callback query param.
+	jsonpBody := readBodyEx(t, jsonpURL, statusCode, appJSContent)
+	checkHealthStatus(t, stripCallback(jsonpBody), wantStatus)
+}
+
+// checkHealthStatus checks the health status from a JSON response.
+func checkHealthStatus(t *testing.T, body []byte, wantStatus string) {
+	t.Helper()
+
+	h := &HealthStatus{}
+
+	if err := json.Unmarshal(body, h); err != nil {
+		t.Fatalf("error unmarshalling the body: %v", err)
+	}
+
+	if h.Status != wantStatus {
+		t.Errorf("want health status %q, got %q", wantStatus, h.Status)
+	}
+}
+
+// checkHealthzEndpoint makes requests to the /healthz endpoint and checks the health status.
+func checkHealthzEndpoint(t *testing.T, address string, statusCode int, wantStatus string) {
+	t.Helper()
+
+	cases := map[string]string{
+		"healthz":         fmt.Sprintf("http://%s/healthz", address),
+		"js-enabled-only": fmt.Sprintf("http://%s/healthz?js-enabled-only=true", address),
+		"js-server-only":  fmt.Sprintf("http://%s/healthz?js-server-only=true", address),
+	}
+
+	for name, url := range cases {
+		t.Run(name, func(t *testing.T) {
+			expectHealthStatus(t, url, statusCode, wantStatus)
+		})
+	}
+}
+
+func TestHealthzStatusOK(t *testing.T) {
+	s := runMonitorServer()
+	defer s.Shutdown()
+
+	checkHealthzEndpoint(t, s.MonitorAddr().String(), http.StatusOK, "ok")
+}
+
+func TestHealthzStatusError(t *testing.T) {
+	s := runMonitorServer()
+	defer s.Shutdown()
+
+	// Intentionally causing an error in readyForConnections().
+	// Note: Private field access, taking advantage of having the tests in the same package.
+	s.listener = nil
+
+	checkHealthzEndpoint(t, s.MonitorAddr().String(), http.StatusInternalServerError, "error")
+}
+
+func TestHealthzStatusUnavailable(t *testing.T) {
+	opts := DefaultMonitorOptions()
+	opts.JetStream = true
+
+	s := RunServer(opts)
+	defer s.Shutdown()
+
+	if !s.JetStreamEnabled() {
+		t.Fatalf("want JetStream to be enabled first")
+	}
+
+	err := s.DisableJetStream()
+
+	if err != nil {
+		t.Fatalf("got an error disabling JetStream: %v", err)
+	}
+
+	checkHealthzEndpoint(t, s.MonitorAddr().String(), http.StatusServiceUnavailable, "unavailable")
+}
+
+// When we converted ipq to use generics we still were using sync.Map. Currently you can not convert
+// interface{} or any to a generic parameterized type. So this stopped working and panics.
+func TestIpqzWithGenerics(t *testing.T) {
+	opts := DefaultMonitorOptions()
+	opts.JetStream = true
+
+	s := RunServer(opts)
+	defer s.Shutdown()
+
+	url := fmt.Sprintf("http://%s/ipqueuesz?all=1", s.MonitorAddr().String())
+	body := readBody(t, url)
+	require_True(t, len(body) > 0)
+
+	queues := map[string]*monitorIPQueue{}
+	require_NoError(t, json.Unmarshal(body, &queues))
+	require_True(t, len(queues) >= 4)
+	require_True(t, queues["SendQ"] != nil)
+}
+
+func TestVarzSyncInterval(t *testing.T) {
+	resetPreviousHTTPConnections()
+	opts := DefaultMonitorOptions()
+	opts.JetStream = true
+	opts.SyncInterval = 22 * time.Second
+	opts.SyncAlways = true
+
+	s := RunServer(opts)
+	defer s.Shutdown()
+
+	url := fmt.Sprintf("http://127.0.0.1:%d/varz", s.MonitorAddr().Port)
+
+	jscfg := pollVarz(t, s, 0, url, nil).JetStream.Config
+	require_True(t, jscfg.SyncInterval == opts.SyncInterval)
+	require_True(t, jscfg.SyncAlways)
 }

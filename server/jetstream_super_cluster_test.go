@@ -550,7 +550,7 @@ func TestJetStreamSuperClusterConnectionCount(t *testing.T) {
 		require_NoError(t, err)
 		_, err = js.AddStream(&nats.StreamConfig{
 			Name:     "src",
-			Sources:  []*nats.StreamSource{{Name: "foo.1"}, {Name: "foo.2"}},
+			Sources:  []*nats.StreamSource{{Name: "foo1"}, {Name: "foo2"}},
 			Replicas: 3})
 		require_NoError(t, err)
 	}()
@@ -561,7 +561,7 @@ func TestJetStreamSuperClusterConnectionCount(t *testing.T) {
 		require_NoError(t, err)
 		_, err = js.AddStream(&nats.StreamConfig{
 			Name:     "mir",
-			Mirror:   &nats.StreamSource{Name: "foo.2"},
+			Mirror:   &nats.StreamSource{Name: "foo2"},
 			Replicas: 3})
 		require_NoError(t, err)
 	}()
@@ -1788,8 +1788,8 @@ func TestJetStreamSuperClusterMovingStreamsAndConsumers(t *testing.T) {
 			})
 			require_Contains(t, err.Error(), "stream move already in progress")
 
-			checkFor(t, 10*time.Second, 10*time.Millisecond, func() error {
-				si, err := js.StreamInfo("MOVE")
+			checkFor(t, 10*time.Second, 200*time.Millisecond, func() error {
+				si, err := js.StreamInfo("MOVE", nats.MaxWait(500*time.Millisecond))
 				if err != nil {
 					return err
 				}
@@ -1811,8 +1811,8 @@ func TestJetStreamSuperClusterMovingStreamsAndConsumers(t *testing.T) {
 			// Expect a new leader to emerge and replicas to drop as a leader is elected.
 			// We have to check fast or it might complete and we will not see intermediate steps.
 			sc.waitOnStreamLeader("$G", "MOVE")
-			checkFor(t, 10*time.Second, 10*time.Millisecond, func() error {
-				si, err := js.StreamInfo("MOVE")
+			checkFor(t, 10*time.Second, 200*time.Millisecond, func() error {
+				si, err := js.StreamInfo("MOVE", nats.MaxWait(500*time.Millisecond))
 				if err != nil {
 					return err
 				}
@@ -1824,8 +1824,8 @@ func TestJetStreamSuperClusterMovingStreamsAndConsumers(t *testing.T) {
 
 			// Should see the cluster designation and leader switch to C2.
 			// We should also shrink back down to original replica count.
-			checkFor(t, 20*time.Second, 100*time.Millisecond, func() error {
-				si, err := js.StreamInfo("MOVE")
+			checkFor(t, 20*time.Second, 200*time.Millisecond, func() error {
+				si, err := js.StreamInfo("MOVE", nats.MaxWait(500*time.Millisecond))
 				if err != nil {
 					return err
 				}
@@ -3182,7 +3182,7 @@ func TestJetStreamSuperClusterPeerEvacuationAndStreamReassignment(t *testing.T) 
 			})
 		}
 		// Now wait until the stream is now current.
-		checkFor(t, 50*time.Second, 100*time.Millisecond, func() error {
+		checkFor(t, 20*time.Second, 100*time.Millisecond, func() error {
 			si, err := js.StreamInfo("TEST", nats.MaxWait(time.Second))
 			if err != nil {
 				return fmt.Errorf("could not fetch stream info: %v", err)
@@ -3216,7 +3216,7 @@ func TestJetStreamSuperClusterPeerEvacuationAndStreamReassignment(t *testing.T) 
 		checkFor(t, 20*time.Second, time.Second, func() error {
 			if !listFrom {
 				// when needed determine which server move moved away from
-				si, err := js.StreamInfo("TEST", nats.MaxWait(2*time.Second))
+				si, err := js.StreamInfo("TEST", nats.MaxWait(time.Second))
 				if err != nil {
 					return fmt.Errorf("could not fetch stream info: %v", err)
 				}
@@ -3952,4 +3952,98 @@ func TestJetStreamSuperClusterGWOfflineSatus(t *testing.T) {
 		}
 		return nil
 	})
+}
+
+func TestJetStreamSuperClusterMovingR1Stream(t *testing.T) {
+	// Make C2 have some latency.
+	gwm := gwProxyMap{
+		"C2": &gwProxy{
+			rtt:  10 * time.Millisecond,
+			up:   1 * 1024 * 1024 * 1024, // 1gbit
+			down: 1 * 1024 * 1024 * 1024, // 1gbit
+		},
+	}
+	sc := createJetStreamTaggedSuperClusterWithGWProxy(t, gwm)
+	defer sc.shutdown()
+
+	nc, js := jsClientConnect(t, sc.clusterForName("C1").randomServer())
+	defer nc.Close()
+
+	_, err := js.AddStream(&nats.StreamConfig{
+		Name: "TEST",
+	})
+	require_NoError(t, err)
+
+	toSend := 10_000
+	for i := 0; i < toSend; i++ {
+		_, err := js.PublishAsync("TEST", []byte("HELLO WORLD"))
+		require_NoError(t, err)
+	}
+	select {
+	case <-js.PublishAsyncComplete():
+	case <-time.After(5 * time.Second):
+		t.Fatalf("Did not receive completion signal")
+	}
+
+	// Have it move to GCP.
+	_, err = js.UpdateStream(&nats.StreamConfig{
+		Name:      "TEST",
+		Placement: &nats.Placement{Tags: []string{"cloud:gcp"}},
+	})
+	require_NoError(t, err)
+
+	checkFor(t, 5*time.Second, 100*time.Millisecond, func() error {
+		sc.waitOnStreamLeader(globalAccountName, "TEST")
+		si, err := js.StreamInfo("TEST")
+		if err != nil {
+			return err
+		}
+		if si.Cluster.Name != "C2" {
+			return fmt.Errorf("Wrong cluster: %q", si.Cluster.Name)
+		}
+		if si.Cluster.Leader == _EMPTY_ {
+			return fmt.Errorf("No leader yet")
+		} else if !strings.HasPrefix(si.Cluster.Leader, "C2") {
+			return fmt.Errorf("Wrong leader: %q", si.Cluster.Leader)
+		}
+		// Now we want to see that we shrink back to original.
+		if len(si.Cluster.Replicas) != 0 {
+			return fmt.Errorf("Expected 0 replicas, got %d", len(si.Cluster.Replicas))
+		}
+		if si.State.Msgs != uint64(toSend) {
+			return fmt.Errorf("Only see %d msgs", si.State.Msgs)
+		}
+		return nil
+	})
+}
+
+// https://github.com/nats-io/nats-server/issues/4396
+func TestJetStreamSuperClusterR1StreamPeerRemove(t *testing.T) {
+	sc := createJetStreamSuperCluster(t, 1, 3)
+	defer sc.shutdown()
+
+	nc, js := jsClientConnect(t, sc.serverByName("C1-S1"))
+	defer nc.Close()
+
+	_, err := js.AddStream(&nats.StreamConfig{
+		Name:     "TEST",
+		Subjects: []string{"foo"},
+		Replicas: 1,
+	})
+	require_NoError(t, err)
+
+	si, err := js.StreamInfo("TEST")
+	require_NoError(t, err)
+
+	// Call peer remove on the only peer the leader.
+	resp, err := nc.Request(fmt.Sprintf(JSApiStreamRemovePeerT, "TEST"), []byte(`{"peer":"`+si.Cluster.Leader+`"}`), time.Second)
+	require_NoError(t, err)
+	var rpr JSApiStreamRemovePeerResponse
+	require_NoError(t, json.Unmarshal(resp.Data, &rpr))
+	require_False(t, rpr.Success)
+	require_True(t, rpr.Error.ErrCode == 10075)
+
+	// Stream should still be in place and useable.
+	_, err = js.StreamInfo("TEST")
+	require_NoError(t, err)
 }

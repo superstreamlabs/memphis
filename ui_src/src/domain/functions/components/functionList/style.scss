@@ -1,18 +1,37 @@
 .function-container {
-    width: calc(100% - 90px);
+    width: calc(100% - var(--main-container-sidebar-width));
+    transition: 0.3s ease-in-out;
+    transition: 0.3s ease-in-out;
     position: absolute;
     padding: 1vw;
     min-width: 700px;
     height: 100%;
+
+    .button-container.uninstall-btn button {
+        opacity: 1!important;
+    }
+
+    .ant-btn > .ant-btn-loading-icon .anticon {
+        padding-right: 0px !important;
+        color: var(--purple);
+    }
     .code-btn {
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 4px;
+        fill: #ffffff;
+        .code-arrow {
+            height: 16px;
+        }
+        fill: #ffffff;
+        .code-arrow {
+            height: 16px;
+        }
     }
     connectedRepos {
         display: flex;
-        width: 260px;
+        width: 245px;
         height: 34px;
         padding: 5px 10px;
         justify-content: center;
@@ -46,12 +65,6 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        .ant-btn > .ant-btn-loading-icon {
-            padding-right: 0px;
-        }
-        .ant-btn > .ant-btn-loading-icon .anticon {
-            padding-right: 0px;
-        }
         .integrated-wrapper {
             display: flex;
             padding: 3px 10px;
@@ -74,22 +87,30 @@
             margin-bottom: 5px;
             cursor: pointer;
         }
+        .alpha-feedback {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            label {
+                cursor: pointer;
+            }
+        }
+        .alpha-feedback {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            label {
+                cursor: pointer;
+            }
+        }
     }
 
     .action-section {
         display: flex;
         gap: 10px;
         justify-content: flex-end;
-        .update-refresh {
-            display: flex;
-            position: relative;
-            .ant-badge {
-                position: absolute;
-                right: 5px;
-                top: 5px;
-                z-index: 5;
-            }
-        }
     }
     .function-list-collapse {
         width: 100%;
@@ -166,7 +187,7 @@
 }
 .repos-popover {
     margin-top: 10px;
-    width: 260px;
+    width: 270px;
 }
 .repo-data {
     display: flex;
@@ -251,7 +272,31 @@
 }
 .clone-popover {
     .ant-popover-inner-content {
-        padding: 20px !important;
-        width: 540px;
+        padding: 5px !important;
+        width: 200px;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        margin-bottom: 10px;
     }
+}
+.item-wrapper-functions {
+    padding-left: 5px;
+    padding-right: 5px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    .item-name {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    label {
+        cursor: pointer;
+    }
+}
+.item-wrapper-functions:hover {
+    background: #e3e0ff;
+    border-radius: 4px;
+    color: var(--purple);
 }

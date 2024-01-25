@@ -19,7 +19,8 @@ import PersonOutlinedIcon from '@material-ui/icons/PersonOutlined';
 import { BsFillChatSquareTextFill } from 'react-icons/bs';
 import { useHistory } from 'react-router-dom';
 import { Divider, Popover } from 'antd';
-import CloudMoadl from '../cloudModal';
+import Drawer from 'components/drawer';
+import CloudModal from 'components/cloudModal';
 import {
     LOCAL_STORAGE_ACCOUNT_NAME,
     LOCAL_STORAGE_AVATAR_ID,
@@ -27,67 +28,62 @@ import {
     LOCAL_STORAGE_FULL_NAME,
     LOCAL_STORAGE_USER_NAME,
     LOCAL_STORAGE_SKIP_GET_STARTED,
-    USER_IMAGE
-} from '../../const/localStorageConsts';
-import { ReactComponent as IntegrationColorIcon } from '../../assets/images/integrationIconColor.svg';
-import { ReactComponent as OverviewActiveIcon } from '../../assets/images/overviewIconActive.svg';
-import { ReactComponent as StationsActiveIcon } from '../../assets/images/stationsIconActive.svg';
-import { compareVersions, isCloud, showUpgradePlan } from '../../services/valueConvertor';
-import { ReactComponent as FunctionsActiveIcon } from '../../assets/images/functionsIconActive.svg';
-import { ReactComponent as SchemaActiveIcon } from '../../assets/images/schemaIconActive.svg';
-import { ReactComponent as IntegrationIcon } from '../../assets/images/integrationIcon.svg';
+    USER_IMAGE,
+    LOCAL_STORAGE_DARK_MODE
+} from 'const/localStorageConsts';
+import { ReactComponent as IntegrationColorIcon } from 'assets/images/integrationIconColor.svg';
+import { ReactComponent as OverviewActiveIcon } from 'assets/images/overviewIconActive.svg';
+import { ReactComponent as StationsActiveIcon } from 'assets/images/stationsIconActive.svg';
+import { compareVersions, isCloud, showUpgradePlan } from 'services/valueConvertor';
+import { ReactComponent as FunctionsActiveIcon } from 'assets/images/functionsIconActive.svg';
+import { ReactComponent as SchemaActiveIcon } from 'assets/images/schemaIconActive.svg';
+import { ReactComponent as IntegrationIcon } from 'assets/images/integrationIcon.svg';
 import { HiUsers } from 'react-icons/hi';
-import { ReactComponent as FunctionsIcon } from '../../assets/images/functionsIcon.svg';
-import { ReactComponent as OverviewIcon } from '../../assets/images/overviewIcon.svg';
-import { ReactComponent as StationsIcon } from '../../assets/images/stationsIcon.svg';
-import { ReactComponent as SupportIcon } from '../../assets/images/supportIcon.svg';
-import { ReactComponent as SupportColorIcon } from '../../assets/images/supportColorIcon.svg';
-import { ReactComponent as NewStationIcon } from '../../assets/images/newStationIcon.svg';
-import { ReactComponent as NewSchemaIcon } from '../../assets/images/newSchemaIcon.svg';
-import { ReactComponent as NewUserIcon } from '../../assets/images/newUserIcon.svg';
-import { ReactComponent as NewIntegrationIcon } from '../../assets/images/newIntegrationIcon.svg';
+import { ReactComponent as FunctionsIcon } from 'assets/images/functionsIcon.svg';
+import { ReactComponent as OverviewIcon } from 'assets/images/overviewIcon.svg';
+import { ReactComponent as StationsIcon } from 'assets/images/stationsIcon.svg';
+import { ReactComponent as SupportIcon } from 'assets/images/supportIcon.svg';
+import { ReactComponent as SupportColorIcon } from 'assets/images/supportColorIcon.svg';
+import { ReactComponent as NewStationIcon } from 'assets/images/newStationIcon.svg';
+import { ReactComponent as NewSchemaIcon } from 'assets/images/newSchemaIcon.svg';
+import { ReactComponent as NewUserIcon } from 'assets/images/newUserIcon.svg';
+import { ReactComponent as NewIntegrationIcon } from 'assets/images/newIntegrationIcon.svg';
 import { BsHouseHeartFill } from 'react-icons/bs';
-import { ReactComponent as EditIcon } from '../../assets/images/editIcon.svg';
-import { ReactComponent as QuickActionBtn } from '../../assets/images/quickActionBtn.svg';
-import { ReactComponent as AddUserIcon } from '../../assets/images/addUserIcon.svg';
-import { GithubRequest } from '../../services/githubRequests';
-import { ReactComponent as LogsActiveIcon } from '../../assets/images/logsActive.svg';
-import { ReactComponent as SchemaIcon } from '../../assets/images/schemaIcon.svg';
-import { LATEST_RELEASE_URL } from '../../config';
-import { ReactComponent as LogsIcon } from '../../assets/images/logsIcon.svg';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { httpRequest } from '../../services/http';
-import Logo from '../../assets/images/logo.svg';
-import AuthService from '../../services/auth';
-import { sendTrace } from '../../services/genericServices';
-import { Context } from '../../hooks/store';
-import pathDomains from '../../router';
-import Spinner from '../spinner';
+import { ReactComponent as EditIcon } from 'assets/images/editIcon.svg';
+import { GithubRequest } from 'services/githubRequests';
+import { ReactComponent as LogsActiveIcon } from 'assets/images/logsActive.svg';
+import { ReactComponent as SchemaIcon } from 'assets/images/schemaIcon.svg';
+import { LATEST_RELEASE_URL } from 'config';
+import { ReactComponent as LogsIcon } from 'assets/images/logsIcon.svg';
+import { FaArrowCircleUp } from 'react-icons/fa';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import Logo from 'assets/images/logo.svg';
+import FullLogo from 'assets/images/fullLogo.svg';
+import FullLogoWhite from 'assets/images/white-logo.svg';
+import AuthService from 'services/auth';
+import { sendTrace, useGetAllowedActions } from 'services/genericServices';
+import { Context } from 'hooks/store';
+import pathDomains from 'router';
+import Spinner from 'components/spinner';
 import Support from './support';
-import LearnMore from '../learnMore';
-import GetStarted from '../getStartedModal';
-import Modal from '../modal';
-import CreateStationForm from '../createStationForm';
-import { ReactComponent as StationIcon } from '../../assets/images/stationIcon.svg';
-import CreateUserDetails from '../../domain/users/createUserDetails';
-
-import UpgradePlans from '../upgradePlans';
+import LearnMore from 'components/learnMore';
+import GetStarted from 'components/getStartedModal';
+import Modal from 'components/modal';
+import AsyncTasks from 'components/asyncTasks';
+import CreateStationForm from 'components/createStationForm';
+import { ReactComponent as StationIcon } from 'assets/images/stationIcon.svg';
+import CreateUserDetails from 'domain/users/createUserDetails';
+import UpgradePlans from 'components/upgradePlans';
 import { FaBook, FaDiscord } from 'react-icons/fa';
 import { BiEnvelope } from 'react-icons/bi';
+import { ReactComponent as ArrowRight } from 'assets/images/arrowRight.svg';
+import { ReactComponent as PlusGrayIcon } from 'assets/images/plusIconGray.svg';
+import { ReactComponent as CloudUploadIcon } from 'assets/images/cloudUpload.svg';
+import { ReactComponent as ArrowTopGrayIcon } from 'assets/images/arrowTopGray.svg';
+import { ReactComponent as SunIcon } from 'assets/images/sun.svg';
+import { ReactComponent as MoonIcon } from 'assets/images/moon.svg';
 
-const overlayStyles = {
-    borderRadius: '8px',
-    width: '230px',
-    paddingTop: '5px',
-    paddingBottom: '5px',
-    marginBottom: '10px'
-};
-const supportContextMenuStyles = {
-    borderRadius: '8px',
-    paddingTop: '5px',
-    paddingBottom: '5px',
-    marginBottom: '10px'
-};
 const overlayStylesSupport = {
     marginTop: window.innerHeight > 560 && 'calc(100vh - 560px)',
     borderRadius: '8px',
@@ -102,7 +98,7 @@ function SideBar() {
     const createStationRef = useRef(null);
     const createUserRef = useRef(null);
 
-    const [avatarUrl, SetAvatarUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
+    const [avatarUrl, SetAvatarUrl] = useState(require('assets/images/bots/avatar1.svg'));
     const [popoverOpenSetting, setPopoverOpenSetting] = useState(false);
     const [popoverOpenSupport, setPopoverOpenSupport] = useState(false);
     const [popoverOpenSupportContextMenu, setPopoverOpenSupportContextMenu] = useState(false);
@@ -116,6 +112,35 @@ function SideBar() {
     const [addUserModalIsOpen, addUserModalFlip] = useState(false);
     const [createUserLoader, setCreateUserLoader] = useState(false);
     const [bannerType, setBannerType] = useState('');
+    const getAllowedActions = useGetAllowedActions();
+    const [expandSidebar, setExpandSidebar] = useState(false);
+    const [darkMode, setDarkMode] = useState(false);
+
+    const overlayStylesUser = {
+        borderRadius: '8px',
+        width: '230px',
+        paddingTop: '5px',
+        paddingBottom: '5px',
+        marginBottom: '10px',
+        marginLeft: expandSidebar ? '100px' : ''
+    };
+
+    const quickActionsStyles = {
+        borderRadius: '8px',
+        width: '250px',
+        paddingTop: '5px',
+        paddingBottom: '5px',
+        marginBottom: '10px',
+        marginLeft: expandSidebar ? '100px' : ''
+    };
+
+    const supportContextMenuStyles = {
+        borderRadius: '8px',
+        paddingTop: '5px',
+        paddingBottom: '5px',
+        marginBottom: '10px',
+        marginLeft: expandSidebar ? '100px' : ''
+    };
 
     const getCompanyLogo = useCallback(async () => {
         try {
@@ -145,16 +170,46 @@ function SideBar() {
         {
             !isCloud() && getSystemVersion().catch(console.error);
         }
+        isCloud() && getAllowedActions();
         setAvatarImage(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID) || state?.userData?.avatar_id);
         localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true' && setOpenGetStartedModal(true);
+        const darkMode = localStorage.getItem(LOCAL_STORAGE_DARK_MODE) === 'dark';
+        if (darkMode) {
+            setDarkMode(darkMode);
+            dispatch({ type: 'SET_DARK_MODE', payload: darkMode });
+        }
     }, []);
 
     useEffect(() => {
         setAvatarImage(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID) || state?.userData?.avatar_id);
     }, [state]);
 
+    useEffect(() => {
+        document.documentElement.style.setProperty('--main-container-sidebar-width', expandSidebar ? '205px' : '90px');
+    }, [expandSidebar]);
+
+    useEffect(() => {
+        // Find the element with the class 'App'
+        const appElement = document.documentElement;
+
+        if (appElement) {
+            if (darkMode) {
+                appElement.classList.add('dark-mode');
+            } else {
+                appElement.classList.remove('dark-mode');
+            }
+        }
+
+        // Optional: Cleanup function if the component is unmounted
+        return () => {
+            if (appElement) {
+                appElement.classList.remove('dark-mode');
+            }
+        };
+    }, [darkMode]); // Depend on darkMode state
+
     const setAvatarImage = (avatarId) => {
-        SetAvatarUrl(require(`../../assets/images/bots/avatar${avatarId}.svg`));
+        SetAvatarUrl(require(`assets/images/bots/avatar${avatarId}.svg`));
     };
 
     const handleLogout = async () => {
@@ -184,22 +239,42 @@ function SideBar() {
         addUserModalFlip(false);
     };
 
-    const MenuItem = ({ icon, activeIcon, name, route, onClick, onMouseEnter, onMouseLeave }) => {
+    const MenuItem = ({ icon, activeIcon, name, route, onClick, onMouseEnter, onMouseLeave, badge }) => {
         return (
-            <div className="item-wrapper" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onClick={onClick}>
-                <div className="icon">{state.route === route ? activeIcon : hoveredItem === route ? activeIcon : icon}</div>
+            <div
+                className={'item-wrapper ' + (state.route === route ? 'ms-active ' : '') + (hoveredItem === route ? 'item-wrapper-hovered' : '')}
+                onMouseEnter={onMouseEnter}
+                onMouseLeave={onMouseLeave}
+                onClick={onClick}
+            >
+                <div className="icon ">{state.route === route ? activeIcon : hoveredItem === route ? activeIcon : icon}</div>
                 <p className={state.route === route ? 'checked' : 'name'}>{name}</p>
+                {badge && <label className="badge">{badge}</label>}
             </div>
         );
     };
 
-    const PopoverActionItem = ({ icon, name, onClick }) => {
+    const PopoverActionItem = ({ icon, name, onClick, upgrade }) => {
+        upgrade && setBannerType('upgrade');
         return (
-            <div className="item-wrap" onClick={onClick}>
+            <div
+                className="item-wrap"
+                onClick={() => {
+                    if (upgrade) {
+                        setCloudModalOpen(true);
+                        setPopoverQuickActions(false);
+                    } else onClick();
+                }}
+            >
                 <div className="item">
                     <span className="icons">{icon}</span>
                     <p className="item-title">{name}</p>
                 </div>
+                {isCloud() && upgrade && (
+                    <div>
+                        <FaArrowCircleUp className="lock-feature-icon" />
+                    </div>
+                )}
             </div>
         );
     };
@@ -214,6 +289,7 @@ function SideBar() {
                     setPopoverQuickActions(false);
                     createStationModalFlip(true);
                 }}
+                upgrade={isCloud() && !state?.allowedActions?.can_create_stations}
             />
             <PopoverActionItem
                 icon={<NewSchemaIcon className="icons-sidebar" />}
@@ -235,6 +311,7 @@ function SideBar() {
                     setPopoverQuickActions(false);
                     addUserModalFlip(true);
                 }}
+                upgrade={isCloud() && !state?.allowedActions?.can_create_users}
             />
             <PopoverActionItem
                 icon={<NewIntegrationIcon className="icons-sidebar" />}
@@ -249,7 +326,7 @@ function SideBar() {
     );
 
     const contentSetting = (
-        <div className="menu-content">
+        <div className="menu-content bottom-sidebar-icons">
             <div className="item-wrap-header">
                 <span className="img-section">
                     <img
@@ -285,7 +362,15 @@ function SideBar() {
                 icon={<SettingOutlined className="icons-sidebar" />}
                 name="Administration"
                 onClick={() => {
-                    history.replace(`${pathDomains.administration}/integrations`);
+                    history.replace(`${pathDomains.administration}/system_information`);
+                    setPopoverOpenSetting(false);
+                }}
+            />
+            <PopoverActionItem
+                icon={<HiUsers className="icons-sidebar" />}
+                name="Users"
+                onClick={() => {
+                    history.replace(pathDomains.users);
                     setPopoverOpenSetting(false);
                 }}
             />
@@ -352,9 +437,6 @@ function SideBar() {
                         trigger="click"
                         onOpenChange={() => setPopoverOpenSupport(!popoverOpenSupport)}
                         open={popoverOpenSupport}
-                        onClick={() => {
-                            setPopoverOpenSupportContextMenu(false);
-                        }}
                     >
                         <div className="item">
                             <span className="icons">
@@ -368,13 +450,34 @@ function SideBar() {
         </div>
     );
 
+    function handleDarkMode(mode) {
+        setDarkMode(mode);
+        localStorage.setItem(LOCAL_STORAGE_DARK_MODE, mode ? 'dark' : 'light');
+        dispatch({ type: 'SET_DARK_MODE', payload: mode });
+    }
+
+    function getCompanyLogoSrc() {
+        const darkMode = state?.darkMode || false;
+        const fullLogoSrc = darkMode ? FullLogoWhite : FullLogo;
+        return isCloud() ? state?.companyLogo || (expandSidebar ? fullLogoSrc : Logo) : expandSidebar ? fullLogoSrc : Logo;
+    }
+
     return (
-        <div className="sidebar-container">
+        <div className={'sidebar-container ' + (expandSidebar ? 'expand' : 'collapse')}>
             <div className="upper-icons">
+                <div
+                    className={'upper-icons-toggle ' + (expandSidebar ? 'open' : 'close')}
+                    onClick={() => {
+                        setExpandSidebar(!expandSidebar);
+                    }}
+                >
+                    <ArrowRight />
+                </div>
+                {state.route !== 'overview' && <AsyncTasks />}
                 <span className="logo-wrapper">
                     <img
-                        src={isCloud() ? state?.companyLogo || Logo : Logo}
-                        width="45"
+                        src={getCompanyLogoSrc()}
+                        width={expandSidebar ? 'auto' : '45'}
                         height="45"
                         className="logoimg"
                         alt="logo"
@@ -383,18 +486,44 @@ function SideBar() {
                     <EditIcon alt="edit" className="edit-logo" onClick={() => history.replace(`${pathDomains.administration}/profile`)} />
                 </span>
 
+                {isCloud() && (
+                    <div className="item-wrapper">
+                        <div className="menu-item-env">
+                            <div className="menu-item-env-badge">Coming Soon</div>
+                            {expandSidebar ? (
+                                <>
+                                    <div className="menu-item-env-left">
+                                        <div className="menu-item-env-title">Production</div>
+                                        <div className="menu-item-env-subtitle">Memphis.dev</div>
+                                    </div>
+                                    <div className="menu-item-env-right">
+                                        <ArrowTopGrayIcon />
+                                        <ArrowTopGrayIcon style={{ transform: 'rotate(180deg)' }} />
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="menu-item-env-collapsed">P</div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 <Popover
-                    overlayInnerStyle={overlayStyles}
-                    placement="rightBottom"
+                    overlayInnerStyle={quickActionsStyles}
+                    placement="right"
                     content={contentQuickStart}
                     trigger="click"
                     onOpenChange={() => setPopoverQuickActions(!popoverQuickActoins)}
                     open={popoverQuickActoins}
+                    key={expandSidebar ? 'expanded-PopoverQuickActions' : 'collapsed-PopoverQuickActions'}
                 >
                     <div className="item-wrapper" onMouseEnter={() => setHoveredItem('actions')} onMouseLeave={() => setHoveredItem('')}>
                         <div className="icon">
-                            <QuickActionBtn alt="Quick actions" onClick={() => sendTrace('quick-actions-click', {})} />
+                            <PlusGrayIcon alt="Quick actions" onClick={() => sendTrace('quick-actions-click', {})} />
                         </div>
+                        <p>{expandSidebar ? 'Create New' : 'Create'}</p>
                     </div>
                 </Popover>
                 <MenuItem
@@ -432,6 +561,7 @@ function SideBar() {
                     onMouseEnter={() => setHoveredItem('functions')}
                     onMouseLeave={() => setHoveredItem('')}
                     route="functions"
+                    badge={'Beta'}
                 />
                 <MenuItem
                     icon={<IntegrationIcon alt="IntegrationIcon" width={20} height={20} />}
@@ -443,7 +573,7 @@ function SideBar() {
                     route="administration"
                 />
             </div>
-            <CloudMoadl type={bannerType} open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
+            <CloudModal type={bannerType} open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
             <div className="bottom-icons">
                 {!isCloud() && (
                     <MenuItem
@@ -456,15 +586,6 @@ function SideBar() {
                         route="logs"
                     />
                 )}
-                <MenuItem
-                    icon={<HiUsers alt="LogsIcon" className="sidebar-title" size={'20px'} />}
-                    activeIcon={<HiUsers alt="LogsActiveIcon" className="sidebar-title ms-active" size={'20px'} />}
-                    name="Users"
-                    onClick={() => history.replace(pathDomains.users)}
-                    onMouseEnter={() => setHoveredItem('users')}
-                    onMouseLeave={() => setHoveredItem('')}
-                    route="users"
-                />
                 <Popover
                     overlayInnerStyle={supportContextMenuStyles}
                     placement="right"
@@ -472,6 +593,7 @@ function SideBar() {
                     trigger="click"
                     onOpenChange={() => setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu)}
                     open={popoverOpenSupportContextMenu}
+                    key={expandSidebar ? 'expanded-PopoverOpenSupportContextMenu' : 'collapsed-PopoverOpenSupportContextMenu'}
                 >
                     <MenuItem
                         icon={<SupportIcon alt="SupportIcon" width={20} height={20} />}
@@ -483,8 +605,21 @@ function SideBar() {
                     />
                 </Popover>
 
+                <div className="item-wrapper ms-appearance-wrapper">
+                    <div className="ms-appearance">
+                        <div className={'ms-appearance-light ' + (!darkMode && 'ms-active')} onClick={() => handleDarkMode(false)}>
+                            <SunIcon />
+                            <span className="ms-appearance-text">Light</span>
+                        </div>
+                        <div className={'ms-appearance-dark ' + (darkMode && 'ms-active')} onClick={() => handleDarkMode(true)}>
+                            <MoonIcon />
+                            <span className="ms-appearance-text">Dark</span>
+                        </div>
+                    </div>
+                </div>
+
                 <Popover
-                    overlayInnerStyle={overlayStyles}
+                    overlayInnerStyle={overlayStylesUser}
                     placement="right"
                     content={contentSetting}
                     trigger="click"
@@ -492,21 +627,33 @@ function SideBar() {
                     open={popoverOpenSetting}
                 >
                     <div className="sub-icon-wrapper" onClick={() => setPopoverOpenSetting(true)}>
-                        <img
-                            className={`sandboxUserImg ${(state.route === 'profile' || state.route === 'administration') && 'sandboxUserImgSelected'}`}
-                            src={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? localStorage.getItem(USER_IMAGE) : avatarUrl}
-                            referrerPolicy="no-referrer"
-                            width={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 35 : 25}
-                            height={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 35 : 25}
-                            alt="avatar"
-                        />
+                        <div className="sidebar-user-info">
+                            <img
+                                className={`sidebar-user-info-img sandboxUserImg ${
+                                    (state.route === 'profile' || state.route === 'administration') && 'sandboxUserImgSelected'
+                                }`}
+                                src={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? localStorage.getItem(USER_IMAGE) : avatarUrl}
+                                referrerPolicy="no-referrer"
+                                width={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 35 : 25}
+                                height={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 35 : 25}
+                                alt="avatar"
+                            />
+                            <div className="sidebar-user-info-bottom">
+                                <div className="sidebar-user-info-name">
+                                    {localStorage.getItem(LOCAL_STORAGE_FULL_NAME) && localStorage.getItem(LOCAL_STORAGE_FULL_NAME)}
+                                </div>
+                                <div className="sidebar-user-info-email">
+                                    {localStorage.getItem(LOCAL_STORAGE_USER_NAME) && localStorage.getItem(LOCAL_STORAGE_USER_NAME)}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </Popover>
                 {!isCloud() && (
                     <version
                         is="x3d"
                         style={{ cursor: !state.isLatest ? 'pointer' : 'default' }}
-                        onClick={() => (!state.isLatest ? history.replace(`${pathDomains.administration}/version_upgrade`) : null)}
+                        onClick={() => (!state.isLatest ? history.replace(`${pathDomains.administration}/system_information`) : null)}
                     >
                         {!state.isLatest && <div className="update-note" />}
                         <p>v{state.currentVersion}</p>
@@ -516,6 +663,7 @@ function SideBar() {
                     <UpgradePlans
                         content={
                             <div className="upgrade-button-wrapper">
+                                <CloudUploadIcon className="upgrade-plan-icon" style={{ marginRight: '5px' }} />
                                 <p className="upgrade-plan">Upgrade</p>
                             </div>
                         }
@@ -557,36 +705,26 @@ function SideBar() {
                     finishUpdate={(e) => createStationModalFlip(false)}
                 />
             </Modal>
-            <Modal
-                header={
-                    <div className="modal-header">
-                        <div className="header-img-container">
-                            <AddUserIcon className="headerImage" alt="stationImg" />
-                        </div>
-                        <p>Add a new user</p>
-                        <label>Enter user details to get started</label>
-                    </div>
-                }
-                width="450px"
-                rBtnText="Create"
-                lBtnText="Cancel"
-                lBtnClick={() => {
-                    addUserModalFlip(false);
-                    setCreateUserLoader(false);
-                }}
-                clickOutside={() => {
+            <Drawer
+                placement="right"
+                title="Add a new user"
+                onClose={() => {
                     setCreateUserLoader(false);
                     addUserModalFlip(false);
                 }}
-                rBtnClick={() => {
-                    setCreateUserLoader(true);
-                    createUserRef.current();
-                }}
-                isLoading={createUserLoader}
+                destroyOnClose={true}
+                width="650px"
                 open={addUserModalIsOpen}
             >
-                <CreateUserDetails createUserRef={createUserRef} closeModal={(userData) => handleAddUser(userData)} handleLoader={(e) => setCreateUserLoader(e)} />
-            </Modal>
+                <CreateUserDetails
+                    createUserRef={createUserRef}
+                    closeModal={(userData) => {
+                        handleAddUser(userData);
+                    }}
+                    handleLoader={(e) => setCreateUserLoader(e)}
+                    isLoading={createUserLoader}
+                />
+            </Drawer>
         </div>
     );
 }

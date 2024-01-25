@@ -12,15 +12,15 @@
 
 import './style.scss';
 
-import { ReactComponent as FunctionIntegrateIcon } from '../../../../assets/images/functionIntegrate.svg';
+import { ReactComponent as FunctionIntegrateIcon } from 'assets/images/functionIntegrate.svg';
 
 const IntegrateFunction = ({ onClick }) => {
     return (
         <div className="itegrate-box-wrapper" onClick={onClick}>
             <FunctionIntegrateIcon />
             <div className="text-wrapper">
-                <p className="main-text">Start to integrate</p>
-                <p className="sub-text">Donec dictum tristique porta. Etiam convallis lorem lobortis nulla molestie</p>
+                <p className="main-text">Add a New Function</p>
+                <p className="sub-text">To start adding new functions, please follow the Getting Started guide</p>
             </div>
         </div>
     );

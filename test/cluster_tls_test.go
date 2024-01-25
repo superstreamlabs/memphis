@@ -82,6 +82,7 @@ func (c *captureTLSError) Errorf(format string, v ...interface{}) {
 	}
 }
 
+// ** added by Memphis
 func (c *captureTLSError) Systemf(format string, v ...interface{}) {
 	msg := fmt.Sprintf(format, v...)
 	if strings.Contains(msg, "handshake error") {
@@ -91,6 +92,8 @@ func (c *captureTLSError) Systemf(format string, v ...interface{}) {
 		}
 	}
 }
+
+// ** added by Memphis
 
 type captureClusterTLSInsecureLogger struct {
 	dummyLogger
@@ -107,6 +110,7 @@ func (c *captureClusterTLSInsecureLogger) Warnf(format string, v ...interface{})
 	}
 }
 
+// ** added by Memphis
 func (c *captureClusterTLSInsecureLogger) Systemf(format string, v ...interface{}) {
 	msg := fmt.Sprintf(format, v...)
 	if strings.Contains(msg, "solicited routes will not be verified") {
@@ -117,12 +121,16 @@ func (c *captureClusterTLSInsecureLogger) Systemf(format string, v ...interface{
 	}
 }
 
+// ** added by Memphis
+
 func TestClusterTLSInsecure(t *testing.T) {
 	confA := createConfFile(t, []byte(`
 		port: -1
 		cluster {
 			name: "xyz"
 			listen: "127.0.0.1:-1"
+			pool_size: -1
+			compression: "disabled"
 			tls {
 			    cert_file: "./configs/certs/server-noip.pem"
 				key_file:  "./configs/certs/server-key-noip.pem"
@@ -142,6 +150,8 @@ func TestClusterTLSInsecure(t *testing.T) {
 		cluster {
 			name: "xyz"
 			listen: "127.0.0.1:-1"
+			pool_size: -1
+			compression: "disabled"
 			tls {
 			    cert_file: "./configs/certs/server-noip.pem"
 				key_file:  "./configs/certs/server-key-noip.pem"

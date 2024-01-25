@@ -1,6 +1,5 @@
-import { bufferToPrettyHex, parseInput } from './decoderFiles/hexUtils';
+import { parseInput } from './decoderFiles/hexUtils';
 import { TYPES, typeToString } from './decoderFiles/protobufDecoder';
-import { decodeVarintParts, decodeFixed64, decodeFixed32 } from './decoderFiles/protobufPartDecoder';
 import { BufferReader } from './decoderFiles/protobufDecoder';
 import { v4 } from 'uuid';
 

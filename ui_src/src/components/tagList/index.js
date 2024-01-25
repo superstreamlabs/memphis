@@ -14,10 +14,10 @@ import './style.scss';
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Popover } from 'antd';
-import Tag from '../tag';
+import Tag from 'components/tag';
 import { Add, AddRounded } from '@material-ui/icons';
 import RemainingTagsList from './remainingTagsList';
-import TagsPicker from '../tagsPicker';
+import TagsPicker from 'components/tagsPicker';
 
 const remainingTagsPopInnerStyle = { maxWidth: '155px', padding: '10px', paddingBottom: '10px', borderRadius: '12px', border: '1px solid #f0f0f0' };
 const tagsPickerPopInnerStyle = {

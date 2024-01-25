@@ -13,7 +13,7 @@
 import './style.scss';
 
 import React from 'react';
-import ConsumerWithStatus from '../../../../components/consumerWithStatus';
+import ConsumerWithStatus from 'components/consumerWithStatus';
 
 const ConsumerGroup = ({ header, details, cgMembers }) => {
 

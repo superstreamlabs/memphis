@@ -13,27 +13,25 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState, createContext, useReducer } from 'react';
-import { useHistory } from 'react-router-dom';
-
-import { extractValueFromURL, parsingDate } from '../../services/valueConvertor';
+import { useHistory, useLocation } from 'react-router-dom';
+import { extractValueFromURL, parsingDate } from 'services/valueConvertor';
 import StationOverviewHeader from './stationOverviewHeader';
 import StationObservabilty from './stationObservabilty';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { httpRequest } from '../../services/http';
-import Loader from '../../components/loader';
-import { Context } from '../../hooks/store';
-import pathDomains from '../../router';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import Loader from 'components/loader';
+import { Context } from 'hooks/store';
+import pathDomains from 'router';
 import Reducer from './hooks/reducer';
 import { StringCodec, JSONCodec } from 'nats.ws';
 
 const initializeState = {
     stationMetaData: { is_native: true },
     stationSocketData: {},
-    stationPartition: -1,
+    stationPartition: 1,
     stationFunctions: {}
 };
 let sub;
-
 const StationOverview = () => {
     const [stationState, stationDispatch] = useReducer(Reducer);
     const url = window.location.href;
@@ -41,11 +39,18 @@ const StationOverview = () => {
     const history = useHistory();
     const [state, dispatch] = useContext(Context);
     const [isLoading, setisLoading] = useState(false);
+    const [isReloading, setisReloading] = useState(false);
     const [socketOn, setSocketOn] = useState(false);
+    const location = useLocation();
+    const [referredFunction, setReferredFunction] = useState(null);
+
+    useEffect(() => {
+        location?.selectedFunction && setReferredFunction(location?.selectedFunction);
+    }, [location?.selectedFunction]);
 
     const sortData = (data) => {
         data.audit_logs?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        data.messages?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        data.messages?.sort((a, b) => b.message_seq - a.message_seq);
         data.active_producers?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         data.active_consumers?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         data.destroyed_consumers?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -69,97 +74,99 @@ const StationOverview = () => {
     };
 
     const getStationDetails = async () => {
+        setisReloading(true);
         try {
-            const data = await httpRequest(
-                'GET',
-                `${ApiEndpoints.GET_STATION_DATA}?station_name=${stationName}&partition_number=${stationState?.stationPartition || -1}`
-            );
+            const data = await httpRequest('GET', `${ApiEndpoints.GET_STATION_DATA}?station_name=${stationName}&partition_number=${stationState?.stationPartition || 1}`);
             await sortData(data);
             stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
             stationDispatch({ type: 'SET_SCHEMA_TYPE', payload: data.schema.schema_type });
             setisLoading(false);
+            setisReloading(false);
         } catch (error) {
             setisLoading(false);
+            setisReloading(false);
             if (error.status === 404) {
                 history.push(pathDomains.stations);
             }
         }
     };
+
     useEffect(() => {
-        if (socketOn) {
-            getStationDetails();
-        }
+        // if (socketOn) {
+        //     getStationDetails();
+        // }
+        getStationDetails();
     }, [stationState?.stationPartition || stationState?.stationSocketData?.total_messages || stationState?.stationSocketData?.total_dls_messages, stationName]);
+
+    // const startListen = async () => {
+    //     const jc = JSONCodec();
+    //     const sc = StringCodec();
+
+    //     const listenForUpdates = async () => {
+    //         try {
+    //             if (sub) {
+    //                 for await (const msg of sub) {
+    //                     let data = jc.decode(msg.data);
+    //                     sortData(data);
+    //                     stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
+    //                     if (!socketOn) {
+    //                         setSocketOn(true);
+    //                     }
+    //                 }
+    //             }
+    //         } catch (err) {
+    //             console.error(`Error receiving data updates for station overview:`, err);
+    //         }
+    //     };
+
+    //     try {
+    //         const rawBrokerName = await state.socket?.request(
+    //             `$memphis_ws_subs.station_overview_data.${stationName}.${stationState?.stationPartition || -1}`,
+    //             sc.encode('SUB')
+    //         );
+    //         if (rawBrokerName) {
+    //             const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
+    //             sub = state.socket?.subscribe(`$memphis_ws_pubs.station_overview_data.${stationName}.${stationState?.stationPartition || -1}.${brokerName}`);
+    //             listenForUpdates();
+    //         }
+    //     } catch (err) {
+    //         console.error('Error subscribing to station overview data:', err);
+    //     }
+    // };
+
+    // const stopListen = async () => {
+    //     if (sub) {
+    //         try {
+    //             await sub.unsubscribe();
+    //         } catch (err) {
+    //             console.error('Error unsubscribing from station overview data:', err);
+    //         }
+    //     }
+    // };
+
+    // useEffect(() => {
+    //     if (state.socket) {
+    //         startListen();
+    //     }
+    //     return () => {
+    //         stopListen();
+    //     };
+    // }, [state.socket, stationName]);
+
+    // useEffect(() => {
+    //     if (sub && socketOn) {
+    //         stopListen();
+    //         startListen();
+    //     }
+    // }, [stationState?.stationPartition, stationName]);
 
     useEffect(() => {
         setisLoading(true);
         dispatch({ type: 'SET_ROUTE', payload: 'stations' });
         getStaionMetaData();
         getStationDetails();
-        stationDispatch({ type: 'SET_STATION_PARTITION', payload: -1 });
+        stationDispatch({ type: 'SET_STATION_PARTITION', payload: 1 });
     }, [stationName]);
-
-    const startListen = async () => {
-        const jc = JSONCodec();
-        const sc = StringCodec();
-
-        const listenForUpdates = async () => {
-            try {
-                if (sub) {
-                    for await (const msg of sub) {
-                        let data = jc.decode(msg.data);
-                        sortData(data);
-                        stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
-                        if (!socketOn) {
-                            setSocketOn(true);
-                        }
-                    }
-                }
-            } catch (err) {
-                console.error(`Error receiving data updates for station overview:`, err);
-            }
-        };
-
-        try {
-            const rawBrokerName = await state.socket?.request(
-                `$memphis_ws_subs.station_overview_data.${stationName}.${stationState?.stationPartition || -1}`,
-                sc.encode('SUB')
-            );
-            if (rawBrokerName) {
-                const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
-                sub = state.socket?.subscribe(`$memphis_ws_pubs.station_overview_data.${stationName}.${stationState?.stationPartition || -1}.${brokerName}`);
-                listenForUpdates();
-            }
-        } catch (err) {
-            console.error('Error subscribing to station overview data:', err);
-        }
-    };
-
-    const stopListen = async () => {
-        if (sub) {
-            try {
-                await sub.unsubscribe();
-            } catch (err) {
-                console.error('Error unsubscribing from station overview data:', err);
-            }
-        }
-    };
-
-    useEffect(() => {
-        if (state.socket) {
-            startListen();
-        }
-        return () => {
-            stopListen();
-        };
-    }, [state.socket, stationName]);
-
-    useEffect(() => {
-        if (sub && socketOn) {
-            stopListen();
-            startListen();
-        }
-    }, [stationState?.stationPartition, stationName]);
 
     return (
         <StationStoreContext.Provider value={[stationState, stationDispatch]}>
@@ -172,10 +179,10 @@ const StationOverview = () => {
                 {!isLoading && (
                     <div className="station-overview-container">
                         <div className="overview-header">
-                            <StationOverviewHeader />
+                            <StationOverviewHeader refresh={() => getStationDetails()} />
                         </div>
                         <div className="station-observability">
-                            <StationObservabilty />
+                            <StationObservabilty referredFunction={referredFunction} loading={isReloading} />
                         </div>
                     </div>
                 )}

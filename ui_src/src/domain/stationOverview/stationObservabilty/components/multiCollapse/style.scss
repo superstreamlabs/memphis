@@ -2,6 +2,25 @@
     .ant-collapse-content-box {
         padding: 0 !important;
     }
+    .ant-collapse-header {
+        padding: 0px !important;
+    }
+    .sub-collapse-header {
+        display: flex;
+        align-items: center !important;
+        padding: 0px 10px !important;
+        gap: 10px;
+        .title {
+            display: flex;
+            align-items: center !important;
+            gap: 10px;
+            .status {
+                svg {
+                    width: 9px !important;
+                }
+            }
+        }
+    }
     .consumer-number {
         background: #dfdfdf;
         min-width: 20px;
@@ -14,14 +33,29 @@
     }
     .collapse-header {
         flex-direction: row !important;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 8px 0px;
+        .title {
+            display: flex;
+            align-items: center;
+        }
     }
     .collapse-child {
         .collapse-header {
+            flex-direction: row !important;
+            display: flex;
+            align-items: center;
+            padding: 0px 10px !important;
             p {
                 font-size: 12px !important;
+                margin: 0 !important;
             }
             .status {
-                margin-right: 10px;
+                display: flex;
+                align-items: center;
+                gap: 5px;
                 svg {
                     width: 9px !important;
                 }
@@ -32,7 +66,6 @@
         }
         .ant-collapse-item.ant-collapse-no-arrow {
             border: none;
-            border-bottom: 1px solid #efefef;
             border-radius: 0px;
         }
         .ant-collapse-item-active.ant-collapse-no-arrow {

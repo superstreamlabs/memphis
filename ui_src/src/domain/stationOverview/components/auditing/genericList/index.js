@@ -14,10 +14,10 @@ import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
 
-import OverflowTip from '../../../../../components/tooltip/overflowtip';
-import Reducer from '../../../hooks/reducer';
-import { StationStoreContext } from '../../..';
-import { parsingDate } from '../../../../../services/valueConvertor';
+import OverflowTip from 'components/tooltip/overflowtip';
+import Reducer from 'hooks/reducer';
+import { StationStoreContext } from 'domain/stationOverview';
+import { parsingDate } from 'services/valueConvertor';
 
 const GenericList = (props) => {
     const [stationState] = useContext(StationStoreContext);

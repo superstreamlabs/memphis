@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2012-2022 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -35,8 +35,9 @@ Usage: nats-server [options]
 
 Server Options:
     -a, --addr, --net <host>         Bind to host address (default: 0.0.0.0)
-    -p, --port <port>                Use port for clients (default: 6666)
-    -n, --name --server_name <server_name>  Server name (default: auto)
+    -p, --port <port>                Use port for clients (default: 4222)
+    -n, --name
+        --server_name <server_name>  Server name (default: auto)
     -P, --pid <file>                 File to store PID
     -m, --http_port <port>           Use port for http monitoring
     -ms,--https_port <port>          Use port for https monitoring
@@ -44,8 +45,8 @@ Server Options:
     -t                               Test configuration and exit
     -sl,--signal <signal>[=<pid>]    Send signal to nats-server process (ldm, stop, quit, term, reopen, reload)
                                      pid> can be either a PID (e.g. 1) or the path to a PID file (e.g. /var/run/nats-server.pid)
-    --client_advertise <string>  Client URL to advertise to other servers
-    --ports_file_dir <dir>       Creates a ports file in the specified directory (<executable_name>_<pid>.ports).
+        --client_advertise <string>  Client URL to advertise to other servers
+        --ports_file_dir <dir>       Creates a ports file in the specified directory (<executable_name>_<pid>.ports).
 
 Logging Options:
     -l, --log <file>                 File to redirect log output
@@ -57,12 +58,12 @@ Logging Options:
     -VV                              Verbose trace (traces system account as well)
     -DV                              Debug and trace
     -DVV                             Debug and verbose trace (traces system account as well)
-    --log_size_limit <limit>     Logfile size limit (default: auto)
-    --max_traced_msg_len <len>   Maximum printable length for traced messages (default: unlimited)
+        --log_size_limit <limit>     Logfile size limit (default: auto)
+        --max_traced_msg_len <len>   Maximum printable length for traced messages (default: unlimited)
 
 JetStream Options:
-    -js, --jetstream                 Enable JetStream functionality.
-    -sd, --store_dir <dir>           Set the storage directory.
+    -js, --jetstream                 Enable JetStream functionality
+    -sd, --store_dir <dir>           Set the storage directory
 
 Authorization Options:
         --user <user>                User required for connections
@@ -84,6 +85,9 @@ Cluster Options:
         --cluster_advertise <string> Cluster URL to advertise to other servers
         --connect_retries <number>   For implicit routes, number of connect retries
         --cluster_listen <url>       Cluster url from which members can solicit routes
+
+Profiling Options:
+        --profile <port>             Profiling HTTP port
 
 Common Options:
     -h, --help                       Show this message
@@ -152,11 +156,6 @@ func runMemphis(s *server.Server) {
 		env = "K8S"
 	}
 
-	err = s.SendReloadSignal()
-	if err != nil {
-		s.Errorf("Failed signaling other brokers to reload")
-	}
-
 	s.Noticef("*** Memphis broker is ready, ENV: %s :-) ***", env)
 }
 
@@ -167,7 +166,7 @@ func main() {
 	fs := flag.NewFlagSet(exe, flag.ExitOnError)
 	fs.Usage = usage
 
-	metadataDb, err := server.InitializeMetadataStorage()
+	metadataDb, rootUserCreated, err := server.InitializeMetadataStorage()
 	if err != nil {
 		server.PrintAndDie(fmt.Sprintf("%s: %s", exe, err))
 	}
@@ -175,6 +174,14 @@ func main() {
 	err = server.InitializeCloudComponents()
 	if err != nil {
 		server.PrintAndDie(fmt.Sprintf("Failed initializing InitializeCloudComponents: %s: %s", exe, err))
+	}
+
+	// create users from env or config file
+	var lenUsers int
+	var errCreateUsers error
+	// create only on the first system load
+	if rootUserCreated {
+		lenUsers, errCreateUsers = server.CreateUsersFromConfigOnFirstSystemLoad()
 	}
 
 	// Configure the options from the flags/config file
@@ -194,7 +201,6 @@ func main() {
 	if err != nil {
 		server.PrintAndDie(fmt.Sprintf("%s: %s", exe, err))
 	}
-
 	// Configure the logger based on the flags
 	s.ConfigureLogger()
 
@@ -203,14 +209,20 @@ func main() {
 		server.PrintAndDie(err.Error())
 	}
 
+	// we do this check here and not below the function creating the users - CreateUsersFromConfigOnFirstSystemLoad because we need the s *Server for logs
+	if errCreateUsers != nil {
+		s.Warnf("[tenant: %v]Failed create users from config file %v", s.MemphisGlobalAccountString(), errCreateUsers.Error())
+	}
+	if lenUsers > 0 {
+		s.Noticef("[tenant: %v]loaded %d users from config file", s.MemphisGlobalAccountString(), lenUsers)
+	}
+
 	// Adjust MAXPROCS if running under linux/cgroups quotas.
 	undo, err := maxprocs.Set(maxprocs.Logger(s.Debugf))
 	if err != nil {
 		s.Warnf("Failed to set GOMAXPROCS: %v", err)
 	} else {
 		defer undo()
-		// Reset these from the snapshots from init for monitor.go
-		server.SnapshotMonitorInfo()
 	}
 	s.Noticef("Established connection with the meta-data storage")
 

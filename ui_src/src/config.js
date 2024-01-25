@@ -12,9 +12,6 @@
 
 export const ENVIRONMENT = process.env.NODE_ENV ? process.env.NODE_ENV : 'development';
 const SERVER_URL_PRODUCTION = `${window.location.href.split('//')[1].split('/')[0]}/api`;
-var ws_server_url_prod = `${window.location.href.split('//')[1].split('/')[0]}`;
-if (ws_server_url_prod?.includes(':')) ws_server_url_prod = ws_server_url_prod.split(':')[0];
-export const WS_SERVER_URL_PRODUCTION = ws_server_url_prod;
 const SSL_PREFIX = window.location.protocol === 'https:' ? 'https://' : 'http://';
 
 export const SERVER_URL = ENVIRONMENT === 'production' ? `${SSL_PREFIX}${SERVER_URL_PRODUCTION}` : `http://localhost:9000/api`;
@@ -22,13 +19,13 @@ export const WS_PREFIX = window.location.href?.includes('https') ? 'wss' : 'ws';
 export const URL = window.location.href;
 
 export const HANDLE_REFRESH_INTERVAL = 600000;
-export const SHOWABLE_ERROR_STATUS_CODE = 666;
+export const SHOWABLE_ERROR_STATUS_CODE = 406;
 export const AUTHENTICATION_ERROR_STATUS_CODE = 401;
 export const DOC_URL = 'https://docs.memphis.dev/memphis/getting-started/readme';
 export const CONNECT_APP_VIDEO = 'https://www.youtube.com/watch?v=-5YmxYRQsdw';
 export const CONNECT_CLI_VIDEO = 'https://www.youtube.com/watch?v=awXwaU4rBBQ';
 export const WELCOME_VIDEO = 'https://youtu.be/mDbGnMC1hig';
-
+export const FUNCTION_GUIDE_VIDEO = 'https://www.youtube.com/watch?v=-5YmxYRQsdw';
 export const RELEASE_NOTES_URL = 'https://api.github.com/repos/Memphisdev/gitbook-backup/contents/release-notes/releases';
 export const LATEST_RELEASE_URL = 'https://api.github.com/repos/Memphisdev/memphis/releases';
 export const RELEASE_DOCS_URL = 'https://docs.memphis.dev/memphis/release-notes/releases/';

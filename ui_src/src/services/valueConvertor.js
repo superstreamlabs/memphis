@@ -10,10 +10,9 @@
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
-import { planType } from '../const/globalConst';
+import { planType } from 'const/globalConst';
 import { decodeMessage } from './decoder';
-import { LOCAL_STORAGE_PLAN } from '../const/localStorageConsts';
-import CloudOnly from '../components/cloudOnly';
+import { LOCAL_STORAGE_PLAN } from 'const/localStorageConsts';
 
 export const convertDateToSeconds = (days, hours, minutes, seconds) => {
     let totalSeconds = 0;
@@ -551,7 +550,6 @@ export const isCheckoutCompletedTrue = (url) => {
 export const showUpgradePlan = () => {
     return isCloud() && localStorage.getItem(LOCAL_STORAGE_PLAN) !== planType.BUSINESS;
 };
-
 export const getFunctionsTabs = () => [
     {
         name: 'All',
@@ -562,14 +560,9 @@ export const getFunctionsTabs = () => [
         disabled: false
     },
     {
-        name: isCloud() ? (
-            'Private'
-        ) : (
-            <>
-                Private <CloudOnly position={'relative'} />
-            </>
-        ),
-        disabled: !isCloud()
+        name: 'Private',
+        disabled: !isCloud(),
+        cloudOnly: !isCloud() ? true : false
     }
 ];
 

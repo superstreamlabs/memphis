@@ -88,7 +88,7 @@ func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, seq uin
 						msgId := map[string]string{}
 						seqNumber := strconv.Itoa(int(seq))
 						msgId["msg-id"] = streamName + seqNumber
-						if tenantName == "" {
+						if tenantName == _EMPTY_ {
 							tenantName = serv.MemphisGlobalAccountString()
 						}
 						subject := fmt.Sprintf("%s.%s.%s", tieredStorageStream, streamName, tenantName)

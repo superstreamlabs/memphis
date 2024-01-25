@@ -11,17 +11,6 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 package models
 
-type EditClusterConfigSchema struct {
-	DlsRetention                       int    `json:"dls_retention" binding:"required"`
-	LogsRetention                      int    `json:"logs_retention" binding:"required"`
-	BrokerHost                         string `json:"broker_host"`
-	UiHost                             string `json:"ui_host"`
-	RestGWHost                         string `json:"rest_gw_host"`
-	TSTimeSec                          int    `json:"tiered_storage_time_sec"`
-	MaxMsgSizeMb                       int    `json:"max_msg_size_mb"`
-	GCProducersConsumersRetentionHours int    `json:"gc_producer_consumer_retention_hours"`
-}
-
 type GlobalConfigurationsUpdate struct {
 	Notifications bool `json:"notifications"`
 }

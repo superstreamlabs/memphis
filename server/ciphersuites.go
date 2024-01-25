@@ -108,11 +108,12 @@ func defaultCurvePreferences() []tls.CurveID {
 	}
 }
 
+// ** added by Memphis
 func EncryptAES(plaintext []byte) (string, error) {
 	key := getAESKey()
 	c, err := aes.NewCipher(key)
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 
 	blockSize := c.BlockSize()
@@ -128,17 +129,17 @@ func EncryptAES(plaintext []byte) (string, error) {
 func DecryptAES(key []byte, encryptedValue string) (string, error) {
 	ciphertextBytes, err := base64.URLEncoding.DecodeString(encryptedValue)
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 
 	c, err := aes.NewCipher(key)
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 
 	blockSize := c.BlockSize()
 	if len(ciphertextBytes) < blockSize {
-		return "", errors.New("ciphertext too short")
+		return _EMPTY_, errors.New("ciphertext too short")
 	}
 
 	plaintext := make([]byte, len(ciphertextBytes))
@@ -147,7 +148,7 @@ func DecryptAES(key []byte, encryptedValue string) (string, error) {
 
 	padSize := int(plaintext[len(plaintext)-1])
 	if padSize < 1 || padSize > aes.BlockSize {
-		return "", fmt.Errorf("invalid padding size")
+		return _EMPTY_, fmt.Errorf("invalid padding size")
 	}
 
 	unpadded := plaintext[:len(plaintext)-padSize]
@@ -156,10 +157,12 @@ func DecryptAES(key []byte, encryptedValue string) (string, error) {
 
 func getAESKey() []byte {
 	var key []byte
-	if configuration.DOCKER_ENV == "true" || configuration.LOCAL_CLUSTER_ENV {
+	if configuration.DOCKER_ENV == "true" || configuration.LOCAL_CLUSTER_ENV || configuration.ENCRYPTION_SECRET_KEY == _EMPTY_ {
 		key = []byte(DEFAULT_ENCRYPTION_SECRET_KEY)
 	} else {
 		key = []byte(configuration.ENCRYPTION_SECRET_KEY)
 	}
 	return key
 }
+
+// ** added by Memphis

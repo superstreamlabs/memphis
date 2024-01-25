@@ -15,7 +15,7 @@ import './style.scss';
 import { Input } from 'antd';
 import React from 'react';
 
-import { getFontColor, getBackgroundColor, getBorderRadius, getBorderColor, getBoxShadows } from '../../utils/styleTemplates';
+import { getFontColor, getBackgroundColor, getBorderRadius, getBorderColor, getBoxShadows } from 'utils/styleTemplates';
 
 const SearchInput = (props) => {
     const {

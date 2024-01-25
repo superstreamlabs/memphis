@@ -14,21 +14,21 @@ import './style.scss';
 
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
-import { ReactComponent as IntegratedIcon } from '../../../../../assets/images/integrated.svg';
-import { ReactComponent as IntegrationFailedIcon } from '../../../../../assets/images/integrationFailed.svg';
-import { ReactComponent as MemphisVerifiedIcon } from '../../../../../assets/images/memphisFunctionIcon.svg';
-import { capitalizeFirst } from '../../../../../services/valueConvertor';
-import { Context } from '../../../../../hooks/store';
+import { ReactComponent as IntegratedIcon } from 'assets/images/integrated.svg';
+import { ReactComponent as IntegrationFailedIcon } from 'assets/images/integrationFailed.svg';
+import { ReactComponent as MemphisVerifiedIcon } from 'assets/images/memphisFunctionIcon.svg';
+import { capitalizeFirst } from 'services/valueConvertor';
+import { Context } from 'hooks/store';
 import SlackIntegration from '../slackIntegration';
 import S3Integration from '../s3Integration';
-import Tag from '../../../../../components/tag';
+import Tag from 'components/tag';
 import DataDogIntegration from '../dataDogIntegration';
 import GrafanaIntegration from '../grafanaIntegration';
 import ElasticIntegration from '../elasticIntegration';
 import DebeziumIntegration from '../debeziumIntegration';
 import GitHubIntegration from '../gitHubIntegration';
 import ZapierIntegration from '../zapierIntegration';
-import { Drawer } from 'antd';
+import Drawer from "components/drawer";
 
 const IntegrationItem = ({ value, lockFeature, isOpen }) => {
     const [state] = useContext(Context);
@@ -70,7 +70,6 @@ const IntegrationItem = ({ value, lockFeature, isOpen }) => {
                 return (
                     <GitHubIntegration
                         close={(data) => {
-                            modalFlip(false);
                             setIntegrateValue(data);
                             data !== ref.current &&
                                 history.push({
@@ -173,14 +172,24 @@ const IntegrationItem = ({ value, lockFeature, isOpen }) => {
             </integ-item>
             <Drawer
                 placement="right"
-                onClose={() => modalFlip(false)}
+                onClose={() => {
+                    if (value?.name === 'Github') {
+                        if (state.integrationsList?.findIndex((integration) => capitalizeFirst(integration.name) === 'Github') !== -1) {
+                            history.push({
+                                pathname: '/functions',
+                                integrated: true
+                            });
+                        }
+                    }
+                    modalFlip(false);
+                }}
                 destroyOnClose={true}
                 className="integration-modal"
                 width="720px"
-                clickOutside={() => modalFlip(false)}
                 open={modalIsOpen}
                 closeIcon={false}
                 headerStyle={{ display: 'none' }}
+                bodyStyle={{ padding: '0px' }}
             >
                 {modalContent()}
             </Drawer>

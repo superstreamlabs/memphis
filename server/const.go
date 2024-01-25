@@ -40,21 +40,24 @@ var (
 )
 
 const (
-	// VERSION is the current version for the memphis.
-	VERSION = "1.4.0"
+	// VERSION is the current version for the NATS server.
+	VERSION = "2.10.7"
 
-	DEFAULT_SERVER_NAME                        = "memphis-0"
-	DEFAULT_WS_PORT                            = 7770
-	DEFAULT_UI_PORT                            = 9000
-	DEFAULT_REST_GW_PORT                       = 4444
-	DEFAULT_WS_TOKEN                           = "memphis"
-	DEFAULT_CLIENTS_TOKEN                      = "memphis"
-	SHOWABLE_ERROR_STATUS_CODE                 = 666
-	DEFAULT_TIERED_STORAGE_UPLOAD_INTERVAL_SEC = 8
-	DEFAULT_DLS_RETENTION_HOURS                = 3
-
-	// COMP_WITH_NATS_VERSION is the NATS version Memphis is compatible with
-	COMP_WITH_NATS_VERSION = "2.9.15"
+	// ** added by Memphis
+	DEFAULT_SERVER_NAME                          = "memphis-0"
+	DEFAULT_WS_PORT                              = 7770
+	DEFAULT_UI_PORT                              = 9000
+	DEFAULT_REST_GW_PORT                         = 4444
+	DEFAULT_WS_TOKEN                             = "memphis"
+	DEFAULT_CLIENTS_TOKEN                        = "memphis"
+	SHOWABLE_ERROR_STATUS_CODE                   = 406
+	DEFAULT_TIERED_STORAGE_UPLOAD_INTERVAL_SEC   = 8
+	DEFAULT_DLS_RETENTION_HOURS                  = 3
+	DEFAULT_GC_PRODUCER_CONSUMER_RETENTION_HOURS = 2
+	DEFAULT_ENCRYPTION_SECRET_KEY                = "thisis32bitlongpassphraseimusing"
+	// MEMPHIS_VERSION is the current version for the memphis server.
+	MEMPHIS_VERSION = "1.4.3"
+	// ** added by Memphis
 
 	// PROTO is the currently supported protocol.
 	// 0 was the original
@@ -63,7 +66,7 @@ const (
 	PROTO = 1
 
 	// DEFAULT_PORT is the default port for client connections.
-	DEFAULT_PORT = 6666
+	DEFAULT_PORT = 6666 // ** changed by Memphis
 
 	// RANDOM_PORT is the value for port that, when supplied, will cause the
 	// server to listen on a randomly-chosen available port. The resolved port
@@ -79,7 +82,7 @@ const (
 
 	// MAX_PAYLOAD_SIZE is the maximum allowed payload size. Should be using
 	// something different if > 1MB payloads are needed.
-	MAX_PAYLOAD_SIZE = (1 * 1024 * 1024)
+	MAX_PAYLOAD_SIZE = (1024 * 1024)
 
 	// MAX_PAYLOAD_MAX_SIZE is the size at which the server will warn about
 	// max_payload being too high. In the future, the server may enforce/reject
@@ -95,10 +98,16 @@ const (
 	// TLS_TIMEOUT is the TLS wait time.
 	TLS_TIMEOUT = 2 * time.Second
 
+	// DEFAULT_TLS_HANDSHAKE_FIRST_FALLBACK_DELAY is the default amount of
+	// time for the server to wait for the TLS handshake with a client to
+	// be initiated before falling back to sending the INFO protocol first.
+	// See TLSHandshakeFirst and TLSHandshakeFirstFallback options.
+	DEFAULT_TLS_HANDSHAKE_FIRST_FALLBACK_DELAY = 50 * time.Millisecond
+
 	// AUTH_TIMEOUT is the authorization wait time.
 	AUTH_TIMEOUT = 2 * time.Second
 
-	// DEFAULT_PING_INTERVAL is how often pings are sent to clients and routes.
+	// DEFAULT_PING_INTERVAL is how often pings are sent to clients, etc...
 	DEFAULT_PING_INTERVAL = 2 * time.Minute
 
 	// DEFAULT_PING_MAX_OUT is maximum allowed pings outstanding before disconnect.
@@ -133,6 +142,9 @@ const (
 
 	// DEFAULT_ROUTE_DIAL Route dial timeout.
 	DEFAULT_ROUTE_DIAL = 1 * time.Second
+
+	// DEFAULT_ROUTE_POOL_SIZE Route default pool size
+	DEFAULT_ROUTE_POOL_SIZE = 3
 
 	// DEFAULT_LEAF_NODE_RECONNECT LeafNode reconnect interval.
 	DEFAULT_LEAF_NODE_RECONNECT = time.Second
@@ -221,6 +233,4 @@ const (
 
 	// DEFAULT_FETCH_TIMEOUT is the default time that the system will wait for an account fetch to return.
 	DEFAULT_ACCOUNT_FETCH_TIMEOUT = 1900 * time.Millisecond
-
-	DEFAULT_ENCRYPTION_SECRET_KEY = "thisis32bitlongpassphraseimusing"
 )

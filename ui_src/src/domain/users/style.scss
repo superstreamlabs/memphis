@@ -1,9 +1,15 @@
 .users-container {
-    width: calc(100% - 90px);
+    width: calc(100% - var(--main-container-sidebar-width));
+    transition: 0.3s ease-in-out;
     position: absolute;
     padding: 1vw;
     min-width: 700px;
     height: 100%;
+    .create-new {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
     .add-search-user {
         display: flex;
         justify-content: space-between;
@@ -47,6 +53,9 @@
                     margin-right: 20px;
                     svg {
                         color: var(--purple);
+                    }
+                    img {
+                        border-radius: 50%;
                     }
                 }
                 .badgeOrange {

@@ -15,7 +15,7 @@ import './style.scss';
 import React, { useEffect, useContext } from 'react';
 import { useLocation } from 'react-router-dom';
 
-import { Context } from '../../hooks/store';
+import { Context } from 'hooks/store';
 import FunctionList from './components/functionList';
 
 function Functions() {

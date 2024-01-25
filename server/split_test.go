@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package server
 
 import (
@@ -363,7 +364,7 @@ func TestSplitDanglingArgBuf(t *testing.T) {
 	}
 
 	// MSG (the client has to be a ROUTE)
-	c = &client{msubs: -1, mpay: -1, subs: make(map[string]*subscription), kind: ROUTER}
+	c = &client{msubs: -1, mpay: -1, subs: make(map[string]*subscription), kind: ROUTER, route: &route{}}
 	msgop := []byte("RMSG $foo foo 5\r\nhello\r\n")
 	c.parse(msgop[:5])
 	c.parse(msgop[5:10])
@@ -419,6 +420,7 @@ func TestSplitRoutedMsgArg(t *testing.T) {
 	defer c.close()
 	// Allow parser to process RMSG
 	c.kind = ROUTER
+	c.route = &route{}
 
 	b := make([]byte, 1024)
 
@@ -444,7 +446,7 @@ func TestSplitRoutedMsgArg(t *testing.T) {
 }
 
 func TestSplitBufferMsgOp(t *testing.T) {
-	c := &client{msubs: -1, mpay: -1, mcl: 1024, subs: make(map[string]*subscription), kind: ROUTER}
+	c := &client{msubs: -1, mpay: -1, mcl: 1024, subs: make(map[string]*subscription), kind: ROUTER, route: &route{}}
 	msg := []byte("RMSG $G foo.bar _INBOX.22 11\r\nhello world\r")
 	msg1 := msg[:2]
 	msg2 := msg[2:9]

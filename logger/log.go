@@ -10,12 +10,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Package logger provides logging facilities for the NATS server
 package logger
 
 import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -33,16 +37,40 @@ type Logger struct {
 	fatalLabel  string
 	debugLabel  string
 	traceLabel  string
-	systemLabel string
+	systemLabel string // ** added by Memphis
 	fl          *fileLogger
 }
 
-// NewStdLogger creates a logger with output directed to Stderr
-func NewStdLogger(time, debug, trace, colors, pid bool) *Logger {
+type LogOption interface {
+	isLoggerOption()
+}
+
+// LogUTC controls whether timestamps in the log output should be UTC or local time.
+type LogUTC bool
+
+func (l LogUTC) isLoggerOption() {}
+
+func logFlags(time bool, opts ...LogOption) int {
 	flags := 0
 	if time {
 		flags = log.LstdFlags | log.Lmicroseconds
 	}
+
+	for _, opt := range opts {
+		switch v := opt.(type) {
+		case LogUTC:
+			if time && bool(v) {
+				flags |= log.LUTC
+			}
+		}
+	}
+
+	return flags
+}
+
+// NewStdLogger creates a logger with output directed to Stderr
+func NewStdLogger(time, debug, trace, colors, pid bool, opts ...LogOption) *Logger {
+	flags := logFlags(time, opts...)
 
 	pre := ""
 	if pid {
@@ -64,6 +92,7 @@ func NewStdLogger(time, debug, trace, colors, pid bool) *Logger {
 	return l
 }
 
+// ** added by Memphis
 // HybridLogPublishFunc is a function used to publish logs
 type HybridLogPublishFunc func(string, []byte)
 
@@ -141,12 +170,11 @@ func NewMemphisLogger(publishFunc HybridLogPublishFunc, fallbackPublishFunc Hybr
 	}
 }
 
+// ** added by Memphis
+
 // NewFileLogger creates a logger with output directed to a file
-func NewFileLogger(filename string, time, debug, trace, pid bool) *Logger {
-	flags := 0
-	if time {
-		flags = log.LstdFlags | log.Lmicroseconds
-	}
+func NewFileLogger(filename string, time, debug, trace, pid bool, opts ...LogOption) *Logger {
+	flags := logFlags(time, opts...)
 
 	pre := ""
 	if pid {
@@ -183,13 +211,14 @@ type fileLogger struct {
 	out       int64
 	canRotate int32
 	sync.Mutex
-	l      *Logger
-	f      writerAndCloser
-	limit  int64
-	olimit int64
-	pid    string
-	time   bool
-	closed bool
+	l           *Logger
+	f           writerAndCloser
+	limit       int64
+	olimit      int64
+	pid         string
+	time        bool
+	closed      bool
+	maxNumFiles int
 }
 
 func newFileLogger(filename, pidPrefix string, time bool) (*fileLogger, error) {
@@ -224,6 +253,12 @@ func (l *fileLogger) setLimit(limit int64) {
 	}
 }
 
+func (l *fileLogger) setMaxNumFiles(max int) {
+	l.Lock()
+	l.maxNumFiles = max
+	l.Unlock()
+}
+
 func (l *fileLogger) logDirect(label, format string, v ...interface{}) int {
 	var entrya = [256]byte{}
 	var entry = entrya[:0]
@@ -243,6 +278,41 @@ func (l *fileLogger) logDirect(label, format string, v ...interface{}) int {
 	entry = append(entry, '\r', '\n')
 	l.f.Write(entry)
 	return len(entry)
+}
+
+func (l *fileLogger) logPurge(fname string) {
+	var backups []string
+	lDir := filepath.Dir(fname)
+	lBase := filepath.Base(fname)
+	entries, err := os.ReadDir(lDir)
+	if err != nil {
+		l.logDirect(l.l.errorLabel, "Unable to read directory %q for log purge (%v), will attempt next rotation", lDir, err)
+		return
+	}
+	for _, entry := range entries {
+		if entry.IsDir() || entry.Name() == lBase || !strings.HasPrefix(entry.Name(), lBase) {
+			continue
+		}
+		if stamp, found := strings.CutPrefix(entry.Name(), fmt.Sprintf("%s%s", lBase, ".")); found {
+			_, err := time.Parse("2006:01:02:15:04:05.999999999", strings.Replace(stamp, ".", ":", 5))
+			if err == nil {
+				backups = append(backups, entry.Name())
+			}
+		}
+	}
+	currBackups := len(backups)
+	maxBackups := l.maxNumFiles - 1
+	if currBackups > maxBackups {
+		// backups sorted oldest to latest based on timestamped lexical filename (ReadDir)
+		for i := 0; i < currBackups-maxBackups; i++ {
+			if err := os.Remove(filepath.Join(lDir, string(os.PathSeparator), backups[i])); err != nil {
+				l.logDirect(l.l.errorLabel, "Unable to remove backup log file %q (%v), will attempt next rotation", backups[i], err)
+				// Bail fast, we'll try again next rotation
+				return
+			}
+			l.logDirect(l.l.infoLabel, "Purged log file %q", backups[i])
+		}
+	}
 }
 
 func (l *fileLogger) Write(b []byte) (int, error) {
@@ -280,6 +350,9 @@ func (l *fileLogger) Write(b []byte) (int, error) {
 			n := l.logDirect(l.l.infoLabel, "Rotated log, backup saved as %q", bak)
 			l.out = int64(n)
 			l.limit = l.olimit
+			if l.maxNumFiles > 0 {
+				l.logPurge(fname)
+			}
 		}
 	}
 	l.Unlock()
@@ -309,6 +382,19 @@ func (l *Logger) SetSizeLimit(limit int64) error {
 	fl := l.fl
 	l.Unlock()
 	fl.setLimit(limit)
+	return nil
+}
+
+// SetMaxNumFiles sets the number of archived log files that will be retained
+func (l *Logger) SetMaxNumFiles(max int) error {
+	l.Lock()
+	if l.fl == nil {
+		l.Unlock()
+		return fmt.Errorf("can set log max number of files only for file logger")
+	}
+	fl := l.fl
+	l.Unlock()
+	fl.setMaxNumFiles(max)
 	return nil
 }
 
@@ -350,7 +436,7 @@ func setPlainLabelFormats(l *Logger) {
 	l.errorLabel = "[ERR] "
 	l.fatalLabel = "[FTL] "
 	l.traceLabel = "[TRC] "
-	l.systemLabel = "[SYS] "
+	l.systemLabel = "[SYS] " // ** added by Memphis
 }
 
 func setColoredLabelFormats(l *Logger) {
@@ -358,7 +444,7 @@ func setColoredLabelFormats(l *Logger) {
 	l.infoLabel = fmt.Sprintf(colorFormat, "32", "INF")
 	l.debugLabel = fmt.Sprintf(colorFormat, "36", "DBG")
 	l.warnLabel = fmt.Sprintf(colorFormat, "0;93", "WRN")
-	l.systemLabel = fmt.Sprintf(colorFormat, "32", "SYS")
+	l.systemLabel = fmt.Sprintf(colorFormat, "32", "SYS") // ** added by Memphis
 	l.errorLabel = fmt.Sprintf(colorFormat, "31", "ERR")
 	l.fatalLabel = fmt.Sprintf(colorFormat, "31", "FTL")
 	l.traceLabel = fmt.Sprintf(colorFormat, "33", "TRC")
@@ -379,10 +465,13 @@ func (l *Logger) Errorf(format string, v ...interface{}) {
 	l.logger.Printf(l.errorLabel+format, v...)
 }
 
+// ** added by Memphis
 // Systemf logs an system statement
 func (l *Logger) Systemf(format string, v ...interface{}) {
 	l.logger.Printf(l.systemLabel+format, v...)
 }
+
+// ** added by Memphis
 
 // Fatalf logs a fatal error
 func (l *Logger) Fatalf(format string, v ...interface{}) {

@@ -24,26 +24,28 @@ import {
     partitionsValidator,
     replicasConvertor,
     showUpgradePlan
-} from '../../services/valueConvertor';
-import S3Integration from '../../domain/administration/integrations/components/s3Integration';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { httpRequest } from '../../services/http';
-import InputNumberComponent from '../InputNumber';
-import OverflowTip from '../tooltip/overflowtip';
-import TitleComponent from '../titleComponent';
-import SelectCheckBox from '../selectCheckBox';
-import { Context } from '../../hooks/store';
-import UpgradePlans from '../upgradePlans';
-import CustomSelect from '../customSelect';
-import RadioButton from '../radioButton';
-import LockFeature from '../lockFeature';
-import SelectComponent from '../select';
-import pathDomains from '../../router';
-import Switcher from '../switcher';
-import CustomTabs from '../Tabs';
-import Button from '../button';
-import Input from '../Input';
-import Modal from '../modal';
+} from 'services/valueConvertor';
+import S3Integration from 'domain/administration/integrations/components/s3Integration';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import { useGetAllowedActions } from 'services/genericServices';
+import InputNumberComponent from 'components/InputNumber';
+import OverflowTip from 'components/tooltip/overflowtip';
+import TitleComponent from 'components/titleComponent';
+import SelectCheckBox from 'components/selectCheckBox';
+import { Context } from 'hooks/store';
+import UpgradePlans from 'components/upgradePlans';
+import CustomSelect from 'components/customSelect';
+import RadioButton from 'components/radioButton';
+import LockFeature from 'components/lockFeature';
+import SelectComponent from 'components/select';
+import pathDomains from 'router';
+import Switcher from 'components/switcher';
+import CustomTabs from 'components/Tabs';
+import Button from 'components/button';
+import Input from 'components/Input';
+import Modal from 'components/modal';
+import { entitlementChecker } from 'utils/plan';
 
 const retanionOptions = [
     {
@@ -96,11 +98,10 @@ const storageTierTwoOptions = [
 
 const idempotencyOptions = ['Milliseconds', 'Seconds', 'Minutes', 'Hours'];
 
-const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpdate, updateFormState, getStarted, setLoading, noRedirect }) => {
+const CreateStationForm = ({ createStationFormRef, finishUpdate, setLoading, noRedirect }) => {
     const [state, dispatch] = useContext(Context);
     const history = useHistory();
     const [creationForm] = Form.useForm();
-    const [allowEdit, setAllowEdit] = useState(true);
     const [actualPods, setActualPods] = useState(['No HA (1)']);
     const [retentionType, setRetentionType] = useState(retanionOptions[0].value);
     const [idempotencyType, setIdempotencyType] = useState(idempotencyOptions[2]);
@@ -109,18 +110,20 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const [useSchema, setUseSchema] = useState(false);
     const [dlsConfiguration, setDlsConfiguration] = useState(true);
     const [tabValue, setTabValue] = useState('Local storage tier');
-    const [selectedOption, setSelectedOption] = useState(getStartedStateRef?.formFieldsCreateStation?.storage_type || 'file');
-    const [selectedTier2Option, setSelectedTier2Option] = useState(getStartedStateRef?.formFieldsCreateStation?.tiered_storage_enabled || false);
+    const [selectedOption, setSelectedOption] = useState('file');
+    const [selectedTier2Option, setSelectedTier2Option] = useState(false);
     const [parserName, setParserName] = useState('');
     const [integrateValue, setIntegrateValue] = useState(null);
     const [modalIsOpen, modalFlip] = useState(false);
     const [retentionViolation, setRetentionViolation] = useState(false);
     const [partitonViolation, setPartitonViolation] = useState(false);
-    const storageTiringLimits = isCloud() && state?.userData?.entitlements && state?.userData?.entitlements['feature-storage-tiering'];
+    const storageTiringLimits = isCloud() && entitlementChecker(state, 'feature-storage-tiering');
     const tabs = [
         { name: 'Local storage tier', checked: true },
         { name: 'Remote storage tier', checked: selectedTier2Option || false }
     ];
+    const getAllowedActions = useGetAllowedActions();
+
     useEffect(() => {
         if (!isCloud()) {
             getAvailableReplicas();
@@ -128,8 +131,6 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         getAllSchemas();
         getIntegration();
         getStations();
-        if (getStarted && getStartedStateRef?.completedSteps > 0) setAllowEdit(false);
-        if (getStarted && getStartedStateRef?.formFieldsCreateStation?.retention_type) setRetentionType(getStartedStateRef.formFieldsCreateStation.retention_type);
         createStationFormRef.current = onFinish;
     }, []);
 
@@ -197,8 +198,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             dls_station: formFields.dlsStation,
             partitions_number: Number(formFields.partitions_number)
         };
-        if ((getStarted && getStartedStateRef?.completedSteps === 0) || !getStarted) createStation(bodyRequest);
-        else finishUpdate();
+        createStation(bodyRequest);
     };
 
     const getStations = async () => {
@@ -240,20 +240,18 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             setLoading(true);
             const data = await httpRequest('POST', ApiEndpoints.CREATE_STATION, bodyRequest);
             if (data) {
-                if (!getStarted) {
-                    !noRedirect && history.push(`${pathDomains.stations}/${data.name}`);
-                }
+                !noRedirect && history.push(`${pathDomains.stations}/${data.name}`);
                 finishUpdate(data);
             }
         } catch (error) {
         } finally {
             setLoading(false);
+            isCloud() && getAllowedActions();
         }
     };
 
     const stationNameChange = (e) => {
         let generatedName = generateName(e.target.value);
-        getStarted && updateFormState('name', generatedName);
         if (parserName === '') {
             setTimeout(() => {
                 setParserName(generatedName);
@@ -264,23 +262,19 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     };
 
     const SelectedLocalStorageOption = (value) => {
-        if (!value.disabled && allowEdit) {
+        if (!value.disabled) {
             setSelectedOption(value.value);
             creationForm.setFieldValue('storage_type', value.value);
-            if (getStarted) updateFormState('storage_type', value.value);
         }
     };
     const SelectedRemoteStorageOption = (value, enabled) => {
-        if (allowEdit) {
-            setSelectedTier2Option(value);
-            creationForm.setFieldValue('tiered_storage_enabled', enabled);
-            if (getStarted) updateFormState('tiered_storage_enabled', enabled);
-        }
+        setSelectedTier2Option(value);
+        creationForm.setFieldValue('tiered_storage_enabled', enabled);
     };
 
     return (
         <Form name="form" form={creationForm} autoComplete="off" className={'create-station-form-getstarted'}>
-            <div className={getStarted ? 'left-side left-gs' : 'left-side'}>
+            <div className={'left-side'}>
                 <div className="station-name-section">
                     <TitleComponent headerTitle="Station name" typeTitle="sub-header" required={true} />
                     <Form.Item
@@ -301,7 +295,6 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             }
                         ]}
                         style={{ height: '50px' }}
-                        initialValue={getStartedStateRef?.formFieldsCreateStation?.name}
                     >
                         <Input
                             placeholder=""
@@ -314,8 +307,6 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             height="40px"
                             onBlur={(e) => stationNameChange(e)}
                             onChange={(e) => stationNameChange(e)}
-                            value={getStartedStateRef?.formFieldsCreateStation?.name}
-                            disabled={!allowEdit}
                         />
                     </Form.Item>
                     {parserName !== '' && (
@@ -331,11 +322,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         <div className="replicas-container">
                             <TitleComponent headerTitle="Replicas" typeTitle="sub-header" headerDescription="Number of mirrors for each message" />
                             <div>
-                                <Form.Item
-                                    name="replicas"
-                                    initialValue={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]}
-                                    style={{ height: '50px' }}
-                                >
+                                <Form.Item name="replicas" initialValue={actualPods[0]} style={{ height: '50px' }}>
                                     <SelectComponent
                                         colorType="black"
                                         backgroundColorType="none"
@@ -344,9 +331,6 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                         height="40px"
                                         popupClassName="select-options"
                                         options={actualPods}
-                                        value={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]}
-                                        onChange={(e) => getStarted && updateFormState('replicas', e)}
-                                        disabled={!allowEdit}
                                     />
                                 </Form.Item>
                             </div>
@@ -357,7 +341,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         <div>
                             <Form.Item
                                 name="partitions_number"
-                                initialValue={getStartedStateRef?.formFieldsCreateStation?.partitions_number || 1}
+                                initialValue={1}
                                 rules={[
                                     {
                                         validator: (_, value) => {
@@ -379,10 +363,6 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     backgroundColorType="none"
                                     borderColorType="gray"
                                     height="40px"
-                                    onBlur={(e) => getStarted && updateFormState('partitions_number', e.target.value)}
-                                    onChange={(e) => getStarted && updateFormState('partitions_number', e.target.value)}
-                                    value={getStartedStateRef?.formFieldsCreateStation?.partitions_number || 1}
-                                    disabled={!allowEdit}
                                 />
                             </Form.Item>
                             {partitonViolation && (
@@ -418,7 +398,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         <div className="idempotency-value">
                             <Form.Item
                                 name="idempotency_number"
-                                initialValue={getStartedStateRef?.formFieldsCreateStation?.idempotency_number || 2}
+                                initialValue={2}
                                 rules={[
                                     {
                                         validator: (_, value) => {
@@ -436,13 +416,9 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     backgroundColorType="none"
                                     borderColorType="gray"
                                     height="40px"
-                                    onBlur={(e) => getStarted && updateFormState('idempotency_number', e.target.value)}
-                                    onChange={(e) => getStarted && updateFormState('idempotency_number', e.target.value)}
-                                    value={getStartedStateRef?.formFieldsCreateStation?.idempotency_number}
-                                    disabled={!allowEdit}
                                 />
                             </Form.Item>
-                            <Form.Item name="idempotency_type" initialValue={getStartedStateRef?.formFieldsCreateStation?.idempotency_type || idempotencyOptions[2]}>
+                            <Form.Item name="idempotency_type" initialValue={idempotencyOptions[2]}>
                                 <SelectComponent
                                     colorType="black"
                                     backgroundColorType="none"
@@ -452,39 +428,32 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     height="40px"
                                     popupClassName="select-options"
                                     options={idempotencyOptions}
-                                    value={getStarted ? getStartedStateRef?.formFieldsCreateStation?.idempotency_type : idempotencyOptions[2]}
-                                    onChange={(e) => {
-                                        setIdempotencyType(e);
-                                        if (getStarted) updateFormState('idempotency_type', e);
-                                    }}
-                                    disabled={!allowEdit}
+                                    onChange={(e) => setIdempotencyType(e)}
                                 />
                             </Form.Item>
                         </div>
                     </Form.Item>
                 </div>
-                {!getStarted && (
-                    <div>
-                        <div className="toggle-add">
-                            <TitleComponent
-                                headerTitle="Schema validation"
-                                typeTitle="sub-header"
-                                headerDescription="Enforcing a schema will enhance the quality of the produced data"
-                            />
-                            <Switcher onChange={() => setUseSchema(!useSchema)} checked={useSchema} />
-                        </div>
-                        {!getStarted && useSchema && (
-                            <Form.Item name="schemaValue" initialValue={schemas?.length > 0 ? schemas[0]?.name : null}>
-                                <CustomSelect
-                                    placeholder={creationForm.schemaValue || 'Select schema'}
-                                    value={creationForm.schemaValue || schemas[0]}
-                                    options={schemas}
-                                    onChange={(e) => creationForm.setFieldsValue({ schemaValue: e })}
-                                />
-                            </Form.Item>
-                        )}
+                <div>
+                    <div className="toggle-add">
+                        <TitleComponent
+                            headerTitle="Schema validation"
+                            typeTitle="sub-header"
+                            headerDescription="Enforcing a schema will enhance the quality of the produced data"
+                        />
+                        <Switcher onChange={() => setUseSchema(!useSchema)} checked={useSchema} />
                     </div>
-                )}
+                    {useSchema && (
+                        <Form.Item name="schemaValue" initialValue={schemas?.length > 0 ? schemas[0]?.name : null}>
+                            <CustomSelect
+                                placeholder={creationForm.schemaValue || 'Select schema'}
+                                value={creationForm.schemaValue || schemas[0]}
+                                options={schemas}
+                                onChange={(e) => creationForm.setFieldsValue({ schemaValue: e })}
+                            />
+                        </Form.Item>
+                    )}
+                </div>
                 <div>
                     <div className="toggle-add">
                         <TitleComponent headerTitle="Dead-letter station" typeTitle="sub-header" headerDescription='A "recylce bin" for messages' />
@@ -523,75 +492,43 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             </p>
                         )}
                         <div className="retention-type-section" style={{ display: tabValue === tabs[0].name ? 'block' : 'none' }}>
-                            <Form.Item name="retention_type" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.retention_type : retentionType}>
+                            <Form.Item name="retention_type" initialValue={retentionType}>
                                 <RadioButton
                                     className="radio-button"
                                     options={retanionOptions}
-                                    radioValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.retention_type : retentionType}
+                                    radioValue={retentionType}
                                     optionType="button"
                                     fontFamily="InterSemiBold"
                                     style={{ marginRight: '20px', content: '' }}
-                                    onChange={(e) => {
-                                        setRetentionType(e.target.value);
-                                        if (getStarted) updateFormState('retention_type', e.target.value);
-                                    }}
-                                    disabled={!allowEdit}
+                                    onChange={(e) => setRetentionType(e.target.value)}
                                 />
                             </Form.Item>
                             {retentionType === retanionOptions[0].value && (
                                 <div className="time-value">
                                     <div className="days-section">
-                                        <Form.Item name="days" initialValue={getStartedStateRef?.formFieldsCreateStation?.days || 1}>
-                                            <InputNumberComponent
-                                                min={0}
-                                                max={isCloud() ? 14 : 1000}
-                                                onChange={(e) => getStarted && updateFormState('days', e)}
-                                                value={getStartedStateRef?.formFieldsCreateStation?.days}
-                                                placeholder={getStartedStateRef?.formFieldsCreateStation?.days || 1}
-                                                disabled={!allowEdit}
-                                            />
+                                        <Form.Item name="days" initialValue={1}>
+                                            <InputNumberComponent min={0} max={isCloud() ? 14 : 1000} placeholder={1} />
                                         </Form.Item>
                                         <p>days</p>
                                     </div>
                                     <p className="separator">:</p>
                                     <div className="hours-section">
-                                        <Form.Item name="hours" initialValue={getStartedStateRef?.formFieldsCreateStation?.hours || 0}>
-                                            <InputNumberComponent
-                                                min={0}
-                                                max={24}
-                                                onChange={(e) => getStarted && updateFormState('hours', e)}
-                                                value={getStartedStateRef?.formFieldsCreateStation?.hours}
-                                                placeholder={getStartedStateRef?.formFieldsCreateStation?.hours || 0}
-                                                disabled={!allowEdit}
-                                            />
+                                        <Form.Item name="hours" initialValue={0}>
+                                            <InputNumberComponent min={0} max={24} placeholder={0} />
                                         </Form.Item>
                                         <p>hours</p>
                                     </div>
                                     <p className="separator">:</p>
                                     <div className="minutes-section">
-                                        <Form.Item name="minutes" initialValue={getStartedStateRef?.formFieldsCreateStation?.minutes || 0}>
-                                            <InputNumberComponent
-                                                min={0}
-                                                max={60}
-                                                onChange={(e) => getStarted && updateFormState('minutes', e)}
-                                                value={getStartedStateRef?.formFieldsCreateStation?.minutes}
-                                                placeholder={getStartedStateRef?.formFieldsCreateStation?.minutes || 0}
-                                                disabled={!allowEdit}
-                                            />
+                                        <Form.Item name="minutes" initialValue={0}>
+                                            <InputNumberComponent min={0} max={60} placeholder={0} />
                                         </Form.Item>
                                         <p>minutes</p>
                                     </div>
                                     <p className="separator">:</p>
                                     <div className="seconds-section">
-                                        <Form.Item name="seconds" initialValue={getStartedStateRef?.formFieldsCreateStation?.seconds || 0}>
-                                            <InputNumberComponent
-                                                min={0}
-                                                max={60}
-                                                onChange={(e) => getStarted && updateFormState('seconds', e)}
-                                                placeholder={getStartedStateRef?.formFieldsCreateStation?.seconds || 0}
-                                                value={getStartedStateRef?.formFieldsCreateStation?.seconds}
-                                                disabled={!allowEdit}
-                                            />
+                                        <Form.Item name="seconds" initialValue={0}>
+                                            <InputNumberComponent min={0} max={60} placeholder={0} />
                                         </Form.Item>
                                         <p>seconds</p>
                                     </div>
@@ -599,7 +536,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             )}
                             {retentionType === retanionOptions[1].value && (
                                 <div className="retention-type">
-                                    <Form.Item name="retentionValue" initialValue={getStartedStateRef?.formFieldsCreateStation?.retentionSizeValue || 1000}>
+                                    <Form.Item name="retentionValue" initialValue={1000}>
                                         <Input
                                             placeholder="Type"
                                             type="number"
@@ -609,10 +546,6 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                             borderColorType="gray"
                                             width="90px"
                                             height="38px"
-                                            onBlur={(e) => getStarted && updateFormState('retentionSizeValue', e.target.value)}
-                                            onChange={(e) => getStarted && updateFormState('retentionSizeValue', e.target.value)}
-                                            value={getStartedStateRef?.formFieldsCreateStation?.retentionSizeValue}
-                                            disabled={!allowEdit}
                                         />
                                     </Form.Item>
                                     <p>bytes</p>
@@ -620,7 +553,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             )}
                             {retentionType === retanionOptions[2].value && (
                                 <div className="retention-type">
-                                    <Form.Item name="retentionMessagesValue" initialValue={getStartedStateRef?.formFieldsCreateStation?.retentionMessagesValue || 10}>
+                                    <Form.Item name="retentionMessagesValue" initialValue={10}>
                                         <Input
                                             placeholder="Type"
                                             type="number"
@@ -630,10 +563,6 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                             borderColorType="gray"
                                             width="90px"
                                             height="38px"
-                                            onBlur={(e) => getStarted && updateFormState('retentionMessagesValue', e.target.value)}
-                                            onChange={(e) => getStarted && updateFormState('retentionMessagesValue', e.target.value)}
-                                            value={getStartedStateRef?.formFieldsCreateStation?.retentionMessagesValue}
-                                            disabled={!allowEdit}
                                         />
                                     </Form.Item>
                                     <p>messages</p>
@@ -666,35 +595,26 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         {(!isCloud() || (isCloud() && tabValue === tabs[1].name)) && (
                             <div className="storage-container">
                                 <TitleComponent headerTitle="Storage type" typeTitle="sub-header" />
-                                <Form.Item
-                                    name="storage_type"
-                                    initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.storage_type : 'file'}
-                                    style={{ display: tabValue === tabs[0].name ? 'block' : 'none' }}
-                                >
+                                <Form.Item name="storage_type" initialValue={'file'} style={{ display: tabValue === tabs[0].name ? 'block' : 'none' }}>
                                     {tabValue === tabs[0].name && (
                                         <SelectCheckBox
                                             selectOptions={storageTierOneOptions}
-                                            allowEdit={allowEdit}
                                             handleOnClick={(e) => SelectedLocalStorageOption(e)}
                                             selectedOption={selectedOption}
                                         />
                                     )}
                                 </Form.Item>
-                                <Form.Item
-                                    name="tiered_storage_enabled"
-                                    initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.tiered_storage_enabled : false}
-                                    style={{ display: tabValue === tabs[1].name ? 'block' : 'none' }}
-                                >
+                                <Form.Item name="tiered_storage_enabled" initialValue={false} style={{ display: tabValue === tabs[1].name ? 'block' : 'none' }}>
                                     {tabValue === tabs[1].name &&
                                         storageTierTwoOptions.map((value) => {
                                             return (
                                                 <SelectCheckBox
                                                     hideCircle={true}
                                                     selectOptions={storageTierTwoOptions}
-                                                    allowEdit={allowEdit}
                                                     handleOnClick={(e) =>
-                                                        integrateValue && allowEdit
-                                                            ? selectedTier2Option
+                                                        integrateValue
+                                                            ? // && allowEdit
+                                                              selectedTier2Option
                                                                 ? SelectedRemoteStorageOption(false, false)
                                                                 : SelectedRemoteStorageOption(true, true)
                                                             : (isCloud() && storageTiringLimits) || !isCloud()
@@ -716,7 +636,6 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                                                 htmlType="button"
                                                                 fontWeight="bold"
                                                                 boxShadowStyle="none"
-                                                                disabled={!allowEdit}
                                                                 onClick={() => null}
                                                             />
                                                         ) : (

@@ -1,4 +1,4 @@
-// Copyright 2020 The NATS Authors
+// Copyright 2020-2022 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -11,8 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build !windows && !openbsd && !wasm
-// +build !windows,!openbsd,!wasm
+//go:build !windows && !openbsd && !netbsd && !wasm
+// +build !windows,!openbsd,!netbsd,!wasm
 
 package server
 
@@ -28,7 +28,7 @@ func diskAvailable(storeDir string) int64 {
 	}
 	var fs syscall.Statfs_t
 	if err := syscall.Statfs(storeDir, &fs); err == nil {
-		// Estimate 95% of available storage.
+		// Estimate 95% of available storage. // ** changed to 95 by Memphis
 		ba = int64(uint64(fs.Blocks) * uint64(fs.Bsize) / 20 * 19) // ** changed to 95% by Memphis **
 	} else {
 		// Used 1TB default as a guess if all else fails.

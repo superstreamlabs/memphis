@@ -1,6 +1,5 @@
 import JSBI from 'jsbi';
 import { bufferLeToBeHex } from './hexUtils';
-import { interpretAsSignedType } from './varintUtils';
 
 export function decodeFixed32(value) {
     const floatValue = value.readFloatLE(0);

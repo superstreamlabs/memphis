@@ -17,16 +17,16 @@ import { StringCodec, JSONCodec } from 'nats.ws';
 import { Virtuoso } from 'react-virtuoso';
 import Lottie from 'lottie-react';
 
-import { ReactComponent as AttachedPlaceholderIcon } from '../../../../assets/images/attachedPlaceholder.svg';
-import animationData from '../../../../assets/lotties/MemphisGif.json';
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../services/http';
-import Filter from '../../../../components/filter';
-import { Context } from '../../../../hooks/store';
-import { Sleep } from '../../../../utils/sleep';
+import { ReactComponent as AttachedPlaceholderIcon } from 'assets/images/attachedPlaceholder.svg';
+import animationData from 'assets/lotties/MemphisGif.json';
+import { ApiEndpoints } from 'const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import Filter from 'components/filter';
+import { Context } from 'hooks/store';
+import { Sleep } from 'utils/sleep';
 import LogPayload from '../logPayload';
 import LogContent from '../logContent';
-import { LOGS_RETENTION_IN_DAYS } from '../../../../const/localStorageConsts';
+import { LOGS_RETENTION_IN_DAYS } from 'const/localStorageConsts';
 
 let sub;
 
@@ -273,6 +273,7 @@ export default LogsWrapper;
 const Footer = () => {
     return (
         <div
+            className="logs-loader"
             style={{
                 display: 'flex',
                 justifyContent: 'center',

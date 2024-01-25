@@ -6,10 +6,11 @@
         justify-content: space-between;
         padding-bottom: 10px !important;
     }
+
     .paywall-header{
         p{
             font-family: 'InterSemiBold' !important;
-            font-size: 28px;
+            font-size: 24px;
             margin: 0;
         }
     }
@@ -22,7 +23,7 @@
         color: #667085;
     }
     .description, .question-info{
-        font-size: 14px;
+        font-size: 12px;
         color: #667085;
         font-family: 'Inter';
         display: flex;
@@ -51,9 +52,13 @@
                 }
             }
             .stigg-header-wrapper{
+                min-height: 220px!important;
                 .stigg-plan-header{
+                    font-size: 20px;
                     font-family: 'InterSemiBold' !important;
-                    color: black !important;
+                    //color: black !important;
+                    color: #6C727F !important;
+                    padding-bottom: 0;
                 }
                 .typography-level-1{
                     font-family: 'InterSemiBold' !important;
@@ -64,9 +69,32 @@
                     color: #6C727F !important;
                 }
                 .stigg-price-text, .stigg-price-unit-and-billing-period-text{
+                    //display: flex;
+                    //align-items: center;
+                    //gap: 10px;
+                }
+                .stigg-price-text {
                     display: flex;
-                    align-items: center;
-                    gap: 10px;
+                    justify-content: space-between;
+                    flex-wrap: wrap;
+                    margin: 10px 0;
+                    flex: 1!important;
+                }
+                .stigg-price-unit-and-billing-period-text {
+                    min-height: inherit!important;
+                    margin-bottom: 5px!important;
+                    order: 2;
+                    display: flex;
+                    align-items: end;
+                    width: 100%;
+                    & > * {
+                        font-size: 12px!important;
+                        color: rgba(132, 129, 138, 0.4) !important;
+                    }
+                }
+                .stigg-price-tier-select {
+                    order: 1;
+                    min-height: 25px!important;
                 }
                 .stigg-paywall-plan-button-layout{
                     button{
@@ -75,8 +103,9 @@
                     .stigg-paywall-plan-button{
                         background: transparent !important;
                         border-color: var(--purple) !important;
-                        p{
+                        p {
                             color: var(--purple) !important;
+                            font-size: 15px!important;
                         }
                     }
                     .stigg-paywall-plan-button:hover{
@@ -111,11 +140,21 @@
                 height: 1px !important;
             }
             .stigg-plan-entitlements-container{
-                gap: 8px !important;
+                gap: 10px !important;
+                max-height: calc( 100vh - 550px);
+                min-height: 250px;
+                overflow-y: auto;
+                width: 100%;
                 .stigg-plan-entitlements-title{
+                    background: #fff;
+                    position: sticky;
+                    top: 0;
+                    padding-bottom: 5px!important;
+                    font-size: 14px!important;
+                    font-weight: 300!important;
+                    line-height: normal!important;
                     color: black !important;
                     font-family: 'Inter' !important;
-                    font-size: 16px !important;
                 }
                 .stigg-entitlement-name {
                     color: #6C727F !important;
@@ -204,7 +243,7 @@
     p{
         margin: 0;
     }
-    
+
     .downgrade-reasons{
         display: flex;
         flex-direction: column;
@@ -226,6 +265,6 @@
         margin-top: 20px;
         display: flex;
         justify-content: space-between;
-        
+
     }
 }

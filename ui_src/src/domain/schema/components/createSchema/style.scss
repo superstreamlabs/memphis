@@ -1,5 +1,6 @@
 .create-schema-wrapper {
-    width: calc(100% - 90px);
+    width: calc(100% - var(--main-container-sidebar-width));
+    transition: 0.3s ease-in-out;
     position: absolute;
     min-width: 700px;
     height: 100%;
@@ -116,6 +117,7 @@
             }
         }
         .right-side {
+            z-index: 1;
             padding: 1vw;
             width: 55%;
             height: 100%;

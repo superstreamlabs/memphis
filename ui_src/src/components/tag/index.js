@@ -14,7 +14,7 @@ import './style.scss';
 import { Close } from '@material-ui/icons';
 
 import React from 'react';
-import { ColorPalette } from '../../const/globalConst';
+import { ColorPalette } from 'const/globalConst';
 
 const Tag = ({ tag, onDelete, editable, border = false, onClick, rounded = false }) => {
     return (

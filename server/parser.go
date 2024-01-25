@@ -920,15 +920,15 @@ func (c *client) parse(buf []byte) error {
 					c.argBuf = nil
 				} else {
 					arg = buf[c.as : i-c.drop]
-
+					// *** added by Memphis
 					d := json.NewDecoder(strings.NewReader(string(arg)))
 					err := d.Decode(&c.opts)
 
 					if err != nil {
 						return err
 					}
+					// *** added by Memphis
 				}
-
 				if err := c.overMaxControlLineLimit(arg, mcl); err != nil {
 					return err
 				}
@@ -938,10 +938,13 @@ func (c *client) parse(buf []byte) error {
 
 				// *** added by Memphis
 				if c.kind == CLIENT &&
+					c.srv.info.AuthRequired &&
 					!strings.Contains(c.opts.Name, "NATS CLI") &&
 					!c.isWebsocket() &&
 					!strings.Contains(c.opts.Name, "MEMPHIS HTTP LOGGER") &&
-					!strings.Contains(c.opts.Name, "MEMPHIS CLOUD FUNCTIONS ADNMINISTRATION") {
+					!strings.Contains(c.opts.Name, "MEMPHIS CLOUD FUNCTIONS ADMINISTRATION") &&
+					!strings.Contains(c.opts.Name, "MEMPHIS CLOUD FUNCTIONS ENGINE") &&
+					!strings.Contains(c.opts.Name, "MEMPHIS CLOUD CONNECTORS ENGINE") {
 					if !s.validateAccIdInUsername(c.opts.Username) {
 						goto accountIdErr
 					}
@@ -957,11 +960,15 @@ func (c *client) parse(buf []byte) error {
 				authSet = c.awaitingAuth()
 				c.mu.Unlock()
 
+				// ** added by Memphis
 				if c.kind == CLIENT &&
+					c.srv.info.AuthRequired &&
 					!strings.Contains(c.opts.Name, "NATS CLI") &&
 					!c.isWebsocket() &&
 					!strings.Contains(c.opts.Name, "MEMPHIS HTTP LOGGER") &&
-					!strings.Contains(c.opts.Name, "MEMPHIS CLOUD FUNCTIONS ADNMINISTRATION") {
+					!strings.Contains(c.opts.Name, "MEMPHIS CLOUD FUNCTIONS ADMINISTRATION") &&
+					!strings.Contains(c.opts.Name, "MEMPHIS CLOUD FUNCTIONS ENGINE") &&
+					!strings.Contains(c.opts.Name, "MEMPHIS CLOUD CONNECTORS ENGINE") {
 					if db.MetadataDbClient.Client == nil { // server is not ready yet to get new connections
 						goto authErr
 					}
@@ -970,6 +977,7 @@ func (c *client) parse(buf []byte) error {
 						goto authErr
 					}
 				}
+				// ** added by Memphis
 			default:
 				if c.argBuf != nil {
 					c.argBuf = append(c.argBuf, b)
@@ -1255,7 +1263,7 @@ accountIdErr:
 parseErr:
 	c.sendErr("Unknown Protocol Operation")
 	snip := protoSnippet(i, PROTO_SNIPPET_SIZE, buf)
-	err := fmt.Errorf("%s parser ERROR, state=%d, i=%d:, name=%s, proto='%s...'", c.kindString(), c.state, i, c.opts.Name, snip)
+	err := fmt.Errorf("%s parser ERROR, state=%d, i=%d:, name=%s, proto='%s...'", c.kindString(), c.state, i, c.opts.Name, snip) // ** name added by Memphis
 	return err
 }
 

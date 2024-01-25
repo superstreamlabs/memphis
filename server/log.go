@@ -45,7 +45,7 @@ type Logger interface {
 	Tracef(format string, v ...interface{})
 
 	// Log a system statement
-	Systemf(format string, v ...interface{})
+	Systemf(format string, v ...interface{}) // ** added by Memphis
 }
 
 // ConfigureLogger configures and sets the logger for the server.
@@ -69,10 +69,20 @@ func (s *Server) ConfigureLogger() {
 	}
 
 	if opts.LogFile != "" {
-		log = srvlog.NewFileLogger(opts.LogFile, opts.Logtime, opts.Debug, opts.Trace, true)
+		log = srvlog.NewFileLogger(opts.LogFile, opts.Logtime, opts.Debug, opts.Trace, true, srvlog.LogUTC(opts.LogtimeUTC))
 		if opts.LogSizeLimit > 0 {
 			if l, ok := log.(*srvlog.Logger); ok {
 				l.SetSizeLimit(opts.LogSizeLimit)
+			}
+		}
+		if opts.LogMaxFiles > 0 {
+			if l, ok := log.(*srvlog.Logger); ok {
+				al := int(opts.LogMaxFiles)
+				if int64(al) != opts.LogMaxFiles {
+					// set to default (no max) on overflow
+					al = 0
+				}
+				l.SetMaxNumFiles(al)
 			}
 		}
 	} else if opts.RemoteSyslog != "" {
@@ -87,6 +97,7 @@ func (s *Server) ConfigureLogger() {
 		if err != nil || (stat.Mode()&os.ModeCharDevice) == 0 {
 			colors = false
 		}
+		// ** added by Memphis
 		s.memphis.fallbackLogQ = newIPQueue[fallbackLog](s, "memphis_fallback_logs", ipQueue_MaxQueueLen(50))
 		log, s.memphis.activateSysLogsPubFunc = srvlog.NewMemphisLogger(s.createMemphisLoggerFunc(),
 			s.createMemphisLoggerFallbackFunc(),
@@ -95,6 +106,7 @@ func (s *Server) ConfigureLogger() {
 			opts.Trace,
 			colors,
 			true)
+		// ** added by Memphis
 	}
 
 	s.SetLoggerV2(log, opts.Debug, opts.Trace, opts.TraceVerbose)
@@ -164,8 +176,11 @@ func (s *Server) ReOpenLogFile() {
 	if opts.LogFile == "" {
 		s.Noticef("File log re-open ignored, not a file logger")
 	} else {
-		fileLog := srvlog.NewFileLogger(opts.LogFile,
-			opts.Logtime, opts.Debug, opts.Trace, true)
+		fileLog := srvlog.NewFileLogger(
+			opts.LogFile, opts.Logtime,
+			opts.Debug, opts.Trace, true,
+			srvlog.LogUTC(opts.LogtimeUTC),
+		)
 		s.SetLogger(fileLog, opts.Debug, opts.Trace)
 		if opts.LogSizeLimit > 0 {
 			fileLog.SetSizeLimit(opts.LogSizeLimit)
@@ -181,11 +196,14 @@ func (s *Server) Noticef(format string, v ...interface{}) {
 	}, format, v...)
 }
 
+// ** added by Memphis
 func (s *Server) Systemf(format string, v ...interface{}) {
 	s.executeLogCall(func(logger Logger, format string, v ...interface{}) {
 		logger.Systemf(format, v...)
 	}, format, v...)
 }
+
+// ** added by Memphis
 
 // Errorf logs an error
 func (s *Server) Errorf(format string, v ...interface{}) {
@@ -230,6 +248,14 @@ func (s *Server) RateLimitWarnf(format string, v ...interface{}) {
 	s.Warnf("%s", statement)
 }
 
+func (s *Server) RateLimitDebugf(format string, v ...interface{}) {
+	statement := fmt.Sprintf(format, v...)
+	if _, loaded := s.rateLimitLogging.LoadOrStore(statement, time.Now()); loaded {
+		return
+	}
+	s.Debugf("%s", statement)
+}
+
 // Fatalf logs a fatal error
 func (s *Server) Fatalf(format string, v ...interface{}) {
 	s.executeLogCall(func(logger Logger, format string, v ...interface{}) {
@@ -269,6 +295,7 @@ func (s *Server) executeLogCall(f func(logger Logger, format string, v ...interf
 	f(s.logging.logger, format, args...)
 }
 
+// ** added by Memphis
 func publishLogToSubjectAndAnalytics(s *Server, label string, log []byte) {
 	copiedLog := copyBytes(log)
 	s.sendLogToSubject(label, copiedLog)
@@ -314,3 +341,5 @@ func (s *Server) sendLogToSubject(label string, log []byte) {
 func (s *Server) getLogSource() string {
 	return s.memphis.serverID
 }
+
+// ** added by Memphis

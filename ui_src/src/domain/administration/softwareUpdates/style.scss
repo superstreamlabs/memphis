@@ -1,0 +1,177 @@
+.softwate-updates-container {
+    padding: 20px 20px 20px 0px;
+    overflow-y: auto;
+    position: relative;
+    height: calc(100% - 40px);
+    width: calc(100% - 350px);
+    min-width: 800px;
+    min-height: 530px;
+    right: 20px;
+    .rows {
+        width: 100%;
+        height: 100%;
+        gap: 15px;
+        display: grid;
+        grid-template-rows: 11% 16% 25% 20% 21%;
+        .item-component {
+            width: 100%;
+            border-radius: 8px;
+            background-color: #ffffff;
+            box-shadow: 0px 23px 44px 0px rgba(176, 183, 195, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+            border-radius: 8px;
+            padding: 0px 30px;
+            display: flex;
+            align-items: center;
+        }
+    }
+    .statistics {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        .stat-item {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            .title {
+                color: #6557ff;
+                font-family: 'InterBold';
+                font-size: 14px;
+                text-transform: uppercase;
+            }
+            .numbers {
+                color: #171717;
+                font-size: 30px;
+                font-family: 'InterBold';
+            }
+        }
+    }
+    .charts {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        .info-item {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            svg {
+                margin-bottom: 16px;
+            }
+
+            p {
+                margin: 0px;
+                margin-bottom: 8px;
+                color: #151515;
+                font-family: 'InterMedium';
+                font-size: 16px;
+                max-width: 80%;
+                text-align: center;
+            }
+        }
+    }
+    .title-component {
+        height: 100%;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        .hostname {
+            border-radius: 32px;
+            border: 0.8px solid #e2dfff;
+            background: #f1f0ff;
+            display: flex;
+            width: fit-content;
+            padding: 2px 10px;
+            gap: 2px;
+            font-family: 'InterMedium';
+            display: flex;
+            align-items: center;
+            p {
+                font-size: 12px;
+                margin: 0px;
+            }
+            span {
+                color: var(--purple);
+                font-size: 12px;
+                margin-right: 5px;
+            }
+        }
+        .versions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+
+            position: relative;
+
+            .red-dot {
+                width: 11px;
+                height: 11px;
+                border-radius: 50%;
+                background-color: #f00;
+                position: absolute;
+                top: -1px;
+                right: -1px;
+                cursor: pointer;
+            }
+            .curr-version {
+                color: #6557ff;
+                font-size: 14px;
+                font-weight: 600;
+                border-radius: 32px;
+                border: 1px solid #eaeaea;
+                padding: 5px 10px;
+            }
+            .new-version {
+                color: #6557ff;
+                font-size: 14px;
+                font-weight: 600;
+                border-radius: 32px;
+                background: rgba(101, 87, 255, 0.15);
+                padding: 5px 10px;
+            }
+        }
+        .change-log {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+    }
+    .delete-account-section {
+        min-height: 130px;
+        .account-title {
+            color: #242424;
+            font-family: 'Inter';
+            font-weight: 600;
+            font-size: 18px;
+            margin-bottom: 0px;
+        }
+        .delete-account-description {
+            font-family: 'Inter';
+            font-size: 12px;
+            color: #b4b4b4;
+        }
+        .delete-account-checkbox {
+            margin: 10px 0;
+            display: flex;
+            p {
+                font-family: 'InterMedium';
+                font-size: 13px;
+                color: #84818a;
+                margin-bottom: 0;
+                cursor: pointer;
+            }
+            .disabled {
+                cursor: not-allowed;
+            }
+        }
+    }
+}

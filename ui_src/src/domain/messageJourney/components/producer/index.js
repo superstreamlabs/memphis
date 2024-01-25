@@ -13,7 +13,7 @@
 import './style.scss';
 
 import React, { useEffect } from 'react';
-import StatusIndication from '../../../../components/indication';
+import StatusIndication from 'components/indication';
 
 const Producer = ({ data }) => {
     const prod = data ? (

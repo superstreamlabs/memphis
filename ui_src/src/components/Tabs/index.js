@@ -19,11 +19,12 @@ import './style.scss';
 import { Tabs } from 'antd';
 import React from 'react';
 
-import TooltipComponent from '../tooltip/tooltip';
-import CheckboxComponent from '../checkBox';
+import TooltipComponent from 'components/tooltip/tooltip';
+import CheckboxComponent from 'components/checkBox';
 import { PriorityHighRounded } from '@material-ui/icons';
+import CloudOnly from 'components/cloudOnly';
 
-const CustomTabs = ({ tabs, onChange, value, disabled, length, tooltip, icon = false, checkbox = false, defaultActiveKey }) => {
+const CustomTabs = ({ tabs, onChange, value, disabled, length, tooltip, icon = false, checkbox = false, defaultActiveKey, tabsCounter, icons }) => {
     return (
         <div className={!disabled ? 'tabs-container hover' : 'tabs-container'}>
             <Tabs
@@ -35,8 +36,14 @@ const CustomTabs = ({ tabs, onChange, value, disabled, length, tooltip, icon = f
                         disabled: tab?.disabled || disabled,
                         label: (
                             <label className="tabs-name" style={{ width: length && length[index] && '135px' }}>
+                                {icons && icons[index] && !icon && icons[index]}
                                 {checkbox && <CheckboxComponent checked={tab.checked} />}
-                                <TooltipComponent text={tooltip && tooltip[index]}>{tab?.name || tab} </TooltipComponent>
+                                <TooltipComponent text={tooltip && tooltip[index]}>
+                                    <>
+                                        {`${tab?.name || tab}  ${tabsCounter ? `(${tabsCounter[index]})` : ''} `}
+                                        {tab?.cloudOnly && <CloudOnly position={'relative'} />}
+                                    </>
+                                </TooltipComponent>
                                 {length && length[index] && icon && (
                                     <div className="error-icon">
                                         <div>

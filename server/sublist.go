@@ -1,4 +1,4 @@
-// Copyright 2016-2020 The NATS Authors
+// Copyright 2016-2023 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -48,7 +48,7 @@ const (
 	// cacheMax is used to bound limit the frontend cache
 	slCacheMax = 1024
 	// If we run a sweeper we will drain to this count.
-	slCacheSweep = 512
+	slCacheSweep = 256
 	// plistMin is our lower bounds to create a fast plist for Match.
 	plistMin = 256
 )
@@ -540,6 +540,7 @@ func (s *Sublist) match(subject string, doLock bool) *SublistResult {
 	if doLock {
 		s.RLock()
 	}
+	cacheEnabled := s.cache != nil
 	r, ok := s.cache[subject]
 	if doLock {
 		s.RUnlock()
@@ -574,7 +575,11 @@ func (s *Sublist) match(subject string, doLock bool) *SublistResult {
 	var n int
 
 	if doLock {
-		s.Lock()
+		if cacheEnabled {
+			s.Lock()
+		} else {
+			s.RLock()
+		}
 	}
 
 	matchLevel(s.root, tokens, result)
@@ -582,16 +587,20 @@ func (s *Sublist) match(subject string, doLock bool) *SublistResult {
 	if len(result.psubs) == 0 && len(result.qsubs) == 0 {
 		result = emptyResult
 	}
-	if s.cache != nil {
+	if cacheEnabled {
 		s.cache[subject] = result
 		n = len(s.cache)
 	}
 	if doLock {
-		s.Unlock()
+		if cacheEnabled {
+			s.Unlock()
+		} else {
+			s.RUnlock()
+		}
 	}
 
 	// Reduce the cache count if we have exceeded our set maximum.
-	if n > slCacheMax && atomic.CompareAndSwapInt32(&s.ccSweep, 0, 1) {
+	if cacheEnabled && n > slCacheMax && atomic.CompareAndSwapInt32(&s.ccSweep, 0, 1) {
 		go s.reduceCacheCount()
 	}
 
@@ -615,7 +624,7 @@ func (s *Sublist) reduceCacheCount() {
 
 // Helper function for auto-expanding remote qsubs.
 func isRemoteQSub(sub *subscription) bool {
-	return sub != nil && sub.queue != nil && sub.client != nil && sub.client.kind == ROUTER
+	return sub != nil && sub.queue != nil && sub.client != nil && (sub.client.kind == ROUTER || sub.client.kind == LEAF)
 }
 
 // UpdateRemoteQSub should be called when we update the weight of an existing
@@ -820,9 +829,13 @@ func (s *Sublist) RemoveBatch(subs []*subscription) error {
 	// Turn off our cache if enabled.
 	wasEnabled := s.cache != nil
 	s.cache = nil
+	// We will try to remove all subscriptions but will report the first that caused
+	// an error. In other words, we don't bail out at the first error which would
+	// possibly leave a bunch of subscriptions that could have been removed.
+	var err error
 	for _, sub := range subs {
-		if err := s.remove(sub, false, false); err != nil {
-			return err
+		if lerr := s.remove(sub, false, false); lerr != nil && err == nil {
+			err = lerr
 		}
 	}
 	// Turn caching back on here.
@@ -830,7 +843,7 @@ func (s *Sublist) RemoveBatch(subs []*subscription) error {
 	if wasEnabled {
 		s.cache = make(map[string]*SublistResult)
 	}
-	return nil
+	return err
 }
 
 // pruneNode is used to prune an empty node from the tree.
@@ -1138,6 +1151,9 @@ func isValidLiteralSubject(tokens []string) bool {
 
 // ValidateMappingDestination returns nil error if the subject is a valid subject mapping destination subject
 func ValidateMappingDestination(subject string) error {
+	if subject == _EMPTY_ {
+		return nil
+	}
 	subjectTokens := strings.Split(subject, tsep)
 	sfwc := false
 	for _, t := range subjectTokens {
@@ -1529,13 +1545,13 @@ func (s *Sublist) ReverseMatch(subject string) *SublistResult {
 
 	result := &SublistResult{}
 
-	s.Lock()
+	s.RLock()
 	reverseMatchLevel(s.root, tokens, nil, result)
 	// Check for empty result.
 	if len(result.psubs) == 0 && len(result.qsubs) == 0 {
 		result = emptyResult
 	}
-	s.Unlock()
+	s.RUnlock()
 
 	return result
 }
@@ -1553,8 +1569,21 @@ func reverseMatchLevel(l *level, toks []string, n *node, results *SublistResult)
 				for _, n := range l.nodes {
 					reverseMatchLevel(n.next, toks[i+1:], n, results)
 				}
+				if l.pwc != nil {
+					reverseMatchLevel(l.pwc.next, toks[i+1:], n, results)
+				}
+				if l.fwc != nil {
+					getAllNodes(l, results)
+				}
 				return
 			}
+		}
+		// If the sub tree has a fwc at this position, match as well.
+		if l.fwc != nil {
+			getAllNodes(l, results)
+			return
+		} else if l.pwc != nil {
+			reverseMatchLevel(l.pwc.next, toks[i+1:], n, results)
 		}
 		n = l.nodes[t]
 		if n == nil {

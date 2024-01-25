@@ -73,30 +73,27 @@ func (fh FunctionsHandler) GetFunctions(tenantName string) (models.FunctionsRes,
 	for _, function := range functions["other"] {
 		if function.Owner == memphisDevFunctionsOwnerName && function.Repo == memphisDevFunctionsRepoName {
 			otherFunctionResult := models.FunctionResult{
-				FunctionName:               function.FunctionName,
-				Description:                function.Description,
-				Tags:                       function.Tags,
-				Runtime:                    function.Runtime,
-				Dependencies:               function.Dependencies,
-				Inputs:                     function.Inputs,
-				Memory:                     function.Memory,
-				Storage:                    function.Storage,
-				Handler:                    function.Handler,
-				Scm:                        "github",
-				Repo:                       function.Repo,
-				Branch:                     function.Branch,
-				Owner:                      function.Owner,
-				Language:                   function.Language,
-				Version:                    -1,
-				IsValid:                    function.IsValid,
-				InvalidReason:              function.InvalidReason,
-				InProgress:                 false,
-				UpdatesAvailable:           false,
-				ByMemphis:                  function.ByMemphis,
-				TenantName:                 function.TenantName,
-				ClonedUpdatesAvailable:     function.ClonedUpdatesAvailable,
-				ClonedUpdatesIsValid:       function.ClonedUpdatesIsValid,
-				ClonedUpdatesInvalidReason: function.ClonedUpdatesInvalidReason,
+				FunctionName:     function.FunctionName,
+				Description:      function.Description,
+				Tags:             function.Tags,
+				Runtime:          function.Runtime,
+				Dependencies:     function.Dependencies,
+				Inputs:           function.Inputs,
+				Memory:           function.Memory,
+				Storage:          function.Storage,
+				Handler:          function.Handler,
+				Scm:              "github",
+				Repo:             function.Repo,
+				Branch:           function.Branch,
+				Owner:            function.Owner,
+				Language:         function.Language,
+				Version:          -1,
+				IsValid:          function.IsValid,
+				InvalidReason:    function.InvalidReason,
+				InProgress:       false,
+				UpdatesAvailable: false,
+				ByMemphis:        function.ByMemphis,
+				TenantName:       function.TenantName,
 			}
 			OtherFunctions = append(OtherFunctions, otherFunctionResult)
 			lastModified = function.LastCommit
@@ -169,12 +166,12 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 				}
 			}
 
-			inputs := []map[string]interface{}{}
+			inputs := []map[string]string{}
 			inputsInterfaceSlice, ok := fucntionContentMap["inputs"].([]interface{})
 			if ok {
 				for _, environmentVarInterface := range inputsInterfaceSlice {
 					environmentVarMap, _ := environmentVarInterface.(map[interface{}]interface{})
-					environmentVar := make(map[string]interface{})
+					environmentVar := make(map[string]string)
 					for k, v := range environmentVarMap {
 						if key, ok := k.(string); ok {
 							if val, ok := v.(string); ok {
@@ -185,19 +182,51 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 					inputs = append(inputs, environmentVar)
 				}
 			}
-			description, ok := fucntionContentMap["description"].(string)
-			if !ok {
-				description = ""
+
+			description := _EMPTY_
+			descriptionInterface, ok := fucntionContentMap["description"]
+			if ok {
+				description = descriptionInterface.(string)
 			}
 
-			runtime, ok := fucntionContentMap["runtime"].(string)
-			var language string
-			if ok {
-				regex := regexp.MustCompile(`[0-9]+|\\.$`)
-				language = regex.ReplaceAllString(runtime, "")
-				language = strings.TrimRight(language, ".")
-				if strings.Contains(language, "-edge") {
-					language = strings.Trim(language, ".-edge")
+			functionName := _EMPTY_
+			if functionNameInterface, ok := fucntionContentMap["function_name"]; !ok || functionNameInterface == nil || functionNameInterface.(string) == _EMPTY_ {
+				errMsg := fmt.Errorf("function in %s repository is invalid since its memphis.yaml file is missing the function_name field", repo)
+				return functions, errMsg
+			} else {
+				functionName = functionNameInterface.(string)
+			}
+
+			runtime := _EMPTY_
+			if runtimeInterface, ok := fucntionContentMap["runtime"]; !ok || runtimeInterface == nil || runtimeInterface.(string) == _EMPTY_ {
+				errMsg := fmt.Errorf("function %s placed in %s repository is invalid since its memphis.yaml file is missing the runtime field", repo, functionName)
+				return functions, errMsg
+			} else {
+				runtime = runtimeInterface.(string)
+			}
+			regex := regexp.MustCompile(`[0-9]+|\\.$`)
+			language := regex.ReplaceAllString(runtime, _EMPTY_)
+			language = strings.TrimRight(language, ".")
+			if strings.Contains(language, "-edge") {
+				language = strings.Trim(language, ".-edge")
+			}
+
+			dependencies := _EMPTY_
+			dependenciesMissing := false
+			if dependenciesInterface, ok := fucntionContentMap["dependencies"]; !ok || dependenciesInterface == nil || dependenciesInterface.(string) == _EMPTY_ {
+				dependenciesMissing = true
+			} else {
+				dependencies = dependenciesInterface.(string)
+			}
+
+			if dependenciesMissing {
+				switch language {
+				case "go":
+					dependencies = "go.mod"
+				case "nodejs":
+					dependencies = "package.json"
+				case "python":
+					dependencies = "requirements.txt"
 				}
 			}
 
@@ -206,7 +235,7 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 				byMemphis = true
 			}
 
-			handler := ""
+			handler := _EMPTY_
 			if _, ok := fucntionContentMap["handler"].(string); ok {
 				handler = fucntionContentMap["handler"].(string)
 			}
@@ -214,33 +243,43 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 			if commit != nil {
 				lastCommit = commit.Commit.Committer.Date
 			}
+			memory := 128 * 1024 * 1024
+			if memoryInterface, ok := fucntionContentMap["memory"]; ok && memoryInterface != nil {
+				if memoryVal, ok := memoryInterface.(int); ok {
+					memory = memoryVal
+				}
+			}
+
+			storage := 512 * 1024 * 1024
+			if storageInterface, ok := fucntionContentMap["storage"]; ok && storageInterface != nil {
+				if storageVal, ok := storageInterface.(int); ok {
+					storage = storageVal
+				}
+			}
 
 			functionDetails := models.FunctionResult{
-				FunctionName:               fucntionContentMap["function_name"].(string),
-				Description:                description,
-				Tags:                       tagsStrings,
-				Runtime:                    runtime,
-				Dependencies:               fucntionContentMap["dependencies"].(string),
-				Inputs:            inputs,
-				Memory:                     int(fucntionContentMap["memory"].(int64)),
-				Storage:                    int(fucntionContentMap["storage"].(int64)),
-				Handler:                    handler,
-				Scm:                        "github",
-				Repo:                       repo,
-				Branch:                     branch,
-				Owner:                      owner,
-				LastCommit:                 lastCommit,
-				Link:                       link,
-				Language:                   language,
-				InProgress:                 false,
-				UpdatesAvailable:           false,
-				ByMemphis:                  byMemphis,
-				TenantName:                 tenantName,
-				IsValid:                    isValid,
-				InvalidReason:              invalidReason,
-				ClonedUpdatesAvailable:     false,
-				ClonedUpdatesIsValid:       isValid,
-				ClonedUpdatesInvalidReason: invalidReason,
+				FunctionName:     functionName,
+				Description:      description,
+				Tags:             tagsStrings,
+				Runtime:          runtime,
+				Dependencies:     dependencies,
+				Inputs:           inputs,
+				Memory:           memory,
+				Storage:          storage,
+				Handler:          handler,
+				Scm:              "github",
+				Repo:             repo,
+				Branch:           branch,
+				Owner:            owner,
+				LastCommit:       lastCommit,
+				Link:             link,
+				Language:         language,
+				InProgress:       false,
+				UpdatesAvailable: false,
+				ByMemphis:        byMemphis,
+				TenantName:       tenantName,
+				IsValid:          isValid,
+				InvalidReason:    invalidReason,
 			}
 
 			functions[key] = append(functions[key], functionDetails)

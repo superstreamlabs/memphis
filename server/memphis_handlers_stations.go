@@ -135,14 +135,16 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 		if len(station.PartitionsList) == 0 {
 			err = s.RemoveStream(station.TenantName, stationName.Intern())
 			if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
-				return err
+				s.Errorf("[tenant: %v]removeStationResources at RemoveStream: Station %v: %v", station.TenantName, station.Name, err.Error())
+				// TODO add retry
 			}
 		} else {
 			for _, p := range station.PartitionsList {
 				streamName := fmt.Sprintf("%v$%v", stationName.Intern(), p)
 				err = s.RemoveStream(station.TenantName, streamName)
 				if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
-					return err
+					s.Errorf("[tenant: %v]removeStationResources at RemoveStream: Station %v: %v", station.TenantName, station.Name, err.Error())
+					// TODO add retry
 				}
 			}
 		}
@@ -179,7 +181,16 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 	if err != nil {
 		return err
 	}
-	// TODO: send response of DeleteAndGetAttachedFunctionsByStation to microservice to delete
+
+	err = deleteConnectorsStationResources(station.TenantName, station.ID)
+	if err != nil {
+		return err
+	}
+
+	err = db.DeleteScheduledFunctionWorkersByStationId(station.ID, station.TenantName)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -251,11 +262,78 @@ func (s *Server) createStationDirectIntern(c *client,
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
-
 	if exist {
 		jsApiResp.Error = NewJSStreamNameExistError()
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
+	}
+
+	exist, user, err := memphis_cache.GetUser(username, csr.TenantName, false)
+	if err != nil {
+		serv.Warnf("[tenant: %v][user:%v]createStationDirect at memphis_cache.GetUser: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+		return
+	}
+	if !exist {
+		serv.Warnf("[tenant: %v][user:%v]createStationDirect at memphis_cache.GetUser: user %v is not exists", csr.TenantName, csr.Username, csr.Username)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+		return
+	}
+
+	allowed, ReloadNeeded, err := ValidateStationPermissions(user.Roles, stationName.Ext(), csr.TenantName, "write")
+	if err != nil {
+		serv.Errorf("[tenant: %v][user:%v]createStationDirect at ValidateStationPermissions: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+		return
+	}
+	if !allowed {
+		errMsg := fmt.Sprintf("user %v is not allowed to create station %v", csr.Username, csr.StationName)
+		serv.Warnf("[tenant: %v][user:%v]createStationDirect: %v", csr.TenantName, csr.Username, errMsg)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, errors.New(errMsg))
+		return
+	}
+	if ReloadNeeded {
+		defer func() {
+			err = serv.SendReloadSignal()
+			if err != nil {
+				serv.Errorf("[tenant: %v][user:%v]createStationDirect at SendReloadSignal: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
+				respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+				return
+			}
+		}()
+	}
+
+	stationsCount, err := db.CountStationsByTenant(csr.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]CreateStation at CountStationsByTenant: %v", csr.TenantName, csr.Username, err.Error())
+	}
+	canCreate, stationsLimit := ValidataUsageLimitOfFeature(csr.TenantName, "feature-stations-limitation", stationsCount+1)
+	if !canCreate {
+		errMsg := fmt.Errorf("cannot create station (max amount of stations for this plan :%v)", stationsLimit)
+		serv.Warnf("[tenant: %v][user:%v]CreateStation %v", csr.TenantName, csr.Username, errMsg)
+		jsApiResp.Error = NewJSStreamCreateError(errMsg)
+		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, errMsg)
+		return
+	}
+
+	if csr.DlsStation != _EMPTY_ {
+		canCreate := ValidataAccessToFeature(csr.TenantName, "feature-dls-consumption-linkage")
+		if !canCreate {
+			errMsg := "cannot create station with DLS linkage, please upgrade your plan to enjoy this feature"
+			serv.Warnf("[tenant: %v][user:%v]CreateStation %v", csr.TenantName, csr.Username, errMsg)
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+			return
+		} else {
+			canCreate, stationsLimit := ValidataUsageLimitOfFeature(csr.TenantName, "feature-stations-limitation", stationsCount+2)
+			if !canCreate {
+				errMsg := fmt.Errorf("cannot create DLS station (max amount of stations for this plan :%v)", stationsLimit)
+				serv.Warnf("[tenant: %v][user:%v]CreateStation %v", csr.TenantName, csr.Username, errMsg)
+				jsApiResp.Error = NewJSStreamCreateError(errMsg)
+				respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, errMsg)
+				return
+			}
+		}
 	}
 
 	if csr.PartitionsNumber == 0 && isNative {
@@ -267,7 +345,6 @@ func (s *Server) createStationDirectIntern(c *client,
 	}
 
 	canCreate, partitionLimit := ValidataUsageLimitOfFeature(csr.TenantName, "feature-partitions-per-station", csr.PartitionsNumber)
-
 	if (!canCreate || csr.PartitionsNumber < 1) && isNative {
 		var errMsg error
 		if canCreate {
@@ -284,7 +361,7 @@ func (s *Server) createStationDirectIntern(c *client,
 
 	schemaName := csr.SchemaName
 	var schemaDetails models.SchemaDetails
-	if schemaName != "" {
+	if schemaName != _EMPTY_ {
 		schemaName = strings.ToLower(csr.SchemaName)
 		exist, schema, err := db.GetSchemaByName(schemaName, csr.TenantName)
 		if err != nil {
@@ -296,6 +373,15 @@ func (s *Server) createStationDirectIntern(c *client,
 		if !exist {
 			errMsg := fmt.Sprintf("Schema %v does not exist", csr.SchemaName)
 			serv.Warnf("[tenant: %v][user:%v]createStationDirect: %v", csr.TenantName, csr.Username, errMsg)
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+			return
+		}
+
+		canCreate := ValidataAccessToFeature(csr.TenantName, "feature-schemaverse-enforcement")
+		if !canCreate {
+			errMsg := fmt.Sprintf("cannot create station with schema enforcement, please upgrade your plan to enjoy this feature")
+			serv.Warnf("[tenant: %v][user:%v]CreateStation %v", csr.TenantName, csr.Username, errMsg)
 			jsApiResp.Error = NewJSStreamCreateError(err)
 			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
@@ -313,7 +399,7 @@ func (s *Server) createStationDirectIntern(c *client,
 
 	var retentionType string
 	var retentionValue int
-	if csr.RetentionType != "" {
+	if csr.RetentionType != _EMPTY_ {
 		retentionType = strings.ToLower(csr.RetentionType)
 		err = validateRetentionType(retentionType)
 		if err != nil {
@@ -342,7 +428,7 @@ func (s *Server) createStationDirectIntern(c *client,
 	}
 
 	var storageType string
-	if csr.StorageType != "" {
+	if csr.StorageType != _EMPTY_ {
 		storageType = getStationStorageType(csr.StorageType)
 		err = validateStorageType(storageType)
 		if err != nil {
@@ -378,36 +464,16 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	if shouldCreateStream {
-		for p := 1; p <= csr.PartitionsNumber; p++ {
-			err = s.CreateStream(csr.TenantName, stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled, p, true)
-			if err != nil {
-				if IsNatsErr(err, JSStreamReplicasNotSupportedErr) {
-					serv.Warnf("[tenant: %v][user:%v]CreateStationDirect: Station %v: Station can not be created, probably since replicas count is larger than the cluster size", csr.TenantName, csr.Username, stationName.Ext())
-					respondWithErr(s.MemphisGlobalAccountString(), s, reply, errors.New("station can not be created, probably since replicas count is larger than the cluster size"))
-					return
-				}
-
-				serv.Errorf("[tenant: %v][user:%v]createStationDirect: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
-				respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
-				return
-			}
-			partitionsList = append(partitionsList, p)
+	dlsStationNameToLower := strings.ToLower(csr.DlsStation)
+	if csr.DlsStation != _EMPTY_ {
+		DlsStation, err := StationNameFromStr(dlsStationNameToLower)
+		if err != nil {
+			serv.Warnf("[tenant: %v][user:%v]createStationDirect at StationNameFromStr: Station %v: %v", csr.TenantName, csr.Username, csr.DlsStation, err.Error())
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+			return
 		}
-	}
-	exist, user, err := memphis_cache.GetUser(username, csr.TenantName, false)
-	if err != nil {
-		serv.Warnf("[tenant: %v][user:%v]createStationDirect at memphis_cache.GetUser: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
-		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
-		return
-	}
-	if !exist {
-		serv.Warnf("[tenant: %v][user:%v]createStationDirect at memphis_cache.GetUser: user %v is not exists", csr.TenantName, csr.Username, csr.Username)
-		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
-		return
-	}
-	if csr.DlsStation != "" {
-		exist, _, err := db.GetStationByName(csr.DlsStation, user.TenantName)
+		exist, _, err := db.GetStationByName(DlsStation.Ext(), user.TenantName)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user:%v]createStationDirect at DLS GetStationByName: %v", csr.TenantName, csr.Username, err.Error())
 			respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
@@ -415,13 +481,13 @@ func (s *Server) createStationDirectIntern(c *client,
 		}
 		if !exist {
 			var created bool
-			dlsStationName, err := StationNameFromStr(csr.DlsStation)
+			dlsStationName, err := StationNameFromStr(dlsStationNameToLower)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user:%v]createStationDirect at DLS StationNameFromStr: %v", csr.TenantName, csr.Username, err.Error())
 				respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 				return
 			}
-			_, created, err = CreateDefaultStation(user.TenantName, s, dlsStationName, user.ID, user.Username, "", 0)
+			_, created, err = CreateDefaultStation(user.TenantName, s, dlsStationName, user, _EMPTY_, 0)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user:%v]createStationDirect at DLS CreateDefaultStation: %v", csr.TenantName, csr.Username, err.Error())
 				respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
@@ -456,7 +522,34 @@ func (s *Server) createStationDirectIntern(c *client,
 		}
 	}
 
-	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled, user.TenantName, partitionsList, 2, csr.DlsStation)
+	if shouldCreateStream {
+		for p := 1; p <= csr.PartitionsNumber; p++ {
+			err = s.CreateStream(csr.TenantName, stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled, p, true)
+			if err != nil {
+				// remove all partitions that were created
+				for _, partition := range partitionsList {
+					streamName := fmt.Sprintf("%v$%v", stationName.Intern(), partition)
+					err = s.RemoveStream(csr.TenantName, streamName)
+					if err != nil {
+						serv.Errorf("[tenant: %v][user: %v]CreateStationDirect at RemoveStream: Station %v: %v", user.TenantName, user.Username, csr.StationName, err.Error())
+					}
+				}
+
+				if IsNatsErr(err, JSStreamReplicasNotSupportedErr) {
+					serv.Warnf("[tenant: %v][user:%v]CreateStationDirect: Station %v: Station can not be created, probably since replicas count is larger than the cluster size", csr.TenantName, csr.Username, stationName.Ext())
+					respondWithErr(s.MemphisGlobalAccountString(), s, reply, errors.New("station can not be created, probably since replicas count is larger than the cluster size"))
+					return
+				}
+
+				serv.Errorf("[tenant: %v][user:%v]createStationDirect: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
+				respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+				return
+			}
+			partitionsList = append(partitionsList, p)
+		}
+	}
+
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled, user.TenantName, partitionsList, 2, dlsStationNameToLower)
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exist") {
 			serv.Errorf("[tenant: %v][user:%v]createStationDirect at InsertNewStation: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
@@ -595,7 +688,7 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 		}
 		for _, info := range allStreamInfo {
 			streamName := info.Config.Name
-			if !strings.Contains(streamName, "$memphis") {
+			if !strings.Contains(streamName, MEMPHIS_GLOBAL_ACCOUNT) {
 				if strings.Contains(streamName, "$") {
 					stationNameAndPartition := strings.Split(streamName, "$")
 					stationTotalMsgs[stationNameAndPartition[0]] += int(info.State.Subjects[streamName+".final"])
@@ -670,7 +763,12 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 				Version:              station.Version,
 			}
 
-			exStations = append(exStations, models.ExtendedStationDetails{Station: stationRes, HasDlsMsgs: hasDlsMsgs, TotalMessages: totalMsgInfo, Tags: tags, Activity: activity})
+			totalDlsMsgs, err := db.CountDlsMsgsByStationAndPartition(station.ID, -1)
+			if err != nil {
+				return []models.ExtendedStationDetails{}, err
+			}
+
+			exStations = append(exStations, models.ExtendedStationDetails{Station: stationRes, HasDlsMsgs: hasDlsMsgs, TotalMessages: totalMsgInfo, Tags: tags, Activity: activity, PoisonMessages: totalDlsMsgs})
 		}
 		if exStations == nil {
 			return []models.ExtendedStationDetails{}, nil
@@ -682,7 +780,7 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 func (sh StationsHandler) GetAllStationsDetailsLight(shouldExtend bool, tenantName string, streamsInfo []*StreamInfo) ([]models.ExtendedStationLight, uint64, uint64, error) {
 	var stations []models.ExtendedStationLight
 	totalMessages := uint64(0)
-	if tenantName == "" {
+	if tenantName == _EMPTY_ {
 		tenantName = serv.MemphisGlobalAccountString()
 	}
 	totalDlsMessages, err := db.GetTotalDlsMessages(tenantName)
@@ -707,7 +805,7 @@ func (sh StationsHandler) GetAllStationsDetailsLight(shouldExtend bool, tenantNa
 		}
 		for _, info := range streamsInfo {
 			streamName := info.Config.Name
-			if !strings.Contains(streamName, "$memphis") {
+			if !strings.Contains(streamName, MEMPHIS_GLOBAL_ACCOUNT) {
 				totalMessages += info.State.Subjects[streamName+".final"]
 				if strings.Contains(streamName, "$") {
 					stationNameAndPartition := strings.Split(streamName, "$")
@@ -834,8 +932,65 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	canCreate, partitionLimit := ValidataUsageLimitOfFeature(tenantName, "feature-partitions-per-station", body.PartitionsNumber)
+	stationName, err := StationNameFromStr(body.Name)
+	if err != nil {
+		serv.Warnf("[tenant: %v][user: %v]CreateStation at StationNameFromStr: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
 
+	allowed, ReloadNeeded, err := ValidateStationPermissions(user.Roles, stationName.Ext(), user.TenantName, "write")
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]CreateStation at ValidateStationPermissions: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !allowed {
+		errMsg := fmt.Sprintf("user %v is not allowed to create station %v", user.Username, body.Name)
+		serv.Warnf("[tenant: %v][user: %v]CreateStation: %v", user.TenantName, user.Username, errMsg)
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+	}
+	if ReloadNeeded {
+		defer func() {
+			err = serv.SendReloadSignal()
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]CreateStation at SendReloadSignal: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			}
+		}()
+	}
+
+	stationsCount, err := db.CountStationsByTenant(user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]CreateStation at CountStationsByTenant: %v", user.TenantName, user.Username, err.Error())
+	}
+	canCreate, stationsLimit := ValidataUsageLimitOfFeature(tenantName, "feature-stations-limitation", stationsCount+1)
+	if !canCreate {
+		errMsg := fmt.Sprintf("cannot create station (max amount of stations for this plan :%v)", stationsLimit)
+		serv.Warnf("[tenant: %v][user:%v]CreateStation %v", user.TenantName, user.Username, errMsg)
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		return
+	}
+
+	if body.DlsStation != _EMPTY_ {
+		canCreate := ValidataAccessToFeature(tenantName, "feature-dls-consumption-linkage")
+		if !canCreate {
+			errMsg := fmt.Sprintf("cannot create station with DLS linkage, please upgrade your plan to enjoy this feature")
+			serv.Warnf("[tenant: %v][user:%v]CreateStation %v", user.TenantName, user.Username, errMsg)
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+			return
+		} else {
+			canCreate, stationsLimit := ValidataUsageLimitOfFeature(tenantName, "feature-stations-limitation", stationsCount+2)
+			if !canCreate {
+				errMsg := fmt.Errorf("cannot create DLS station (max amount of stations for this plan :%v)", stationsLimit)
+				serv.Warnf("[tenant: %v][user:%v]CreateStation %v", user.TenantName, user.Username, errMsg)
+				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+				return
+			}
+		}
+	}
+
+	canCreate, partitionLimit := ValidataUsageLimitOfFeature(tenantName, "feature-partitions-per-station", body.PartitionsNumber)
 	if !canCreate || body.PartitionsNumber < 1 {
 		var errMsg error
 		if canCreate {
@@ -843,18 +998,11 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		} else {
 			errMsg = fmt.Errorf("this amount of partitions you are trying to create for a single station is not supported on your pricing plan")
 		}
-		serv.Errorf("[tenant: %v][user:%v]CreateStation %v", user.TenantName, user.Username, errMsg)
+		serv.Warnf("[tenant: %v][user:%v]CreateStation %v", user.TenantName, user.Username, errMsg)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg.Error()})
 		return
 	}
 	partitionsList := make([]int, 0)
-
-	stationName, err := StationNameFromStr(body.Name)
-	if err != nil {
-		serv.Warnf("[tenant: %v][user: %v]CreateStation at StationNameFromStr: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-		return
-	}
 
 	exist, _, err := db.GetStationByName(stationName.Ext(), tenantName)
 	if err != nil {
@@ -871,7 +1019,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	var schemaVersionNumber int
 	schemaName := body.SchemaName
-	if schemaName != "" {
+	if schemaName != _EMPTY_ {
 		schemaName = strings.ToLower(body.SchemaName)
 		exist, schema, err := db.GetSchemaByName(schemaName, tenantName)
 		if err != nil {
@@ -886,6 +1034,14 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			return
 		}
 
+		canCreate := ValidataAccessToFeature(tenantName, "feature-schemaverse-enforcement")
+		if !canCreate {
+			errMsg := fmt.Sprintf("cannot create station with schema enforcement, please upgrade your plan to enjoy this feature")
+			serv.Warnf("[tenant: %v][user:%v]CreateStation %v", user.TenantName, user.Username, errMsg)
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+			return
+		}
+
 		schemaVersion, err := getActiveVersionBySchemaId(schema.ID)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]CreateStation at getActiveVersionBySchemaId: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
@@ -895,12 +1051,12 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 		schemaVersionNumber = schemaVersion.VersionNumber
 	} else {
-		schemaName = ""
+		schemaName = _EMPTY_
 		schemaVersionNumber = 0
 	}
 
 	var retentionType string
-	if body.RetentionType != "" {
+	if body.RetentionType != _EMPTY_ {
 		retentionType = strings.ToLower(body.RetentionType)
 		err = validateRetentionType(retentionType)
 		if err != nil {
@@ -924,7 +1080,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		body.RetentionValue = 3600 // 1 hour
 	}
 
-	if body.StorageType != "" {
+	if body.StorageType != _EMPTY_ {
 		body.StorageType = getStationStorageType(body.StorageType)
 		err = validateStorageType(body.StorageType)
 		if err != nil {
@@ -962,24 +1118,15 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		body.IdempotencyWindow = 100 // minimum is 100 millis
 	}
 
-	for p := 1; p <= body.PartitionsNumber; p++ {
-		err = sh.S.CreateStream(tenantName, stationName, retentionType, body.RetentionValue, body.StorageType, body.IdempotencyWindow, body.Replicas, body.TieredStorageEnabled, p, true)
+	if body.DlsStation != _EMPTY_ {
+		dlsStationName, err := StationNameFromStr(body.DlsStation)
 		if err != nil {
-			if IsNatsErr(err, JSInsufficientResourcesErr) {
-				serv.Warnf("[tenant: %v][user: %v]CreateStation: Station %v: Station can not be created, probably since replicas count is larger than the cluster size", user.TenantName, user.Username, body.Name)
-				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station can not be created, probably since replicas count is larger than the cluster size"})
-				return
-			}
-
-			serv.Errorf("[tenant: %v][user: %v]CreateStation at CreateStream: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+			serv.Errorf("[tenant: %v][user:%v]CreateStation at DLS StationNameFromStr: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-		partitionsList = append(partitionsList, p)
-	}
 
-	if body.DlsStation != "" {
-		exist, _, err := db.GetStationByName(body.DlsStation, user.TenantName)
+		exist, _, err := db.GetStationByName(dlsStationName.Ext(), user.TenantName)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user:%v]CreateStation at DLS GetStationByName: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -987,13 +1134,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		}
 		if !exist {
 			var created bool
-			dlsStationName, err := StationNameFromStr(body.DlsStation)
-			if err != nil {
-				serv.Errorf("[tenant: %v][user:%v]CreateStation at DLS StationNameFromStr: %v", user.TenantName, user.Username, err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-			_, created, err = CreateDefaultStation(user.TenantName, sh.S, dlsStationName, user.ID, user.Username, "", 0)
+			_, created, err = CreateDefaultStation(user.TenantName, sh.S, dlsStationName, user, _EMPTY_, 0)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user:%v]CreateStation at DLS CreateDefaultStation: %v", user.TenantName, user.Username, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1028,6 +1169,31 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		}
 	}
 
+	for p := 1; p <= body.PartitionsNumber; p++ {
+		err = sh.S.CreateStream(tenantName, stationName, retentionType, body.RetentionValue, body.StorageType, body.IdempotencyWindow, body.Replicas, body.TieredStorageEnabled, p, true)
+		if err != nil {
+			// remove all partitions that were created
+			for _, partition := range partitionsList {
+				streamName := fmt.Sprintf("%v$%v", stationName.Intern(), partition)
+				err = sh.S.RemoveStream(tenantName, streamName)
+				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v]CreateStation at RemoveStream: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+				}
+			}
+
+			if IsNatsErr(err, JSInsufficientResourcesErr) {
+				serv.Warnf("[tenant: %v][user: %v]CreateStation: Station %v: Station can not be created, probably since replicas count is larger than the cluster size", user.TenantName, user.Username, body.Name)
+				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station can not be created, probably since replicas count is larger than the cluster size"})
+				return
+			}
+
+			serv.Errorf("[tenant: %v][user: %v]CreateStation at CreateStream: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		partitionsList = append(partitionsList, p)
+	}
+
 	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled, tenantName, partitionsList, 2, body.DlsStation)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]CreateStation at db.InsertNewStation: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
@@ -1044,7 +1210,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	}
 
 	if len(body.Tags) > 0 {
-		err = AddTagsToEntity(body.Tags, "station", newStation.ID, newStation.TenantName, "")
+		err = AddTagsToEntity(body.Tags, "station", newStation.ID, newStation.TenantName, _EMPTY_)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]CreateStation: : Station %v Failed adding tags: %v", user.TenantName, user.Username, body.Name, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1133,7 +1299,7 @@ func (sh StationsHandler) AttachDlsStation(c *gin.Context) {
 			return
 		}
 
-		station, _, err = CreateDefaultStation(tenantName, sh.S, stationName, user.ID, user.Username, "", 0)
+		station, _, err = CreateDefaultStation(tenantName, sh.S, stationName, user, _EMPTY_, 0)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]AttachDlsStation at CreateDefaultStation: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1190,7 +1356,7 @@ func (sh StationsHandler) DetachDlsStation(c *gin.Context) {
 		return
 	}
 
-	err = db.UpdateStationsDls(body.StationNames, "", tenantName)
+	err = db.UpdateStationsDls(body.StationNames, _EMPTY_, tenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]DetachDlsStation at UpdateStationsDls: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1303,6 +1469,40 @@ func (s *Server) removeStationDirectIntern(c *client,
 	jsApiResp := JSApiStreamDeleteResponse{ApiResponse: ApiResponse{Type: JSApiStreamDeleteResponseType}}
 	memphisGlobalAcc := s.MemphisGlobalAccount()
 
+	_, user, err := memphis_cache.GetUser(dsr.Username, dsr.TenantName, false)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]removeStationDirectIntern at memphis_cache.GetUser: Station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+		return
+	}
+
+	stationName, err := StationNameFromStr(dsr.StationName)
+	if err != nil {
+		serv.Warnf("[tenant: %v][user: %v]removeStationDirectIntern at StationNameFromStr: Station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
+		jsApiResp.Error = NewJSStreamDeleteError(err)
+		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+		return
+	}
+
+	allowed, ReloadNeeded, err := ValidateStationPermissions(user.Roles, stationName.Ext(), user.TenantName, "write")
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]CreateStation at ValidateStationPermissions: Station %v: %v", user.TenantName, user.Username, stationName.Ext(), err.Error())
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+		return
+	}
+	if !allowed {
+		errMsg := fmt.Sprintf("user %v is not allowed to remove station %v", user.Username, stationName.Ext())
+		serv.Warnf("[tenant: %v][user: %v]CreateStation: %v", user.TenantName, user.Username, errMsg)
+	}
+	if ReloadNeeded {
+		defer func() {
+			err = serv.SendReloadSignal()
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]CreateStation at SendReloadSignal: Station %v: %v", user.TenantName, user.Username, stationName.Ext(), err.Error())
+			}
+		}()
+	}
+
 	// for NATS compatibility
 	username, tenantId, err := getUserAndTenantIdFromString(dsr.Username)
 	if err != nil {
@@ -1329,14 +1529,6 @@ func (s *Server) removeStationDirectIntern(c *client,
 		}
 		dsr.TenantName = t.Name
 		dsr.Username = username
-	}
-
-	stationName, err := StationNameFromStr(dsr.StationName)
-	if err != nil {
-		serv.Warnf("[tenant: %v][user: %v]removeStationDirectIntern at StationNameFromStr: Station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
-		jsApiResp.Error = NewJSStreamDeleteError(err)
-		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
-		return
 	}
 
 	exist, station, err := db.GetStationByName(stationName.Ext(), dsr.TenantName)
@@ -1369,12 +1561,6 @@ func (s *Server) removeStationDirectIntern(c *client,
 		return
 	}
 
-	_, user, err := memphis_cache.GetUser(dsr.Username, dsr.TenantName, false)
-	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]removeStationDirectIntern at memphis_cache.GetUser: Station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
-		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
-		return
-	}
 	message := "Station " + stationName.Ext() + " has been deleted by user " + dsr.Username
 	serv.Noticef("[tenant: %v][user: %v] %v ", user.TenantName, user.Username, message)
 	if isNative {
@@ -1561,15 +1747,21 @@ func (s *Server) ResendUnackedMsg(dlsMsg models.DlsMessage, user models.User, st
 			err = fmt.Errorf("Failed ResendUnackedMsg at DecodeString: Poisoned consumer group: %v: %v", cgName, err.Error())
 			return cgName, err
 		}
-		err = s.ResendPoisonMessage(user.TenantName, "$memphis_dls_"+replaceDelimiters(stationName)+"_"+replaceDelimiters(cgName), []byte(data), headers)
+		//resend to both old and new subject convention
+		err = s.ResendPoisonMessage(user.TenantName, fmt.Sprintf(dlsResendMessagesStreamNew, replaceDelimiters(stationName), replaceDelimiters(cgName)), []byte(data), headers)
+		if err != nil {
+			err = fmt.Errorf("Failed ResendUnackedMsg at ResendPoisonMessage: Poisoned consumer group: %v: %v", cgName, err.Error())
+			return cgName, err
+		}
+		err = s.ResendPoisonMessage(user.TenantName, fmt.Sprintf(dlsResendMessagesStreamOld, replaceDelimiters(stationName), replaceDelimiters(cgName)), []byte(data), headers)
 		if err != nil {
 			err = fmt.Errorf("Failed ResendUnackedMsg at ResendPoisonMessage: Poisoned consumer group: %v: %v", cgName, err.Error())
 			return cgName, err
 		}
 		size += int64(dlsMsg.MessageDetails.Size)
 	}
-	IncrementEventCounter(user.TenantName, "dls-resend", size, int64(len(dlsMsg.PoisonedCgs)), "", []byte{}, []byte{})
-	return "", nil
+	IncrementEventCounter(user.TenantName, "dls-resend", size, int64(len(dlsMsg.PoisonedCgs)), _EMPTY_, []byte{}, []byte{})
+	return _EMPTY_, nil
 }
 
 func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
@@ -1652,7 +1844,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 
 	poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
 	if body.IsDls {
-		dlsMessage, err := poisonMsgsHandler.GetDlsMessageDetailsById(body.MessageId, body.DlsType, user.TenantName)
+		dlsMessage, err := poisonMsgsHandler.GetDlsMessageDetails(body.MessageId, body.DlsType, user.TenantName)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetDlsMessageDetailsById: Message ID: %v :%v", user.TenantName, user.Username, strconv.Itoa(msgId), err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1729,7 +1921,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
 
 	for header := range headersJson {
-		if strings.HasPrefix(header, "$memphis") {
+		if strings.HasPrefix(header, MEMPHIS_GLOBAL_ACCOUNT) {
 			delete(headersJson, header)
 		}
 	}
@@ -1755,7 +1947,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	if exist {
 		isActive = producer.IsActive
 	} else {
-		if producedByHeader == "" {
+		if producedByHeader == _EMPTY_ {
 			producedByHeader = "unknown"
 		}
 	}
@@ -2397,7 +2589,7 @@ func getUserAndTenantIdFromString(username string) (string, int, error) {
 		numberAfterSuffix := strings.TrimLeft(matches[2], userNameItemSep)
 		tenantId, err := strconv.Atoi(numberAfterSuffix)
 		if err != nil {
-			return "", 0, err
+			return _EMPTY_, 0, err
 		}
 		return beforeSuffix, tenantId, nil
 	}
@@ -2434,14 +2626,14 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 
 		err := db.UpdateResendDisabledInStations(true, []int{stationId})
 		if err != nil {
-			serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at UpdateResendDisabledInStations at station %v : %v", tenantName, username, stationName, err.Error())
-			s.handleResendAllFailure(user, stationId, tenantName, stationName)
+			s.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at UpdateResendDisabledInStations at station %v : %v", tenantName, username, stationName, err.Error())
+			s.handleResendAllFailure("resend_all_dls_msgs", user, stationId, tenantName, stationName, err.Error())
 			return
 		}
 		task, err := db.UpsertAsyncTask("resend_all_dls_msgs", s.opts.ServerName, createdAt, tenantName, stationId, user.Username)
 		if err != nil {
-			serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at UpsertAsyncTask at station %v : %v", tenantName, username, stationName, err.Error())
-			s.handleResendAllFailure(user, stationId, tenantName, stationName)
+			s.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at UpsertAsyncTask at station %v : %v", tenantName, username, stationName, err.Error())
+			s.handleResendAllFailure("resend_all_dls_msgs", user, stationId, tenantName, stationName, err.Error())
 			return
 		}
 
@@ -2452,15 +2644,15 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 			minId = int(data)
 			_, maxId, err = db.GetMinMaxIdsOfDlsMsgsByUpdatedAt(tenantName, createdAt, stationId)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at GetMinMaxIdsOfDlsMsgsByUpdatedAt at station %v : %v", tenantName, username, stationName, err.Error())
-				s.handleResendAllFailure(user, stationId, tenantName, stationName)
+				s.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at GetMinMaxIdsOfDlsMsgsByUpdatedAt at station %v : %v", tenantName, username, stationName, err.Error())
+				s.handleResendAllFailure("resend_all_dls_msgs", user, stationId, tenantName, stationName, err.Error())
 				return
 			}
 		} else {
 			minId, maxId, err = db.GetMinMaxIdsOfDlsMsgsByUpdatedAt(tenantName, createdAt, stationId)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at GetMinMaxIdsOfDlsMsgsByUpdatedAt at station %v : %v", tenantName, username, stationName, err.Error())
-				s.handleResendAllFailure(user, stationId, tenantName, stationName)
+				s.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at GetMinMaxIdsOfDlsMsgsByUpdatedAt at station %v : %v", tenantName, username, stationName, err.Error())
+				s.handleResendAllFailure("resend_all_dls_msgs", user, stationId, tenantName, stationName, err.Error())
 				return
 			}
 			// -1 in order to prevent skipping the first element
@@ -2470,8 +2662,8 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 		for {
 			_, dlsMsgs, err := db.GetDlsMsgsBatch(tenantName, minId, maxId, stationId)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at GetDlsMsgsBatch at station %v : %v", tenantName, username, stationName, err.Error())
-				s.handleResendAllFailure(user, stationId, tenantName, stationName)
+				s.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at GetDlsMsgsBatch at station %v : %v", tenantName, username, stationName, err.Error())
+				s.handleResendAllFailure("resend_all_dls_msgs", user, stationId, tenantName, stationName, err.Error())
 				return
 			}
 
@@ -2481,31 +2673,31 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 				data = models.MetaData{
 					Offset: offset,
 				}
-				_, err = serv.ResendUnackedMsg(dlsMsg, user, stationName)
+				_, err = s.ResendUnackedMsg(dlsMsg, user, stationName)
 				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at ResendUnackedMsg at station %v : %v", tenantName, username, stationName, err.Error())
+					s.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at ResendUnackedMsg at station %v : %v", tenantName, username, stationName, err.Error())
 					continue
 				}
 
 			}
 			err = db.UpdateAsyncTask(task.Name, tenantName, time.Now(), data, stationId)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at UpdateAsyncTask at station %v : %v ", tenantName, username, stationName, err.Error())
+				s.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at UpdateAsyncTask at station %v : %v ", tenantName, username, stationName, err.Error())
 				continue
 			}
 			minId = offset
 			if len(dlsMsgs) == 0 || offset == maxId {
-				err = db.RemoveAsyncTask(task.Name, tenantName, stationId)
+				err = db.UpdateStatusAsyncTask(task.Name, tenantName, "completed", stationId, "", "")
 				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at RemoveAsyncTask at station %v : %v ", tenantName, username, stationName, err.Error())
-					s.handleResendAllFailure(user, stationId, tenantName, stationName)
+					s.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at UpdateStatusAsyncTask at station %v : %v ", tenantName, username, stationName, err.Error())
+					s.handleResendAllFailure("resend_all_dls_msgs", user, stationId, tenantName, stationName, err.Error())
 					return
 				}
 
 				err = db.UpdateResendDisabledInStations(false, []int{stationId})
 				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at UpdateResendDisabledInStations at station %v : %v", tenantName, username, stationName, err.Error())
-					s.handleResendAllFailure(user, stationId, tenantName, stationName)
+					s.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at UpdateResendDisabledInStations at station %v : %v", tenantName, username, stationName, err.Error())
+					s.handleResendAllFailure("resend_all_dls_msgs", user, stationId, tenantName, stationName, err.Error())
 					return
 				}
 
@@ -2514,9 +2706,9 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 					MessagePayload: fmt.Sprintf("Resend all unacked messages operation at station %s, triggered by user %s has been completed successfully", stationName, username),
 				}
 
-				err = serv.sendSystemMessageOnWS(user, systemMessage)
+				err = s.sendSystemMessageOnWS(user, systemMessage)
 				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at sendSystemMessageOnWS at station %v : %v", tenantName, username, stationName, err.Error())
+					s.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at sendSystemMessageOnWS at station %v : %v", tenantName, username, stationName, err.Error())
 					return
 				}
 				break
@@ -2525,19 +2717,26 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 	}()
 }
 
-func (s *Server) handleResendAllFailure(user models.User, stationId int, tenantName, stationName string) {
+func (s *Server) handleResendAllFailure(taskName string, user models.User, stationId int, tenantName, stationName string, errMsg string) {
+	msgErr := fmt.Sprintf("Resend all unacked messages operation in station %s, triggered by user %s has failed due to an internal error", stationName, user.Username)
 	systemMessage := SystemMessage{
 		MessageType:    "error",
-		MessagePayload: fmt.Sprintf("Resend all unacked messages operation in station %s, triggered by user %s has failed due to an internal error:", stationName, user.Username),
+		MessagePayload: msgErr,
 	}
-	err := serv.sendSystemMessageOnWS(user, systemMessage)
+	err := s.sendSystemMessageOnWS(user, systemMessage)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]handleResendAllFailure at sendSystemMessageOnWS at station %v :  %v", tenantName, user.Username, stationName, err.Error())
 		return
 	}
 	err = db.UpdateResendDisabledInStations(false, []int{stationId})
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]handleResendAllFailure at UpdateResendDisabledInStations at station %v : %v", tenantName, user.Username, stationName, err.Error())
+		s.Errorf("[tenant: %v][user: %v]handleResendAllFailure at UpdateResendDisabledInStations at station %v : %v", tenantName, user.Username, stationName, err.Error())
+		return
+	}
+
+	err = db.UpdateStatusAsyncTask(taskName, tenantName, "failed", stationId, errMsg, "")
+	if err != nil {
+		s.Errorf("[tenant: %v][user: %v]handleResendAllFailure at UpdateReasonAsyncTask at station %v : %v", tenantName, user.Username, stationName, err.Error())
 		return
 	}
 }

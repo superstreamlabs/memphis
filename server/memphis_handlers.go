@@ -105,15 +105,43 @@ func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {
 	return userModel, nil
 }
 
-func CreateDefaultStation(tenantName string, s *Server, sn StationName, userId int, username, schemaName string, schemaVersionNumber int) (models.Station, bool, error) {
-	stationName := sn.Ext()
-	replicas := getDefaultReplicas()
-	err := s.CreateStream(tenantName, sn, "message_age_sec", 3600, "file", 120000, replicas, false, 1, true)
+func CreateDefaultStation(tenantName string, s *Server, sn StationName, user models.User, schemaName string, schemaVersionNumber int) (models.Station, bool, error) {
+	stationsCount, err := db.CountStationsByTenant(tenantName)
 	if err != nil {
 		return models.Station{}, false, err
 	}
 
-	newStation, rowsUpdated, err := db.InsertNewStation(stationName, userId, username, "message_age_sec", 3600, "file", replicas, schemaName, schemaVersionNumber, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false, tenantName, []int{1}, 2, "")
+	allowed, ReloadNeeded, err := ValidateStationPermissions(user.Roles, sn.Ext(), user.TenantName, "write")
+	if err != nil {
+		return models.Station{}, false, err
+	}
+	if !allowed {
+		errMsg := fmt.Sprintf("user %v is not allowed to create station %v", user.Username, sn.Ext())
+		return models.Station{}, false, errors.New(errMsg)
+	}
+	if ReloadNeeded {
+		defer func() {
+			err = serv.SendReloadSignal()
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]CreateStation at SendReloadSignal: Station %v: %v", user.TenantName, user.Username, sn.Ext(), err.Error())
+			}
+		}()
+	}
+
+	canCreate, stationsLimit := ValidataUsageLimitOfFeature(tenantName, "feature-stations-limitation", stationsCount+1)
+	if !canCreate {
+		errMsg := fmt.Errorf("cannot create station (max amount of stations for this plan :%v)", stationsLimit)
+		return models.Station{}, false, errMsg
+	}
+
+	stationName := sn.Ext()
+	replicas := getDefaultReplicas()
+	err = s.CreateStream(tenantName, sn, "message_age_sec", 3600, "file", 120000, replicas, false, 1, true)
+	if err != nil {
+		return models.Station{}, false, err
+	}
+
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName, user.ID, user.Username, "message_age_sec", 3600, "file", replicas, schemaName, schemaVersionNumber, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false, tenantName, []int{1}, 2, _EMPTY_)
 	if err != nil {
 		return models.Station{}, false, err
 	}
@@ -163,22 +191,22 @@ func CreateDefaultSchema(username, tenantName string, userId int) (string, error
 	}`
 	newSchema, rowsUpdated, err := db.InsertNewSchema(defaultSchemaName, defualtSchemaType, username, tenantName)
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 
 	if rowsUpdated == 1 {
-		_, _, err = db.InsertNewSchemaVersion(1, userId, username, defualtSchemaContent, newSchema.ID, "", "", true, tenantName)
+		_, _, err = db.InsertNewSchemaVersion(1, userId, username, defualtSchemaContent, newSchema.ID, _EMPTY_, _EMPTY_, true, tenantName)
 		if err != nil {
-			return "", err
+			return _EMPTY_, err
 		}
 	} else {
 		errMsg := fmt.Sprintf("Schema with the name %v already exists ", newSchema.Name)
-		return "", fmt.Errorf(errMsg)
+		return _EMPTY_, fmt.Errorf(errMsg)
 	}
 
 	err = CreateDefaultTags("schema", newSchema.ID, tenantName)
 	if err != nil {
-		return "", err
+		return _EMPTY_, err
 	}
 	return newSchema.Name, nil
 }

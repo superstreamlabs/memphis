@@ -12,20 +12,23 @@
 
 import './style.scss';
 
-import React, { useContext, useState } from 'react';
-import { Divider, Popover } from 'antd';
-import { ReactComponent as PartitionIcon } from '../../assets/images/partitionIcon.svg';
-import { ReactComponent as CollapseArrowIcon } from '../../assets/images/collapseArrow.svg';
-import { StationStoreContext } from '../../domain/stationOverview';
+import React, { useContext, useState, useEffect } from 'react';
+import { Popover } from 'antd';
+import { ReactComponent as PartitionIcon } from 'assets/images/partitionIcon.svg';
+import { ReactComponent as CollapseArrowIcon } from 'assets/images/collapseArrow.svg';
+import { StationStoreContext } from 'domain/stationOverview';
 
 const PartitionsFilter = ({ partitions_number }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [isOpen, setIsOpen] = useState(false);
-    const [selectedPartition, setSelectedPartition] = useState(-1);
+    const [selectedPartition, setSelectedPartition] = useState(1);
 
+    useEffect(() => {
+        setSelectedPartition(stationState?.stationPartition);
+    }, [stationState?.stationPartition]);
     const handleApply = (i) => {
-        setSelectedPartition(i === 0 ? -1 : i);
-        stationDispatch({ type: 'SET_STATION_PARTITION', payload: i === 0 ? -1 : i });
+        setSelectedPartition(i);
+        stationDispatch({ type: 'SET_STATION_PARTITION', payload: i });
         setIsOpen(false);
     };
 
@@ -34,17 +37,14 @@ const PartitionsFilter = ({ partitions_number }) => {
     };
 
     const getItems = () => {
-        let elements = [];
-        for (let i = 0; i <= partitions_number; i++) {
-            elements.push(
-                <div className="partition-item" key={i} onClick={() => handleApply(i)}>
-                    <PartitionIcon alt="PartitionIcon" />
-                    <label> {i == 0 ? 'All partitions' : `Partition ${i}`}</label>
-                </div>
-            );
-        }
-        return elements;
+        return Array.apply(null, { length: partitions_number }).map((_, index) => (
+            <div className="partition-item" key={index} onClick={() => handleApply(index + 1)}>
+                <PartitionIcon alt="PartitionIcon" />
+                <label> {`Partition ${index + 1}`}</label>
+            </div>
+        ));
     };
+
     const getContent = () => {
         return <div className="filter-partitions-container">{getItems()}</div>;
     };
@@ -54,7 +54,7 @@ const PartitionsFilter = ({ partitions_number }) => {
             <div className="filter-partition-btn">
                 <div className="filter-partition-container">
                     <PartitionIcon alt="PartitionIcon" />
-                    <div>{selectedPartition == -1 ? `All partitions` : `Partition ${selectedPartition}`}</div>
+                    <div>{`Partition ${selectedPartition}`}</div>
                     <CollapseArrowIcon alt="CollapseArrow" className={isOpen ? 'collapse-arrow open' : 'collapse-arrow close'} />
                 </div>
             </div>

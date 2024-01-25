@@ -15,13 +15,13 @@ import './style.scss';
 import React from 'react';
 import Lottie from 'lottie-react';
 
-import animationData from '../../assets/lotties/MemphisGif.json';
+import animationData from 'assets/lotties/MemphisGif.json';
 
 const Loader = ({ background = true, auto = true }) => {
     return (
         <div className="loader-container">
             {background && <div className="gif-wrapper"></div>}
-            <div className={auto && 'memphis-gif'} style={{ height: '10vw', width: '10vw' }}>
+            <div className={auto ? 'memphis-gif' : undefined} style={{ height: '10vw', width: '10vw' }}>
                 <Lottie animationData={animationData} loop={true} />
             </div>
         </div>

@@ -1,5 +1,4 @@
-.selecte-check-box-wrapper{
-
+.selecte-check-box-wrapper {
     .option-wrapper {
         display: flex;
         flex-direction: row;
@@ -11,7 +10,7 @@
         font-family: 'InterMedium';
         font-size: 16px;
         margin-bottom: 12px;
-        justify-content:space-between;
+        justify-content: space-between;
         svg {
             width: 18px;
             height: 18px;
@@ -42,11 +41,11 @@
             }
         }
     }
-    .check-and-content{
+    .check-and-content {
         display: flex;
         width: 100%;
         justify-content: space-between;
-        .check-button{
+        .check-button {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -57,7 +56,7 @@
         cursor: pointer;
         border-color: var(--purple) !important;
     }
-    .not-allowed{
+    .not-allowed {
         cursor: not-allowed !important;
         background-color: #f5f5f5;
     }

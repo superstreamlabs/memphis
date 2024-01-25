@@ -14,20 +14,21 @@ import './style.scss';
 
 import React, { useEffect, useState, useRef, useContext } from 'react';
 import { useHistory } from 'react-router-dom';
-import { Context } from '../../../hooks/store';
-import debeziumIcon from '../../../../src/assets/images/debeziumIcon.svg';
-import slackLogo from '../../../../src/assets/images/slackLogo.svg';
-import s3Logo from '../../../../src/assets/images/s3Logo.svg';
-import pathDomains from '../../../router';
-import Modal from '../../../../src/components/modal';
+import { Context } from 'hooks/store';
+import debeziumIcon from 'assets/images/debeziumIcon.svg';
+import slackLogo from 'assets/images/slackLogo.svg';
+import s3Logo from 'assets/images/s3Logo.svg';
+import pathDomains from 'router';
+import Modal from 'components/modal';
 import SlackIntegration from '../../administration/integrations/components/slackIntegration';
 import S3Integration from '../../administration/integrations/components/s3Integration';
 import DebeziumIntegration from '../../administration/integrations/components/debeziumIntegration';
-import { httpRequest } from '../../../services/http';
-import { ApiEndpoints } from '../../../const/apiEndpoints';
+import { httpRequest } from 'services/http';
+import { ApiEndpoints } from 'const/apiEndpoints';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import ErrorRoundedIcon from '@material-ui/icons/ErrorRounded';
-import LockFeature from '../../../components/lockFeature';
+import LockFeature from 'components/lockFeature';
+import {entitlementChecker} from "utils/plan";
 
 const Integrations = () => {
     const [state, dispatch] = useContext(Context);
@@ -39,7 +40,7 @@ const Integrations = () => {
     ]);
     const history = useHistory();
     const ref = useRef();
-    const storageTiringLimits = state?.userData?.entitlements && state?.userData?.entitlements['feature-storage-tiering'] ? false : true;
+    const storageTiringLimits = !entitlementChecker(state, 'feature-storage-tiering');
 
     useEffect(() => {
         getallIntegration();
@@ -142,7 +143,7 @@ const Integrations = () => {
                                 }}
                             >
                                 {storageTiringLimits && integration.name === 'S3' ? (
-                                    <LockFeature header={'Storage tiering'} />
+                                    <LockFeature />
                                 ) : (
                                     integrations[index]?.value &&
                                     Object.keys(integrations[index]?.value).length > 0 &&

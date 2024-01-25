@@ -14,7 +14,7 @@
 package server
 
 import (
-	"crypto/rand"
+	crand "crypto/rand"
 	"encoding/base64"
 )
 
@@ -34,7 +34,7 @@ func (s *Server) NonceRequired() bool {
 // nonceRequired tells us if we should send a nonce.
 // Lock should be held on entry.
 func (s *Server) nonceRequired() bool {
-	return s.opts.AlwaysEnableNonce || len(s.nkeys) > 0 || s.trustedKeys != nil
+	return s.getOpts().AlwaysEnableNonce || len(s.nkeys) > 0 || s.trustedKeys != nil
 }
 
 // Generate a nonce for INFO challenge.
@@ -42,6 +42,6 @@ func (s *Server) nonceRequired() bool {
 func (s *Server) generateNonce(n []byte) {
 	var raw [nonceRawLen]byte
 	data := raw[:]
-	rand.Read(data)
+	crand.Read(data)
 	base64.RawURLEncoding.Encode(n, data)
 }

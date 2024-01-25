@@ -1,74 +1,125 @@
 .create-user-form {
-    p{
-        margin-bottom: 5px;
+    height: 100%;
+    .user-form {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
+        position: relative;
+        .option-wrapper {
+            margin-bottom: 0px;
+        }
+        .form-section {
+            .form-section-row {
+                display: flex;
+                justify-content: space-between;
+                gap: 20px;
+                margin-bottom: 10px;
+            }
+        }
+        .fields-section {
+            height: calc(100% - 50px);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            .radio-group {
+                justify-content: flex-end;
+            }
+        }
+        .button-container {
+            margin-top: 10px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+    }
+    .user-row {
+        display: flex;
+        gap: 10px;
+        div {
+            width: 100%;
+        }
+    }
+    p {
+        margin-bottom: 0px;
     }
     .ant-form-item {
         margin-bottom: 0px;
+        width: 100%;
     }
-    .fields-title{
-        font-family: 'InterMedium';
-        font-size: 16px;
-    }
-    .field-title{
-        font-size:12px;
-        font-family: 'Inter';
-        font-weight: 400;
-    }
-    .user-details{
-        margin-bottom: 12px;
-    }
-    .field{
-        margin-bottom: 10px;
-    }
-    .user-type{
-        margin-bottom: 0 !important;
-    }
-    .password {
-        .generate-password-button{
-            color: var(--purple);
-            cursor: pointer;
-            font-family: 'InterSemiBold';
-            font-size: 12px;
-        }
-    }
-    .flex-row{
+    .fields-title-container {
         display: flex;
         justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 10px;
+        span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .coming-soon {
+            color: #f4f4f4;
+            background-color: var(--purple);
+            padding: 2px 8px;
+            border-radius: 32px;
+            font-size: 8px;
+            font-family: 'InterSemiBold';
+            width: 75px;
+            text-align: center;
+        }
     }
-    .password-section {
-        .radio-button {
-            margin-bottom: 10px;
-            .ant-radio-group {
-                .ant-radio-button-wrapper {
-                    border-radius: 32px;
-                    text-align: center;
-                    margin-right: 5px;
-                    color: #808191;
-                    border-color: rgba(243,243,243,1);
-                    content: normal;
-                    border-left-width: 1px;
-                }
-
-                .ant-radio-button-wrapper:first-child {
-                    text-align: center;
-                }
-
-                .ant-radio-button-wrapper > .ant-radio-button {
-                    border-radius: 32px;
-                }
-
-                .ant-radio-button-wrapper-checked {
-                    color: white;
-                    background-color: #6557ff;
-                    border-color: #6557ff;
-                }
-                .ant-radio-button-wrapper:not(:first-child)::before {
-                    content: none;
-                }
+    .fields-title {
+        font-family: 'InterMedium';
+        font-size: 16px;
+        width: 100%;
+    }
+    .field-title {
+        font-size: 12px;
+        font-family: 'Inter';
+        font-weight: 400;
+        margin-top: 5px;
+        .required {
+            color: red;
+        }
+    }
+    .field {
+        margin-bottom: 10px;
+    }
+    .password-title {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        .generate-btn {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            gap: 5px;
+            p {
+                margin: 0;
             }
         }
     }
-    .show-violation-form{
-            margin-top: 0;
+
+    .show-violation-form {
+        margin-top: 0;
+    }
+    .select-container {
+        margin-bottom: 10px;
+    }
+    .ant-select-multiple.ant-select-disabled.ant-select:not(.ant-select-customize-input) .ant-select-selector {
+        background: none;
+    }
+    .drop-down-icon {
+        color: black;
+        margin-left: 10px;
+    }
+    .ant-select-focused .ant-select-selector,
+    .ant-select-selector:focus,
+    .ant-select-selector:active,
+    .ant-select-open .ant-select-selector {
+        border-color: #d9d9d9 !important;
+        box-shadow: none !important;
     }
 }
