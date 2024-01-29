@@ -8407,3 +8407,49 @@ func RemoveRoleAndPermissions(roleID []int, tenantName string) error {
 
 	return nil
 }
+
+func RemovePermissionsByTenant(tenantName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	tenantName = strings.ToLower(tenantName)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	query := `DELETE FROM permissions WHERE tenant_name = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "remove_permissions_by_tenant", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func RemoveRolesByTenant(tenantName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	tenantName = strings.ToLower(tenantName)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	query := `DELETE FROM roles WHERE tenant_name = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "remove_roles_by_tenant", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
