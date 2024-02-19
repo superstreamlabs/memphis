@@ -6756,6 +6756,12 @@ func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass, organiz
 	}
 	defer conn.Release()
 
+	var colors any
+	colors = brandData.Colors
+	if brandData.Colors == nil || len(brandData.Colors) == 0 {
+		colors = []string{}
+	}
+
 	query := `INSERT INTO tenants 
 	(id, name, firebase_organization_id, internal_ws_pass, organization_name, dark_icon, light_icon, brand_colors)
 	VALUES(nextval('tenants_seq'),$1, $2, $3, $4, $5, $6, $7)`
@@ -6766,7 +6772,7 @@ func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass, organiz
 	}
 
 	var tenantId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, firebaseOrganizationId, encryptrdInternalWSPass, organizationName, brandData.DarkIcon, brandData.LightIcon, brandData.Colors)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, firebaseOrganizationId, encryptrdInternalWSPass, organizationName, brandData.DarkIcon, brandData.LightIcon, colors)
 	if err != nil {
 		return models.Tenant{}, err
 	}
