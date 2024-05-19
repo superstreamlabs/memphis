@@ -1,3 +1,7 @@
+<p align="center">
+Please pay attention that Memphis.dev is no longer supported officially by the Superstream team (formerly Memphis.dev) and was released to the public.
+  <p align="center">
+    
 <a href="![Github (4)](https://github.com/memphisdev/memphis-terraform/assets/107035359/a5fe5d0f-22e1-4445-957d-5ce4464e61b1)">[![Github (4)](https://github.com/memphisdev/memphis-terraform/assets/107035359/a5fe5d0f-22e1-4445-957d-5ce4464e61b1)](https://memphis.dev)</a>
 <p align="center">
 <a href="https://memphis.dev/discord"><img src="https://img.shields.io/discord/963333392844328961?color=6557ff&label=discord" alt="Discord"></a>
@@ -14,8 +18,6 @@
 
 **[Memphis.dev](https://memphis.dev)** Is The First Data Streaming Platform Designed For Backend Developers<br>
 To Build Event-driven And Real-time Features Faster Than Ever.<br>
-
-<img width="177" alt="cloud_native 2 (5)" src="https://github.com/memphisdev/memphis/assets/107035359/a20ea11c-d509-42bb-a46c-e388c8424101">
 
   </h4>
   
