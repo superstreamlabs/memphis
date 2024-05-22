@@ -24,7 +24,6 @@ import Modal from 'components/modal';
 import CloneModal from 'components/cloneModal';
 import { ApiEndpoints } from 'const/apiEndpoints';
 import { httpRequest } from 'services/http';
-import { sendTrace } from 'services/genericServices';
 import { capitalizeFirst } from 'services/valueConvertor';
 import { LOCAL_STORAGE_SKIP_GET_STARTED, LOCAL_STORAGE_USER_NAME } from 'const/localStorageConsts';
 
@@ -43,10 +42,6 @@ const GetStartedModal = ({ open, handleClose }) => {
     const [chosenUseCase, setUseCase] = useState('');
     const [manualUseCase, setManualUseCase] = useState('');
     const [openCloneModal, setOpenCloneModal] = useState(false);
-
-    useEffect(() => {
-        sendTrace('user-opened-get-started-modal', {});
-    }, []);
 
     const handleSelectUseCase = (useCase) => {
         setUseCase(useCase);
@@ -68,7 +63,6 @@ const GetStartedModal = ({ open, handleClose }) => {
     };
 
     const finsihGetStarted = async () => {
-        sendTrace('user-chosen-use-case', { use_case: chosenUseCase !== '' ? chosenUseCase : manualUseCase });
         setManualUseCase('');
         if (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true') {
             skipGetStarted();
@@ -141,7 +135,6 @@ const GetStartedModal = ({ open, handleClose }) => {
                             key={index}
                             onClick={() => {
                                 setOpenCloneModal(true);
-                                sendTrace('user-click-example-app', { app: code.title });
                             }}
                         >
                             <div className="left-purple"></div>

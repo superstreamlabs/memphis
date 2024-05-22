@@ -33,7 +33,6 @@ import { ReactComponent as PlusElement } from 'assets/images/plusElement.svg';
 import { ReactComponent as EditIcon } from 'assets/images/editIcon.svg';
 import CreateStationForm from 'components/createStationForm';
 import { capitalizeFirst, isCloud } from 'services/valueConvertor';
-import { sendTrace } from 'services/genericServices';
 import { ApiEndpoints } from 'const/apiEndpoints';
 import { httpRequest } from 'services/http';
 import SystemComponents from './systemComponents';
@@ -41,13 +40,11 @@ import GenericDetails from './genericDetails';
 import Stations from './stations';
 import Tags from './tags';
 import Integrations from './integrations';
-import Usage from './usage';
 import Loader from 'components/loader';
 import Button from 'components/button';
 import LearnMore from 'components/learnMore';
 import { Context } from 'hooks/store';
 import Modal from 'components/modal';
-import CloudModal from 'components/cloudModal';
 import Throughput from './throughput';
 import Copy from 'components/copy';
 import StreamLineage from '../streamLineage';
@@ -256,7 +253,6 @@ function OverView() {
                                     alt="Cloud"
                                     className="cloud-teaser"
                                     onClick={() => {
-                                        sendTrace('overview-cloud-icon-click', {});
                                         setCloudModalOpen(true);
                                     }}
                                 />
@@ -287,10 +283,7 @@ function OverView() {
                                 fontWeight="600"
                                 aria-haspopup="true"
                                 boxShadowStyle="float"
-                                onClick={() => {
-                                    sendTrace('overview-create-station-click', {});
-                                    !isCloud() || state?.allowedActions?.can_create_stations ? modalFlip(true) : setOpenCloudModal(true);
-                                }}
+                                onClick={() => modalFlip(true)}
                             />
                         </div>
                     </div>
@@ -299,47 +292,33 @@ function OverView() {
                             <div className="top-component">
                                 <GenericDetails />
                             </div>
-                            {isCloud() ? (
-                                <div className="overview-components overview-components-cloud">
-                                    <div className="left-side">
-                                        <StreamLineage createStationTrigger={(e) => modalFlip(e)} setExpended={(e) => setExpend(e)} expend={lineageExpend} />
-                                        <Throughput />
-                                    </div>
-                                    <div className={state?.isFreePlan ? 'right-side free-cloud' : 'right-side cloud'}>
-                                        <Stations createStationTrigger={(e) => modalFlip(e)} />
-                                        <Tags />
-                                        {state?.isFreePlan ? <Usage /> : <Integrations />}
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="overview-components">
-                                    <div className="left-side">
-                                        <Stations createStationTrigger={(e) => modalFlip(e)} />
-                                        <Throughput />
-                                    </div>
 
-                                    <div className="right-side">
-                                        <SystemComponents />
-                                        <div className="overview-components-wrapper system-components-wrapper">
-                                            <div className="system-components-container">
-                                                <div className="overview-components-header">
-                                                    <p>System overview</p>
-                                                    <label>A dynamic, self-built graph visualization of your main system components</label>
-                                                </div>
-                                                <div
-                                                    className="graphview-section"
-                                                    onClick={() => {
-                                                        sendTrace('overview-graph-overview-oss-click', {});
-                                                        setCloudModalOpen(true);
-                                                    }}
-                                                >
-                                                    <img className="graphview-img" src={(state?.darkMode ? GraphOverviewDark : GraphOverviewLight) || null} alt="" />
-                                                </div>
+                            <div className="overview-components">
+                                <div className="left-side">
+                                    <Stations createStationTrigger={(e) => modalFlip(e)} />
+                                    <Throughput />
+                                </div>
+
+                                <div className="right-side">
+                                    <SystemComponents />
+                                    <div className="overview-components-wrapper system-components-wrapper">
+                                        <div className="system-components-container">
+                                            <div className="overview-components-header">
+                                                <p>System overview</p>
+                                                <label>A dynamic, self-built graph visualization of your main system components</label>
+                                            </div>
+                                            <div
+                                                className="graphview-section"
+                                                onClick={() => {
+                                                    setCloudModalOpen(true);
+                                                }}
+                                            >
+                                                <img className="graphview-img" src={(state?.darkMode ? GraphOverviewDark : GraphOverviewLight) || null} alt="" />
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            )}
+                            </div>
                         </>
                     ) : (
                         <StreamLineage setExpended={(e) => setExpend(e)} expend={lineageExpend} />
@@ -375,8 +354,6 @@ function OverView() {
             >
                 <CreateStationForm createStationFormRef={createStationRef} setLoading={(e) => setCreatingProsessd(e)} />
             </Modal>
-            <CloudModal type="cloud" open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
-            <CloudModal type="upgrade" open={openCloudModal} handleClose={() => setOpenCloudModal(false)} />
         </div>
     );
 }

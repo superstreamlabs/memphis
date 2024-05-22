@@ -26,9 +26,8 @@ import DataDogIntegration from '../dataDogIntegration';
 import GrafanaIntegration from '../grafanaIntegration';
 import ElasticIntegration from '../elasticIntegration';
 import DebeziumIntegration from '../debeziumIntegration';
-import GitHubIntegration from '../gitHubIntegration';
 import ZapierIntegration from '../zapierIntegration';
-import Drawer from "components/drawer";
+import Drawer from 'components/drawer';
 
 const IntegrationItem = ({ value, lockFeature, isOpen }) => {
     const [state] = useContext(Context);
@@ -62,20 +61,6 @@ const IntegrationItem = ({ value, lockFeature, isOpen }) => {
                         close={(data) => {
                             modalFlip(false);
                             setIntegrateValue(data);
-                        }}
-                        value={ref.current}
-                    />
-                );
-            case 'Github':
-                return (
-                    <GitHubIntegration
-                        close={(data) => {
-                            setIntegrateValue(data);
-                            data !== ref.current &&
-                                history.push({
-                                    pathname: '/functions',
-                                    integrated: true
-                                });
                         }}
                         value={ref.current}
                     />

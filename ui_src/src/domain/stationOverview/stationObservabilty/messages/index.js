@@ -45,8 +45,6 @@ import UseSchemaModal from '../../components/useSchemaModal';
 import DeleteItemsModal from 'components/deleteItemsModal';
 import { ReactComponent as DisableIcon } from 'assets/images/disableIcon.svg';
 import { Divider } from 'antd';
-import FunctionsOverview from '../components/functionsOverview';
-import CloudModal from 'components/cloudModal';
 import Spinner from 'components/spinner';
 import { ReactComponent as CleanDisconnectedProducersIcon } from 'assets/images/clean_disconnected_producers.svg';
 
@@ -414,35 +412,6 @@ const Messages = ({ referredFunction, loading }) => {
 
     return (
         <div className="messages-container">
-            <div className="top">
-                <div className="top-header">
-                    <div className="left">
-                        <div className="top-switcher">
-                            <div className={`top-switcher-btn ${activeTab === 'general' ? 'ms-active' : ''}`} onClick={() => setActiveTab('general')}>
-                                General
-                            </div>
-                            <div
-                                className={`top-switcher-btn ${activeTab === 'functions' ? 'ms-active' : ''} ${
-                                    !isCloud() || !stationState?.stationSocketData?.functions_enabled ? 'ms-disabled' : undefined
-                                }`}
-                                onClick={() => (isCloud() ? stationState?.stationSocketData?.functions_enabled && setActiveTab('functions') : setCloudModalOpen(true))}
-                            >
-                                {stationState?.stationSocketData?.functions_enabled ? (
-                                    <>
-                                        <label>Functions</label>
-                                        <label className="badge">Beta</label>
-                                    </>
-                                ) : (
-                                    <TooltipComponent text="Supported for new stations" minWidth="35px">
-                                        Functions
-                                    </TooltipComponent>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             {activeTab === 'general' && (
                 <div className="tab-general">
                     <Divider style={{ marginTop: 0, marginBottom: '10px' }} />
@@ -452,8 +421,7 @@ const Messages = ({ referredFunction, loading }) => {
                             {((tabValue === tabs[0] && stationState?.stationSocketData?.messages?.length > 0) ||
                                 (tabValue === tabs[1] &&
                                     ((subTabValue === subTabs[0]?.name && stationState?.stationSocketData?.poison_messages?.length > 0) ||
-                                        (subTabValue === subTabs[1]?.name && stationState?.stationSocketData?.schema_failed_messages?.length > 0) ||
-                                        (subTabValue === subTabs[2]?.name && stationState?.stationSocketData?.functions_failed_messages?.length > 0)))) && (
+                                        (subTabValue === subTabs[1]?.name && stationState?.stationSocketData?.schema_failed_messages?.length > 0)))) && (
                                 <Button
                                     width="80px"
                                     height="32px"
@@ -704,14 +672,6 @@ const Messages = ({ referredFunction, loading }) => {
                     )}
                 </div>
             )}
-            {activeTab === 'functions' && (
-                <FunctionsOverview
-                    referredFunction={choseReferredFunction}
-                    dismissFunction={() => setChoseReferredFunction(null)}
-                    moveToGenralView={() => setActiveTab('general')}
-                    loading={loading}
-                />
-            )}
 
             <Modal
                 header={<PurgeWrapperIcon alt="deleteWrapperIcon" />}
@@ -768,7 +728,6 @@ const Messages = ({ referredFunction, loading }) => {
                     loader={disableLoader}
                 />
             </Modal>
-            <CloudModal open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} type="cloud" />
             <MessageDetails
                 open={selectedRowIndex !== null}
                 isDls={tabValue === tabs[1]}

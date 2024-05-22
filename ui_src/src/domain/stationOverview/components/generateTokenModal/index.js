@@ -23,9 +23,7 @@ import Input from 'components/Input';
 import Copy from 'components/copy';
 import CreateUserDetails from 'domain/users/createUserDetails';
 import Drawer from 'components/drawer';
-import { LOCAL_STORAGE_ACCOUNT_ID, LOCAL_STORAGE_USER_PASS_BASED_AUTH } from 'const/localStorageConsts';
-import { isCloud } from 'services/valueConvertor';
-import { sendTrace } from 'services/genericServices';
+import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from 'const/localStorageConsts';
 
 const GenerateTokenModal = ({ host, close, returnToken, restProducer, stationName }) => {
     const [isLoading, setIsLoading] = useState(true);
@@ -34,7 +32,7 @@ const GenerateTokenModal = ({ host, close, returnToken, restProducer, stationNam
     const [formFields, setFormFields] = useState({
         username: appUsers[0]?.name || '',
         connection_token: '',
-        account_id: isCloud() ? Number(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)) : 1,
+        account_id: 1,
         token_expiry_in_minutes: restProducer ? 525600 : 123,
         refresh_token_expiry_in_minutes: 10000092
     });
@@ -79,7 +77,7 @@ const GenerateTokenModal = ({ host, close, returnToken, restProducer, stationNam
             setFormFields({
                 username: appUsers[0]?.name || '',
                 password: '',
-                account_id: isCloud() ? Number(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)) : 1,
+                account_id: 1,
                 token_expiry_in_minutes: restProducer ? 525600 : 123,
                 refresh_token_expiry_in_minutes: 10000092
             });
@@ -104,12 +102,6 @@ const GenerateTokenModal = ({ host, close, returnToken, restProducer, stationNam
         } catch (erro) {
             setGenerateLoading(false);
         }
-    };
-
-    const produceConsumeRest = (action) => {
-        sendTrace('produceConsumeRest', {
-            action: action
-        });
     };
 
     return (
@@ -223,14 +215,14 @@ const GenerateTokenModal = ({ host, close, returnToken, restProducer, stationNam
                         <div className="user-password-section">
                             <div className="api-token">
                                 <p className="field-title">Produce</p>
-                                <div className="input-and-copy" onClick={() => produceConsumeRest('produce')}>
+                                <div className="input-and-copy">
                                     <span className="url-span">{`${host}/stations/${stationName}/produce/single?authorization=${userToken?.jwt_refresh_token}`}</span>
                                     <Copy data={`${host}/stations/${stationName}/produce/single?authorization=${userToken?.jwt_refresh_token}`} width={20} />
                                 </div>
                             </div>
                             <div className="api-token">
                                 <p className="field-title">Consume</p>
-                                <div className="input-and-copy" onClick={() => produceConsumeRest('consume')}>
+                                <div className="input-and-copy">
                                     <span className="url-span">{`${host}/stations/${stationName}/consume/batch?authorization=${userToken?.jwt_refresh_token}`}</span>
                                     <Copy data={`${host}/stations/${stationName}/consume/batch?authorization=${userToken?.jwt_refresh_token}`} width={20} />
                                 </div>

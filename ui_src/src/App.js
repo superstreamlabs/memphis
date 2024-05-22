@@ -38,7 +38,7 @@ import { handleRefreshTokenRequest, httpRequest } from 'services/http';
 import { ReactComponent as RedirectIcon } from 'assets/images/redirectIcon.svg';
 import { ReactComponent as SuccessIcon } from 'assets/images/successIcon.svg';
 import { ReactComponent as CloseIcon } from 'assets/images/closeNotification.svg';
-import { showMessages, useGetAllowedActions } from 'services/genericServices';
+import { showMessages } from 'services/genericServices';
 import StationOverview from 'domain/stationOverview';
 import { ReactComponent as ErrorIcon } from 'assets/images/errorIcon.svg';
 import MessageJourney from 'domain/messageJourney';
@@ -52,21 +52,18 @@ import PrivateRoute from 'PrivateRoute';
 import AuthService from 'services/auth';
 import Overview from 'domain/overview';
 import Loader from 'components/loader';
-import Functions from 'domain/functions';
 import { Context } from 'hooks/store';
 import pathDomains from 'router';
 import Users from 'domain/users';
-import { planType } from "const/globalConst";
+import { planType } from 'const/globalConst';
 
 let SysLogs = undefined;
 let Login = undefined;
 let Signup = undefined;
 
-if (!isCloud()) {
-    SysLogs = require('domain/sysLogs').default;
-    Login = require('domain/login').default;
-    Signup = require('domain/signup').default;
-}
+SysLogs = require('domain/sysLogs').default;
+Login = require('domain/login').default;
+Signup = require('domain/signup').default;
 
 const App = withRouter(() => {
     const [state, dispatch] = useContext(Context);
@@ -85,7 +82,6 @@ const App = withRouter(() => {
     const [displayedNotifications, setDisplayedNotifications] = useState([]);
     const [systemMessage, setSystemMessage] = useState([]);
     const { stigg } = isCloud() && useStiggContext();
-    const getAllowedActions = useGetAllowedActions();
 
     const stateRef = useRef([]);
     stateRef.current = [cloudLogedIn, persistedNotifications];
@@ -125,7 +121,6 @@ const App = withRouter(() => {
                 }
             }
             history.push('/overview');
-            setCloudLogedIn(true);
         } catch (error) {
             setCloudLogedIn(true);
             console.log(error);
@@ -204,7 +199,6 @@ const App = withRouter(() => {
             dispatch({ type: 'SET_ENTITLEMENTS', payload: data?.entitelments });
             dispatch({ type: 'SET_PLAN_TYPE', payload: data.plan === planType.FREE });
             setRefreshPlan(false);
-            await getAllowedActions();
             showMessages('success', 'Your plan has been successfully updated.');
         } catch (error) {
             setRefreshPlan(false);
@@ -480,19 +474,7 @@ const App = withRouter(() => {
                                     ></AppWrapper>
                                 }
                             />
-                            <PrivateRoute
-                                exact
-                                path={`${pathDomains.functions}`}
-                                component={
-                                    <AppWrapper
-                                        content={
-                                            <div>
-                                                <Functions />
-                                            </div>
-                                        }
-                                    ></AppWrapper>
-                                }
-                            />
+
                             <PrivateRoute
                                 exact
                                 path={pathDomains.users}
@@ -601,32 +583,7 @@ const App = withRouter(() => {
                                     ></AppWrapper>
                                 }
                             />
-                            <PrivateRoute
-                                exact
-                                path={`${pathDomains.functions}`}
-                                component={
-                                    <AppWrapper
-                                        content={
-                                            <div>
-                                                <Functions />
-                                            </div>
-                                        }
-                                    ></AppWrapper>
-                                }
-                            />
-                            {/* <PrivateRoute
-                                exact
-                                path={`${pathDomains.functions}/:name`}
-                                component={
-                                    <AppWrapper
-                                        content={
-                                            <div>
-                                                <Functions />
-                                            </div>
-                                        }
-                                    ></AppWrapper>
-                                }
-                            /> */}
+
                             <PrivateRoute
                                 exact
                                 path={`${pathDomains.schemaverse}/create`}

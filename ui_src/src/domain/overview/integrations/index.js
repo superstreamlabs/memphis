@@ -27,8 +27,6 @@ import { httpRequest } from 'services/http';
 import { ApiEndpoints } from 'const/apiEndpoints';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import ErrorRoundedIcon from '@material-ui/icons/ErrorRounded';
-import LockFeature from 'components/lockFeature';
-import {entitlementChecker} from "utils/plan";
 
 const Integrations = () => {
     const [state, dispatch] = useContext(Context);
@@ -40,7 +38,6 @@ const Integrations = () => {
     ]);
     const history = useHistory();
     const ref = useRef();
-    const storageTiringLimits = !entitlementChecker(state, 'feature-storage-tiering');
 
     useEffect(() => {
         getallIntegration();
@@ -134,21 +131,13 @@ const Integrations = () => {
                                 className="integration-item"
                                 key={index}
                                 onClick={() => {
-                                    if (storageTiringLimits && integration.name === 'S3') {
-                                        return;
-                                    } else {
-                                        ref.current = integration.name;
-                                        modalFlip(true);
-                                    }
+                                    ref.current = integration.name;
+                                    modalFlip(true);
                                 }}
                             >
-                                {storageTiringLimits && integration.name === 'S3' ? (
-                                    <LockFeature />
-                                ) : (
-                                    integrations[index]?.value &&
+                                {integrations[index]?.value &&
                                     Object.keys(integrations[index]?.value).length > 0 &&
-                                    isValidIndication(integrations[index]?.value?.is_valid)
-                                )}
+                                    isValidIndication(integrations[index]?.value?.is_valid)}
                                 <img className="img-icon" src={integration.logo} alt={integration.name} />
                                 <label className="integration-name">{integration.name}</label>
                             </div>

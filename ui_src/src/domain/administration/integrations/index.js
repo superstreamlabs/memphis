@@ -18,7 +18,6 @@ import { CATEGORY_LIST, INTEGRATION_LIST } from 'const/integrationList';
 import { ReactComponent as SoonBadgeIcon } from 'assets/images/soonBadge.svg';
 import IntegrationItem from './components/integrationItem';
 import { ApiEndpoints } from 'const/apiEndpoints';
-import { isCloud } from 'services/valueConvertor';
 import { httpRequest } from 'services/http';
 import Button from 'components/button';
 import Loader from 'components/loader';
@@ -28,7 +27,6 @@ import Input from 'components/Input';
 import Tag from 'components/tag';
 import { showMessages } from 'services/genericServices';
 import { useLocation } from 'react-router-dom';
-import {entitlementChecker} from "utils/plan";
 
 const Integrations = () => {
     const [state, dispatch] = useContext(Context);
@@ -40,8 +38,6 @@ const Integrations = () => {
     const [githubModalIsOpen, setGithubModalIsOpen] = useState(false);
     const location = useLocation();
     const queryParameters = new URLSearchParams(location.search);
-
-    const storageTiringLimits = !entitlementChecker(state, 'feature-storage-tiering');
 
     useEffect(() => {
         const process = async () => {
@@ -156,14 +152,7 @@ const Integrations = () => {
                     {Object.keys(filterList)?.map((integration) => {
                         const integrationItem = filterList[integration];
                         const key = integrationItem.name;
-                        const integrationElement = (
-                            <IntegrationItem
-                                lockFeature={isCloud() && integrationItem.name === 'S3' && storageTiringLimits}
-                                key={key}
-                                value={integrationItem}
-                                isOpen={integration === 'GitHub' ? githubModalIsOpen : false}
-                            />
-                        );
+                        const integrationElement = <IntegrationItem key={key} value={integrationItem} isOpen={integration === 'GitHub' ? githubModalIsOpen : false} />;
 
                         if (integrationItem.comingSoon) {
                             return (

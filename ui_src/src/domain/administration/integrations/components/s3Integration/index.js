@@ -23,7 +23,6 @@ import CustomTabs from 'components/Tabs';
 import Input from 'components/Input';
 import Checkbox from 'components/checkBox';
 import Loader from 'components/loader';
-import CloudMoadl from 'components/cloudModal';
 import { ReactComponent as PurpleQuestionMark } from 'assets/images/purpleQuestionMark.svg';
 import { showMessages } from 'services/genericServices';
 import IntegrationDetails from '../integrationItem/integrationDetails';
@@ -85,18 +84,15 @@ const S3Integration = ({ close, value, lockFeature }) => {
         if (values?.errorFields) {
             return;
         } else {
-            if (lockFeature) setCloudModalOpen(true);
-            else {
-                setLoadingSubmit(true);
-                if (isValue) {
-                    if (creationForm.isFieldTouched('secret_key')) {
-                        updateIntegration();
-                    } else {
-                        updateIntegration(false);
-                    }
+            setLoadingSubmit(true);
+            if (isValue) {
+                if (creationForm.isFieldTouched('secret_key')) {
+                    updateIntegration();
                 } else {
-                    createIntegration();
+                    updateIntegration(false);
                 }
+            } else {
+                createIntegration();
             }
         }
     };
@@ -392,7 +388,6 @@ const S3Integration = ({ close, value, lockFeature }) => {
                     </Form>
                 </>
             )}
-            <CloudMoadl type="upgrade" open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
         </dynamic-integration>
     );
 };

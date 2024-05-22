@@ -22,7 +22,6 @@ import React from 'react';
 import TooltipComponent from 'components/tooltip/tooltip';
 import CheckboxComponent from 'components/checkBox';
 import { PriorityHighRounded } from '@material-ui/icons';
-import CloudOnly from 'components/cloudOnly';
 
 const CustomTabs = ({ tabs, onChange, value, disabled, length, tooltip, icon = false, checkbox = false, defaultActiveKey, tabsCounter, icons }) => {
     return (
@@ -39,10 +38,7 @@ const CustomTabs = ({ tabs, onChange, value, disabled, length, tooltip, icon = f
                                 {icons && icons[index] && !icon && icons[index]}
                                 {checkbox && <CheckboxComponent checked={tab.checked} />}
                                 <TooltipComponent text={tooltip && tooltip[index]}>
-                                    <>
-                                        {`${tab?.name || tab}  ${tabsCounter ? `(${tabsCounter[index]})` : ''} `}
-                                        {tab?.cloudOnly && <CloudOnly position={'relative'} />}
-                                    </>
+                                    <>{`${tab?.name || tab}  ${tabsCounter ? `(${tabsCounter[index]})` : ''} `}</>
                                 </TooltipComponent>
                                 {length && length[index] && icon && (
                                     <div className="error-icon">

@@ -19,8 +19,6 @@ import { ReactComponent as TypeIcon } from 'assets/images/typeIcon.svg';
 import { ReactComponent as CreatedByIcon } from 'assets/images/createdByIcon.svg';
 import { ReactComponent as SchemaItemIcon } from 'assets/images/schemaItemIcon.svg';
 import { httpRequest } from 'services/http';
-import { useGetAllowedActions } from 'services/genericServices';
-import { isCloud } from 'services/valueConvertor';
 import Button from 'components/button';
 import Copy from 'components/copy';
 import SelectComponent from 'components/select';
@@ -39,7 +37,6 @@ const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => 
     const [currentVersion, setCurrentversion] = useState();
     const [isDiff, setIsDiff] = useState('Yes');
 
-    const getAllowedActions = useGetAllowedActions();
     const getUpdateSchema = async () => {
         try {
             setIsLoading(true);
@@ -67,10 +64,7 @@ const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => 
                 dispatch(data);
                 setUseschemaLoading(false);
             }
-        } catch (error) {
-        } finally {
-            isCloud() && getAllowedActions();
-        }
+        } catch (error) {}
         setUseschemaLoading(false);
     };
 

@@ -12,16 +12,14 @@
 
 import './style.scss';
 
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Form } from 'antd';
-import { HiLockClosed } from 'react-icons/hi';
 import { ArrowDropDownRounded } from '@material-ui/icons';
 import Input from 'components/Input';
 import Button from 'components/button';
 import SelectComponent from 'components/select';
 import { Select } from 'antd';
 import { httpRequest } from 'services/http';
-import { useGetAllowedActions } from 'services/genericServices';
 import { ApiEndpoints } from 'const/apiEndpoints';
 import SelectCheckBox from 'components/selectCheckBox';
 import RadioButton from 'components/radioButton';
@@ -29,19 +27,14 @@ import LearnMore from 'components/learnMore';
 import { generator } from 'services/generator';
 import { ReactComponent as RefreshIcon } from 'assets/images/refresh.svg';
 import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from 'const/localStorageConsts';
-import { isCloud, showUpgradePlan } from 'services/valueConvertor';
-import { Context } from 'hooks/store';
-import UpgradePlans from 'components/upgradePlans';
 
 const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, isLoading, clientType = false, selectedRow }) => {
-    const [state, dispatch] = useContext(Context);
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
         username: '',
         password: ''
     });
     const [userType, setUserType] = useState(selectedRow?.user_type === 'application' ? 'application' : clientType ? 'application' : 'management');
-    const [userViolation, setUserViolation] = useState(false);
     const userTypeOptions = [
         {
             id: 1,
@@ -74,9 +67,6 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
     const [rbacTypeWrite, setRbacTypeWrite] = useState(selectedRow ? null : 'pattern');
     const [rbacTypeRead, setRbacTypeRead] = useState(selectedRow ? null : 'pattern');
     const [isDisabled, setIsDisabled] = useState(false);
-
-    const getAllowedActions = useGetAllowedActions();
-
     useEffect(() => {
         if (selectedRow) {
             creationForm.setFieldsValue({ allow_read_permissions: selectedRow?.permissions?.allow_read_permissions });
@@ -95,27 +85,13 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
         setFormFields((formFields) => ({ ...formFields, ...updatedValue }));
     };
 
-    const checkPlanViolation = () => {
-        const usersLimits = state?.userData?.entitlements && state?.userData?.entitlements['feature-management-users']?.limits;
-        const usersExceeded = userList?.management_users?.length === usersLimits;
-        setUserViolation(usersExceeded);
-
-        return !usersExceeded;
-    };
-
     const onFinish = async () => {
         try {
-            let canCreate = isCloud() ? false : true;
             const fieldsValue = await creationForm.validateFields();
             if (fieldsValue?.errorFields) {
                 handleLoader(false);
                 return;
             } else {
-                if (isCloud()) canCreate = checkPlanViolation(formFields);
-                if (!canCreate) {
-                    handleLoader(false);
-                    return;
-                }
                 try {
                     handleLoader(true);
                     const bodyRequest = fieldsValue;
@@ -141,7 +117,6 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                     handleLoader(false);
                 } finally {
                     handleLoader(false);
-                    getAllowedActions();
                 }
             }
         } catch (error) {
@@ -190,131 +165,8 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                     </div>
                     <div className="form-section">
                         <p className="fields-title">User details</p>
-                        {userType === 'management' && isCloud() && (
-                            <div className="form-section-row">
-                                <Form.Item
-                                    name="username"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: 'Please input email!'
-                                        },
-                                        {
-                                            message: 'Please enter a valid email address!',
-                                            pattern: /^[a-zA-Z0-9._%]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
-                                        }
-                                    ]}
-                                >
-                                    <p className="field-title">
-                                        Email <label className="required">*</label>
-                                    </p>
-                                    <Input
-                                        placeholder="Type email"
-                                        type="text"
-                                        radiusType="semi-round"
-                                        maxLength={60}
-                                        colorType="black"
-                                        backgroundColorType="none"
-                                        borderColorType="gray"
-                                        height="40px"
-                                        width="100%"
-                                        fontSize="12px"
-                                        onBlur={(e) => updateFormState('username', e.target.value)}
-                                        onChange={(e) => {
-                                            updateFormState('username', e.target.value);
-                                            creationForm.setFieldsValue({ username: e.target.value });
-                                        }}
-                                        value={formFields?.username || selectedRow?.username}
-                                        disabled={isDisabled}
-                                    />
-                                </Form.Item>
-                                <Form.Item
-                                    name="full_name"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: 'Please input full name!'
-                                        },
-                                        {
-                                            message: 'Please enter a valid full name!',
-                                            pattern: /^[A-Za-z\s]+$/i
-                                        }
-                                    ]}
-                                >
-                                    <p className="field-title">
-                                        Full name<label className="required">*</label>
-                                    </p>
-                                    <Input
-                                        placeholder="Type full name"
-                                        type="text"
-                                        maxLength={30}
-                                        radiusType="semi-round"
-                                        colorType="black"
-                                        backgroundColorType="none"
-                                        borderColorType="gray"
-                                        height="40px"
-                                        width="100%"
-                                        fontSize="12px"
-                                        onBlur={(e) => updateFormState('full_name', e.target.value)}
-                                        onChange={(e) => {
-                                            updateFormState('full_name', e.target.value);
-                                            creationForm.setFieldsValue({ full_name: e.target.value });
-                                        }}
-                                        value={formFields?.full_name || selectedRow?.full_name}
-                                        disabled={isDisabled}
-                                    />
-                                </Form.Item>
-                            </div>
-                        )}
-                        {userType === 'management' && isCloud() && (
-                            <div className="form-section-row">
-                                <Form.Item name="team">
-                                    <p className="field-title">Team</p>
-                                    <Input
-                                        placeholder="Type your team"
-                                        type="text"
-                                        maxLength={20}
-                                        radiusType="semi-round"
-                                        colorType="black"
-                                        backgroundColorType="none"
-                                        borderColorType="gray"
-                                        height="40px"
-                                        width="100%"
-                                        fontSize="12px"
-                                        onBlur={(e) => updateFormState('team', e.target.value)}
-                                        onChange={(e) => {
-                                            updateFormState('team', e.target.value);
-                                            creationForm.setFieldsValue({ team: e.target.value });
-                                        }}
-                                        value={formFields?.team || selectedRow?.team}
-                                        disabled={isDisabled}
-                                    />
-                                </Form.Item>
-                                <Form.Item name="position">
-                                    <p className="field-title">Position</p>
-                                    <Input
-                                        placeholder="Type your position"
-                                        type="text"
-                                        maxLength={30}
-                                        radiusType="semi-round"
-                                        colorType="black"
-                                        backgroundColorType="none"
-                                        borderColorType="gray"
-                                        height="40px"
-                                        width="100%"
-                                        fontSize="12px"
-                                        onBlur={(e) => updateFormState('position', e.target.value)}
-                                        onChange={(e) => {
-                                            updateFormState('position', e.target.value);
-                                            creationForm.setFieldsValue({ position: e.target.value });
-                                        }}
-                                        value={formFields?.position || selectedRow?.position}
-                                        disabled={isDisabled}
-                                    />
-                                </Form.Item>
-                            </div>
-                        )}
-                        {userType === 'management' && !isCloud() && (
+
+                        {userType === 'management' && (
                             <div className="form-section-row">
                                 <Form.Item
                                     name="username"
@@ -396,7 +248,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                                 </Form.Item>
                             </div>
                         )}
-                        {userType === 'management' && !isCloud() && (
+                        {userType === 'management' && (
                             <div className="form-section-row">
                                 <Form.Item
                                     name="full_name"
@@ -775,25 +627,6 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                                     )}
                                 </Form.Item>
                             </div>
-                        </div>
-                    )}
-
-                    {userViolation && (
-                        <div className="show-violation-form">
-                            <div className="flex-line">
-                                <HiLockClosed className="lock-feature-icon" />
-                                <p>Your current plan allows {state?.userData?.entitlements['feature-management-users']?.limits} management users</p>
-                            </div>
-                            {showUpgradePlan() && (
-                                <UpgradePlans
-                                    content={
-                                        <div className="upgrade-button-wrapper">
-                                            <p className="upgrade-plan">Upgrade now</p>
-                                        </div>
-                                    }
-                                    isExternal={false}
-                                />
-                            )}
                         </div>
                     )}
                 </div>

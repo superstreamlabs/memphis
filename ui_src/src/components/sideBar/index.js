@@ -20,7 +20,6 @@ import { BsFillChatSquareTextFill } from 'react-icons/bs';
 import { useHistory } from 'react-router-dom';
 import { Divider, Popover } from 'antd';
 import Drawer from 'components/drawer';
-import CloudModal from 'components/cloudModal';
 import {
     LOCAL_STORAGE_ACCOUNT_NAME,
     LOCAL_STORAGE_AVATAR_ID,
@@ -62,7 +61,6 @@ import Logo from 'assets/images/logo.svg';
 import FullLogo from 'assets/images/fullLogo.svg';
 import FullLogoWhite from 'assets/images/white-logo.svg';
 import AuthService from 'services/auth';
-import { sendTrace, useGetAllowedActions } from 'services/genericServices';
 import { Context } from 'hooks/store';
 import pathDomains from 'router';
 import Spinner from 'components/spinner';
@@ -74,7 +72,6 @@ import AsyncTasks from 'components/asyncTasks';
 import CreateStationForm from 'components/createStationForm';
 import { ReactComponent as StationIcon } from 'assets/images/stationIcon.svg';
 import CreateUserDetails from 'domain/users/createUserDetails';
-import UpgradePlans from 'components/upgradePlans';
 import { FaBook, FaDiscord } from 'react-icons/fa';
 import { BiEnvelope } from 'react-icons/bi';
 import { ReactComponent as ArrowRight } from 'assets/images/arrowRight.svg';
@@ -112,7 +109,6 @@ function SideBar() {
     const [addUserModalIsOpen, addUserModalFlip] = useState(false);
     const [createUserLoader, setCreateUserLoader] = useState(false);
     const [bannerType, setBannerType] = useState('');
-    const getAllowedActions = useGetAllowedActions();
     const [expandSidebar, setExpandSidebar] = useState(false);
     const [darkMode, setDarkMode] = useState(false);
 
@@ -170,7 +166,6 @@ function SideBar() {
         {
             !isCloud() && getSystemVersion().catch(console.error);
         }
-        isCloud() && getAllowedActions();
         setAvatarImage(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID) || state?.userData?.avatar_id);
         localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true' && setOpenGetStartedModal(true);
         const darkMode = localStorage.getItem(LOCAL_STORAGE_DARK_MODE) === 'dark';
@@ -285,17 +280,14 @@ function SideBar() {
                 icon={<NewStationIcon className="icons-sidebar" />}
                 name="Create a new station"
                 onClick={() => {
-                    sendTrace('quick-actions-station', {});
                     setPopoverQuickActions(false);
                     createStationModalFlip(true);
                 }}
-                upgrade={isCloud() && !state?.allowedActions?.can_create_stations}
             />
             <PopoverActionItem
                 icon={<NewSchemaIcon className="icons-sidebar" />}
                 name="Create a new schema"
                 onClick={() => {
-                    sendTrace('quick-actions-schema', {});
                     setPopoverQuickActions(false);
                     history.replace({
                         pathname: `${pathDomains.schemaverse}/create`,
@@ -307,17 +299,14 @@ function SideBar() {
                 icon={<NewUserIcon className="icons-sidebar" />}
                 name="Create a new user"
                 onClick={() => {
-                    sendTrace('quick-actions-user', {});
                     setPopoverQuickActions(false);
                     addUserModalFlip(true);
                 }}
-                upgrade={isCloud() && !state?.allowedActions?.can_create_users}
             />
             <PopoverActionItem
                 icon={<NewIntegrationIcon className="icons-sidebar" />}
                 name="Connect a new integration"
                 onClick={() => {
-                    sendTrace('quick-actions-integration', {});
                     setPopoverQuickActions(false);
                     history.replace(`${pathDomains.administration}/integrations`);
                 }}
@@ -421,7 +410,6 @@ function SideBar() {
                         name="Open service request"
                         onClick={() => {
                             setBannerType('bundle');
-                            setCloudModalOpen(true);
                             setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu);
                         }}
                     />
@@ -521,7 +509,7 @@ function SideBar() {
                 >
                     <div className="item-wrapper" onMouseEnter={() => setHoveredItem('actions')} onMouseLeave={() => setHoveredItem('')}>
                         <div className="icon">
-                            <PlusGrayIcon alt="Quick actions" onClick={() => sendTrace('quick-actions-click', {})} />
+                            <PlusGrayIcon alt="Quick actions" />
                         </div>
                         <p>{expandSidebar ? 'Create New' : 'Create'}</p>
                     </div>
@@ -573,19 +561,16 @@ function SideBar() {
                     route="administration"
                 />
             </div>
-            <CloudModal type={bannerType} open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
             <div className="bottom-icons">
-                {!isCloud() && (
-                    <MenuItem
-                        icon={<LogsIcon alt="LogsIcon" width={20} height={20} />}
-                        activeIcon={<LogsActiveIcon alt="LogsActiveIcon" width={20} height={20} />}
-                        name="Logs"
-                        onClick={() => history.replace(pathDomains.sysLogs)}
-                        onMouseEnter={() => setHoveredItem('logs')}
-                        onMouseLeave={() => setHoveredItem('')}
-                        route="logs"
-                    />
-                )}
+                <MenuItem
+                    icon={<LogsIcon alt="LogsIcon" width={20} height={20} />}
+                    activeIcon={<LogsActiveIcon alt="LogsActiveIcon" width={20} height={20} />}
+                    name="Logs"
+                    onClick={() => history.replace(pathDomains.sysLogs)}
+                    onMouseEnter={() => setHoveredItem('logs')}
+                    onMouseLeave={() => setHoveredItem('')}
+                    route="logs"
+                />
                 <Popover
                     overlayInnerStyle={supportContextMenuStyles}
                     placement="right"
@@ -649,27 +634,14 @@ function SideBar() {
                         </div>
                     </div>
                 </Popover>
-                {!isCloud() && (
-                    <version
-                        is="x3d"
-                        style={{ cursor: !state.isLatest ? 'pointer' : 'default' }}
-                        onClick={() => (!state.isLatest ? history.replace(`${pathDomains.administration}/system_information`) : null)}
-                    >
-                        {!state.isLatest && <div className="update-note" />}
-                        <p>v{state.currentVersion}</p>
-                    </version>
-                )}
-                {showUpgradePlan() && (
-                    <UpgradePlans
-                        content={
-                            <div className="upgrade-button-wrapper">
-                                <CloudUploadIcon className="upgrade-plan-icon" style={{ marginRight: '5px' }} />
-                                <p className="upgrade-plan">Upgrade</p>
-                            </div>
-                        }
-                        isExternal={false}
-                    />
-                )}
+                <version
+                    is="x3d"
+                    style={{ cursor: !state.isLatest ? 'pointer' : 'default' }}
+                    onClick={() => (!state.isLatest ? history.replace(`${pathDomains.administration}/system_information`) : null)}
+                >
+                    {!state.isLatest && <div className="update-note" />}
+                    <p>v{state.currentVersion}</p>
+                </version>
             </div>
             <GetStarted open={openGetStartedModal} handleClose={() => setOpenGetStartedModal(false)} />
             <Modal

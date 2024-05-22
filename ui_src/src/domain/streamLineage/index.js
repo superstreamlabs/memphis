@@ -26,18 +26,14 @@ import { httpRequest } from 'services/http';
 import Connection from './components/connection';
 import Button from 'components/button';
 import Loader from 'components/loader';
-import CloudModal from 'components/cloudModal';
-import { FaArrowCircleUp } from 'react-icons/fa';
 import { Context } from 'hooks/store';
 import Station from './components/station';
-import {entitlementChecker} from "utils/plan";
 
 const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
     const [state, dispatch] = useContext(Context);
     const [isLoading, setisLoading] = useState(false);
     const [nodes, setNodes] = useState([]);
     const [edges, setEdges] = useState([]);
-    const [openCloudModal, setOpenCloudModal] = useState(false);
     const ref = useRef(null);
 
     const getGraphData = async () => {
@@ -183,23 +179,16 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                         <div
                             className="close-wrapper"
                             onClick={() => {
-                                if (!expend && !entitlementChecker(state, 'feature-graph-overview')) {
-                                    setOpenCloudModal(true);
+                                if (expend) {
+                                    setExpended(false);
                                 } else {
-                                    if (expend) {
-                                        setExpended(false);
-                                    } else if (entitlementChecker(state, 'feature-graph-overview')) {
-                                        setExpended(true);
-                                    }
+                                    setExpended(true);
                                 }
                             }}
                         >
                             {expend && <IoClose />}
 
                             {!expend && <MdZoomOutMap />}
-                            {!expend && !entitlementChecker(state, 'feature-graph-overview') && (
-                                <FaArrowCircleUp className="lock-feature-icon" />
-                            )}
                         </div>
                         {expend && (
                             <div className="zoom-wrapper">
@@ -230,7 +219,7 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                         edges={edges}
                         fit={true}
                         ref={ref}
-                        zoomable={entitlementChecker(state, 'feature-graph-overview')}
+                        zoomable={true}
                         maxZoom={0.1}
                         minZoom={-0.9}
                         maxHeight={nodes.length > 3 ? nodes.length * 350 : 900}
@@ -281,7 +270,6 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                     />
                 </div>
             )}
-            <CloudModal type="upgrade" open={openCloudModal} handleClose={() => setOpenCloudModal(false)} />
         </div>
     );
 };

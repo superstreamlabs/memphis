@@ -28,11 +28,9 @@ import { httpRequest } from 'services/http';
 import TitleComponent from 'components/titleComponent';
 import SelectComponent from 'components/select';
 import Switcher from 'components/switcher';
-import Button from 'components/button';
 import Input from 'components/Input';
 import Copy from 'components/copy';
 import pathDomains from 'router';
-import CloudOnly from 'components/cloudOnly';
 
 loader.init();
 loader.config({ monaco });
@@ -41,7 +39,7 @@ const partitons = ['all'];
 const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const history = useHistory();
-    const [messageExample, setMessageExample] = useState(generateJSONWithMaxLength(isCloud() ? 120 : 55));
+    const [messageExample, setMessageExample] = useState(generateJSONWithMaxLength(55));
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({});
 
@@ -50,11 +48,11 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
     }, [messageExample]);
 
     const generateMessage = () => {
-        setMessageExample(generateJSONWithMaxLength(isCloud() ? 120 : 55));
+        setMessageExample(generateJSONWithMaxLength(55));
     };
 
     const handleEditorChange = (newValue) => {
-        if (isCloud() || (!isCloud() && newValue.length <= 100)) {
+        if (newValue.length <= 100) {
             setMessageExample(newValue);
         }
     };
@@ -142,7 +140,7 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                 <div className="message-example">
                     <div className="code-content">{generateEditor()}</div>
                 </div>
-                {!isCloud() && <p>{100 - messageExample.length} characters are left</p>}
+                <p>{100 - messageExample.length} characters are left</p>
             </div>
             <Divider className="seperator" />
             <Form name="form" form={creationForm} onFinish={onFinish} onAbort={cancel} autoComplete="on" className="produce-form">
@@ -222,18 +220,9 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                     </Form.List>
                     <Divider className="seperator" />
                     <div className="by-pass-switcher">
-                        <TitleComponent
-                            headerTitle="Ignore enforced schema"
-                            cloudOnly={isCloud() ? false : true}
-                            typeTitle="sub-header"
-                            headerDescription="Check this box to avoid schema validation"
-                        />
-                        <Form.Item className="form-input" name="bypass_schema" initialValue={isCloud() ? false : true}>
-                            <Switcher
-                                disabled={!isCloud()}
-                                onChange={(e) => creationForm.setFieldsValue({ bypass_schema: e })}
-                                checked={isCloud() ? formFields.bypass_schema : true}
-                            />
+                        <TitleComponent headerTitle="Ignore enforced schema" typeTitle="sub-header" headerDescription="Check this box to avoid schema validation" />
+                        <Form.Item className="form-input" name="bypass_schema" initialValue={true}>
+                            <Switcher disabled={true} onChange={(e) => creationForm.setFieldsValue({ bypass_schema: e })} checked={true} />
                         </Form.Item>
                     </div>
                     <Divider className="seperator" />
@@ -241,12 +230,11 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                         <Form.Item className="form-input" name="partition_number" initialValue={partitons[0]}>
                             <div className="header-flex">
                                 <p className="field-title">Partition</p>
-                                {!isCloud() && <CloudOnly />}
                             </div>
                             <SelectComponent
                                 value={formFields.partition_number || partitons[0]}
                                 colorType="navy"
-                                backgroundColorType={isCloud() ? 'none' : 'disabled'}
+                                backgroundColorType={'disabled'}
                                 borderColorType="gray"
                                 radiusType="semi-round"
                                 height="45px"
@@ -254,14 +242,13 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                                 options={partitons}
                                 onChange={(e) => creationForm.setFieldsValue({ partition_number: e.target.value })}
                                 popupClassName="select-options"
-                                disabled={!isCloud()}
+                                // disabled={!isCloud()}
                             />
                         </Form.Item>
 
                         <Form.Item className="form-input" name="amount" initialValue={1}>
                             <div className="header-flex">
                                 <p className="field-title">Number of records</p>
-                                {!isCloud() && <CloudOnly />}
                             </div>
                             <InputNumberComponent
                                 min={1}
@@ -269,7 +256,7 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                                 onChange={(e) => creationForm.setFieldsValue({ amount: e })}
                                 value={formFields.amount}
                                 placeholder={formFields.amount || 1}
-                                disabled={!isCloud()}
+                                // disabled={!isCloud()}
                                 width="100%"
                             />
                         </Form.Item>

@@ -25,15 +25,12 @@ import activeAndHealthy from 'assets/lotties/activeAndHealthy.json';
 import OverflowTip from 'components/tooltip/overflowtip';
 import { ReactComponent as NoStationsIcon } from 'assets/images/noStations.svg';
 import Button from 'components/button';
-import CloudModal from 'components/cloudModal';
-import { FaArrowCircleUp } from 'react-icons/fa';
 import { Context } from 'hooks/store';
 import pathDomains from 'router';
 import { Virtuoso } from 'react-virtuoso';
 
 const Stations = ({ createStationTrigger }) => {
     const [state, dispatch] = useContext(Context);
-    const [openCloudModal, setOpenCloudModal] = useState(false);
     const history = useHistory();
 
     const goToStation = (stationName) => {
@@ -121,13 +118,12 @@ const Stations = ({ createStationTrigger }) => {
                                 fontSize="12px"
                                 fontWeight="600"
                                 aria-haspopup="true"
-                                onClick={() => (!isCloud() || state?.allowedActions?.can_create_stations ? createStationTrigger(true) : setOpenCloudModal(true))}
+                                onClick={() => createStationTrigger(true)}
                             />
                         </div>
                     )}
                 </div>
             </div>
-            <CloudModal type="upgrade" open={openCloudModal} handleClose={() => setOpenCloudModal(false)} />
         </div>
     );
 };

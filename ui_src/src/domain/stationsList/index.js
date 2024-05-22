@@ -22,7 +22,6 @@ import './style.scss';
 
 import React, { useEffect, useContext, useState, useRef } from 'react';
 import { Virtuoso } from 'react-virtuoso';
-import { useGetAllowedActions } from 'services/genericServices';
 import { ReactComponent as DeleteWrapperIcon } from 'assets/images/deleteWrapperIcon.svg';
 import StationsInstructions from 'components/stationsInstructions';
 import { ReactComponent as StationIcon } from 'assets/images/stationIcon.svg';
@@ -39,8 +38,6 @@ import Loader from 'components/loader';
 import LearnMore from 'components/learnMore';
 import { Context } from 'hooks/store';
 import Modal from 'components/modal';
-import CloudModal from 'components/cloudModal';
-import { FaArrowCircleUp } from 'react-icons/fa';
 import RefreshButton from 'components/refreshButton';
 
 const StationsList = () => {
@@ -52,9 +49,7 @@ const StationsList = () => {
     const [creatingProsessd, setCreatingProsessd] = useState(false);
     const [isCheck, setIsCheck] = useState([]);
     const [isCheckAll, setIsCheckAll] = useState(false);
-    const [openCloudModal, setOpenCloudModal] = useState(false);
     const createStationRef = useRef(null);
-    const getAllowedActions = useGetAllowedActions();
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'stations' });
@@ -102,21 +97,12 @@ const StationsList = () => {
                                 className="modal-btn"
                                 width="230px"
                                 height="42px"
-                                placeholder={
-                                    isCloud() && !state?.allowedActions?.can_create_stations ? (
-                                        <span className="create-new">
-                                            <label>Add another station</label>
-                                            <FaArrowCircleUp className="lock-feature-icon" />
-                                        </span>
-                                    ) : (
-                                        <span className="create-new">Add another station</span>
-                                    )
-                                }
+                                placeholder={<span className="create-new">Add another station</span>}
                                 colorType="white"
                                 radiusType="circle"
                                 backgroundColorType="purple"
                                 fontSize="16px"
-                                onClick={() => (!isCloud() || state?.allowedActions?.can_create_stations ? modalFlip(true) : setOpenCloudModal(true))}
+                                onClick={() => modalFlip(true)}
                             />
                         </div>
                     </div>
@@ -182,8 +168,6 @@ const StationsList = () => {
             }
         } catch (error) {
             setDeleteLoader(false);
-        } finally {
-            getAllowedActions();
         }
     };
 
@@ -236,16 +220,7 @@ const StationsList = () => {
                         <Button
                             width="170px"
                             height="34px"
-                            placeholder={
-                                isCloud() && !state?.allowedActions?.can_create_stations ? (
-                                    <span className="create-new">
-                                        <label>Create a new station</label>
-                                        <FaArrowCircleUp className="lock-feature-icon" />
-                                    </span>
-                                ) : (
-                                    <span className="create-new">Create a new station</span>
-                                )
-                            }
+                            placeholder={<span className="create-new">Create a new station</span>}
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"
@@ -253,7 +228,7 @@ const StationsList = () => {
                             boxShadowStyle="float"
                             fontWeight="600"
                             aria-haspopup="true"
-                            onClick={() => (!isCloud() || state?.allowedActions?.can_create_stations ? modalFlip(true) : setOpenCloudModal(true))}
+                            onClick={() => modalFlip(true)}
                         />
                     </div>
                 </div>
@@ -311,7 +286,6 @@ const StationsList = () => {
                     loader={deleteLoader}
                 />
             </Modal>
-            <CloudModal type="upgrade" open={openCloudModal} handleClose={() => setOpenCloudModal(false)} />
         </div>
     );
 };

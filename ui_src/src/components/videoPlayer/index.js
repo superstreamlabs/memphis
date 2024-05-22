@@ -17,9 +17,8 @@ import ReactPlayer from 'react-player';
 
 import { ReactComponent as PlayVideoIcon } from 'assets/images/playVideoIcon.svg';
 import { ReactComponent as Img404Icon } from 'assets/images/404.svg';
-import { sendTrace } from 'services/genericServices';
 
-const VideoPlayer = ({ url, bgImg, width, height, tracePlay }) => {
+const VideoPlayer = ({ url, bgImg, width, height }) => {
     const [playState, setPlayState] = useState(false);
     const [isOffline, setIsOffline] = useState(false);
 
@@ -41,7 +40,6 @@ const VideoPlayer = ({ url, bgImg, width, height, tracePlay }) => {
             url={url}
             onError={() => setIsOffline(true)}
             style={{ backgroundImage: `url(${bgImg})`, backgroundRepeat: 'no-repeat', backgroundSize: 'cover' }}
-            onStart={() => tracePlay && sendTrace('user-played-functions-video', {})}
         ></ReactPlayer>
     );
 };
