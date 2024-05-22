@@ -26,14 +26,13 @@ import {
     LOCAL_STORAGE_COMPANY_LOGO,
     LOCAL_STORAGE_FULL_NAME,
     LOCAL_STORAGE_USER_NAME,
-    LOCAL_STORAGE_SKIP_GET_STARTED,
     USER_IMAGE,
     LOCAL_STORAGE_DARK_MODE
 } from 'const/localStorageConsts';
 import { ReactComponent as IntegrationColorIcon } from 'assets/images/integrationIconColor.svg';
 import { ReactComponent as OverviewActiveIcon } from 'assets/images/overviewIconActive.svg';
 import { ReactComponent as StationsActiveIcon } from 'assets/images/stationsIconActive.svg';
-import { compareVersions, isCloud, showUpgradePlan } from 'services/valueConvertor';
+import { compareVersions } from 'services/valueConvertor';
 import { ReactComponent as FunctionsActiveIcon } from 'assets/images/functionsIconActive.svg';
 import { ReactComponent as SchemaActiveIcon } from 'assets/images/schemaIconActive.svg';
 import { ReactComponent as IntegrationIcon } from 'assets/images/integrationIcon.svg';
@@ -66,7 +65,6 @@ import pathDomains from 'router';
 import Spinner from 'components/spinner';
 import Support from './support';
 import LearnMore from 'components/learnMore';
-import GetStarted from 'components/getStartedModal';
 import Modal from 'components/modal';
 import AsyncTasks from 'components/asyncTasks';
 import CreateStationForm from 'components/createStationForm';
@@ -103,7 +101,6 @@ function SideBar() {
     const [hoveredItem, setHoveredItem] = useState('');
     const [logoutLoader, setLogoutLoader] = useState(false);
     const [cloudModalOpen, setCloudModalOpen] = useState(false);
-    const [openGetStartedModal, setOpenGetStartedModal] = useState(false);
     const [createStationModal, createStationModalFlip] = useState(false);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
     const [addUserModalIsOpen, addUserModalFlip] = useState(false);
@@ -163,11 +160,8 @@ function SideBar() {
 
     useEffect(() => {
         getCompanyLogo().catch(console.error);
-        {
-            !isCloud() && getSystemVersion().catch(console.error);
-        }
+        getSystemVersion().catch(console.error);
         setAvatarImage(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID) || state?.userData?.avatar_id);
-        localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true' && setOpenGetStartedModal(true);
         const darkMode = localStorage.getItem(LOCAL_STORAGE_DARK_MODE) === 'dark';
         if (darkMode) {
             setDarkMode(darkMode);
@@ -209,24 +203,11 @@ function SideBar() {
 
     const handleLogout = async () => {
         setLogoutLoader(true);
-        if (isCloud()) {
-            try {
-                const data = await httpRequest('POST', ApiEndpoints.SIGN_OUT);
-                if (data) {
-                    setTimeout(() => {
-                        AuthService.logout();
-                        setLogoutLoader(false);
-                    }, 1000);
-                }
-            } catch (error) {
-                setLogoutLoader(false);
-            }
-        } else {
-            AuthService.logout();
-            setTimeout(() => {
-                setLogoutLoader(false);
-            }, 1000);
-        }
+
+        AuthService.logout();
+        setTimeout(() => {
+            setLogoutLoader(false);
+        }, 1000);
     };
 
     const handleAddUser = () => {
@@ -249,27 +230,18 @@ function SideBar() {
         );
     };
 
-    const PopoverActionItem = ({ icon, name, onClick, upgrade }) => {
-        upgrade && setBannerType('upgrade');
+    const PopoverActionItem = ({ icon, name, onClick }) => {
         return (
             <div
                 className="item-wrap"
                 onClick={() => {
-                    if (upgrade) {
-                        setCloudModalOpen(true);
-                        setPopoverQuickActions(false);
-                    } else onClick();
+                    onClick();
                 }}
             >
                 <div className="item">
                     <span className="icons">{icon}</span>
                     <p className="item-title">{name}</p>
                 </div>
-                {isCloud() && upgrade && (
-                    <div>
-                        <FaArrowCircleUp className="lock-feature-icon" />
-                    </div>
-                )}
             </div>
         );
     };
@@ -335,7 +307,6 @@ function SideBar() {
                             ? localStorage.getItem(LOCAL_STORAGE_FULL_NAME)
                             : localStorage.getItem(LOCAL_STORAGE_USER_NAME)}
                     </p>
-                    {isCloud() && <span className="company-name">{state?.userData?.account_name || localStorage.getItem(LOCAL_STORAGE_ACCOUNT_NAME)}</span>}
                 </div>
             </div>
             <Divider />
@@ -363,16 +334,6 @@ function SideBar() {
                     setPopoverOpenSetting(false);
                 }}
             />
-            {isCloud() && (
-                <PopoverActionItem
-                    icon={<ExceptionOutlined className="icons-sidebar" />}
-                    name="Billing"
-                    onClick={() => {
-                        history.replace(`${pathDomains.administration}/usage`);
-                        setPopoverOpenSetting(false);
-                    }}
-                />
-            )}
             <PopoverActionItem icon={logoutLoader ? <Spinner /> : <ExitToAppOutlined className="icons-sidebar" />} name="Log out" onClick={() => handleLogout()} />
         </div>
     );
@@ -383,7 +344,6 @@ function SideBar() {
                 icon={<BsHouseHeartFill className="icons-sidebar" />}
                 name="Getting started"
                 onClick={() => {
-                    setOpenGetStartedModal(true);
                     setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu);
                 }}
             />
@@ -403,38 +363,14 @@ function SideBar() {
                     window.open('https://memphis.dev/discord', '_blank');
                 }}
             />
-            {!isCloud() && (
-                <>
-                    <PopoverActionItem
-                        icon={<BsFillChatSquareTextFill className="icons-sidebar" />}
-                        name="Open service request"
-                        onClick={() => {
-                            setBannerType('bundle');
-                            setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu);
-                        }}
-                    />
-                </>
-            )}
-
-            {isCloud() && (
-                <div className="item-wrap">
-                    <Popover
-                        overlayInnerStyle={overlayStylesSupport}
-                        placement="bottomRight"
-                        content={<Support closeModal={(e) => setPopoverOpenSupport(e)} />}
-                        trigger="click"
-                        onOpenChange={() => setPopoverOpenSupport(!popoverOpenSupport)}
-                        open={popoverOpenSupport}
-                    >
-                        <div className="item">
-                            <span className="icons">
-                                <BiEnvelope className="icons-sidebar" />
-                            </span>
-                            <p className="item-title">Open a service request</p>
-                        </div>
-                    </Popover>
-                </div>
-            )}
+            <PopoverActionItem
+                icon={<BsFillChatSquareTextFill className="icons-sidebar" />}
+                name="Open service request"
+                onClick={() => {
+                    setBannerType('bundle');
+                    setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu);
+                }}
+            />
         </div>
     );
 
@@ -447,7 +383,7 @@ function SideBar() {
     function getCompanyLogoSrc() {
         const darkMode = state?.darkMode || false;
         const fullLogoSrc = darkMode ? FullLogoWhite : FullLogo;
-        return isCloud() ? state?.companyLogo || (expandSidebar ? fullLogoSrc : Logo) : expandSidebar ? fullLogoSrc : Logo;
+        return expandSidebar ? fullLogoSrc : Logo;
     }
 
     return (
@@ -473,31 +409,6 @@ function SideBar() {
                     />
                     <EditIcon alt="edit" className="edit-logo" onClick={() => history.replace(`${pathDomains.administration}/profile`)} />
                 </span>
-
-                {isCloud() && (
-                    <div className="item-wrapper">
-                        <div className="menu-item-env">
-                            <div className="menu-item-env-badge">Coming Soon</div>
-                            {expandSidebar ? (
-                                <>
-                                    <div className="menu-item-env-left">
-                                        <div className="menu-item-env-title">Production</div>
-                                        <div className="menu-item-env-subtitle">Memphis.dev</div>
-                                    </div>
-                                    <div className="menu-item-env-right">
-                                        <ArrowTopGrayIcon />
-                                        <ArrowTopGrayIcon style={{ transform: 'rotate(180deg)' }} />
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="menu-item-env-collapsed">P</div>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                )}
-
                 <Popover
                     overlayInnerStyle={quickActionsStyles}
                     placement="right"
@@ -643,7 +554,6 @@ function SideBar() {
                     <p>v{state.currentVersion}</p>
                 </version>
             </div>
-            <GetStarted open={openGetStartedModal} handleClose={() => setOpenGetStartedModal(false)} />
             <Modal
                 header={
                     <div className="modal-header">
