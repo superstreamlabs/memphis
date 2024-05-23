@@ -136,13 +136,6 @@ const ProduceConsumList = ({ producer }) => {
                 setOpenRunBenchmark(true);
                 setOpenProducerPopover(false);
             }
-        },
-        {
-            action: 'Add a source',
-            onClick: () => {
-                setOpenConnectorModal(true);
-                setOpenProducerPopover(false);
-            }
         }
     ];
 
@@ -165,13 +158,6 @@ const ProduceConsumList = ({ producer }) => {
             action: 'Run a benchmark',
             onClick: () => {
                 setOpenRunBenchmark(true);
-                setOpenProducerPopover(false);
-            }
-        },
-        {
-            action: 'Add a sink',
-            onClick: () => {
-                setOpenConnectorModal(true);
                 setOpenProducerPopover(false);
             }
         }

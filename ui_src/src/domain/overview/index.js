@@ -277,22 +277,6 @@ function OverView() {
 
                                 <div className="right-side">
                                     <SystemComponents />
-                                    <div className="overview-components-wrapper system-components-wrapper">
-                                        <div className="system-components-container">
-                                            <div className="overview-components-header">
-                                                <p>System overview</p>
-                                                <label>A dynamic, self-built graph visualization of your main system components</label>
-                                            </div>
-                                            <div
-                                                className="graphview-section"
-                                                onClick={() => {
-                                                    setCloudModalOpen(true);
-                                                }}
-                                            >
-                                                <img className="graphview-img" src={(state?.darkMode ? GraphOverviewDark : GraphOverviewLight) || null} alt="" />
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         </>

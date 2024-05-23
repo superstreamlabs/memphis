@@ -341,13 +341,6 @@ function SideBar() {
     const supportContextMenu = (
         <div className="menu-content">
             <PopoverActionItem
-                icon={<BsHouseHeartFill className="icons-sidebar" />}
-                name="Getting started"
-                onClick={() => {
-                    setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu);
-                }}
-            />
-            <PopoverActionItem
                 icon={<FaBook className="icons-sidebar" />}
                 name="Documentation"
                 onClick={() => {
@@ -361,14 +354,6 @@ function SideBar() {
                 onClick={() => {
                     setPopoverOpenSupportContextMenu(false);
                     window.open('https://memphis.dev/discord', '_blank');
-                }}
-            />
-            <PopoverActionItem
-                icon={<BsFillChatSquareTextFill className="icons-sidebar" />}
-                name="Open service request"
-                onClick={() => {
-                    setBannerType('bundle');
-                    setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu);
                 }}
             />
         </div>

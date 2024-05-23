@@ -1,6 +1,6 @@
 .overview-container {
     width: calc(100% - var(--main-container-sidebar-width));
-    transition: .3s ease-in-out;
+    transition: 0.3s ease-in-out;
     position: absolute;
     height: 100%;
     overflow: auto;
@@ -187,9 +187,6 @@
                 position: relative;
                 min-height: 580px;
                 min-width: 430px;
-                align-content: space-between;
-                display: grid;
-                grid-template-rows: 60% 38%;
                 .graphview-section {
                     height: calc(100% - 50px);
                     position: relative;
