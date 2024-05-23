@@ -17,7 +17,7 @@ import { InfoOutlined } from '@material-ui/icons';
 
 import { DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS } from 'const/localStorageConsts';
 import { ReactComponent as DeadLetterPlaceholderIcon } from 'assets/images/deadLetterPlaceholder.svg';
-import { isCloud, messageParser, msToUnits, parsingDate } from 'services/valueConvertor';
+import { messageParser, msToUnits, parsingDate } from 'services/valueConvertor';
 import { ReactComponent as PurgeWrapperIcon } from 'assets/images/purgeWrapperIcon.svg';
 import { ReactComponent as WaitingMessagesIcon } from 'assets/images/waitingMessages.svg';
 import { ReactComponent as IdempotencyIcon } from 'assets/images/idempotencyIcon.svg';
@@ -80,16 +80,10 @@ const Messages = ({ referredFunction, loading }) => {
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
 
-    const subTabs = isCloud()
-        ? [
-              { name: 'Unacknowledged', disabled: false },
-              { name: 'Schema violation', disabled: !stationState?.stationMetaData?.is_native },
-              { name: 'Functions', disabled: !stationState?.stationSocketData?.functions_enabled }
-          ]
-        : [
-              { name: 'Unacknowledged', disabled: false },
-              { name: 'Schema violation', disabled: !stationState?.stationMetaData?.is_native }
-          ];
+    const subTabs = [
+        { name: 'Unacknowledged', disabled: false },
+        { name: 'Schema violation', disabled: !stationState?.stationMetaData?.is_native }
+    ];
 
     useEffect(() => {
         activeTab === 'general' && setTabValue('Messages');
@@ -572,7 +566,7 @@ const Messages = ({ referredFunction, loading }) => {
                                 showDivider
                             ></DetailBox>
                             <Divider />
-                            {!isCloud() && stationState?.stationPartition !== 1 && (
+                            {stationState?.stationPartition !== 1 && (
                                 <>
                                     <DetailBox
                                         icon={<LeaderIcon width={24} alt="leaderIcon" />}
@@ -591,7 +585,7 @@ const Messages = ({ referredFunction, loading }) => {
                                     <Divider />
                                 </>
                             )}
-                            {stationState?.stationSocketData?.followers?.length > 0 && !isCloud() && stationState?.stationPartition !== 1 && (
+                            {stationState?.stationSocketData?.followers?.length > 0 && stationState?.stationPartition !== 1 && (
                                 <>
                                     <DetailBox
                                         icon={<FollowersIcon width={24} alt="followersImg" />}
@@ -625,49 +619,6 @@ const Messages = ({ referredFunction, loading }) => {
                                 data={[msToUnits(stationState?.stationSocketData?.idempotency_window_in_ms)]}
                                 showDivider
                             />
-
-                            {isCloud() && (
-                                <>
-                                    <Divider />
-                                    <DetailBox
-                                        icon={<CleanDisconnectedProducersIcon width={24} alt="clean disconnected producers" />}
-                                        title="Clean disconnected producers"
-                                        data={[
-                                            <Button
-                                                width="80px"
-                                                height="25px"
-                                                placeholder="Clean"
-                                                colorType="white"
-                                                radiusType="circle"
-                                                backgroundColorType="red"
-                                                fontSize="12px"
-                                                fontWeight="600"
-                                                disabled={
-                                                    disableLoaderCleanDisconnectedProducers ||
-                                                    (stationState?.stationSocketData?.disconnected_producers?.reduce(
-                                                        (accumulator, item) => accumulator + item.disconnected_producers_count,
-                                                        0
-                                                    ) === 0 &&
-                                                        stationState?.stationSocketData?.connected_producers?.reduce(
-                                                            (accumulator, item) => accumulator + item.disconnected_producers_count,
-                                                            0
-                                                        ) === 0)
-                                                }
-                                                onClick={() => cleanDisconnectedProducers(stationState?.stationMetaData?.id)}
-                                                isLoading={disableLoaderCleanDisconnectedProducers}
-                                                tooltip={
-                                                    stationState?.stationSocketData?.disconnected_producers?.reduce(
-                                                        (accumulator, item) => accumulator + item.disconnected_producers_count,
-                                                        0
-                                                    ) === 0 && 'Nothing to clean'
-                                                }
-                                                tooltip_placement={'right'}
-                                            />
-                                        ]}
-                                        showDivider
-                                    ></DetailBox>
-                                </>
-                            )}
                         </div>
                     )}
                 </div>

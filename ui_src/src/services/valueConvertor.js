@@ -362,9 +362,7 @@ export const partitionsValidator = (value) => {
     if (value <= 0) {
         return 'At least 1 partition is required';
     }
-    if (isCloud() && value > 30) {
-        return 'Max number of partitions is: 30';
-    } else if (!isCloud() && value > 10000) {
+    if (value > 10000) {
         return 'Max number of partitions is: 10,000';
     } else {
         return '';
@@ -439,15 +437,6 @@ export const compareVersions = (a, b) => {
         }
     }
     return true;
-};
-
-export const isCloud = () => {
-    if (process.env.REACT_APP_CLOUD) {
-        const cloud_env = process.env.REACT_APP_CLOUD === 'true';
-        return cloud_env;
-    } else {
-        return false;
-    }
 };
 
 export const convertArrayToObject = (array) => {

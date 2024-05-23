@@ -22,7 +22,6 @@ import { ReactComponent as ClusterConfGrayIcon } from 'assets/images/setting/clu
 import { ReactComponent as IntegrationGrayIcon } from 'assets/images/setting/integrationGray.svg';
 import PersonOutlinedIcon from '@material-ui/icons/PersonOutlined';
 
-import { isCloud } from 'services/valueConvertor';
 import { Context } from 'hooks/store';
 
 function AccountMenu({ selectedMenuItem, setMenuItem }) {
@@ -35,8 +34,8 @@ function AccountMenu({ selectedMenuItem, setMenuItem }) {
             <div className="side-menu administration">
                 <div className={selectedMenuItem === 'system_information' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('system_information')}>
                     {selectedMenuItem === 'system_information' ? <VersionUpgradeColorIcon alt="versionUpgrade" /> : <VersionUpgradeGrayIcon alt="versionUpgrade" />}
-                    {isCloud() ? 'Account' : 'System'} information
-                    {!isCloud() && !state.isLatest && <div className="update-available">New version!</div>}
+                    System information
+                    {!state.isLatest && <div className="update-available">New version!</div>}
                 </div>
                 <div className={selectedMenuItem === 'profile' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('profile')}>
                     <PersonOutlinedIcon alt="versionUpgrade" />

@@ -18,7 +18,7 @@ import { KeyboardArrowRightRounded } from '@material-ui/icons';
 import Lottie from 'lottie-react';
 
 import noActiveAndUnhealthy from 'assets/lotties/noActiveAndUnhealthy.json';
-import { isCloud, parsingDate } from 'services/valueConvertor';
+import { parsingDate } from 'services/valueConvertor';
 import noActiveAndHealthy from 'assets/lotties/noActiveAndHealthy.json';
 import activeAndUnhealthy from 'assets/lotties/activeAndUnhealthy.json';
 import activeAndHealthy from 'assets/lotties/activeAndHealthy.json';
@@ -46,15 +46,15 @@ const Stations = ({ createStationTrigger }) => {
                 <div className="err-stations-list">
                     {state?.monitor_data?.stations?.length > 0 ? (
                         <>
-                            <div className={!isCloud() ? 'coulmns-table' : 'coulmns-table coulmns-table-cloud'}>
+                            <div className="coulmns-table">
                                 <span className="station-name">Name</span>
-                                {!isCloud() && <span>Creation date</span>}
+                                <span>Creation date</span>
                                 <span className="title-center">Messages</span>
                                 <span className="title-center">Partitions</span>
                                 <span className="title-center">Status</span>
                                 <span></span>
                             </div>
-                            <div className={!isCloud() ? 'rows-wrapper' : 'rows-wrapper rows-wrapper-cloud'}>
+                            <div className="rows-wrapper">
                                 <Virtuoso
                                     data={state?.monitor_data?.stations}
                                     overscan={100}
@@ -62,13 +62,10 @@ const Stations = ({ createStationTrigger }) => {
                                         <div className={index % 2 === 0 ? 'stations-row' : 'stations-row even'} key={index} onClick={() => goToStation(station.name)}>
                                             <OverflowTip className="station-details station-name" text={station.name}>
                                                 {station.name}
-                                                {isCloud() && <span className="creates">{parsingDate(station.created_at)}</span>}
                                             </OverflowTip>
-                                            {!isCloud() && (
-                                                <OverflowTip className="station-creation" text={parsingDate(station.created_at)}>
-                                                    {parsingDate(station.created_at)}
-                                                </OverflowTip>
-                                            )}
+                                            <OverflowTip className="station-creation" text={parsingDate(station.created_at)}>
+                                                {parsingDate(station.created_at)}
+                                            </OverflowTip>
                                             <OverflowTip className="station-details total" text={station.total_messages?.toLocaleString()}>
                                                 <span className="centered">{station.total_messages?.toLocaleString()}</span>
                                             </OverflowTip>
@@ -79,7 +76,7 @@ const Stations = ({ createStationTrigger }) => {
                                                         : station?.partitions_list?.length?.toLocaleString()}
                                                 </span>
                                             </div>
-                                            <div className={!isCloud() ? 'centered lottie' : 'centered lottie-cloud'}>
+                                            <div className="centered lottie">
                                                 {station?.has_dls_messages ? (
                                                     station?.activity ? (
                                                         <Lottie animationData={activeAndUnhealthy} loop={true} />

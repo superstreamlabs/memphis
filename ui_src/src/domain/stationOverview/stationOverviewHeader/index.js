@@ -17,7 +17,7 @@ import { Add, FiberManualRecord } from '@material-ui/icons';
 import { HiOutlineExclamationCircle } from 'react-icons/hi';
 import { MinusOutlined } from '@ant-design/icons';
 import { useHistory } from 'react-router-dom';
-import { convertBytes, convertSecondsToDate, isCloud, replicasConvertor } from 'services/valueConvertor';
+import { convertBytes, convertSecondsToDate, replicasConvertor } from 'services/valueConvertor';
 import { ReactComponent as DeleteWrapperIcon } from 'assets/images/deleteWrapperIcon.svg';
 import { ReactComponent as StopUsingIcon } from 'assets/images/stopUsingIcon.svg';
 import { ReactComponent as SchemaIconActive } from 'assets/images/schemaIconActive.svg';
@@ -74,7 +74,6 @@ const StationOverviewHeader = ({ refresh }) => {
             ? localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
             : 'memphis.memphis.svc.cluster.local';
 
-    const showRetentinViolation = isCloud() && stationState?.stationMetaData?.retention_type !== 'message_age_sec';
     const dls = stationState?.stationMetaData?.dls_station === '' ? null : stationState?.stationMetaData?.dls_station;
     useEffect(() => {
         switch (stationState?.stationMetaData?.retention_type) {
@@ -209,13 +208,6 @@ const StationOverviewHeader = ({ refresh }) => {
                         <b>
                             {stationState?.stationMetaData?.created_by_username.startsWith('$') ? 'system' : stationState?.stationMetaData?.created_by_username}
                         </b> at {stationState?.stationMetaData?.created_at} {!stationState?.stationMetaData?.is_native && '(NATS-Compatible)'}
-                        {isCloud() && (
-                            <span className="hostname">
-                                <p>Account ID : </p>
-                                <span>{localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)}</span>
-                                <Copy width="12" data={localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)} />
-                            </span>
-                        )}
                         <span className="hostname">
                             <p>Broker hostname : </p>
                             <span>{host}</span>
@@ -249,36 +241,19 @@ const StationOverviewHeader = ({ refresh }) => {
                             <p>
                                 <b>Retention:</b> {retentionValue}
                             </p>
-                            {showRetentinViolation && (
-                                <TooltipComponent
-                                    text={`Based on your current subscription plan, messages can be retained for a maximum of ${
-                                        (state?.userData?.entitlements && state?.userData?.entitlements['feature-storage-retention']?.limits) || 3
-                                    } days`}
-                                    minWidth="35px"
-                                >
-                                    <HiOutlineExclamationCircle />
-                                </TooltipComponent>
-                            )}
+
                             <div className="flex-details-wrapper">
-                                {!isCloud() && (
-                                    <p style={{ display: 'flex' }}>
-                                        <b>Partitions: </b>
-                                        {stationState?.stationMetaData?.partitions_number === 0 ? 1 : stationState?.stationMetaData?.partitions_number}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                        <div className="storage-section">
-                            {!isCloud() ? (
-                                <p>
-                                    <b>Replicas:</b> {replicasConvertor(stationState?.stationMetaData?.replicas, false)}
-                                </p>
-                            ) : (
-                                <p>
+                                <p style={{ display: 'flex' }}>
                                     <b>Partitions: </b>
                                     {stationState?.stationMetaData?.partitions_number === 0 ? 1 : stationState?.stationMetaData?.partitions_number}
                                 </p>
-                            )}
+                            </div>
+                        </div>
+                        <div className="storage-section">
+                            <p>
+                                <b>Replicas:</b> {replicasConvertor(stationState?.stationMetaData?.replicas, false)}
+                            </p>
+
                             <div className="flex-details-wrapper">
                                 <p style={{ display: 'flex' }}>
                                     <b style={{ marginRight: '5px' }}>Dead-letter for: </b>

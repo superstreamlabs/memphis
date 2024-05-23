@@ -26,7 +26,7 @@ import { ReactComponent as DeleteWrapperIcon } from 'assets/images/deleteWrapper
 import StationsInstructions from 'components/stationsInstructions';
 import { ReactComponent as StationIcon } from 'assets/images/stationIcon.svg';
 import CreateStationForm from 'components/createStationForm';
-import { stationFilterArray, isCloud } from 'services/valueConvertor';
+import { stationFilterArray } from 'services/valueConvertor';
 import DeleteItemsModal from 'components/deleteItemsModal';
 import stationsIcon from 'assets/images/stationIcon.svg';
 import { ApiEndpoints } from 'const/apiEndpoints';

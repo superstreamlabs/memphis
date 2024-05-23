@@ -21,7 +21,7 @@ import * as monaco from 'monaco-editor';
 
 import { StationStoreContext } from 'domain/stationOverview';
 import { ApiEndpoints } from 'const/apiEndpoints';
-import { convertArrayToObject, generateJSONWithMaxLength, isCloud } from 'services/valueConvertor';
+import { convertArrayToObject, generateJSONWithMaxLength } from 'services/valueConvertor';
 import { ReactComponent as RefreshIcon } from 'assets/images/refresh.svg';
 import InputNumberComponent from 'components/InputNumber';
 import { httpRequest } from 'services/http';
@@ -252,7 +252,7 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                             </div>
                             <InputNumberComponent
                                 min={1}
-                                max={isCloud() ? 1000 : 1}
+                                max={1}
                                 onChange={(e) => creationForm.setFieldsValue({ amount: e })}
                                 value={formFields.amount}
                                 placeholder={formFields.amount || 1}

@@ -30,7 +30,7 @@ import { Line } from 'react-chartjs-2';
 import { Chart } from 'chart.js';
 import 'chartjs-plugin-streaming';
 import moment from 'moment';
-import { convertBytes, isCloud } from 'services/valueConvertor';
+import { convertBytes } from 'services/valueConvertor';
 import SelectThroughput from 'components/selectThroughput';
 import SegmentButton from 'components/segmentButton';
 import Loader from 'components/loader';
@@ -269,7 +269,7 @@ function Throughput() {
                     <div className="play-pause-btn" onClick={() => setstop(!stop)}>
                         {stop ? <PlayArrowRounded /> : <PauseRounded />}
                     </div>
-                    {!isCloud() && <SelectThroughput value={selectedComponent || 'total'} options={selectOptions} onChange={(e) => setSelectedComponent(e)} />}
+                    <SelectThroughput value={selectedComponent || 'total'} options={selectOptions} onChange={(e) => setSelectedComponent(e)} />
                 </div>
             </div>
             <div className="external-monitoring">

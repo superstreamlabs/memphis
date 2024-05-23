@@ -30,10 +30,8 @@ import CustomTabs from 'components/Tabs';
 import { URL } from 'config';
 import Loader from 'components/loader';
 import { showMessages } from 'services/genericServices';
-import { isCloud } from 'services/valueConvertor';
 import IntegrationDetails from '../integrationItem/integrationDetails';
 import IntegrationLogs from '../integrationItem/integrationLogs';
-import { FaArrowCircleUp } from 'react-icons/fa';
 
 const urlSplit = URL.split('/', 3);
 
@@ -326,17 +324,7 @@ const SlackIntegration = ({ close, value }) => {
                                 <Button
                                     width="500px"
                                     height="45px"
-                                    placeholder={
-                                        isValue ? (
-                                            'Update'
-                                        ) : isCloud() && !state?.allowedActions?.can_connect_slack ? (
-                                            <span className="upgrade">
-                                                Connect <FaArrowCircleUp className="lock-feature-icon" />
-                                            </span>
-                                        ) : (
-                                            'Connect'
-                                        )
-                                    }
+                                    placeholder={isValue ? 'Update' : 'Connect'}
                                     colorType="white"
                                     radiusType="circle"
                                     backgroundColorType="purple"

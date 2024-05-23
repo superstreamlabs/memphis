@@ -45,7 +45,6 @@ import { ApiEndpoints } from 'const/apiEndpoints';
 import { httpRequest } from 'services/http';
 import Spinner from 'components/spinner';
 import TooltipComponent from 'components/tooltip/tooltip';
-import { isCloud } from 'services/valueConvertor';
 import { BiLogoGoLang, BiLogoPython } from 'react-icons/bi';
 import { SiDotnet } from 'react-icons/si';
 import { DiJavascript1 } from 'react-icons/di';
@@ -429,10 +428,7 @@ const ProduceConsumList = ({ producer }) => {
                         <span className="poduce-consume-header">
                             <p className="title">
                                 <TooltipComponent text="max allowed producers" placement="right">
-                                    <>
-                                        Producers ({(producersList?.length > 0 && countProducers(producersList).toLocaleString()) || 0}
-                                        {isCloud() && '/' + stationState?.stationSocketData?.max_amount_of_allowed_producers?.toLocaleString()})
-                                    </>
+                                    <>Producers ({(producersList?.length > 0 && countProducers(producersList).toLocaleString()) || 0}</>
                                 </TooltipComponent>
                             </p>
                             <Popover

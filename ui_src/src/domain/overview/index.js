@@ -32,7 +32,7 @@ import { ReactComponent as CloudTeaser } from 'assets/images/cloudTeaser.svg';
 import { ReactComponent as PlusElement } from 'assets/images/plusElement.svg';
 import { ReactComponent as EditIcon } from 'assets/images/editIcon.svg';
 import CreateStationForm from 'components/createStationForm';
-import { capitalizeFirst, isCloud } from 'services/valueConvertor';
+import { capitalizeFirst } from 'services/valueConvertor';
 import { ApiEndpoints } from 'const/apiEndpoints';
 import { httpRequest } from 'services/http';
 import SystemComponents from './systemComponents';
@@ -232,13 +232,6 @@ function OverView() {
                                     </h1>
                                 )}
                                 <div className="org-details">
-                                    {isCloud() && (
-                                        <div className="hostname">
-                                            <p>Account ID : </p>
-                                            <span>{localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)}</span>
-                                            <Copy width="12" data={localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)} />
-                                        </div>
-                                    )}
                                     <div className="hostname">
                                         <p>Broker hostname : </p>
                                         <span>{host}</span>
@@ -248,32 +241,15 @@ function OverView() {
                             </div>
                         </div>
                         <div className="btn-section">
-                            {!isCloud() && (
-                                <CloudTeaser
-                                    alt="Cloud"
-                                    className="cloud-teaser"
-                                    onClick={() => {
-                                        setCloudModalOpen(true);
-                                    }}
-                                />
-                            )}
                             <Button
                                 className="modal-btn"
                                 width="180px"
                                 height="34px"
                                 placeholder={
-                                    isCloud() && !state?.allowedActions?.can_create_stations ? (
-                                        <span className="create-new">
-                                            <PlusElement alt="add" />
-                                            <label>Create a new station</label>
-                                            <FaArrowCircleUp className="lock-feature-icon" />
-                                        </span>
-                                    ) : (
-                                        <span className="create-new">
-                                            <PlusElement alt="add" />
-                                            <label>Create a new station</label>
-                                        </span>
-                                    )
+                                    <span className="create-new">
+                                        <PlusElement alt="add" />
+                                        <label>Create a new station</label>
+                                    </span>
                                 }
                                 border="none"
                                 colorType="white"
