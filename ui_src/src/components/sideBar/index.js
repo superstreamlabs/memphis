@@ -345,7 +345,7 @@ function SideBar() {
                 name="Documentation"
                 onClick={() => {
                     setPopoverOpenSupportContextMenu(false);
-                    window.open('https://memphis.dev/docs', '_blank');
+                    window.open('https://docs.memphis.dev/memphis/', '_blank');
                 }}
             />
             <PopoverActionItem
@@ -353,7 +353,7 @@ function SideBar() {
                 name="Discord channel"
                 onClick={() => {
                     setPopoverOpenSupportContextMenu(false);
-                    window.open('https://memphis.dev/discord', '_blank');
+                    window.open('https://discord.com/channels/963333392844328961', '_blank');
                 }}
             />
         </div>
