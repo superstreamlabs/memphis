@@ -17,7 +17,6 @@ import Modal from 'components/modal';
 import Spinner from 'components/spinner';
 import { ApiEndpoints } from 'const/apiEndpoints';
 import { httpRequest } from 'services/http';
-import { sendTrace } from 'services/genericServices';
 import { connectorTypesSource, connectorTypesSink } from 'connectors';
 
 const ConnectorInfo = ({ open, clickOutside, connectorId }) => {
@@ -34,10 +33,6 @@ const ConnectorInfo = ({ open, clickOutside, connectorId }) => {
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_CONNECTOR_DETAILS}?connector_id=${connectorId}`);
             arrangeData(data);
-            sendTrace('getConnectorInfo', {
-                connector_type: data?.connector_type,
-                type: data?.type
-            });
         } catch (error) {
         } finally {
             setLoading(false);

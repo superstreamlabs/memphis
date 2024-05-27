@@ -54,6 +54,7 @@ const (
 	dlsStreamName               = "$memphis-%s-dls"
 	dlsUnackedStream            = "$memphis_dls_unacked"
 	dlsSchemaverseStream        = "$memphis_dls_schemaverse"
+	dlsNackedStream             = "$memphis_dls_nacked"
 	dlsFunctionsStream          = "$memphis_dls_functions"
 	dlsResendMessagesStreamNew  = "$memphis_dls_%v.%v"
 	dlsResendMessagesStreamOld  = "$memphis_dls_%v_%v"
@@ -95,6 +96,7 @@ var memphisExportString = `[
 	{service: "$memphis_integration_updates"},
 	{service: "$memphis_notifications"},
 	{service: "$memphis_schemaverse_dls"},
+	{service: "$memphis_nacked_dls"},
 	{service: "$memphis_pm_acks"},
 	{service: "$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>"},
 	{stream: "$memphis_ws_pubs.>"},
@@ -115,6 +117,7 @@ var memphisImportString = `[
 	{service: {account: "$memphis", subject: "$memphis_integration_updates"}},
 	{service: {account: "$memphis", subject: "$memphis_notifications"}},
 	{service: {account: "$memphis", subject: "$memphis_schemaverse_dls"}},
+	{service: {account: "$memphis", subject: "$memphis_nacked_dls"}},
 	{service: {account: "$memphis", subject: "$memphis_pm_acks"}},
 	{service: {account: "$memphis", subject: "$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>"}},
 	{stream: {account: "$memphis", subject: "$memphis_ws_pubs.>"}},
@@ -147,6 +150,8 @@ var (
 	DLS_UNACKED_STREAM_CREATED             bool
 	DLS_SCHEMAVERSE_STREAM_CREATED         bool
 	DLS_SCHEMAVERSE_CONSUMER_CREATED       bool
+	DLS_NACKED_STREAM_CREATED              bool
+	DLS_NACKED_CONSUMER_CREATED            bool
 	DLS_FUNCTIONS_STREAM_CREATED           bool
 	DLS_FUNCTIONS_CONSUMER_CREATED         bool
 	SYSLOGS_STREAM_CREATED                 bool
@@ -445,6 +450,43 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			return
 		}
 		DLS_SCHEMAVERSE_CONSUMER_CREATED = true
+	}
+
+	// create nacked dls stream
+	if !DLS_NACKED_STREAM_CREATED {
+		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
+			Name:         dlsNackedStream,
+			Subjects:     []string{NACKED_DLS_INNER_SUBJ},
+			Retention:    WorkQueuePolicy,
+			MaxAge:       time.Hour * 24,
+			MaxConsumers: -1,
+			Discard:      DiscardOld,
+			Storage:      FileStorage,
+			Replicas:     replicas,
+		})
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+		DLS_NACKED_STREAM_CREATED = true
+	}
+
+	// create nacked dls consumer
+	if !DLS_NACKED_CONSUMER_CREATED {
+		cc := ConsumerConfig{
+			DeliverPolicy: DeliverAll,
+			AckPolicy:     AckExplicit,
+			Durable:       NACKED_DLS_CONSUMER,
+			AckWait:       time.Duration(80) * time.Second,
+			MaxAckPending: -1,
+			MaxDeliver:    10,
+		}
+		err = serv.memphisAddConsumer(s.MemphisGlobalAccountString(), dlsNackedStream, &cc)
+		if err != nil {
+			successCh <- err
+			return
+		}
+		DLS_NACKED_CONSUMER_CREATED = true
 	}
 
 	// create functions dls stream

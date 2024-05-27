@@ -3013,7 +3013,7 @@ func GetActiveConsumerByCG(consumersGroup string, stationId int) (bool, models.C
 	}
 	defer conn.Release()
 
-	query := `SELECT * FROM consumers WHERE consumers_group = $1 AND station_id = $2 AND type = 'application' LIMIT 1`
+	query := `SELECT * FROM consumers WHERE consumers_group = $1 AND station_id = $2 AND type = 'application' AND is_active = true LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_active_consumer_by_cg", query)
 	if err != nil {
 		return false, models.Consumer{}, err
@@ -5901,7 +5901,7 @@ func GetMsgByStationIdAndMsgSeq(stationId, messageSeq, partitionNumber int) (boo
 	return true, message[0], nil
 }
 
-func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName string, poisonedCgs []string, messageDetails models.MessagePayload, tenantName string, partitionNumber int) (int, bool, error) {
+func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName string, poisonedCgs []string, messageDetails models.MessagePayload, tenantName string, partitionNumber int, validationError string) (int, bool, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	updated := false
@@ -5979,7 +5979,7 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName strin
 		if tenantName != conf.GlobalAccount {
 			tenantName = strings.ToLower(tenantName)
 		}
-		rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, producerName, poisonedCgs, messageDetails, updatedAt, "poison", "", tenantName, partitionNumber)
+		rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, producerName, poisonedCgs, messageDetails, updatedAt, "poison", validationError, tenantName, partitionNumber)
 		if err != nil {
 			return 0, updated, err
 		}
@@ -6008,7 +6008,7 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName strin
 			}
 		}
 	} else { // then update
-		query = `UPDATE dls_messages SET poisoned_cgs = ARRAY_APPEND(poisoned_cgs, $1), updated_at = $4 WHERE station_id=$2 AND message_seq=$3 AND not($1 = ANY(poisoned_cgs)) AND tenant_name=$5 RETURNING id`
+		query = `UPDATE dls_messages SET poisoned_cgs = ARRAY_APPEND(poisoned_cgs, $1), updated_at = $4, validation_error = $6 WHERE station_id=$2 AND message_seq=$3 AND not($1 = ANY(poisoned_cgs)) AND tenant_name=$5 RETURNING id`
 		stmt, err := tx.Prepare(ctx, "update_poisoned_cgs", query)
 		if err != nil {
 			return 0, updated, err
@@ -6017,7 +6017,7 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName strin
 		if tenantName != conf.GlobalAccount {
 			tenantName = strings.ToLower(tenantName)
 		}
-		rows, err = tx.Query(ctx, stmt.Name, poisonedCgs[0], stationId, messageSeq, updatedAt, tenantName)
+		rows, err = tx.Query(ctx, stmt.Name, poisonedCgs[0], stationId, messageSeq, updatedAt, tenantName, validationError)
 		if err != nil {
 			return 0, updated, err
 		}
@@ -6756,6 +6756,12 @@ func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass, organiz
 	}
 	defer conn.Release()
 
+	var colors any
+	colors = brandData.Colors
+	if brandData.Colors == nil || len(brandData.Colors) == 0 {
+		colors = []string{}
+	}
+
 	query := `INSERT INTO tenants 
 	(id, name, firebase_organization_id, internal_ws_pass, organization_name, dark_icon, light_icon, brand_colors)
 	VALUES(nextval('tenants_seq'),$1, $2, $3, $4, $5, $6, $7)`
@@ -6766,7 +6772,7 @@ func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass, organiz
 	}
 
 	var tenantId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, firebaseOrganizationId, encryptrdInternalWSPass, organizationName, brandData.DarkIcon, brandData.LightIcon, brandData.Colors)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, firebaseOrganizationId, encryptrdInternalWSPass, organizationName, brandData.DarkIcon, brandData.LightIcon, colors)
 	if err != nil {
 		return models.Tenant{}, err
 	}
@@ -8401,6 +8407,52 @@ func RemoveRoleAndPermissions(roleID []int, tenantName string) error {
 		return err
 	}
 	_, err = tx.Exec(ctx, stmt.Name, roleID, tenantName)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func RemovePermissionsByTenant(tenantName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	tenantName = strings.ToLower(tenantName)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	query := `DELETE FROM permissions WHERE tenant_name = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "remove_permissions_by_tenant", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func RemoveRolesByTenant(tenantName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	tenantName = strings.ToLower(tenantName)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	query := `DELETE FROM roles WHERE tenant_name = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "remove_roles_by_tenant", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return err
 	}

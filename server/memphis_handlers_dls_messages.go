@@ -128,7 +128,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		Headers:  headersJson,
 	}
 
-	dlsMsgId, updated, err := db.StorePoisonMsg(station.ID, int(messageSeq), cgName, producedByHeader, poisonedCgs, messageDetails, station.TenantName, partitionNumber)
+	dlsMsgId, updated, err := db.StorePoisonMsg(station.ID, int(messageSeq), cgName, producedByHeader, poisonedCgs, messageDetails, station.TenantName, partitionNumber, "")
 	if err != nil {
 		serv.Errorf("[tenant: %v]handleNewUnackedMsg at StorePoisonMsg: Error while getting notified about a poison message: %v", station.TenantName, err.Error())
 		return err
@@ -168,13 +168,14 @@ func (s *Server) handleSchemaverseDlsMsg(msg []byte) error {
 		return err
 	}
 
-	exist, station, err := db.GetStationByName(message.StationName, tenantName)
+	stationName := StationNameFromStreamName(message.StationName)
+	exist, station, err := db.GetStationByName(stationName.Ext(), tenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v]handleSchemaverseDlsMsg: %v", tenantName, err.Error())
 		return err
 	}
 	if !exist {
-		serv.Warnf("[tenant: %v]handleSchemaverseDlsMsg: station %v couldn't been found", tenantName, message.StationName)
+		serv.Warnf("[tenant: %v]handleSchemaverseDlsMsg: station %v couldn't been found", tenantName, stationName.Ext())
 		return nil
 	}
 
@@ -193,6 +194,105 @@ func (s *Server) handleSchemaverseDlsMsg(msg []byte) error {
 	if err != nil {
 		serv.Errorf("[tenant: %v]handleSchemaverseDlsMsg at sendToDlsStation: station: %v, Error while getting notified about a poison message: %v", tenantName, station.DlsStation, err.Error())
 		return err
+	}
+
+	return nil
+}
+
+func (s *Server) handleNackedDlsMsg(msg []byte) error {
+	tenantName, stringMessage, err := s.getTenantNameAndMessage(msg)
+	if err != nil {
+		s.Errorf("handleNackedDlsMsg at getTenantNameAndMessage: %v", err.Error())
+		return err
+	}
+	var message models.NackedDlsMessageSdk
+	err = json.Unmarshal([]byte(stringMessage), &message)
+	if err != nil {
+		serv.Errorf("[tenant: %v]handleNackedDlsMsg: %v", tenantName, err.Error())
+		return err
+	}
+
+	if message.Partition == 0 {
+		serv.Errorf("[tenant: %v]handleNackedDlsMsg - missing partition number: %v", tenantName, err.Error())
+		return err
+	}
+
+	stationName := StationNameFromStreamName(message.StationName)
+	streamName := stationName.Intern() + "$" + strconv.Itoa(message.Partition)
+	exist, station, err := db.GetStationByName(stationName.Ext(), tenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v]handleNackedDlsMsg: %v", tenantName, err.Error())
+		return err
+	}
+	if !exist {
+		serv.Warnf("[tenant: %v]handleNackedDlsMsg: station %v couldn't been found", tenantName, stationName.Ext())
+		return nil
+	}
+	if !station.DlsConfigurationPoison {
+		return nil
+	}
+
+	poisonMessageContent, err := s.memphisGetMessage(tenantName, streamName, uint64(message.Seq))
+	if err != nil {
+		if IsNatsErr(err, JSNoMessageFoundErr) {
+			return nil
+		}
+		serv.Errorf("[tenant: %v]handleNackedDlsMsg at memphisGetMessage: station: %v, Error while getting notified about a poison message: %v", tenantName, stationName.Ext(), err.Error())
+		return err
+	}
+
+	
+	timeSentTimeStamp := poisonMessageContent.Time
+	data := poisonMessageContent.Data
+	lenPayload := len(poisonMessageContent.Data) + len(poisonMessageContent.Header)
+	headers := poisonMessageContent.Header
+	var headersJson map[string]string
+	if headers != nil {
+		headersJson, err = DecodeHeader(headers)
+		if err != nil {
+			serv.Errorf("handleNackedDlsMsg: %v", err.Error())
+			return err
+		}
+	}
+
+	producedByHeader := _EMPTY_
+	poisonedCgs := []string{}
+	producedByHeader = headersJson["$memphis_producedBy"]
+	if producedByHeader == _EMPTY_ {
+		producedByHeader = "unknown"
+	}
+	poisonedCgs = append(poisonedCgs, message.CgName)
+
+	messageDetails := models.MessagePayload{
+		TimeSent: timeSentTimeStamp,
+		Size:     lenPayload,
+		Data:     hex.EncodeToString(data),
+		Headers:  headersJson,
+	}
+
+	dlsMsgId, updated, err := db.StorePoisonMsg(station.ID, int(message.Seq), message.CgName, producedByHeader, poisonedCgs, messageDetails, tenantName, message.Partition, message.Error)
+	if err != nil {
+		serv.Errorf("[tenant: %v]handleNackedDlsMsg at StorePoisonMsg: Error while getting notified about a poison message: %v", station.TenantName, err.Error())
+		return err
+	}
+	if !updated {
+		err = s.sendToDlsStation(station, data, headersJson, "unacked", _EMPTY_)
+		if err != nil {
+			serv.Errorf("[tenant: %v]handleNackedDlsMsg at sendToDlsStation: station: %v, Error while getting notified about a poison message: %v", station.TenantName, station.DlsStation, err.Error())
+			return err
+		}
+	}
+
+	if dlsMsgId == 0 { // nothing to do
+		return nil
+	}
+
+	idForUrl := strconv.Itoa(dlsMsgId)
+	var msgUrl = s.opts.UiHost + "/stations/" + stationName.Ext() + "/" + idForUrl
+	err = s.SendNotification(station.TenantName, PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, PoisonMAlert)
+	if err != nil {
+		serv.Warnf("[tenant: %v]handleNackedDlsMsg at SendNotification: Error while sending a poison message notification: %v", station.TenantName, err.Error())
+		return nil
 	}
 
 	return nil

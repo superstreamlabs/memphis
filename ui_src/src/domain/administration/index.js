@@ -17,17 +17,12 @@ import React, { useContext, useState, useEffect } from 'react';
 import { Context } from 'hooks/store';
 import Integrations from './integrations';
 import AccountMenu from './accountMenu';
-import BillingMenu from './billing/billingMenu';
-import Payments from './billing/payments';
-import Requests from './billing/requests';
 import Profile from '../profile';
 
 import ClusterConfiguration from './clusterConfiguration';
 import SoftwareUpates from './softwareUpdates';
 import { useHistory } from 'react-router-dom';
 import pathDomains from 'router';
-import VersionUpgrade from './versionUpgrade';
-import { isCloud } from 'services/valueConvertor';
 import { useLocation } from 'react-router-dom/cjs/react-router-dom.min';
 
 function Administration({ step }) {
@@ -61,10 +56,6 @@ function Administration({ step }) {
                 return <ClusterConfiguration />;
             case 'system_information':
                 return <SoftwareUpates />;
-            case 'usage':
-                return <Requests />;
-            case 'payments':
-                return <Payments />;
             default:
                 return null; // Handle invalid selections
         }
@@ -74,7 +65,6 @@ function Administration({ step }) {
         <div className="setting-container">
             <div className="menu-container">
                 <AccountMenu selectedMenuItem={selectedMenuItem} setMenuItem={handleMenuItemChange} />
-                {isCloud() && <BillingMenu selectedMenuItem={selectedMenuItem} setMenuItem={handleMenuItemChange} />}
             </div>
             {selectedMenuItem === 'system_information' ? <>{renderSelectedComponent()}</> : <div className="setting-items">{renderSelectedComponent()}</div>}
         </div>

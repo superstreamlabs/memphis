@@ -1,10 +1,8 @@
 import Button from 'components/button';
 import React from 'react';
-import { isCloud } from 'services/valueConvertor';
-import LockFeature from 'components/lockFeature';
 import './style.scss';
 
-const StationsInstructions = ({ upgrade, header, button, image, newStation, des }) => {
+const StationsInstructions = ({ header, button, image, newStation, des }) => {
     const description = des || 'A station is a distributed storage for messages';
 
     return (
@@ -17,16 +15,7 @@ const StationsInstructions = ({ upgrade, header, button, image, newStation, des 
                     className="modal-btn"
                     width="180px"
                     height="37px"
-                    // placeholder={button}
-                    placeholder={
-                        isCloud() && upgrade ? (
-                            <span className="upgrade">
-                                {button} <LockFeature />
-                            </span>
-                        ) : (
-                            button
-                        )
-                    }
+                    placeholder={button}
                     colorType={image ? 'white' : 'purple'}
                     radiusType="circle"
                     border={image ? 'none' : 'gray-light'}

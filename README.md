@@ -1,3 +1,7 @@
+<p align="center">
+Please pay attention that Memphis.dev is no longer supported officially by the Superstream team (formerly Memphis.dev) and was released to the public.
+  <p align="center">
+    
 <a href="![Github (4)](https://github.com/memphisdev/memphis-terraform/assets/107035359/a5fe5d0f-22e1-4445-957d-5ce4464e61b1)">[![Github (4)](https://github.com/memphisdev/memphis-terraform/assets/107035359/a5fe5d0f-22e1-4445-957d-5ce4464e61b1)](https://memphis.dev)</a>
 <p align="center">
 <a href="https://memphis.dev/discord"><img src="https://img.shields.io/discord/963333392844328961?color=6557ff&label=discord" alt="Discord"></a>
@@ -8,18 +12,12 @@
 <img src="https://img.shields.io/github/last-commit/memphisdev/memphis?color=61dfc6&label=last%20commit">
 </p>
 
- <b><p align="center">
-  <a href="https://memphis.dev/pricing/">Cloud</a> - <a href="github.com/memphisdev/memphis-dev-academy">Academy</a> - <a href="https://memphis.dev/docs/">Docs</a> - <a href="https://twitter.com/Memphis_Dev">X</a> - <a href="https://www.youtube.com/channel/UCVdMDLCSxXOqtgrBaRUHKKg">YouTube</a>
-</p></b>
-
 <div align="center">
 
   <h4>
 
 **[Memphis.dev](https://memphis.dev)** Is The First Data Streaming Platform Designed For Backend Developers<br>
 To Build Event-driven And Real-time Features Faster Than Ever.<br>
-
-<img width="177" alt="cloud_native 2 (5)" src="https://github.com/memphisdev/memphis/assets/107035359/a20ea11c-d509-42bb-a46c-e388c8424101">
 
   </h4>
   
@@ -48,7 +46,7 @@ docker compose -f docker-compose.yml -p memphis up
 
 </div>
 
-## ✨ Key Features [v1.4.2](https://docs.memphis.dev/memphis/release-notes/releases/v1.4.2-latest)
+## ✨ Key Features [v1.4.4](https://docs.memphis.dev/memphis/release-notes/releases/v1.4.4-latest)
 
 
 ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Production-ready message broker in under 3 minutes<br>

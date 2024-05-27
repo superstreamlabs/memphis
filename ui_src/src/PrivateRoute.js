@@ -14,22 +14,13 @@ import React from 'react';
 import { Route, Redirect } from 'react-router-dom';
 
 import AuthService from 'services/auth';
-import { isCloud } from 'services/valueConvertor';
-import { CLOUD_URL } from 'config';
 import pathDomains from 'router';
 
 function PrivateRoute(props) {
     const { component: Component, ...rest } = props;
     if (AuthService.isValidToken()) {
         return <Route {...rest} render={() => Component} />;
-    } else {
-        if (isCloud()) {
-            AuthService.clearLocalStorage();
-            window.location.replace(CLOUD_URL);
-        } else {
-            return <Redirect to={{ pathname: pathDomains.login, state: { referer: props.location } }} />;
-        }
-    }
+    } else return <Redirect to={{ pathname: pathDomains.login, state: { referer: props.location } }} />;
 }
 
 export default PrivateRoute;

@@ -17,30 +17,24 @@ import { ReactComponent as DeleteWrapperIcon } from 'assets/images/deleteWrapper
 import { ReactComponent as RedirectWhiteIcon } from 'assets/images/exportWhite.svg';
 import { ReactComponent as DocumentIcon } from 'assets/images/documentGroupIcon.svg';
 import { ReactComponent as DisordIcon } from 'assets/images/discordGroupIcon.svg';
-import { ReactComponent as WindowIcon } from 'assets/images/windowGroupIcon.svg';
 import DeleteItemsModal from 'components/deleteItemsModal';
-import CloudModal from 'components/cloudModal';
 import Button from 'components/button';
 import Modal from 'components/modal';
-import Copy from 'components/copy';
 import { Context } from 'hooks/store';
 import { ApiEndpoints } from 'const/apiEndpoints';
 import { LATEST_RELEASE_URL } from 'config';
 import { compareVersions } from 'services/valueConvertor';
 import { GithubRequest } from 'services/githubRequests';
-import { isCloud } from 'services/valueConvertor';
 import { httpRequest } from 'services/http';
 import AuthService from 'services/auth';
 import { Checkbox } from 'antd';
 import ImgUploader from './imgUploader';
-import { LOCAL_STORAGE_USER_TYPE, LOCAL_STORAGE_ACCOUNT_ID } from 'const/localStorageConsts';
-import Support from 'components/sideBar/support';
+import { LOCAL_STORAGE_USER_TYPE } from 'const/localStorageConsts';
 import FullLogoWhite from 'assets/images/white-logo.svg';
 import FullLogo from 'assets/images/fullLogo.svg';
 
 function SoftwareUpates({}) {
     const [state, dispatch] = useContext(Context);
-    const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
     const [systemData, setSystemData] = useState({});
     const [version, setVersion] = useState('v' + state?.currentVersion);
     const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
@@ -79,14 +73,6 @@ function SoftwareUpates({}) {
             ),
             onClick: () => {
                 window.open('https://memphis.dev/discord', '_blank');
-            }
-        },
-        {
-            icon: <WindowIcon />,
-            title: 'Open a service request',
-            description: <span>If you have any questions or need assistance. </span>,
-            onClick: () => {
-                setIsCloudModalOpen(true);
             }
         }
     ];
@@ -144,7 +130,7 @@ function SoftwareUpates({}) {
     function getCompanyLogoSrc() {
         const darkMode = state?.darkMode || false;
         const fullLogoSrc = darkMode ? FullLogoWhite : FullLogo;
-        return isCloud() ? state?.companyLogo || fullLogoSrc : fullLogoSrc;
+        return fullLogoSrc;
     }
 
     return (
@@ -152,22 +138,14 @@ function SoftwareUpates({}) {
             <div className="rows">
                 <div className="item-component">
                     <div className="title-component">
-                        <div className="versions" onClick={() => !isCloud() && isUpdateAvailable && window.open(latestVersionUrl, '_blank')}>
+                        <div className="versions" onClick={() => isUpdateAvailable && window.open(latestVersionUrl, '_blank')}>
                             <span className="logo-wrapper">
                                 <img src={getCompanyLogoSrc() || ''} height="40" className="logoimg" alt="logo" />
                             </span>
-                            {isCloud() ? (
-                                <div className="hostname">
-                                    <p>Account ID : </p>
-                                    <span>{localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)}</span>
-                                    <Copy width="12" data={localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)} />
-                                </div>
-                            ) : (
-                                <>
-                                    <label className="curr-version">{version}</label>
-                                    {isUpdateAvailable && <div className="red-dot" />}
-                                </>
-                            )}
+                            <>
+                                <label className="curr-version">{version}</label>
+                                {isUpdateAvailable && <div className="red-dot" />}
+                            </>
                         </div>
                         <Button
                             width="200px"
@@ -191,14 +169,14 @@ function SoftwareUpates({}) {
                 </div>
                 <div className="statistics">
                     {systemDataComponents.map((item, index) => {
-                        return (isCloud() && !item.ossOnly) || !isCloud() ? (
+                        return (
                             <div className="item-component" key={`${item}-${index}`}>
                                 <span className="stat-item">
                                     <label className="title">{item.title}</label>
                                     <label className="numbers">{item.value}</label>
                                 </span>
                             </div>
-                        ) : null;
+                        );
                     })}
                 </div>
                 <div className="charts">{informationPanelData.map((item, index) => genrateInformationPanel(item, index))}</div>
@@ -208,36 +186,26 @@ function SoftwareUpates({}) {
                 </div>
                 <div className="item-component">
                     <div className="delete-account-section">
-                        <p className="account-title">{isCloud() ? 'Delete your organization' : 'Delete your account'}</p>
-                        {isCloud() ? (
-                            <label className="delete-account-description">
-                                When you delete your organization, you will lose access to Memphis, and your entire organization data will be permanently deleted. You can
-                                cancel the deletion for 14 days.
-                            </label>
-                        ) : (
-                            <label className="delete-account-description">
-                                When you delete your account, you will lose access to Memphis, and your profile will be permanently deleted. You can cancel the deletion
-                                for 14 days.
-                            </label>
-                        )}
+                        <p className="account-title">Delete your account</p>
 
+                        <label className="delete-account-description">
+                            When you delete your account, you will lose access to Memphis, and your profile will be permanently deleted.
+                        </label>
                         <div className="delete-account-checkbox">
                             <Checkbox
                                 checked={checkboxdeleteAccount}
-                                disabled={(isCloud() && userType !== 'root') || (!isCloud() && userType === 'root')}
+                                disabled={userType === 'root'}
                                 onChange={() => setCheckboxdeleteAccount(!checkboxdeleteAccount)}
                                 name="delete-account"
                             >
-                                <p className={(isCloud() && userType !== 'root') || (!isCloud() && userType === 'root') ? 'disabled' : ''}>
-                                    Confirm that I want to delete my {isCloud() ? 'organization' : 'account'}.
-                                </p>
+                                <p className={userType === 'root' ? 'disabled' : ''}>Confirm that I want to delete my account.</p>
                             </Checkbox>
                         </div>
                         <Button
                             className="modal-btn"
                             width="200px"
                             height="36px"
-                            placeholder={isCloud() ? 'Delete organization' : 'Delete account'}
+                            placeholder={'Delete account'}
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="red"
@@ -262,31 +230,20 @@ function SoftwareUpates({}) {
                 open={open}
             >
                 <DeleteItemsModal
-                    title={isCloud() ? 'Delete your organization' : 'Delete your account'}
+                    title={'Delete your account'}
                     desc={
                         <>
-                            Are you sure you want to delete {isCloud() ? 'your organization' : 'your account'}?
+                            Are you sure you want to delete your account?
                             <br />
                             Please note that this action is irreversible.
                         </>
                     }
-                    buttontxt={<>I understand, delete my {isCloud() ? 'organization' : 'account'}</>}
+                    buttontxt={<>I understand, delete my account</>}
                     handleDeleteSelected={() => removeMyUser()}
                     loader={delateLoader}
                 />
                 <br />
             </Modal>
-            <Modal
-                width="400px"
-                height="550px"
-                className={'support-modal'}
-                displayButtons={false}
-                clickOutside={() => setIsCloudModalOpen(false)}
-                open={isCloud && isCloudModalOpen}
-            >
-                <Support closeModal={(e) => setIsCloudModalOpen(false)} />
-            </Modal>
-            <CloudModal type={'bundle'} open={!isCloud() && isCloudModalOpen} handleClose={() => setIsCloudModalOpen(false)} />
         </div>
     );
 }

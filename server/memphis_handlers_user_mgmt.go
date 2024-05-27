@@ -176,6 +176,16 @@ func removeTenantResources(tenantName string, user models.User) error {
 		return err
 	}
 
+	err = db.RemovePermissionsByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveRolesByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
 	err = db.RemoveStationsByTenant(tenantName)
 	if err != nil {
 		return err

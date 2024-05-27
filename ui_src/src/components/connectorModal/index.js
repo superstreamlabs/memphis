@@ -25,9 +25,6 @@ import Modal from 'components/modal';
 import Spinner from 'components/spinner';
 import { ApiEndpoints } from 'const/apiEndpoints';
 import { httpRequest } from 'services/http';
-import CloudModal from 'components/cloudModal';
-import { isCloud } from 'services/valueConvertor';
-import { sendTrace } from 'services/genericServices';
 import { connectorTypesSource } from 'connectors';
 import { connectorTypesSink } from 'connectors';
 
@@ -41,8 +38,6 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
     });
     const [connectorInputFields, setConnectorInputFields] = useState([]);
     const [resError, setError] = useState(null);
-    const [cloudModalopen, setCloudModalOpen] = useState(false);
-
     useEffect(() => {
         if (open) {
             setStep(1);
@@ -108,12 +103,6 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
             if (step === 1) {
                 try {
                     await connectorForm.validateFields();
-                    sendTrace('createConnector', {
-                        name: formFields?.name,
-                        type: formFields?.type?.toLocaleLowerCase(),
-                        connector_type: formFields?.connector_type?.toLocaleLowerCase()
-                    });
-                    isCloud() ? createConnector() : setCloudModalOpen(true);
                 } catch (err) {
                     return;
                 }
@@ -144,7 +133,7 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
                 connector_type: formFields?.connector_type?.toLocaleLowerCase(),
                 settings: modifiedSettings,
                 partitions: [stationState?.stationPartition],
-                instances: formFields?.instances || 1,
+                instances: formFields?.instances || 1
             });
             newConnecor(data?.connector, formFields?.connector_type?.toLocaleLowerCase());
         } catch (error) {
@@ -347,7 +336,6 @@ const ConnectorModal = ({ open, clickOutside, newConnecor, source }) => {
 
                 {step === 2 && resError && Object.keys(resError)?.length > 0 && !loading && <div className="result">{resError}</div>}
             </div>
-            <CloudModal type="cloud" open={cloudModalopen} handleClose={() => setCloudModalOpen(false)} />
         </Modal>
     );
 };

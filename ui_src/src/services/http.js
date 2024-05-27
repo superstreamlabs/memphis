@@ -17,7 +17,6 @@ import { LOCAL_STORAGE_TOKEN } from 'const/localStorageConsts.js';
 import { ApiEndpoints } from 'const/apiEndpoints';
 import pathDomains from 'router';
 import AuthService from './auth';
-import { isCloud } from './valueConvertor';
 import EmailLink from 'components/emailLink';
 import { showMessages } from './genericServices';
 
@@ -56,7 +55,7 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
             !serverUrl
         ) {
             AuthService.clearLocalStorage();
-            isCloud() ? window.location.replace(CLOUD_URL) : window.location.assign(pathDomains.login);
+            window.location.assign(pathDomains.login);
         }
         if (err?.response?.data?.message !== undefined && err?.response?.status === SHOWABLE_ERROR_STATUS_CODE && displayMsg) {
             showMessages('warning', err?.response?.data?.message);
@@ -64,20 +63,13 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
         if (err?.response?.data?.message !== undefined && err?.response?.status === 500) {
             showMessages(
                 'error',
-                isCloud() ? (
-                    <>
-                        We are experiencing some issues. Please contact us at <EmailLink email="support@memphis.dev" /> for assistance.
-                    </>
-                ) : (
-                    <>
-                        <>
-                            We have some issues. Please open a
-                            <a className="a-link" href="https://github.com/memphisdev/memphis" target="_blank">
-                                GitHub issue
-                            </a>
-                        </>
-                    </>
-                )
+
+                <>
+                    We have some issues. Please open a
+                    <a className="a-link" href="https://github.com/memphisdev/memphis" target="_blank">
+                        GitHub issue
+                    </a>
+                </>
             );
         }
         if (err?.message?.includes('Network Error') && serverUrl) {
@@ -98,7 +90,7 @@ export async function handleRefreshTokenRequest() {
         return res.data;
     } catch (err) {
         AuthService.clearLocalStorage();
-        isCloud() ? window.location.replace(CLOUD_URL) : window.location.assign(pathDomains.login);
+        window.location.assign(pathDomains.login);
         return '';
     }
 }

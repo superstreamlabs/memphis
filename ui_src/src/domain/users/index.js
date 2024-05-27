@@ -16,13 +16,11 @@ import React, { useEffect, useContext, useState, useRef } from 'react';
 import { AccountCircleRounded } from '@material-ui/icons';
 
 import { LOCAL_STORAGE_USER_PASS_BASED_AUTH, LOCAL_STORAGE_FULL_NAME, USER_IMAGE } from 'const/localStorageConsts';
-import { isCloud, parsingDate } from 'services/valueConvertor';
-import { ReactComponent as AddUserIcon } from 'assets/images/addUserIcon.svg';
+import { parsingDate } from 'services/valueConvertor';
 import { ReactComponent as DeleteWrapperIcon } from 'assets/images/deleteWrapperIcon.svg';
 import { ReactComponent as MailIcon } from 'assets/images/mailIcon.svg';
 import { ReactComponent as DeleteIcon } from 'assets/images/deleteIcon.svg';
 import { ReactComponent as SearchIcon } from 'assets/images/searchIcon.svg';
-import { FaArrowCircleUp } from 'react-icons/fa';
 import SegmentButton from 'components/segmentButton';
 import { ApiEndpoints } from 'const/apiEndpoints';
 import SearchInput from 'components/searchInput';
@@ -35,7 +33,6 @@ import { Context } from 'hooks/store';
 import Modal from 'components/modal';
 import Table from 'components/table';
 import DeleteItemsModal from 'components/deleteItemsModal';
-import CloudModal from 'components/cloudModal';
 import { isCurrentUser } from 'utils/user';
 import Drawer from 'components/drawer';
 
@@ -55,7 +52,6 @@ function Users() {
     const [resendEmailLoader, setResendEmailLoader] = useState(false);
     const [createUserLoader, setCreateUserLoader] = useState(false);
     const [userToResend, setuserToResend] = useState('');
-    const [openCloudModal, setOpenCloudModal] = useState(false);
     const [selectedRow, setSelectedRow] = useState(null);
 
     useEffect(() => {
@@ -376,72 +372,27 @@ function Users() {
             render: (_, record) =>
                 record.user_type !== 'root' && (
                     <div className="user-action">
-                        {isCloud() && record.pending ? (
-                            <>
-                                <Button
-                                    width="125px"
-                                    height="30px"
-                                    placeholder={
-                                        <div className="action-button">
-                                            <MailIcon className="action-img-btn" alt="mailIcon" />
-                                            Resend email
-                                        </div>
-                                    }
-                                    colorType="black"
-                                    radiusType="circle"
-                                    border="gray-light"
-                                    backgroundColorType={'white'}
-                                    fontSize="12px"
-                                    fontFamily="InterMedium"
-                                    isLoading={record.username === userToResend && resendEmailLoader}
-                                    onClick={() => {
-                                        resendEmail(record.username);
-                                    }}
-                                />
-                                <Button
-                                    width="95px"
-                                    height="30px"
-                                    placeholder={
-                                        <div className="action-button">
-                                            <DeleteIcon className="action-img-btn" alt="deleteIcon" />
-                                            Revoke
-                                        </div>
-                                    }
-                                    colorType="red"
-                                    radiusType="circle"
-                                    border="gray-light"
-                                    backgroundColorType={'white'}
-                                    fontSize="12px"
-                                    fontFamily="InterMedium"
-                                    isLoading={record.username === userToRemove.username && userDeletedLoader}
-                                    onClick={() => {
-                                        revokeUser(record.username, record.user_type);
-                                    }}
-                                />
-                            </>
-                        ) : (
-                            !isCurrentUser(record.id) && (
-                                <Button
-                                    width="115px"
-                                    height="30px"
-                                    placeholder={
-                                        <div className="action-button">
-                                            <DeleteIcon className="action-img-btn" alt="deleteIcon" />
-                                            Delete user
-                                        </div>
-                                    }
-                                    colorType="red"
-                                    radiusType="circle"
-                                    border="gray-light"
-                                    backgroundColorType={'white'}
-                                    fontSize="12px"
-                                    fontFamily="InterMedium"
-                                    isLoading={record.username === userToRemove.username && userDeletedLoader}
-                                    onClick={() => {
-                                        deleteUser(record.username, record.user_type);
-                                    }}
-                                />
-                            )
+                        {!isCurrentUser(record.id) && (
+                            <Button
+                                width="115px"
+                                height="30px"
+                                placeholder={
+                                    <div className="action-button">
+                                        <DeleteIcon className="action-img-btn" alt="deleteIcon" />
+                                        Delete user
+                                    </div>
+                                }
+                                colorType="red"
+                                radiusType="circle"
+                                border="gray-light"
+                                backgroundColorType={'white'}
+                                fontSize="12px"
+                                fontFamily="InterMedium"
+                                isLoading={record.username === userToRemove.username && userDeletedLoader}
+                                onClick={() => {
+                                    deleteUser(record.username, record.user_type);
+                                }}
+                            />
                         )}
                     </div>
                 )
@@ -490,16 +441,7 @@ function Users() {
                         className="modal-btn"
                         width="160px"
                         height="34px"
-                        placeholder={
-                            isCloud() && !state?.allowedActions?.can_create_users ? (
-                                <span className="create-new">
-                                    <label>Add a new user</label>
-                                    <FaArrowCircleUp className="lock-feature-icon" />
-                                </span>
-                            ) : (
-                                <span className="create-new">Add a new user</span>
-                            )
-                        }
+                        placeholder={<span className="create-new">Add a new user</span>}
                         colorType="white"
                         radiusType="circle"
                         backgroundColorType="purple"
@@ -507,7 +449,7 @@ function Users() {
                         fontWeight="600"
                         boxShadowStyle="float"
                         aria-haspopup="true"
-                        onClick={() => (!isCloud() || state?.allowedActions?.can_create_users ? addUserModalFlip(true) : setOpenCloudModal(true))}
+                        onClick={() => addUserModalFlip(true)}
                     />
                 </div>
             </div>
@@ -593,7 +535,6 @@ function Users() {
                 />
                 <br />
             </Modal>
-            <CloudModal type="upgrade" open={openCloudModal} handleClose={() => setOpenCloudModal(false)} />
         </div>
     );
 }

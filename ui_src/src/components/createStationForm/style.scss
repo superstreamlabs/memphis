@@ -68,6 +68,7 @@
         flex-direction: column;
     }
     .replicas-partition-container {
+        display: grid;
         grid-template-columns: 47% 47%;
         justify-content: space-between;
         .replicas-container {
