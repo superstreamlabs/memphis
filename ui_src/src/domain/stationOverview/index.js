@@ -23,7 +23,6 @@ import Loader from 'components/loader';
 import { Context } from 'hooks/store';
 import pathDomains from 'router';
 import Reducer from './hooks/reducer';
-import { StringCodec, JSONCodec } from 'nats.ws';
 
 const initializeState = {
     stationMetaData: { is_native: true },
@@ -40,7 +39,6 @@ const StationOverview = () => {
     const [state, dispatch] = useContext(Context);
     const [isLoading, setisLoading] = useState(false);
     const [isReloading, setisReloading] = useState(false);
-    const [socketOn, setSocketOn] = useState(false);
     const location = useLocation();
     const [referredFunction, setReferredFunction] = useState(null);
 
@@ -92,74 +90,8 @@ const StationOverview = () => {
     };
 
     useEffect(() => {
-        // if (socketOn) {
-        //     getStationDetails();
-        // }
-        // getStationDetails();
         stationState?.stationPartition && getStationDetails();
     }, [stationState?.stationPartition]);
-
-    // const startListen = async () => {
-    //     const jc = JSONCodec();
-    //     const sc = StringCodec();
-
-    //     const listenForUpdates = async () => {
-    //         try {
-    //             if (sub) {
-    //                 for await (const msg of sub) {
-    //                     let data = jc.decode(msg.data);
-    //                     sortData(data);
-    //                     stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
-    //                     if (!socketOn) {
-    //                         setSocketOn(true);
-    //                     }
-    //                 }
-    //             }
-    //         } catch (err) {
-    //             console.error(`Error receiving data updates for station overview:`, err);
-    //         }
-    //     };
-
-    //     try {
-    //         const rawBrokerName = await state.socket?.request(
-    //             `$memphis_ws_subs.station_overview_data.${stationName}.${stationState?.stationPartition || -1}`,
-    //             sc.encode('SUB')
-    //         );
-    //         if (rawBrokerName) {
-    //             const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
-    //             sub = state.socket?.subscribe(`$memphis_ws_pubs.station_overview_data.${stationName}.${stationState?.stationPartition || -1}.${brokerName}`);
-    //             listenForUpdates();
-    //         }
-    //     } catch (err) {
-    //         console.error('Error subscribing to station overview data:', err);
-    //     }
-    // };
-
-    // const stopListen = async () => {
-    //     if (sub) {
-    //         try {
-    //             await sub.unsubscribe();
-    //         } catch (err) {
-    //             console.error('Error unsubscribing from station overview data:', err);
-    //         }
-    //     }
-    // };
-
-    // useEffect(() => {
-    //     if (state.socket) {
-    //         startListen();
-    //     }
-    //     return () => {
-    //         stopListen();
-    //     };
-    // }, [state.socket, stationName]);
-
-    // useEffect(() => {
-    //     if (sub && socketOn) {
-    //         stopListen();
-    //         startListen();
-    //     }
-    // }, [stationState?.stationPartition, stationName]);
 
     useEffect(() => {
         setisLoading(true);

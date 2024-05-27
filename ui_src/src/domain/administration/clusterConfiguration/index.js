@@ -14,7 +14,7 @@ import './style.scss';
 
 import React, { useEffect, useState } from 'react';
 
-import { compareObjects, isCloud } from 'services/valueConvertor';
+import { compareObjects } from 'services/valueConvertor';
 import BrokerHostname from 'assets/images/BrokerHostname.svg';
 import UIHostname from 'assets/images/UIHostname.svg';
 import DeadLetterInHours from 'assets/images/DeadLetterInHours.svg';
@@ -28,7 +28,6 @@ import Button from 'components/button';
 import SliderRow from './components/sliderRow';
 import InputRow from './components/inputRow';
 import TieredInputRow from './components/tieredInputRow';
-import { message } from 'antd';
 import {
     LOCAL_STORAGE_BROKER_HOST,
     LOCAL_STORAGE_ENV,
@@ -56,12 +55,10 @@ function ClusterConfiguration() {
         localStorage.setItem(DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS, data.dls_retention);
         localStorage.setItem(LOGS_RETENTION_IN_DAYS, data.logs_retention);
         localStorage.setItem(TIERED_STORAGE_UPLOAD_INTERVAL, data.tiered_storage_time_sec);
-        if (!isCloud()) {
-            localStorage.setItem(LOCAL_STORAGE_BROKER_HOST, data.broker_host);
-            localStorage.setItem(LOCAL_STORAGE_REST_GW_HOST, data.rest_gw_host);
-            localStorage.setItem(LOCAL_STORAGE_UI_HOST, data.ui_host);
-            localStorage.setItem(LOCAL_STORAGE_TIERED_STORAGE_TIME, data.tiered_storage_time_sec);
-        }
+        localStorage.setItem(LOCAL_STORAGE_BROKER_HOST, data.broker_host);
+        localStorage.setItem(LOCAL_STORAGE_REST_GW_HOST, data.rest_gw_host);
+        localStorage.setItem(LOCAL_STORAGE_UI_HOST, data.ui_host);
+        localStorage.setItem(LOCAL_STORAGE_TIERED_STORAGE_TIME, data.tiered_storage_time_sec);
     };
     const getConfigurationValue = async () => {
         try {
@@ -133,39 +130,36 @@ function ClusterConfiguration() {
                             unit={'h'}
                             onChanges={(e) => handleChange('gc_producer_consumer_retention_hours', e)}
                         />
-                        {!isCloud() && (
-                            <>
-                                <SliderRow
-                                    title="MAX MESSAGE SIZE"
-                                    desc="Maximum message size (payload + headers) in megabytes"
-                                    value={formFields?.max_msg_size_mb}
-                                    img={DeadLetterInHours}
-                                    min={1}
-                                    max={12}
-                                    unit={'mb'}
-                                    onChanges={(e) => handleChange('max_msg_size_mb', e)}
-                                />
-                                <SliderRow
-                                    title="LOGS RETENTION IN DAYS"
-                                    desc="Amount of days to retain system logs"
-                                    img={LogsRetentionInDays}
-                                    value={formFields?.logs_retention}
-                                    min={1}
-                                    max={100}
-                                    unit={'d'}
-                                    onChanges={(e) => handleChange('logs_retention', e)}
-                                />
-                                <TieredInputRow
-                                    title="TIERED STORAGE UPLOAD INTERVAL"
-                                    desc="(if configured) The interval which the broker will migrate a batch of messages to the second storage tier"
-                                    img={TieredStorageInterval}
-                                    value={formFields?.tiered_storage_time_sec}
-                                    onChanges={(e, err) => handleChange('tiered_storage_time_sec', e, err)}
-                                />
-                            </>
-                        )}
 
-                        {localStorage.getItem(LOCAL_STORAGE_ENV) !== 'docker' && !isCloud() && (
+                        <SliderRow
+                            title="MAX MESSAGE SIZE"
+                            desc="Maximum message size (payload + headers) in megabytes"
+                            value={formFields?.max_msg_size_mb}
+                            img={DeadLetterInHours}
+                            min={1}
+                            max={12}
+                            unit={'mb'}
+                            onChanges={(e) => handleChange('max_msg_size_mb', e)}
+                        />
+                        <SliderRow
+                            title="LOGS RETENTION IN DAYS"
+                            desc="Amount of days to retain system logs"
+                            img={LogsRetentionInDays}
+                            value={formFields?.logs_retention}
+                            min={1}
+                            max={100}
+                            unit={'d'}
+                            onChanges={(e) => handleChange('logs_retention', e)}
+                        />
+                        <TieredInputRow
+                            title="TIERED STORAGE UPLOAD INTERVAL"
+                            desc="(if configured) The interval which the broker will migrate a batch of messages to the second storage tier"
+                            img={TieredStorageInterval}
+                            value={formFields?.tiered_storage_time_sec}
+                            onChanges={(e, err) => handleChange('tiered_storage_time_sec', e, err)}
+                        />
+
+                        {localStorage.getItem(LOCAL_STORAGE_ENV) !== 'docker' && (
                             <>
                                 <InputRow
                                     title="BROKER HOSTNAME"

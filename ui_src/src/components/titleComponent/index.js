@@ -1,11 +1,9 @@
 import React from 'react';
 import './style.scss';
 import Lottie from 'lottie-react';
-import CloudOnly from 'components/cloudOnly';
-import { isCloud } from 'services/valueConvertor';
 
 const TitleComponent = (props) => {
-    const { headerTitle, spanHeader, typeTitle = 'header', headerDescription, style, img, finish, required, learnMore = false, link, cloudOnly = false } = props;
+    const { headerTitle, spanHeader, typeTitle = 'header', headerDescription, style, img, finish, required, learnMore = false, link } = props;
 
     return (
         <div className="title-container" style={style?.container}>
@@ -29,7 +27,6 @@ const TitleComponent = (props) => {
                         <span className="span-header">{spanHeader}</span>
                     </p>
                 )}
-                {cloudOnly && !isCloud() && <CloudOnly />}
             </div>
             {headerDescription && (
                 <p className="header-description" style={style?.description}>

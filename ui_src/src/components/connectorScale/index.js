@@ -17,7 +17,6 @@ import TitleComponent from 'components/titleComponent';
 import InputNumberComponent from 'components/InputNumber';
 import { ApiEndpoints } from 'const/apiEndpoints';
 import { httpRequest } from 'services/http';
-import { sendTrace } from 'services/genericServices';
 import { Form } from 'antd';
 import Button from 'components/button';
 
@@ -41,12 +40,6 @@ const ConnectorScale = ({ connector, open, done }) => {
             } catch (error) {
                 setLoading(false);
             }
-            sendTrace('scale', {
-                name: connector?.name,
-                type: connector?.type,
-                connector_type: connector?.connector_type,
-                instances: instances
-            });
             let connectorData = { ...connector };
             connectorData.instances = instances;
             done(connectorData);

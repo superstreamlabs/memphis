@@ -29,7 +29,6 @@ export const ApiEndpoints = {
     GET_SIGNUP_FLAG: '/usermgmt/getSignUpFlag',
     SKIP_GET_STARTED: '/usermgmt/skipGetStarted',
     GET_FILTER_DETAILS: '/usermgmt/getFilterDetails',
-    SEND_TRACE: '/usermgmt/sendTrace',
     GET_SYSTEM_GENERAL_INFO: '/monitoring/getSystemGeneralInfo',
 
     //Station

@@ -19,13 +19,11 @@ import { ReactComponent as AttachedPlaceholderIcon } from 'assets/images/attache
 import { ReactComponent as StationsActiveIcon } from 'assets/images/stationsIconActive.svg';
 import { ApiEndpoints } from 'const/apiEndpoints';
 import { httpRequest } from 'services/http';
-import { useGetAllowedActions } from 'services/genericServices';
 import Button from 'components/button';
 import OverflowTip from 'components/tooltip/overflowtip';
 import Modal from 'components/modal';
 import LearnMore from 'components/learnMore';
 import CreateStationForm from 'components/createStationForm';
-import { isCloud } from 'services/valueConvertor';
 
 function AttachStationModal({ close, handleAttachedStations, attachedStations, schemaName, update }) {
     const createStationRef = useRef(null);
@@ -37,7 +35,6 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
     const [creatingProsessd, setCreatingProsessd] = useState(false);
     const [open, modalFlip] = useState(false);
 
-    const getAllowedActions = useGetAllowedActions();
     const onCheckedAll = (e) => {
         if (!update && attachedStations?.length > 0) {
             setIndeterminate(!indeterminate);
@@ -113,8 +110,6 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
         } catch (error) {
             setAttachLoader(false);
             close();
-        } finally {
-            isCloud() && getAllowedActions();
         }
     };
 

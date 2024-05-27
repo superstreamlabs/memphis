@@ -17,7 +17,7 @@ import { InfoOutlined } from '@material-ui/icons';
 
 import { DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS } from 'const/localStorageConsts';
 import { ReactComponent as DeadLetterPlaceholderIcon } from 'assets/images/deadLetterPlaceholder.svg';
-import { isCloud, messageParser, msToUnits, parsingDate } from 'services/valueConvertor';
+import { messageParser, msToUnits, parsingDate } from 'services/valueConvertor';
 import { ReactComponent as PurgeWrapperIcon } from 'assets/images/purgeWrapperIcon.svg';
 import { ReactComponent as WaitingMessagesIcon } from 'assets/images/waitingMessages.svg';
 import { ReactComponent as IdempotencyIcon } from 'assets/images/idempotencyIcon.svg';
@@ -45,8 +45,6 @@ import UseSchemaModal from '../../components/useSchemaModal';
 import DeleteItemsModal from 'components/deleteItemsModal';
 import { ReactComponent as DisableIcon } from 'assets/images/disableIcon.svg';
 import { Divider } from 'antd';
-import FunctionsOverview from '../components/functionsOverview';
-import CloudModal from 'components/cloudModal';
 import Spinner from 'components/spinner';
 import { ReactComponent as CleanDisconnectedProducersIcon } from 'assets/images/clean_disconnected_producers.svg';
 
@@ -82,16 +80,10 @@ const Messages = ({ referredFunction, loading }) => {
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
 
-    const subTabs = isCloud()
-        ? [
-              { name: 'Unacknowledged', disabled: false },
-              { name: 'Schema violation', disabled: !stationState?.stationMetaData?.is_native },
-              { name: 'Functions', disabled: !stationState?.stationSocketData?.functions_enabled }
-          ]
-        : [
-              { name: 'Unacknowledged', disabled: false },
-              { name: 'Schema violation', disabled: !stationState?.stationMetaData?.is_native }
-          ];
+    const subTabs = [
+        { name: 'Unacknowledged', disabled: false },
+        { name: 'Schema violation', disabled: !stationState?.stationMetaData?.is_native }
+    ];
 
     useEffect(() => {
         activeTab === 'general' && setTabValue('Messages');
@@ -414,35 +406,6 @@ const Messages = ({ referredFunction, loading }) => {
 
     return (
         <div className="messages-container">
-            <div className="top">
-                <div className="top-header">
-                    <div className="left">
-                        <div className="top-switcher">
-                            <div className={`top-switcher-btn ${activeTab === 'general' ? 'ms-active' : ''}`} onClick={() => setActiveTab('general')}>
-                                General
-                            </div>
-                            <div
-                                className={`top-switcher-btn ${activeTab === 'functions' ? 'ms-active' : ''} ${
-                                    !isCloud() || !stationState?.stationSocketData?.functions_enabled ? 'ms-disabled' : undefined
-                                }`}
-                                onClick={() => (isCloud() ? stationState?.stationSocketData?.functions_enabled && setActiveTab('functions') : setCloudModalOpen(true))}
-                            >
-                                {stationState?.stationSocketData?.functions_enabled ? (
-                                    <>
-                                        <label>Functions</label>
-                                        <label className="badge">Beta</label>
-                                    </>
-                                ) : (
-                                    <TooltipComponent text="Supported for new stations" minWidth="35px">
-                                        Functions
-                                    </TooltipComponent>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             {activeTab === 'general' && (
                 <div className="tab-general">
                     <Divider style={{ marginTop: 0, marginBottom: '10px' }} />
@@ -452,8 +415,7 @@ const Messages = ({ referredFunction, loading }) => {
                             {((tabValue === tabs[0] && stationState?.stationSocketData?.messages?.length > 0) ||
                                 (tabValue === tabs[1] &&
                                     ((subTabValue === subTabs[0]?.name && stationState?.stationSocketData?.poison_messages?.length > 0) ||
-                                        (subTabValue === subTabs[1]?.name && stationState?.stationSocketData?.schema_failed_messages?.length > 0) ||
-                                        (subTabValue === subTabs[2]?.name && stationState?.stationSocketData?.functions_failed_messages?.length > 0)))) && (
+                                        (subTabValue === subTabs[1]?.name && stationState?.stationSocketData?.schema_failed_messages?.length > 0)))) && (
                                 <Button
                                     width="80px"
                                     height="32px"
@@ -604,7 +566,7 @@ const Messages = ({ referredFunction, loading }) => {
                                 showDivider
                             ></DetailBox>
                             <Divider />
-                            {!isCloud() && stationState?.stationPartition !== 1 && (
+                            {stationState?.stationPartition !== 1 && (
                                 <>
                                     <DetailBox
                                         icon={<LeaderIcon width={24} alt="leaderIcon" />}
@@ -623,7 +585,7 @@ const Messages = ({ referredFunction, loading }) => {
                                     <Divider />
                                 </>
                             )}
-                            {stationState?.stationSocketData?.followers?.length > 0 && !isCloud() && stationState?.stationPartition !== 1 && (
+                            {stationState?.stationSocketData?.followers?.length > 0 && stationState?.stationPartition !== 1 && (
                                 <>
                                     <DetailBox
                                         icon={<FollowersIcon width={24} alt="followersImg" />}
@@ -657,60 +619,9 @@ const Messages = ({ referredFunction, loading }) => {
                                 data={[msToUnits(stationState?.stationSocketData?.idempotency_window_in_ms)]}
                                 showDivider
                             />
-
-                            {isCloud() && (
-                                <>
-                                    <Divider />
-                                    <DetailBox
-                                        icon={<CleanDisconnectedProducersIcon width={24} alt="clean disconnected producers" />}
-                                        title="Clean disconnected producers"
-                                        data={[
-                                            <Button
-                                                width="80px"
-                                                height="25px"
-                                                placeholder="Clean"
-                                                colorType="white"
-                                                radiusType="circle"
-                                                backgroundColorType="red"
-                                                fontSize="12px"
-                                                fontWeight="600"
-                                                disabled={
-                                                    disableLoaderCleanDisconnectedProducers ||
-                                                    (stationState?.stationSocketData?.disconnected_producers?.reduce(
-                                                        (accumulator, item) => accumulator + item.disconnected_producers_count,
-                                                        0
-                                                    ) === 0 &&
-                                                        stationState?.stationSocketData?.connected_producers?.reduce(
-                                                            (accumulator, item) => accumulator + item.disconnected_producers_count,
-                                                            0
-                                                        ) === 0)
-                                                }
-                                                onClick={() => cleanDisconnectedProducers(stationState?.stationMetaData?.id)}
-                                                isLoading={disableLoaderCleanDisconnectedProducers}
-                                                tooltip={
-                                                    stationState?.stationSocketData?.disconnected_producers?.reduce(
-                                                        (accumulator, item) => accumulator + item.disconnected_producers_count,
-                                                        0
-                                                    ) === 0 && 'Nothing to clean'
-                                                }
-                                                tooltip_placement={'right'}
-                                            />
-                                        ]}
-                                        showDivider
-                                    ></DetailBox>
-                                </>
-                            )}
                         </div>
                     )}
                 </div>
-            )}
-            {activeTab === 'functions' && (
-                <FunctionsOverview
-                    referredFunction={choseReferredFunction}
-                    dismissFunction={() => setChoseReferredFunction(null)}
-                    moveToGenralView={() => setActiveTab('general')}
-                    loading={loading}
-                />
             )}
 
             <Modal
@@ -768,7 +679,6 @@ const Messages = ({ referredFunction, loading }) => {
                     loader={disableLoader}
                 />
             </Modal>
-            <CloudModal open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} type="cloud" />
             <MessageDetails
                 open={selectedRowIndex !== null}
                 isDls={tabValue === tabs[1]}

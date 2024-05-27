@@ -16,28 +16,17 @@ import { useHistory } from 'react-router-dom';
 import { HiLockClosed } from 'react-icons/hi';
 import { Form } from 'antd';
 
-import {
-    convertDateToSeconds,
-    generateName,
-    idempotencyValidator,
-    isCloud,
-    partitionsValidator,
-    replicasConvertor,
-    showUpgradePlan
-} from 'services/valueConvertor';
+import { convertDateToSeconds, generateName, idempotencyValidator, partitionsValidator, replicasConvertor } from 'services/valueConvertor';
 import S3Integration from 'domain/administration/integrations/components/s3Integration';
 import { ApiEndpoints } from 'const/apiEndpoints';
 import { httpRequest } from 'services/http';
-import { useGetAllowedActions } from 'services/genericServices';
 import InputNumberComponent from 'components/InputNumber';
 import OverflowTip from 'components/tooltip/overflowtip';
 import TitleComponent from 'components/titleComponent';
 import SelectCheckBox from 'components/selectCheckBox';
 import { Context } from 'hooks/store';
-import UpgradePlans from 'components/upgradePlans';
 import CustomSelect from 'components/customSelect';
 import RadioButton from 'components/radioButton';
-import LockFeature from 'components/lockFeature';
 import SelectComponent from 'components/select';
 import pathDomains from 'router';
 import Switcher from 'components/switcher';
@@ -45,7 +34,6 @@ import CustomTabs from 'components/Tabs';
 import Button from 'components/button';
 import Input from 'components/Input';
 import Modal from 'components/modal';
-import { entitlementChecker } from 'utils/plan';
 
 const retanionOptions = [
     {
@@ -81,9 +69,9 @@ const storageTierOneOptions = [
     {
         id: 2,
         value: 'memory',
-        label: isCloud() ? 'Memory (Coming soon)' : 'Memory',
+        label: 'Memory',
         desc: 'Memory can boost your performance. Lower availability',
-        disabled: isCloud() ? true : false
+        disabled: false
     }
 ];
 
@@ -117,17 +105,13 @@ const CreateStationForm = ({ createStationFormRef, finishUpdate, setLoading, noR
     const [modalIsOpen, modalFlip] = useState(false);
     const [retentionViolation, setRetentionViolation] = useState(false);
     const [partitonViolation, setPartitonViolation] = useState(false);
-    const storageTiringLimits = isCloud() && entitlementChecker(state, 'feature-storage-tiering');
     const tabs = [
         { name: 'Local storage tier', checked: true },
         { name: 'Remote storage tier', checked: selectedTier2Option || false }
     ];
-    const getAllowedActions = useGetAllowedActions();
 
     useEffect(() => {
-        if (!isCloud()) {
-            getAvailableReplicas();
-        }
+        getAvailableReplicas();
         getAllSchemas();
         getIntegration();
         getStations();
@@ -158,28 +142,8 @@ const CreateStationForm = ({ createStationFormRef, finishUpdate, setLoading, noR
         }
     };
 
-    const checkPlanViolation = (formFields) => {
-        const partitionsLimits = state?.userData?.entitlements ? state?.userData?.entitlements['feature-partitions-per-station']?.limits : 3;
-        const retentionLimits = state?.userData?.entitlements ? state?.userData?.entitlements['feature-storage-retention']?.limits : 7;
-
-        const partitionsExceeded = Number(formFields.partitions_number) > partitionsLimits;
-
-        const retentionDays =
-            formFields.retention_type === 'message_age_sec' ? convertDateToSeconds(formFields.days, formFields.hours, formFields.minutes, formFields.seconds) / 86400 : 0;
-
-        const retentionExceeded = retentionDays > retentionLimits;
-
-        setPartitonViolation(partitionsExceeded);
-        setRetentionViolation(retentionExceeded);
-
-        return !(partitionsExceeded || retentionExceeded);
-    };
-
     const onFinish = async () => {
-        let canCreate = isCloud() ? false : true;
         const formFields = await creationForm.validateFields();
-        if (isCloud()) canCreate = checkPlanViolation(formFields);
-        if (!canCreate) return;
         const retentionValue = getRetentionValue(formFields);
         const idempotencyValue = getIdempotencyValue(formFields);
         const bodyRequest = {
@@ -187,7 +151,7 @@ const CreateStationForm = ({ createStationFormRef, finishUpdate, setLoading, noR
             retention_type: formFields.retention_type || retentionType,
             retention_value: retentionValue,
             storage_type: formFields.storage_type,
-            replicas: isCloud() ? replicasConvertor(3, true) : replicasConvertor(formFields.replicas, true),
+            replicas: replicasConvertor(formFields.replicas, true),
             schema_name: formFields.schemaValue,
             tiered_storage_enabled: formFields.tiered_storage_enabled,
             idempotency_window_in_ms: idempotencyValue,
@@ -246,7 +210,6 @@ const CreateStationForm = ({ createStationFormRef, finishUpdate, setLoading, noR
         } catch (error) {
         } finally {
             setLoading(false);
-            isCloud() && getAllowedActions();
         }
     };
 
@@ -317,25 +280,23 @@ const CreateStationForm = ({ createStationFormRef, finishUpdate, setLoading, noR
                         </div>
                     )}
                 </div>
-                <div className="replicas-partition-container" style={{ display: isCloud() ? 'block' : 'grid' }}>
-                    {!isCloud() && (
-                        <div className="replicas-container">
-                            <TitleComponent headerTitle="Replicas" typeTitle="sub-header" headerDescription="Number of mirrors for each message" />
-                            <div>
-                                <Form.Item name="replicas" initialValue={actualPods[0]} style={{ height: '50px' }}>
-                                    <SelectComponent
-                                        colorType="black"
-                                        backgroundColorType="none"
-                                        borderColorType="gray"
-                                        radiusType="semi-round"
-                                        height="40px"
-                                        popupClassName="select-options"
-                                        options={actualPods}
-                                    />
-                                </Form.Item>
-                            </div>
+                <div className="replicas-partition-container">
+                    <div className="replicas-container">
+                        <TitleComponent headerTitle="Replicas" typeTitle="sub-header" headerDescription="Number of mirrors for each message" />
+                        <div>
+                            <Form.Item name="replicas" initialValue={actualPods[0]} style={{ height: '50px' }}>
+                                <SelectComponent
+                                    colorType="black"
+                                    backgroundColorType="none"
+                                    borderColorType="gray"
+                                    radiusType="semi-round"
+                                    height="40px"
+                                    popupClassName="select-options"
+                                    options={actualPods}
+                                />
+                            </Form.Item>
                         </div>
-                    )}
+                    </div>
                     <div className="replicas-container">
                         <TitleComponent headerTitle="Partitions" typeTitle="sub-header" headerDescription="Number of partitions per station" learnMore={false} />
                         <div>
@@ -371,16 +332,6 @@ const CreateStationForm = ({ createStationFormRef, finishUpdate, setLoading, noR
                                         <HiLockClosed className="lock-feature-icon" />
                                         <p>Your current plan allows {state?.userData?.entitlements['feature-partitions-per-station']?.limits} partitions</p>
                                     </div>
-                                    {showUpgradePlan() && (
-                                        <UpgradePlans
-                                            content={
-                                                <div className="upgrade-button-wrapper">
-                                                    <p className="upgrade-plan">Upgrade now</p>
-                                                </div>
-                                            }
-                                            isExternal={false}
-                                        />
-                                    )}
                                 </div>
                             )}
                         </div>
@@ -507,7 +458,7 @@ const CreateStationForm = ({ createStationFormRef, finishUpdate, setLoading, noR
                                 <div className="time-value">
                                     <div className="days-section">
                                         <Form.Item name="days" initialValue={1}>
-                                            <InputNumberComponent min={0} max={isCloud() ? 14 : 1000} placeholder={1} />
+                                            <InputNumberComponent min={0} max={1000} placeholder={1} />
                                         </Form.Item>
                                         <p>days</p>
                                     </div>
@@ -579,75 +530,58 @@ const CreateStationForm = ({ createStationFormRef, finishUpdate, setLoading, noR
                                         <HiLockClosed className="lock-feature-icon" />
                                         <p>Your current plan allows {state?.userData?.entitlements['feature-storage-retention']?.limits} retention days</p>
                                     </div>
-                                    {showUpgradePlan() && (
-                                        <UpgradePlans
-                                            content={
-                                                <div className="upgrade-button-wrapper">
-                                                    <p className="upgrade-plan">Upgrade now</p>
-                                                </div>
-                                            }
-                                            isExternal={false}
-                                        />
-                                    )}
                                 </div>
                             )}
                         </div>
-                        {(!isCloud() || (isCloud() && tabValue === tabs[1].name)) && (
-                            <div className="storage-container">
-                                <TitleComponent headerTitle="Storage type" typeTitle="sub-header" />
-                                <Form.Item name="storage_type" initialValue={'file'} style={{ display: tabValue === tabs[0].name ? 'block' : 'none' }}>
-                                    {tabValue === tabs[0].name && (
-                                        <SelectCheckBox
-                                            selectOptions={storageTierOneOptions}
-                                            handleOnClick={(e) => SelectedLocalStorageOption(e)}
-                                            selectedOption={selectedOption}
-                                        />
-                                    )}
-                                </Form.Item>
-                                <Form.Item name="tiered_storage_enabled" initialValue={false} style={{ display: tabValue === tabs[1].name ? 'block' : 'none' }}>
-                                    {tabValue === tabs[1].name &&
-                                        storageTierTwoOptions.map((value) => {
-                                            return (
-                                                <SelectCheckBox
-                                                    hideCircle={true}
-                                                    selectOptions={storageTierTwoOptions}
-                                                    handleOnClick={(e) =>
-                                                        integrateValue
-                                                            ? // && allowEdit
-                                                              selectedTier2Option
-                                                                ? SelectedRemoteStorageOption(false, false)
-                                                                : SelectedRemoteStorageOption(true, true)
-                                                            : (isCloud() && storageTiringLimits) || !isCloud()
-                                                            ? modalFlip(true)
-                                                            : null
-                                                    }
-                                                    selectedOption={selectedTier2Option}
-                                                    button={
-                                                        (isCloud() && storageTiringLimits) || !isCloud() ? (
-                                                            <Button
-                                                                width="90px"
-                                                                height="30px"
-                                                                placeholder={integrateValue ? (selectedTier2Option ? 'Disable' : 'Enable') : 'Connect'}
-                                                                colorType="white"
-                                                                border="none"
-                                                                radiusType="circle"
-                                                                backgroundColorType="purple"
-                                                                fontSize="12px"
-                                                                htmlType="button"
-                                                                fontWeight="bold"
-                                                                boxShadowStyle="none"
-                                                                onClick={() => null}
-                                                            />
-                                                        ) : (
-                                                            <LockFeature header="Storage tiering" />
-                                                        )
-                                                    }
-                                                />
-                                            );
-                                        })}
-                                </Form.Item>
-                            </div>
-                        )}
+
+                        <div className="storage-container">
+                            <TitleComponent headerTitle="Storage type" typeTitle="sub-header" />
+                            <Form.Item name="storage_type" initialValue={'file'} style={{ display: tabValue === tabs[0].name ? 'block' : 'none' }}>
+                                {tabValue === tabs[0].name && (
+                                    <SelectCheckBox
+                                        selectOptions={storageTierOneOptions}
+                                        handleOnClick={(e) => SelectedLocalStorageOption(e)}
+                                        selectedOption={selectedOption}
+                                    />
+                                )}
+                            </Form.Item>
+                            <Form.Item name="tiered_storage_enabled" initialValue={false} style={{ display: tabValue === tabs[1].name ? 'block' : 'none' }}>
+                                {tabValue === tabs[1].name &&
+                                    storageTierTwoOptions.map((value) => {
+                                        return (
+                                            <SelectCheckBox
+                                                hideCircle={true}
+                                                selectOptions={storageTierTwoOptions}
+                                                handleOnClick={(e) =>
+                                                    integrateValue
+                                                        ? // && allowEdit
+                                                          selectedTier2Option
+                                                            ? SelectedRemoteStorageOption(false, false)
+                                                            : SelectedRemoteStorageOption(true, true)
+                                                        : modalFlip(true)
+                                                }
+                                                selectedOption={selectedTier2Option}
+                                                button={
+                                                    <Button
+                                                        width="90px"
+                                                        height="30px"
+                                                        placeholder={integrateValue ? (selectedTier2Option ? 'Disable' : 'Enable') : 'Connect'}
+                                                        colorType="white"
+                                                        border="none"
+                                                        radiusType="circle"
+                                                        backgroundColorType="purple"
+                                                        fontSize="12px"
+                                                        htmlType="button"
+                                                        fontWeight="bold"
+                                                        boxShadowStyle="none"
+                                                        onClick={() => null}
+                                                    />
+                                                }
+                                            />
+                                        );
+                                    })}
+                            </Form.Item>
+                        </div>
                     </div>
                 </div>
             </div>

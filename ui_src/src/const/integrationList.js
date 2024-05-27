@@ -261,7 +261,6 @@ export const INTEGRATION_LIST = {
                         <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Open source</label>
-                        <label className="oss-cloud-badge">Cloud</label>
                     </span>
                 </div>
             </div>
@@ -297,7 +296,6 @@ export const INTEGRATION_LIST = {
                         <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Open source</label>
-                        <label className="oss-cloud-badge">Cloud</label>
                     </span>
                 </div>
             </div>
@@ -428,7 +426,6 @@ export const INTEGRATION_LIST = {
                         <MemphisVerifiedIcon />
                         <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
-                        <label className="oss-cloud-badge">Cloud</label>
                         <label className="oss-cloud-badge">Open source</label>
                     </span>
                 </div>
@@ -479,7 +476,6 @@ export const INTEGRATION_LIST = {
                         <label className="memphis">Memphis.dev</label>
                         <Divider type="vertical" />
                         <label className="oss-cloud-badge">Open source</label>
-                        <label className="oss-cloud-badge">Cloud</label>
                     </span>
                 </div>
             </div>
@@ -503,141 +499,5 @@ export const INTEGRATION_LIST = {
                 key: 1
             }
         ]
-    },
-    GitHub: {
-        name: 'Github',
-        by: 'Memphis.dev',
-        banner: <img className="banner" src={githubBanner} alt="gitHubBanner" />,
-        insideBanner: <img className="insideBanner" src={githubBannerPopup} alt="slackBannerPopup" />,
-        icon: <GithubIntegrationIcon alt="gitHubIcon" />,
-        description:
-            'GitHub is an open source code repository and collaborative software development platform. Use GitHub repositories to manage your Schemaverse schemas and Functions source code.',
-        category: CATEGORY_LIST['SourceCode'],
-        cloudOnly: true,
-        hasLogs: true,
-        comingSoon: false,
-        header: (
-            <div className="header-left-side">
-                <GithubIntegrationIcon alt="gitHubLogo" />
-                <div className="details">
-                    <p>GitHub</p>
-                    <span className="by">
-                        <MemphisVerifiedIcon />
-                        <label className="memphis">Memphis.dev</label>
-                        <Divider type="vertical" />
-                        <label className="oss-cloud-badge">Cloud</label>
-                    </span>
-                </div>
-            </div>
-        ),
-        integrateDesc: (
-            <div className="integrate-description">
-                <p>Description</p>
-                <span className="content">
-                    GitHub is an open source code repository and collaborative software development platform. Use GitHub repositories to manage your Schemaverse schemas
-                    and Functions source code.
-                </span>
-            </div>
-        )
-    },
-    PagerDuty: {
-        name: 'PagerDuty',
-        by: 'Memphis.dev',
-        banner: <img className="banner" src={pagerdutyBanner} alt="pagerdutyBanner" />,
-        insideBanner: <img className="insideBanner" src={pagerdutyBanner} alt="pagerdutyBanner" />,
-        icon: <PageDutyIcon alt="pagerDutyIcon" />,
-        description: 'In PagerDuty, you can configure operations schedules to allow for 24x7 monitoring by an operations team that can span the globe.',
-        category: CATEGORY_LIST['Notifications'],
-        comingSoon: true,
-        osOnly: true,
-        hasLogs: false,
-        header: (
-            <div className="header-left-side">
-                <PageDutyIcon alt="pagerDutyIcon" />
-                <div className="details">
-                    <p>PagerDuty</p>
-                    <span className="by">
-                        <MemphisVerifiedIcon />
-                        <label className="memphis">Memphis.dev</label>
-                        <Divider type="vertical" />
-                        <label className="oss-cloud-badge">Open source</label>
-                    </span>
-                </div>
-            </div>
-        ),
-        integrateDesc: (
-            <div className="integrate-description">
-                <p>Description</p>
-                <span className="content">
-                    In PagerDuty, you can configure operations schedules to allow for 24x7 monitoring by an operations team that can span the globe.
-                </span>
-            </div>
-        )
-    },
-    'New Relic': {
-        name: 'New Relic',
-        by: 'Memphis.dev',
-        banner: <img className="banner" src={newrelicBanner} alt="newrelicBanner" />,
-        insideBanner: <img className="insideBanner" src={newrelicBanner} alt="newrelicBanner" />,
-        icon: <NewRelicIcon alt="newrelicIcon" />,
-        description: 'New Relic is where dev, ops, security and business teams solve software. Integrate memphis logs and metrics with New Relic',
-        comingSoon: true,
-        category: CATEGORY_LIST['Monitoring'],
-        osOnly: true,
-        hasLogs: false,
-        header: (
-            <div className="header-left-side">
-                <NewRelicIcon alt="newrelicIcon" />
-                <div className="details">
-                    <p>New Relic</p>
-                    <span className="by">
-                        <MemphisVerifiedIcon />
-                        <label className="memphis">Memphis.dev</label>
-                        <Divider type="vertical" />
-                        <label className="oss-cloud-badge">Open source</label>
-                    </span>
-                </div>
-            </div>
-        ),
-        integrateDesc: (
-            <div className="integrate-description">
-                <p>Description</p>
-                <span className="content">
-                    New Relic is where dev, ops, security and business teams solve software. Integrate memphis logs and metrics with New Relic
-                </span>
-            </div>
-        )
-    },
-    influxDB: {
-        name: 'influxDB',
-        by: 'Memphis.dev',
-        banner: <img className="banner" src={influxDBBanner} alt="influxDBBanner" />,
-        insideBanner: <img className="insideBanner" src={influxDBBanner} alt="influxDBBanner" />,
-        icon: <InfluxDBIcon alt="influxDBIcon" />,
-        description: 'Ship memphis logs to influxDB for near real-time monitoring with Grafana visualization',
-        category: CATEGORY_LIST['Monitoring'],
-        comingSoon: true,
-        osOnly: true,
-        hasLogs: false,
-        header: (
-            <div className="header-left-side">
-                <InfluxDBIcon alt="influxDBIcon" />
-                <div className="details">
-                    <p>influxDB</p>
-                    <span className="by">
-                        <MemphisVerifiedIcon />
-                        <label className="memphis">Memphis.dev</label>
-                        <Divider type="vertical" />
-                        <label className="oss-cloud-badge">Open source</label>
-                    </span>
-                </div>
-            </div>
-        ),
-        integrateDesc: (
-            <div className="integrate-description">
-                <p>Description</p>
-                <span className="content">Ship memphis logs to influxDB for near real-time monitoring with Grafana visualization</span>
-            </div>
-        )
     }
 };

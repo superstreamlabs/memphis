@@ -19,7 +19,6 @@ import { ApiEndpoints } from 'const/apiEndpoints';
 import { httpRequest } from 'services/http';
 import { parsingDate } from 'services/valueConvertor';
 import OverflowTip from 'components/tooltip/overflowtip';
-import { sendTrace } from 'services/genericServices';
 const logsColumns = [
     {
         key: '1',
@@ -47,9 +46,6 @@ const ConnectorError = ({ open, clickOutside, connectorId }) => {
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_CONNECTOR_ERRORS}?connector_id=${connectorId}`);
             setLogs(data?.logs);
-            sendTrace('getConnectorLogs', {
-                logsCount: data?.logs?.length || 0
-            });
         } catch (error) {
         } finally {
             setLoading(false);
@@ -63,7 +59,6 @@ const ConnectorError = ({ open, clickOutside, connectorId }) => {
                 connector_id: connectorId
             });
             setLogs(null);
-            sendTrace('userPurgeErros', {});
         } catch (error) {
         } finally {
             setLoading(false);
@@ -72,7 +67,7 @@ const ConnectorError = ({ open, clickOutside, connectorId }) => {
 
     return (
         <Modal
-            header={'Connector\'s logs'}
+            header={"Connector's logs"}
             className={'modal-wrapper produce-modal'}
             width="550px"
             height="50vh"

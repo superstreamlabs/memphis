@@ -17,7 +17,7 @@ import { MinusOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import Lottie from 'lottie-react';
 
-import { convertSecondsToDate, isCloud, parsingDate } from 'services/valueConvertor';
+import { convertSecondsToDate, parsingDate } from 'services/valueConvertor';
 import activeAndHealthy from 'assets/lotties/activeAndHealthy.json';
 import noActiveAndUnhealthy from 'assets/lotties/noActiveAndUnhealthy.json';
 import noActiveAndHealthy from 'assets/lotties/noActiveAndHealthy.json';
@@ -109,15 +109,13 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
 
                                 <p className="data-info">{station?.station?.storage_type}</p>
                             </div>
-                            {!isCloud() && (
-                                <div className="station-meta">
-                                    <div className="header">
-                                        <ReplicasIcon />
-                                        <label className="data-labels replicas">Replicas</label>
-                                    </div>
-                                    <p className="data-info">{station?.station?.replicas}</p>
+                            <div className="station-meta">
+                                <div className="header">
+                                    <ReplicasIcon />
+                                    <label className="data-labels replicas">Replicas</label>
                                 </div>
-                            )}
+                                <p className="data-info">{station?.station?.replicas}</p>
+                            </div>
                             <div className="station-meta">
                                 <div className="header">
                                     <TotalMsgIcon />
@@ -183,7 +181,9 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                         </div>
                         <div className="meta-container">
                             <UserIcon />
-                            <label className="data-labels date">Created by: {station?.station?.created_by_username.startsWith('$') ? 'system' : station?.station?.created_by_username}</label>
+                            <label className="data-labels date">
+                                Created by: {station?.station?.created_by_username.startsWith('$') ? 'system' : station?.station?.created_by_username}
+                            </label>
                         </div>
 
                         <div className="tags-list">

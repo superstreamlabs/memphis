@@ -30,12 +30,10 @@ import { ReactComponent as TypeIcon } from 'assets/images/typeIcon.svg';
 import { ApiEndpoints } from 'const/apiEndpoints';
 import SelectComponent from 'components/select';
 import { httpRequest } from 'services/http';
-import { isCloud } from 'services/valueConvertor';
 import Button from 'components/button';
 import Modal from 'components/modal';
 import Copy from 'components/copy';
 import TagsList from 'components/tagList';
-import LockFeature from 'components/lockFeature';
 import { useHistory } from 'react-router-dom';
 import pathDomains from 'router';
 import { Context } from 'hooks/store';
@@ -62,7 +60,6 @@ function SchemaDetails({ schemaName, closeDrawer }) {
     const [currentVersion, setCurrentversion] = useState();
     const [updated, setUpdated] = useState(false);
     const [loading, setIsLoading] = useState(false);
-    const [attachLoader, setAttachLoader] = useState(false);
     const [rollLoading, setIsRollLoading] = useState(false);
     const [newVersion, setNewVersion] = useState('');
     const [schemaDetails, setSchemaDetails] = useState({
@@ -516,13 +513,12 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                 <div className="attach-button">
                                     <AddRounded className="add" />
                                     <span>Enforce</span>
-                                    {isCloud() && !state?.allowedActions?.can_enforce_schema && <LockFeature />}
                                 </div>
                             }
                             radiusType="semi-round"
                             backgroundColorType="white"
                             border="gray-light"
-                            onClick={() => (!isCloud() || state?.allowedActions?.can_enforce_schema) && setAttachStaionModal(true)}
+                            onClick={() => setAttachStaionModal(true)}
                         />
                     </div>
                     {schemaDetails?.used_stations?.length > 0 && (

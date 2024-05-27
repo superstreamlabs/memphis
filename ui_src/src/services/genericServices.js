@@ -48,32 +48,3 @@ export const showMessages = (type, content) => {
             break;
     }
 };
-
-export const sendTrace = async (event, trace_params) => {
-    const bodyRequest = {
-        trace_name: event,
-        trace_params: trace_params
-    };
-    try {
-        await httpRequest('POST', ApiEndpoints.SEND_TRACE, bodyRequest);
-    } catch (error) {
-        return;
-    }
-};
-
-export const useGetAllowedActions = () => {
-    const [, dispatch] = useContext(Context);
-
-    const getAllowedActions = async () => {
-        try {
-            const data = await httpRequest('GET', ApiEndpoints.GET_ALLOWED_FUNCTIONS);
-            if (data) {
-                dispatch({ type: 'SET_ALLOWED_ACTIONS', payload: data });
-            }
-        } catch (error) {
-            console.error('Error fetching allowed actions:', error);
-        }
-    };
-
-    return getAllowedActions;
-};
