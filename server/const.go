@@ -56,7 +56,7 @@ const (
 	DEFAULT_GC_PRODUCER_CONSUMER_RETENTION_HOURS = 2
 	DEFAULT_ENCRYPTION_SECRET_KEY                = "thisis32bitlongpassphraseimusing"
 	// MEMPHIS_VERSION is the current version for the memphis server.
-	MEMPHIS_VERSION = "1.4.3"
+	MEMPHIS_VERSION = "1.4.4"
 	// ** added by Memphis
 
 	// PROTO is the currently supported protocol.
