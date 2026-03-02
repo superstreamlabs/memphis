@@ -1,5 +1,5 @@
 <p align="center">
-Please pay attention that Memphis.dev is no longer supported officially by the Superstream team (formerly Memphis.dev) and was released to the public.
+Please pay attention that Memphis.dev is no longer supported officially by the Superstream team (formerly Memphis.dev) and was released to the public
   <p align="center">
     
 <a href="![Github (4)](https://github.com/memphisdev/memphis-terraform/assets/107035359/a5fe5d0f-22e1-4445-957d-5ce4464e61b1)">[![Github (4)](https://github.com/memphisdev/memphis-terraform/assets/107035359/a5fe5d0f-22e1-4445-957d-5ce4464e61b1)](https://memphis.dev)</a>
